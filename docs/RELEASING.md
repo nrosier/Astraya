@@ -39,7 +39,9 @@ fixed, without waiting for a milestone — a wrong chart is not something to sit
    never waived. If reference agreement has degraded, that is the release blocker.
 4. `npm run ephe:sync` reports no digest change, or the change is explained in the
    changelog.
-5. Bump `version` in `package.json` to the table's value.
+5. Bump `version` in `package.json` to the table's value. The hard-coded release
+   badge in `README.md` follows it; `test/readme.test.ts` fails if it does not, so
+   step 2 catches a forgotten bump.
 6. `CHANGELOG.md` has a section for the release. Start from
    `npm run changelog:draft`, which groups conventional commit subjects since the
    last tag by change type, then **edit it for humans** — say what changed for a
