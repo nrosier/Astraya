@@ -20,14 +20,22 @@ on:
 permissions:
   contents: read
 
-env:
-  IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/astraya
-
 jobs:
   image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      # A pull request from a fork gets no secrets, so the image name cannot be
+      # built from DOCKERHUB_USERNAME there. Building is still worth doing on a fork
+      # PR — a broken Dockerfile should fail review, not the merge — so fall back to
+      # a placeholder owner. Nothing is pushed on a pull request either way, and an
+      # absent secret must not turn into a confusing `/astraya` parse failure.
+      - name: Resolve the image name
+        id: image
+        env:
+          OWNER: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: echo "name=${OWNER:-fork-pr-build}/astraya" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
@@ -44,7 +52,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE }}
+          images: ${{ steps.image.outputs.name }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -62,8 +70,10 @@ jobs:
       # which would also move it for a prerelease tag.
       - name: Decide whether this moves `latest`
         id: latest
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v*  && "$GITHUB_REF_NAME" != *-* ]]; then
+          if [[ "$GITHUB_REF" == refs/tags/v* && "$GITHUB_REF_NAME" != *-* ]]; then
             echo "tags=${IMAGE}:latest" >> "$GITHUB_OUTPUT"
           else
             echo "tags=" >> "$GITHUB_OUTPUT"
