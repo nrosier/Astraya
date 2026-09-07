@@ -6,7 +6,7 @@
   "description": "Astrological calculation and charting webapp powered by the Swiss Ephemeris",
   "license": "AGPL-3.0-or-later",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "vite",
@@ -21,6 +21,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -b --noEmit",
     "ephe:sync": "node scripts/sync-ephemeris.mjs",
+    "changelog:draft": "node scripts/changelog-draft.mjs",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {

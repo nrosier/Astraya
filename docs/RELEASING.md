@@ -40,9 +40,13 @@ fixed, without waiting for a milestone — a wrong chart is not something to sit
 4. `npm run ephe:sync` reports no digest change, or the change is explained in the
    changelog.
 5. Bump `version` in `package.json` to the table's value.
-6. `CHANGELOG.md` has a section for the release, generated from conventional commit
-   subjects and then edited for humans. Say what changed for a _user_, not which
-   files moved.
+6. `CHANGELOG.md` has a section for the release. Start from
+   `npm run changelog:draft`, which groups conventional commit subjects since the
+   last tag by change type, then **edit it for humans** — say what changed for a
+   _user_, not which files moved. The draft is not written to the file on purpose: it
+   guarantees nothing is forgotten, not that the result is worth reading. It also
+   lists any commit whose subject did not parse, so nothing user-facing is dropped;
+   CI rejects those on pull requests, so this should be empty.
 7. Tag and push: `git tag -a v0.1.0 -m 'M0: foundation' && git push origin v0.1.0`.
    The tag triggers `.github/workflows/release.yml`, which builds, attaches the
    changelog, and publishes the GitHub release.
