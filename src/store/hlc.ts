@@ -60,6 +60,17 @@ export type NodeId = string;
 
 const NODE_ID_PATTERN = /^[0-9a-f]{16}$/;
 
+/**
+ * Is this a device id?
+ *
+ * Exported so that other modules validate against this pattern rather than writing
+ * their own copy of it — two spellings of "16 hex characters" that drift apart is a
+ * bug nobody would find until two devices disagreed about a timestamp.
+ */
+export function isNodeId(value: unknown): value is NodeId {
+  return typeof value === 'string' && NODE_ID_PATTERN.test(value);
+}
+
 export interface Clock {
   /** The logical millisecond reading. Never decreases. */
   readonly millis: number;
@@ -132,6 +143,17 @@ export function decodeHlc(hlc: Hlc): Clock {
     throw new Error(`Not a timestamp: ${hlc}`);
   }
   return { millis: Number(millis), counter: Number(counter), nodeId };
+}
+
+/** Is this a timestamp? The predicate form of `decodeHlc`, for validating input. */
+export function isHlc(value: unknown): value is Hlc {
+  if (typeof value !== 'string') return false;
+  try {
+    decodeHlc(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

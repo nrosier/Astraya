@@ -1,0 +1,51 @@
+{
+  "note": "An operation log recorded at opVersion 1. Do not edit: test/store-ops.test.ts replays it to prove that operations written by an older build still decode. If a future version cannot read this file, that version has broken a promise to every device that has ever synced.",
+  "recordedBy": "astraya 0.4.0-dev",
+  "ops": [
+    {
+      "opVersion": 1,
+      "hlc": "000001780963200000-00000-a1b2c3d4e5f60718",
+      "deviceId": "a1b2c3d4e5f60718",
+      "entity": "person",
+      "entityId": "p-01HQZ8V2N7",
+      "field": "name",
+      "value": "Vevay test subject"
+    },
+    {
+      "opVersion": 1,
+      "hlc": "000001780963200000-00001-a1b2c3d4e5f60718",
+      "deviceId": "a1b2c3d4e5f60718",
+      "entity": "person",
+      "entityId": "p-01HQZ8V2N7",
+      "field": "civil",
+      "value": { "year": 1960, "month": 6, "day": 15, "hour": 14, "minute": 30, "second": 0 }
+    },
+    {
+      "opVersion": 1,
+      "hlc": "000001780963200000-00002-a1b2c3d4e5f60718",
+      "deviceId": "a1b2c3d4e5f60718",
+      "entity": "person",
+      "entityId": "p-01HQZ8V2N7",
+      "field": "coordinates",
+      "value": { "latitude": 38.7478, "longitude": -85.0672 }
+    },
+    {
+      "opVersion": 1,
+      "hlc": "000001780963260000-00000-b0000000000000ff",
+      "deviceId": "b0000000000000ff",
+      "entity": "person",
+      "entityId": "p-01HQZ8V2N7",
+      "field": "offsetOverrideMinutes",
+      "value": -300
+    },
+    {
+      "opVersion": 1,
+      "hlc": "000001780963260001-00000-b0000000000000ff",
+      "deviceId": "b0000000000000ff",
+      "entity": "chart",
+      "entityId": "c-01HQZ8W4X1",
+      "field": "houseSystem",
+      "value": "placidus"
+    }
+  ]
+}
