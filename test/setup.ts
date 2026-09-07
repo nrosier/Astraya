@@ -1,11 +1,20 @@
 /**
- * Vitest setup.
+ * Test environment setup.
  *
- * Teaches Node's `fetch` to read `file://` URLs so `sweph-wasm` — whose
- * Emscripten glue is browser-only and fetches its own assets — loads from
- * `public/ephe` with no network. Tests then exercise the exact same load path
- * that runs in the browser, rather than a Node-specific shortcut.
+ * Vitest runs in Node, deliberately: it makes the ephemeris tests exercise the same
+ * asset-loading path the browser takes, with no network. That choice means two browser
+ * APIs have to be supplied here.
  */
 import { installFileFetch } from '../scripts/node-file-fetch.mjs';
 
 installFileFetch();
+
+/**
+ * IndexedDB, via `fake-indexeddb`.
+ *
+ * The store is the one place where a bug loses a user's data outright, so its tests run
+ * against a real IndexedDB implementation — versions, upgrade transactions, key ordering
+ * and transaction aborts included — rather than against a mock that would agree with
+ * whatever `db.ts` happens to do.
+ */
+import 'fake-indexeddb/auto';

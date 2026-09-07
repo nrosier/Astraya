@@ -4,6 +4,49 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.4.0] — 2026-09-08
+
+**Milestone M3 — local-first data and people.**
+
+Astraya now remembers people. Everything typed lives on the device it was typed
+on — no account, no server, no network call — and survives closing the tab,
+losing the connection, or reopening the app a year later.
+
+### Added
+
+- **People.** Add a person, fill in their birth record, and find them again from
+  the people list. A person with no birth data yet is shown as exactly that, not
+  hidden or guessed at.
+- **A local-first store.** Every change is an operation stamped with a hybrid
+  logical clock and appended to a log in IndexedDB, so two devices' histories
+  merge deterministically once sync exists (M8) with no server involved in
+  deciding the outcome.
+- **Deletes you can undo.** Removing a person hides them and their charts rather
+  than erasing anything; the people list can bring them back.
+- **A request to not be evicted.** The app asks the browser to persist its
+  storage, and says so plainly when the browser refuses — this is the only copy
+  of the data that exists.
+- **A status line that will not reassure you falsely.** Every screen holding
+  local data shows whether it exists anywhere else yet. Today the honest answer
+  is always "only on this device" — accounts and sync land in M8.
+- **The app works with the network off.** The app shell and the ephemeris files
+  it needs are cached ahead of time, and a second visit with no connection at all
+  loads and works exactly as it did the first time.
+
+### Notes on correctness
+
+- **Forward compatibility is built in, not promised.** Every stored operation
+  carries a version number. A future build's operations are preserved untouched
+  by an older one rather than dropped, so upgrading and downgrading devices
+  cannot lose data between them.
+- **A chart's settings are not the same register as its birth data.** A person's
+  date, time and coordinates are written as whole values — a coordinate merged
+  half from one device and half from another would be a place nobody was born —
+  while chart settings merge field-by-field, because that is harmless there.
+- 382 tests cover the store, the form validation, and the offline behaviour;
+  the offline-shell and cache-storage behaviour was also verified against a real
+  browser with the network genuinely disabled, not simulated.
+
 ## [0.3.0] — 2026-09-07
 
 **Milestone M2 — time and place.**
@@ -141,6 +184,7 @@ Astraya is **AGPL-3.0-or-later**. This is required, not chosen: Swiss Ephemeris 
 offered under either the AGPL or a commercial licence, and the AGPL cannot be
 combined with MIT in this direction.
 
+[0.4.0]: https://github.com/nrosier/Astraya/releases/tag/v0.4.0
 [0.3.0]: https://github.com/nrosier/Astraya/releases/tag/v0.3.0
 [0.2.0]: https://github.com/nrosier/Astraya/releases/tag/v0.2.0
 [0.1.0]: https://github.com/nrosier/Astraya/releases/tag/v0.1.0

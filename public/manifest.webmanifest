@@ -1,0 +1,17 @@
+{
+  "name": "Astraya",
+  "short_name": "Astraya",
+  "description": "Astrological chart calculation built on the Swiss Ephemeris. Works offline; your birth data stays on your device.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b0c18",
+  "theme_color": "#0b0c18",
+  "lang": "en",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -12,17 +12,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { decodeBirthMoment, encodeBirthMoment } from '../time/encode.js';
 import { formatOffset, resolveMoment } from '../time/resolve.js';
-import type { BirthMomentInput, Calendar, ResolvedMoment, TimeWarningCode } from '../time/types.js';
-
-/** Provenance in the user's words, not ours. */
-const PROVENANCE: Record<ResolvedMoment['provenance'], string> = {
-  manual: 'the offset you entered',
-  tzdb: 'the timezone database, for this date',
-  lmt: 'Local Mean Time from the longitude',
-};
-
-/** Which warnings deserve a stronger presentation than the rest. */
-const NEEDS_A_DECISION: readonly TimeWarningCode[] = ['ambiguous-local-time', 'nonexistent-local-time'];
+import { NEEDS_A_DECISION, PROVENANCE } from './moment-labels.js';
+import type { BirthMomentInput, Calendar } from '../time/types.js';
 
 const DEFAULT: BirthMomentInput = {
   // A deliberately awkward default: Vevay is the county whose zone lookup this

@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { defineConfig } from 'vitest/config';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 const pkg: { version: string } = JSON.parse(readFileSync('./package.json', 'utf8')) as { version: string };
@@ -16,8 +16,29 @@ function commitSha(): string {
   }
 }
 
+/**
+ * Writes `dist/precache-manifest.json`: every emitted `.html`/`.js`/`.css` path,
+ * for the service worker's `install` handler to precache (#99). Vite's
+ * content-hashed filenames aren't statically knowable from `src/sw.ts` itself,
+ * so this is what bridges that gap — the service worker's own build
+ * (`vite.sw.config.ts`) runs after this one and never touches this file.
+ */
+function precacheManifest(): Plugin {
+  return {
+    name: 'astraya-precache-manifest',
+    writeBundle(options, bundle) {
+      // "/" covers the navigation request for index.html; listing "/index.html"
+      // too would just precache the identical response under a second key.
+      const paths = ['/', ...Object.keys(bundle).map((fileName) => `/${fileName}`)].filter(
+        (path) => path !== '/index.html' && (path === '/' || /\.(html|js|css)$/.test(path)),
+      );
+      writeFileSync(`${options.dir ?? 'dist'}/precache-manifest.json`, JSON.stringify(paths));
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), precacheManifest()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __APP_COMMIT__: JSON.stringify(commitSha()),
