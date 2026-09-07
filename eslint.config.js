@@ -87,6 +87,9 @@ export default tseslint.config(
       // Test doubles legitimately have no-op members: a transport that drops
       // messages is exactly the failure being simulated.
       '@typescript-eslint/no-empty-function': 'off',
+      // Fakes implementing an async interface (Cache Storage, etc.) legitimately
+      // have members with nothing to await, for the same reason as engine.ts above.
+      '@typescript-eslint/require-await': 'off',
     },
   },
 );

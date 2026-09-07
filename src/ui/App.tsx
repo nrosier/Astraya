@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { registerServiceWorker } from '../pwa/register.js';
+import { startWarming } from '../pwa/warm-status.js';
 import { About } from './About.js';
 import { Changelog } from './Changelog.js';
 import { People } from './People.js';
 import { PersonForm } from './PersonForm.js';
+import { PwaStatus } from './PwaStatus.js';
 import { parseRoute } from './route.js';
 import { StatusBar } from './StatusBar.js';
 import { StoreProvider, useStoreStatus } from './store-context.js';
@@ -107,7 +110,31 @@ export function App(): React.JSX.Element {
     };
   }, []);
 
+  useEffect(() => {
+    // Dev mode only, never registered: a service worker caching `npm run dev`'s
+    // requests would fight Vite's HMR, which serves the same paths differently
+    // on every reload.
+    if (!import.meta.env.PROD) return;
+    registerServiceWorker();
+    startWarming();
+  }, []);
+
   const parsed = parseRoute(route);
+  const screen = renderScreen(parsed, engineStatus, seVersion);
+
+  return (
+    <>
+      {screen}
+      <PwaStatus />
+    </>
+  );
+}
+
+function renderScreen(
+  parsed: ReturnType<typeof parseRoute>,
+  engineStatus: string,
+  seVersion: string | undefined,
+): React.JSX.Element {
   if (parsed.kind === 'about') return <About seVersion={seVersion} />;
   if (parsed.kind === 'changelog') return <Changelog />;
   if (parsed.kind === 'time') return <TimePlace />;
