@@ -4,7 +4,7 @@
  * If the ephemeris boundary is wrong, every feature built on top of it is wrong
  * invisibly — an astrological chart has no obviously-broken state, it just quietly
  * describes the wrong person. So this suite runs before any feature work and
- * compares against values Astraea did not produce.
+ * compares against values Astraya did not produce.
  *
  * Reference values come from NASA/JPL Horizons via
  * `scripts/fetch-horizons-fixture.mjs`, committed under test/fixtures. They are

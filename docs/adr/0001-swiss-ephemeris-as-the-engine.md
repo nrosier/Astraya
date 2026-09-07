@@ -5,7 +5,7 @@
 
 ## Context
 
-Astraea's premise is that the numbers are right. That makes the ephemeris the
+Astraya's premise is that the numbers are right. That makes the ephemeris the
 single most consequential dependency in the project, and it constrains the
 licence of everything else.
 
@@ -36,9 +36,9 @@ Swiss Ephemeris via `sweph-wasm`, confined to `src/ephemeris/` behind our own
 
 ## Consequences
 
-- **Astraea must be AGPL-3.0-or-later.** This is not a preference. The AGPL is the
+- **Astraya must be AGPL-3.0-or-later.** This is not a preference. The AGPL is the
   option we take on Astrodienst's dual licence, and AGPL and MIT cannot be linked
-  in the other direction. Running a modified Astraea as a network service obliges
+  in the other direction. Running a modified Astraya as a network service obliges
   us to offer users the source, which the `/about` page does. Astrodienst also
   requires visible credit.
 - **We ship 2.48 MB of the 110.6 MB package**: `swisseph.wasm` (584,227 B),

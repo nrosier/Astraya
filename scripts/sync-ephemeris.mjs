@@ -66,7 +66,7 @@ const expected = new Set(assets.map((a) => a.file));
 const stray = (await readdir(dest)).filter((f) => !expected.has(f) && f !== '.gitignore');
 if (stray.length > 0) {
   console.error(`\nsync-ephemeris: unexpected files in public/ephe: ${stray.join(', ')}`);
-  console.error('Astraea ships only the pinned assets. Remove these or add them to the manifest.');
+  console.error('Astraya ships only the pinned assets. Remove these or add them to the manifest.');
   process.exit(1);
 }
 

@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
 /**
- * Lint configuration for Astraea.
+ * Lint configuration for Astraya.
  *
  * Beyond ordinary hygiene this file enforces the two architectural boundaries the
  * design depends on, so they hold mechanically rather than by memory:

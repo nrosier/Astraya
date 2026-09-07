@@ -1,7 +1,7 @@
 /**
  * Worker host for the Swiss Ephemeris engine.
  *
- * This is the only place in a running Astraea where WebAssembly executes. It sits
+ * This is the only place in a running Astraya where WebAssembly executes. It sits
  * off the UI thread because a full chart is hundreds of ephemeris calls, and
  * because `swe_set_sid_mode` and `swe_set_topo` mutate global state on the WASM
  * instance: confining that state to one thread with one serialised request queue

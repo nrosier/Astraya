@@ -36,7 +36,7 @@ whether or not the user has an account.
   ephemeris, and a few dozen records do not need SQL.
 - **Field-level last-write-wins, ordered by hybrid logical clock — not CRDTs.**
   Actual needs CRDT machinery because budgets take concurrent numeric edits to
-  shared cells. Astraea does not. Per-field LWW registers keyed by HLC converge
+  shared cells. Astraya does not. Per-field LWW registers keyed by HLC converge
   deterministically in a fraction of the code. This is a considered simplification
   and is recorded in the module so nobody "upgrades" it without a reason.
 - **The server is an opaque relay.** One table:
