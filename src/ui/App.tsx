@@ -5,6 +5,7 @@ import { Changelog } from './Changelog.js';
 import { People } from './People.js';
 import { PersonForm } from './PersonForm.js';
 import { parseRoute } from './route.js';
+import { StatusBar } from './StatusBar.js';
 import { StoreProvider, useStoreStatus } from './store-context.js';
 import { TimePlace } from './TimePlace.js';
 import { APP_VERSION } from '../version.js';
@@ -47,7 +48,14 @@ function Stored({ children }: { children: React.ReactNode }): React.JSX.Element 
     );
   }
 
-  return <StoreProvider store={status.store}>{children}</StoreProvider>;
+  return (
+    <StoreProvider store={status.store}>
+      {children}
+      {/* Inside the provider and after the screen: every route that shows the user's data
+          gets the same answer to "does this exist anywhere but here?", in the same place. */}
+      <StatusBar />
+    </StoreProvider>
+  );
 }
 
 /**

@@ -61,12 +61,6 @@ export function People(): React.JSX.Element {
         </p>
       )}
 
-      {store.persistence.state !== 'persisted' && (
-        <p className="hint" role="status">
-          This is the only copy of this data. <a href="#/about">What that means and how to keep a copy</a>.
-        </p>
-      )}
-
       <p>
         <button type="button" onClick={create} disabled={busy}>
           Add a person

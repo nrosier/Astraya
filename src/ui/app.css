@@ -565,3 +565,72 @@ label.stacked textarea:focus-visible {
   border-radius: var(--radius);
   color: var(--muted);
 }
+
+/*
+ * The status line.
+ *
+ * Collapsed to a few words until it has something to say, and opened by itself when it
+ * does. A bar in the flow rather than a fixed overlay: fixed bars cover the bottom of a
+ * form on a phone, which is where the save button is.
+ */
+.statusbar {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.statusbar summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 550;
+}
+
+.statusbar summary::-webkit-details-marker {
+  display: none;
+}
+
+.statusbar summary::after {
+  content: '›';
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+
+.statusbar details[open] summary::after {
+  transform: rotate(90deg);
+}
+
+.statusbar p {
+  margin: 0.5rem 0 0;
+  max-width: 44rem;
+}
+
+/* Tone carries in the dot and the label weight, never in colour alone — the same rule the
+   warning panels follow, for the same reason. */
+.statusbar .dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.statusbar[data-tone='ok'] summary {
+  color: var(--fg);
+}
+
+.statusbar[data-tone='ok'] .dot {
+  background: color-mix(in oklab, var(--accent) 80%, var(--fg));
+}
+
+.statusbar[data-tone='warn'] summary {
+  color: var(--solar);
+}
+
+.statusbar[data-tone='warn'] .dot {
+  background: var(--solar);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--solar) 22%, transparent);
+}
