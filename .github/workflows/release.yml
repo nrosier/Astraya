@@ -1,0 +1,66 @@
+name: Release
+
+# Policy: every milestone ends in a tagged release. See docs/RELEASING.md.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full history, so the changelog can be generated
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run ephe:sync
+
+      # Deliberate duplication of CI. A release must not be able to escape the
+      # correctness gate because someone tagged in a hurry.
+      - name: Verify before publishing
+        run: |
+          node scripts/gen-constants.mjs --check
+          npm run check
+
+      - name: Check the tag matches package.json
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p 'require("./package.json").version')"
+          if [ "$tag" != "$pkg" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $pkg." >&2
+            exit 1
+          fi
+
+      - run: npm run build
+
+      - name: Extract this version's changelog section
+        id: notes
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            awk -v v="${GITHUB_REF_NAME#v}" '
+              $0 ~ "^## \\[?"v"\\]?" {found=1; next}
+              found && /^## / {exit}
+              found {print}
+            ' CHANGELOG.md > release-notes.md
+          fi
+          # Fall back to commit subjects rather than publishing empty notes.
+          if [ ! -s release-notes.md ]; then
+            previous="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
+            range="${previous:+$previous..}${GITHUB_REF_NAME}"
+            git log --no-merges --pretty='- %s' "$range" > release-notes.md
+          fi
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes.md

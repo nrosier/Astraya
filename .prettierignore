@@ -1,0 +1,9 @@
+dist/
+coverage/
+public/ephe/
+package-lock.json
+# Generated from a live sweph-wasm instance; formatting is the generator's job.
+src/ephemeris/generated-constants.ts
+# Reference values from JPL Horizons. Reformatting would obscure diffs against
+# the upstream fetch.
+test/fixtures/

@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # The ephemeris data files are not committed. Syncing verifies each against
+      # its pinned SHA-256, so this step fails if upstream repacked the package —
+      # which would mean different numbers from the same version.
+      - name: Sync and verify ephemeris assets
+        run: npm run ephe:sync
+
+      # Swiss Ephemeris constants are generated from a live instance, never
+      # transcribed. Drift here means the committed constants no longer match the
+      # library actually being called.
+      - name: Check generated constants are current
+        run: node scripts/gen-constants.mjs --check
+
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+
+      # Includes the golden-chart gate: 11 bodies at 3 epochs against JPL Horizons
+      # reference values, 0.2" for historical dates. Runs fully offline.
+      - run: npm test
+
+      - run: npm run build

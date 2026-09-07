@@ -1,0 +1,51 @@
+Astraea — astrological calculation and charting webapp
+Copyright (C) 2026 NiQck
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. See LICENSE for the full text.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+
+THIRD-PARTY COMPONENTS
+======================
+
+Swiss Ephemeris
+---------------
+Astraea performs its astronomical calculations with the Swiss Ephemeris,
+Copyright (C) 1997-2021 Astrodienst AG, Switzerland. The Swiss Ephemeris is
+dual-licensed under the GNU Affero General Public License version 3 or a
+commercial licence from Astrodienst AG.
+
+Astraea uses it under the AGPL. Astrodienst requires that the Swiss Ephemeris be
+credited in any software that uses it; that notice is displayed in the
+application's About page as well as here.
+
+  https://www.astro.com/swisseph/
+  https://github.com/aloistr/swisseph
+
+Astraea links the Swiss Ephemeris through sweph-wasm
+(https://github.com/ptprashanttripathi/sweph-wasm), an Emscripten/WebAssembly
+build of the Swiss Ephemeris C library.
+
+Because the Swiss Ephemeris is AGPL and the AGPL's network clause applies to
+software made available over a network, any deployment of Astraea that is
+reachable by other people must offer those users the corresponding source code
+of the running version. The application's About page carries that source link.
+
+Ephemeris data files
+--------------------
+The compressed ephemeris data files shipped with this application
+(sepl_18.se1, semo_18.se1, seas_18.se1) are derived from NASA/JPL's DE431
+ephemeris and are distributed by Astrodienst AG as part of the Swiss Ephemeris
+under the same terms.
+
+Other dependencies
+------------------
+Remaining runtime and build dependencies are permissively licensed (MIT,
+ISC, BSD, Apache-2.0, CC0). A generated, per-release inventory of every
+dependency and its licence is published in the application's About page.

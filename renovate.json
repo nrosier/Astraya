@@ -1,0 +1,34 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits", ":dependencyDashboard"],
+  "timezone": "Europe/Brussels",
+  "schedule": ["before 6am on monday"],
+  "labels": ["type:chore", "area:infra"],
+  "prConcurrentLimit": 5,
+  "lockFileMaintenance": { "enabled": true },
+  "packageRules": [
+    {
+      "description": "Swiss Ephemeris is the source of every number this app produces. An upgrade can shift positions and repack the .se1 files, which invalidates the pinned SHA-256 digests in src/ephemeris/assets.ts and the generated constants. Never automatic; always a deliberate review against the golden-chart gate.",
+      "matchPackageNames": ["sweph-wasm"],
+      "rangeStrategy": "pin",
+      "automerge": false,
+      "labels": ["type:chore", "area:ephemeris", "risk:correctness"],
+      "prBodyNotes": [
+        "**Before merging:** run `npm run ephe:sync` (expect digest failures if upstream repacked), `node scripts/gen-constants.mjs`, and `npm test`. The golden-chart gate must stay green at its historical tolerance of 0.2 arcseconds."
+      ]
+    },
+    {
+      "description": "typescript-eslint gates which TypeScript version is usable: TS is pinned to the newest release its peer range accepts. Group them so the toolchain moves as one unit.",
+      "matchPackageNames": ["typescript", "typescript-eslint", "@typescript-eslint/**"],
+      "groupName": "typescript toolchain"
+    },
+    {
+      "description": "Dev tooling patch and minor updates are safe to automerge once the check suite passes.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "excludePackageNames": ["typescript", "typescript-eslint"],
+      "automerge": true
+    }
+  ],
+  "vulnerabilityAlerts": { "labels": ["type:bug", "area:infra"], "automerge": false }
+}

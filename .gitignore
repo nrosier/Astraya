@@ -1,0 +1,19 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Ephemeris assets are copied from the npm package by `npm run ephe:sync` and
+# verified against the SHA-256 digests in src/ephemeris/assets.ts. They are build
+# output, not source: 2.48 MB of binary that would otherwise be committed twice.
+public/ephe/
+
+# Secrets. The sync server's encryption key lives here and must never be
+# committed, never baked into the Docker image, and be backed up separately from
+# the database — a backup holding both is a backup with no encryption.
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.local
