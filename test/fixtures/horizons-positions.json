@@ -1,0 +1,222 @@
+{
+  "$provenance": {
+    "source": "NASA/JPL Horizons system",
+    "api": "https://ssd.jpl.nasa.gov/api/horizons.api",
+    "retrieved": "2026-09-07",
+    "quantity": "31 (observer ecliptic longitude and latitude)",
+    "center": "500@399 (geocentric)",
+    "frame": "apparent, light-time corrected, true ecliptic and equinox of date",
+    "units": "degrees",
+    "timeScale": "UT",
+    "reproduce": "node scripts/fetch-horizons-fixture.mjs",
+    "note": "Do not edit by hand. These are external reference values; hand-editing defeats the purpose of the gate."
+  },
+  "epochs": {
+    "j2000": {
+      "utc": [
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0
+      ],
+      "horizons": "2000-Jan-01 12:00:00"
+    },
+    "apollo11": {
+      "utc": [
+        1969,
+        7,
+        20,
+        20,
+        17,
+        40
+      ],
+      "horizons": "1969-Jul-20 20:17:40"
+    },
+    "future2035": {
+      "utc": [
+        2035,
+        3,
+        15,
+        6,
+        45,
+        0
+      ],
+      "horizons": "2035-Mar-15 06:45:00"
+    }
+  },
+  "positions": {
+    "j2000": {
+      "Sun": {
+        "se": 0,
+        "longitude": 280.3689092,
+        "latitude": 0.0002381
+      },
+      "Moon": {
+        "se": 1,
+        "longitude": 223.323786,
+        "latitude": 5.1707422
+      },
+      "Mercury": {
+        "se": 2,
+        "longitude": 271.8892699,
+        "latitude": -0.994819
+      },
+      "Venus": {
+        "se": 3,
+        "longitude": 241.5657794,
+        "latitude": 2.0663548
+      },
+      "Mars": {
+        "se": 4,
+        "longitude": 327.9632921,
+        "latitude": -1.0677752
+      },
+      "Jupiter": {
+        "se": 5,
+        "longitude": 25.2530685,
+        "latitude": -1.2621868
+      },
+      "Saturn": {
+        "se": 6,
+        "longitude": 40.3956366,
+        "latitude": -2.4448533
+      },
+      "Uranus": {
+        "se": 7,
+        "longitude": 314.809168,
+        "latitude": -0.658324
+      },
+      "Neptune": {
+        "se": 8,
+        "longitude": 303.1930007,
+        "latitude": 0.2350026
+      },
+      "Pluto": {
+        "se": 9,
+        "longitude": 251.4547644,
+        "latitude": 10.8552605
+      },
+      "Chiron": {
+        "se": 15,
+        "longitude": 251.617609,
+        "latitude": 4.0717061
+      }
+    },
+    "apollo11": {
+      "Sun": {
+        "se": 0,
+        "longitude": 117.9111722,
+        "latitude": -0.0001002
+      },
+      "Moon": {
+        "se": 1,
+        "longitude": 187.8796443,
+        "latitude": -1.3636571
+      },
+      "Mercury": {
+        "se": 2,
+        "longitude": 115.843887,
+        "latitude": 1.4588429
+      },
+      "Venus": {
+        "se": 3,
+        "longitude": 75.0379184,
+        "latitude": -2.4542164
+      },
+      "Mars": {
+        "se": 4,
+        "longitude": 242.7733607,
+        "latitude": -3.3930199
+      },
+      "Jupiter": {
+        "se": 5,
+        "longitude": 180.746292,
+        "latitude": 1.21917
+      },
+      "Saturn": {
+        "se": 6,
+        "longitude": 38.09802,
+        "latitude": -2.4284412
+      },
+      "Uranus": {
+        "se": 7,
+        "longitude": 180.6900179,
+        "latitude": 0.7107018
+      },
+      "Neptune": {
+        "se": 8,
+        "longitude": 236.0229032,
+        "latitude": 1.7299195
+      },
+      "Pluto": {
+        "se": 9,
+        "longitude": 173.0071981,
+        "latitude": 15.306082
+      },
+      "Chiron": {
+        "se": 15,
+        "longitude": 6.8273565,
+        "latitude": 3.0106485
+      }
+    },
+    "future2035": {
+      "Sun": {
+        "se": 0,
+        "longitude": 354.5136171,
+        "latitude": -0.0001556
+      },
+      "Moon": {
+        "se": 1,
+        "longitude": 63.8203381,
+        "latitude": -5.1839495
+      },
+      "Mercury": {
+        "se": 2,
+        "longitude": 336.2707455,
+        "latitude": -2.2097558
+      },
+      "Venus": {
+        "se": 3,
+        "longitude": 317.255746,
+        "latitude": -0.1546537
+      },
+      "Mars": {
+        "se": 4,
+        "longitude": 281.3362242,
+        "latitude": -0.4216829
+      },
+      "Jupiter": {
+        "se": 5,
+        "longitude": 19.1567602,
+        "latitude": -1.0758605
+      },
+      "Saturn": {
+        "se": 6,
+        "longitude": 118.6375722,
+        "latitude": 0.455885
+      },
+      "Uranus": {
+        "se": 7,
+        "longitude": 96.4868476,
+        "latitude": 0.3337835
+      },
+      "Neptune": {
+        "se": 8,
+        "longitude": 21.0177454,
+        "latitude": -1.6093556
+      },
+      "Pluto": {
+        "se": 9,
+        "longitude": 318.9025705,
+        "latitude": -7.8651512
+      },
+      "Chiron": {
+        "se": 15,
+        "longitude": 62.0621214,
+        "latitude": -3.9776727
+      }
+    }
+  }
+}
