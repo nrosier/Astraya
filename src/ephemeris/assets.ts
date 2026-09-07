@@ -1,5 +1,5 @@
 /**
- * The exact set of Swiss Ephemeris assets Astraea ships, pinned by digest.
+ * The exact set of Swiss Ephemeris assets Astraya ships, pinned by digest.
  *
  * `sweph-wasm` is a 110 MB package containing 150 `.se1` files. We ship four
  * assets (~2.5 MB) and deliberately exclude the rest. Pinning size and SHA-256

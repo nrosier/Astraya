@@ -1,4 +1,4 @@
-Astraea — astrological calculation and charting webapp
+Astraya — astrological calculation and charting webapp
 Copyright (C) 2026 NiQck
 
 This program is free software: you can redistribute it and/or modify it under
@@ -16,24 +16,24 @@ THIRD-PARTY COMPONENTS
 
 Swiss Ephemeris
 ---------------
-Astraea performs its astronomical calculations with the Swiss Ephemeris,
+Astraya performs its astronomical calculations with the Swiss Ephemeris,
 Copyright (C) 1997-2021 Astrodienst AG, Switzerland. The Swiss Ephemeris is
 dual-licensed under the GNU Affero General Public License version 3 or a
 commercial licence from Astrodienst AG.
 
-Astraea uses it under the AGPL. Astrodienst requires that the Swiss Ephemeris be
+Astraya uses it under the AGPL. Astrodienst requires that the Swiss Ephemeris be
 credited in any software that uses it; that notice is displayed in the
 application's About page as well as here.
 
   https://www.astro.com/swisseph/
   https://github.com/aloistr/swisseph
 
-Astraea links the Swiss Ephemeris through sweph-wasm
+Astraya links the Swiss Ephemeris through sweph-wasm
 (https://github.com/ptprashanttripathi/sweph-wasm), an Emscripten/WebAssembly
 build of the Swiss Ephemeris C library.
 
 Because the Swiss Ephemeris is AGPL and the AGPL's network clause applies to
-software made available over a network, any deployment of Astraea that is
+software made available over a network, any deployment of Astraya that is
 reachable by other people must offer those users the corresponding source code
 of the running version. The application's About page carries that source link.
 

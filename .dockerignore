@@ -1,0 +1,16 @@
+# Everything the image must not carry, and everything that would defeat layer caching.
+.git
+.github
+node_modules
+dist
+.env
+.env.*
+!.env.example
+
+# Regenerated inside the build from node_modules and verified against pinned
+# SHA-256 checksums, so a stale host copy must never be able to reach the image.
+public/ephe
+
+*.log
+.DS_Store
+.claude

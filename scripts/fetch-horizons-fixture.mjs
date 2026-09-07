@@ -11,7 +11,7 @@
  *
  *   node scripts/fetch-horizons-fixture.mjs
  *
- * What is being validated is Astraea's *use* of the ephemeris — time conversion,
+ * What is being validated is Astraya's *use* of the ephemeris — time conversion,
  * flags, coordinate frame, normalisation — rather than the underlying DE431 data,
  * which Horizons also derives from. For an independent check of the data itself,
  * see the astronomy-engine cross-check in the same test file.

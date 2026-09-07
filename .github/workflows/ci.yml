@@ -9,13 +9,41 @@ permissions:
   contents: read
 
 jobs:
+  # The changelog is drafted from commit subjects (npm run changelog:draft), so a
+  # subject that does not parse is a changelog entry that silently goes missing.
+  commits:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check commit subjects are conventional
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          bad=0
+          while IFS= read -r subject; do
+            [ -z "$subject" ] && continue
+            if ! printf '%s' "$subject" \
+              | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9./-]+\))?!?: .+'; then
+              echo "Not a conventional commit subject: $subject" >&2
+              bad=1
+            fi
+          done < <(git log --no-merges --pretty=%s "$BASE..HEAD")
+          if [ "$bad" -ne 0 ]; then
+            echo 'Expected e.g. "feat(chart): draw the aspect web". See docs/RELEASING.md.' >&2
+            exit 1
+          fi
+          echo 'All commit subjects parse.'
+
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
 

@@ -92,7 +92,7 @@ export interface PositionOptions {
 }
 
 /**
- * The engine interface the rest of Astraea talks to.
+ * The engine interface the rest of Astraya talks to.
  *
  * Every method is async because the real implementation lives in a Web Worker.
  * Errors are thrown, never encoded as sentinel values — Swiss Ephemeris signals

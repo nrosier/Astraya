@@ -1,5 +1,5 @@
 /**
- * The Swiss Ephemeris boundary: the only module in Astraea that touches
+ * The Swiss Ephemeris boundary: the only module in Astraya that touches
  * `sweph-wasm`.
  *
  * This is deliberately a plain module rather than worker-only code, so the same
@@ -339,7 +339,7 @@ export class SwissEphemerisEngine implements EphemerisProvider {
     if (jd < lower || jd >= upper) {
       throw new EphemerisError(
         `Julian day ${jd} is outside the shipped ephemeris range ${first}-${last} CE. ` +
-          `Astraea refuses to compute with the reduced-accuracy fallback theory.`,
+          `Astraya refuses to compute with the reduced-accuracy fallback theory.`,
         { call: 'swe_calc_ut', jd, body },
       );
     }

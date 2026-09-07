@@ -4,7 +4,7 @@ import { APP_BUILT_AT, APP_COMMIT, APP_VERSION, SOURCE_URL, SOURCE_URL_FOR_BUILD
  * About page.
  *
  * This page is an obligation, not a nicety. The AGPL's network clause requires
- * that users of a hosted Astraea be offered the corresponding source, and
+ * that users of a hosted Astraya be offered the corresponding source, and
  * Astrodienst requires visible credit for the Swiss Ephemeris. It also carries the
  * privacy statement, which must say what is stored, where, who can read it and how
  * to delete it.
@@ -15,7 +15,7 @@ export function About({ seVersion }: { seVersion?: string | undefined }): React.
       <p>
         <a href="#/">&larr; Back</a>
       </p>
-      <h1>About Astraea</h1>
+      <h1>About Astraya</h1>
 
       <h2>Version</h2>
       <dl>
@@ -29,7 +29,7 @@ export function About({ seVersion }: { seVersion?: string | undefined }): React.
         <dd>{seVersion ?? 'not loaded'}</dd>
       </dl>
       <p>
-        <a href={`${SOURCE_URL}/blob/main/CHANGELOG.md`}>Changelog</a>
+        <a href="#/changelog">What changed in this release</a>
       </p>
 
       <h2>Your data</h2>
@@ -53,13 +53,13 @@ export function About({ seVersion }: { seVersion?: string | undefined }): React.
       </p>
       <p>
         Interpretation text is written ahead of release and shipped as part of the application. No AI service is
-        contacted while you use Astraea — the Content Security Policy makes that impossible rather than merely
+        contacted while you use Astraya — the Content Security Policy makes that impossible rather than merely
         unintended.
       </p>
 
       <h2>Licence and source</h2>
       <p>
-        Astraea is free software under the <strong>GNU Affero General Public License, version 3 or later</strong>. You
+        Astraya is free software under the <strong>GNU Affero General Public License, version 3 or later</strong>. You
         may use, study, modify and redistribute it under those terms. Because the AGPL covers use over a network, you
         are entitled to the source code of this running instance:
       </p>
@@ -74,7 +74,7 @@ export function About({ seVersion }: { seVersion?: string | undefined }): React.
         Astrodienst asks that this credit be visible, and it is.
       </p>
       <p>
-        Reference positions used to test Astraea come from the NASA JPL Horizons system. A full list of third-party
+        Reference positions used to test Astraya come from the NASA JPL Horizons system. A full list of third-party
         components and their licences is in <a href={`${SOURCE_URL}/blob/main/NOTICE`}>NOTICE</a>.
       </p>
     </main>

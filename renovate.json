@@ -5,7 +5,9 @@
   "schedule": ["before 6am on monday"],
   "labels": ["type:chore", "area:infra"],
   "prConcurrentLimit": 5,
-  "lockFileMaintenance": { "enabled": true },
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "description": "Swiss Ephemeris is the source of every number this app produces. An upgrade can shift positions and repack the .se1 files, which invalidates the pinned SHA-256 digests in src/ephemeris/assets.ts and the generated constants. Never automatic; always a deliberate review against the golden-chart gate.",
@@ -26,9 +28,12 @@
       "description": "Dev tooling patch and minor updates are safe to automerge once the check suite passes.",
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
-      "excludePackageNames": ["typescript", "typescript-eslint"],
-      "automerge": true
+      "automerge": true,
+      "matchPackageNames": ["*", "!typescript", "!typescript-eslint"]
     }
   ],
-  "vulnerabilityAlerts": { "labels": ["type:bug", "area:infra"], "automerge": false }
+  "vulnerabilityAlerts": {
+    "labels": ["type:bug", "area:infra"],
+    "automerge": false
+  }
 }

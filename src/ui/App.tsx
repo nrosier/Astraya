@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { About } from './About.js';
+import { Changelog } from './Changelog.js';
 import { APP_VERSION } from '../version.js';
 
 /**
@@ -53,10 +54,11 @@ export function App(): React.JSX.Element {
   }, []);
 
   if (route === '#/about') return <About seVersion={seVersion} />;
+  if (route === '#/changelog') return <Changelog />;
 
   return (
     <main className="shell">
-      <h1>Astraea</h1>
+      <h1>Astraya</h1>
       <p className="tagline">Astrological charts, calculated properly.</p>
 
       <section aria-live="polite">
@@ -70,7 +72,9 @@ export function App(): React.JSX.Element {
       </section>
 
       <footer>
-        <a href="#/about">Version {APP_VERSION} &mdash; about, changelog and licence</a>
+        {/* The version itself is the changelog link: clicking a version to see
+            what changed in it is the behaviour people expect. */}
+        <a href="#/changelog">Version {APP_VERSION}</a> &middot; <a href="#/about">about &amp; licence</a>
       </footer>
     </main>
   );
