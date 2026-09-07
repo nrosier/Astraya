@@ -4,6 +4,64 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.3.0] — 2026-09-07
+
+**Milestone M2 — time and place.**
+
+Astraya can now work out _when_ a birth happened. That sounds like the easy part
+and it is the single most common reason a chart is wrong: an offset that is off by
+an hour moves the Ascendant by around 15 degrees, which is enough to change the
+rising sign and every house boundary with it — and nothing about the result looks
+wrong. So this release is less about calculating an offset than about showing its
+reasoning and admitting what it cannot know.
+
+Still no chart wheel. That starts in M4 and M5.
+
+### Added
+
+- **A "when and where" panel.** Enter a date, a time and coordinates, and it shows
+  the UTC offset it arrived at, where that offset came from, and anything about the
+  moment that deserves a second look.
+- **Historical timezones, not today's.** Offsets are resolved for the date in
+  question, so the US patchwork of 1918–1966, British Double Summer Time, Amsterdam
+  Time before 1940 and Soviet decree time all resolve as they actually were.
+- **Local Mean Time before standard time existed.** For a birth before roughly
+  1880, the offset comes from longitude, because towns kept their own solar time and
+  that is the clock the record meant.
+- **A manual offset override.** A birth certificate that states the offset beats
+  any lookup, so a stated offset wins outright over the database.
+- **Dates in the Julian calendar**, chosen automatically against the 1582 reform or
+  set by hand — Russia and Greece kept the Julian calendar into the twentieth
+  century, so the date on an old record is not always the date it looks like.
+- **Shareable links.** The address bar holds the whole record and stays readable —
+  `#/time?d=1960-06-15&t=14:30&la=38.7478&lo=-85.0672` — so you can see what a link
+  contains before you open it.
+- **A night-sky palette**, in light and dark, applied across the app.
+
+### Notes on correctness
+
+- **Ambiguity is shown, not resolved by guessing.** When clocks go back, a
+  wall-clock time genuinely happens twice and nothing in the date can say which was
+  meant. Astraya uses the first, says so, and shows the alternative. When clocks go
+  forward, a stated time may never have existed at all, and it says that too.
+- **Coordinates near a timezone boundary are flagged.** County lines defeat
+  coordinate lookups — the panel opens on Vevay, Indiana, precisely because that is
+  a case the naive lookup gets wrong, which seemed a better default than one that
+  flatters the implementation.
+- **Which timezone database was used is recorded with every resolution.**
+  Historical offsets are data, and that data is revised; a saved chart should not
+  move because a timezone update shipped.
+- **Leap seconds are handled where they exist**, from 1972, and deliberately not
+  before, because UTC did not exist to have them.
+- **The offset and the wall-clock time it applies to travel together** as one value,
+  so no part of the app can be handed a mismatched pair and produce a confident
+  wrong answer.
+- Sixty-two tests cover this, and every expectation in them was measured against
+  the ephemeris rather than written from memory. That caught three wrong
+  assumptions, including one about how far the Ascendant actually moves, so the
+  suite now pins the quantity that does advance uniformly — right ascension, at
+  15.04 degrees an hour — rather than the one folklore says does.
+
 ## [0.2.0] — 2026-09-07
 
 **Milestone M1 — delivery pipeline.**
@@ -83,5 +141,6 @@ Astraya is **AGPL-3.0-or-later**. This is required, not chosen: Swiss Ephemeris 
 offered under either the AGPL or a commercial licence, and the AGPL cannot be
 combined with MIT in this direction.
 
+[0.3.0]: https://github.com/nrosier/Astraya/releases/tag/v0.3.0
 [0.2.0]: https://github.com/nrosier/Astraya/releases/tag/v0.2.0
 [0.1.0]: https://github.com/nrosier/Astraya/releases/tag/v0.1.0
