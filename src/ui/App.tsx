@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { About } from './About.js';
 import { Changelog } from './Changelog.js';
+import { TimePlace } from './TimePlace.js';
 import { APP_VERSION } from '../version.js';
 
 /**
  * Application shell.
  *
- * Deliberately thin: M0's job is to prove the boundaries hold — worker, CSP,
- * version, AGPL obligations — not to build the chart UI. The birth-data form and
- * person selector arrive in M3, once the local-first store exists to hold them.
+ * Deliberately thin: its job is to prove the boundaries hold — worker, CSP,
+ * version, AGPL obligations — not to be the chart UI. The person selector and the
+ * full birth-data form arrive in M3, once the local-first store exists to hold
+ * them; M2's time-and-place panel is what that form will absorb.
  */
 export function App(): React.JSX.Element {
   const [route, setRoute] = useState(() => window.location.hash);
@@ -55,6 +57,8 @@ export function App(): React.JSX.Element {
 
   if (route === '#/about') return <About seVersion={seVersion} />;
   if (route === '#/changelog') return <Changelog />;
+  // The query carries the birth record, so match on the path part alone.
+  if (route.split('?')[0] === '#/time') return <TimePlace />;
 
   return (
     <main className="shell">
@@ -63,13 +67,19 @@ export function App(): React.JSX.Element {
 
       <section aria-live="polite">
         {engineStatus === 'ready' ? (
-          <p>
-            Swiss Ephemeris <strong>{seVersion}</strong> loaded. Chart entry arrives in milestone M3.
+          <p className="status" data-state="ready">
+            Swiss Ephemeris <strong>{seVersion}</strong> loaded.
           </p>
         ) : (
           <p className="status">{engineStatus}</p>
         )}
       </section>
+
+      <h2>Try it</h2>
+      <p>
+        <a href="#/time">When and where</a> resolves a birth record to a UTC offset and shows how it decided &mdash; the
+        step where charts most often go quietly wrong. Chart entry and drawing arrive in milestones M3 to M5.
+      </p>
 
       <footer>
         {/* The version itself is the changelog link: clicking a version to see

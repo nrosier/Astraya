@@ -26,6 +26,7 @@ import {
   EphemerisError,
   type BodyId,
   type BodyPosition,
+  type CalendarSystem,
   type Degrees,
   type EphemerisProvider,
   type GeoPosition,
@@ -50,6 +51,12 @@ const ASCMC = {
 
 /** Gregorian calendar, as opposed to Julian. */
 const GREGORIAN = SE.SE_GREG_CAL;
+const JULIAN = SE.SE_JUL_CAL;
+
+/** Swiss Ephemeris `gregflag` for a resolved calendar. */
+function gregflag(calendar: CalendarSystem): number {
+  return calendar === 'julian' ? JULIAN : GREGORIAN;
+}
 
 /**
  * Base flags for every position request.
@@ -183,8 +190,14 @@ export class SwissEphemerisEngine implements EphemerisProvider {
     return flags;
   }
 
-  async julianDay(year: number, month: number, day: number, hour: number): Promise<JulianDayUT> {
-    return this.#instance().swe_julday(year, month, day, hour, GREGORIAN);
+  async julianDay(
+    year: number,
+    month: number,
+    day: number,
+    hour: number,
+    calendar: CalendarSystem = 'gregorian',
+  ): Promise<JulianDayUT> {
+    return this.#instance().swe_julday(year, month, day, hour, gregflag(calendar));
   }
 
   async julianDayFromUtc(

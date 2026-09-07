@@ -17,6 +17,7 @@ import {
 import type {
   BodyId,
   BodyPosition,
+  CalendarSystem,
   Degrees,
   EphemerisProvider,
   GeoPosition,
@@ -130,8 +131,8 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
     return this.#call('initialize', []);
   }
 
-  julianDay(year: number, month: number, day: number, hour: number): Promise<JulianDayUT> {
-    return this.#call('julianDay', [year, month, day, hour]);
+  julianDay(year: number, month: number, day: number, hour: number, calendar?: CalendarSystem): Promise<JulianDayUT> {
+    return this.#call('julianDay', [year, month, day, hour, calendar]);
   }
 
   julianDayFromUtc(

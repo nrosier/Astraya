@@ -12,7 +12,7 @@ import { APP_VERSION, SOURCE_URL, sourceFileUrl } from '../version.js';
 export function Changelog(): React.JSX.Element {
   return (
     <main className="shell">
-      <p>
+      <p className="back">
         <a href="#/">&larr; Back</a>
       </p>
       <h1>Changelog</h1>

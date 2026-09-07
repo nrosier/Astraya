@@ -12,6 +12,15 @@ export type Degrees = number;
 /** Julian day number in Universal Time. */
 export type JulianDayUT = number;
 
+/**
+ * Which calendar a written date is in.
+ *
+ * Deliberately not `Calendar` from `src/time`: that type has an `auto` member,
+ * and by the time a date reaches the ephemeris boundary the ambiguity must
+ * already be resolved. An engine is the wrong place to be guessing.
+ */
+export type CalendarSystem = 'gregorian' | 'julian';
+
 /** Swiss Ephemeris body identifier. See `SE` in generated-constants.ts. */
 export type BodyId = number;
 
@@ -103,10 +112,22 @@ export interface EphemerisProvider {
   /** Load the WASM module and ephemeris data. Safe to call more than once. */
   initialize(): Promise<void>;
 
-  /** Julian day (UT) from a Gregorian calendar date and decimal hour. */
-  julianDay(year: number, month: number, day: number, hour: number): Promise<JulianDayUT>;
+  /**
+   * Julian day (UT) from a calendar date and decimal hour.
+   *
+   * The date is read in `calendar`, defaulting to Gregorian. Julian is not merely
+   * a pre-1582 concern: Russia kept the Julian calendar until 1918 and Greece until
+   * 1923, so a date written in 1900 may be either, and the difference is 13 days.
+   */
+  julianDay(year: number, month: number, day: number, hour: number, calendar?: CalendarSystem): Promise<JulianDayUT>;
 
-  /** Julian day (UT) from UTC, using the library's leap-second aware conversion. */
+  /**
+   * Julian day (UT) from UTC, using the library's leap-second aware conversion.
+   *
+   * Gregorian by design, and only meaningful from 1972 onward: UTC — and therefore
+   * leap seconds — did not exist before then, so for earlier dates there is nothing
+   * for this path to be more accurate about. Use `julianDay` there.
+   */
   julianDayFromUtc(
     year: number,
     month: number,

@@ -12,7 +12,7 @@ import { APP_BUILT_AT, APP_COMMIT, APP_VERSION, SOURCE_URL, SOURCE_URL_FOR_BUILD
 export function About({ seVersion }: { seVersion?: string | undefined }): React.JSX.Element {
   return (
     <main className="shell">
-      <p>
+      <p className="back">
         <a href="#/">&larr; Back</a>
       </p>
       <h1>About Astraya</h1>
