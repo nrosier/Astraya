@@ -9,5 +9,10 @@
     "types": ["node", "vite/client"],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo"
   },
-  "include": ["test"]
+  /**
+   * `src/types` carries ambient declarations for untyped dependencies. Tests import
+   * `src`, but an ambient .d.ts that nothing imports only enters a program if it is
+   * included explicitly — so without this, `tz-lookup` is untyped here alone.
+   */
+  "include": ["test", "src/types"]
 }
