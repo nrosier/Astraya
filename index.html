@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Content Security Policy.
+
+      Written once, now, for the final architecture rather than tightened later:
+      the earlier plan would have declared "no external connect-src" and then had
+      to contradict itself when Authentik arrived.
+
+      The load-bearing directive is `connect-src 'self'`. Astraea's interpretation
+      corpus is drafted by an LLM at build time and committed as data; the shipped
+      application must never call a model provider. This makes that structural
+      rather than a promise. When OIDC lands, the Authentik issuer origin is added
+      here and nowhere else.
+
+      `'wasm-unsafe-eval'` is required to compile the Swiss Ephemeris WebAssembly
+      module. It permits WASM compilation only, not eval of JavaScript.
+
+      The server sends this as a real header too, which additionally covers
+      frame-ancestors; a meta tag cannot express that directive.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self' 'wasm-unsafe-eval';
+               style-src 'self' 'unsafe-inline';
+               img-src 'self' data:;
+               font-src 'self';
+               connect-src 'self';
+               worker-src 'self' blob:;
+               object-src 'none';
+               base-uri 'none';
+               form-action 'none'"
+    />
+    <title>Astraea — astrological charts</title>
+    <meta
+      name="description"
+      content="Astrological chart calculation built on the Swiss Ephemeris. Works offline; your birth data stays on your device."
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
