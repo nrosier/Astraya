@@ -76,3 +76,66 @@ footer {
   border-top: 1px solid color-mix(in oklab, var(--fg) 15%, transparent);
   font-size: 0.9rem;
 }
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.field-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.field-grid input,
+.field-grid select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--fg) 25%, transparent);
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, var(--fg) 4%, transparent);
+  color: var(--fg);
+  font: inherit;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.field-grid input:focus-visible,
+.field-grid select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.hint,
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.warnings {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.warnings li {
+  margin-bottom: 0.5rem;
+}
+
+/*
+ * Warnings that need a decision get a visible weight, not colour alone: an
+ * ambiguous birth time is a question only the user can answer, and it must not read
+ * as decoration. Colour is a secondary cue for the same reason.
+ */
+.warning {
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+code {
+  font-size: 0.9em;
+}
