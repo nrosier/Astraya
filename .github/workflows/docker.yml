@@ -59,7 +59,12 @@ jobs:
             type=semver,pattern={{major}}
             type=edge,branch=main
             type=sha,format=short,enable={{is_default_branch}}
-          flags: |
+          # `flavor`, not `flags`: the latter is not an input this action has, so it
+          # was accepted in silence and metadata-action kept its default
+          # `latest=auto`. That meant two things generated `latest` — its default and
+          # the explicit step below — and they only happened to agree because no
+          # prerelease has been tagged yet.
+          flavor: |
             latest=false
           labels: |
             org.opencontainers.image.title=Astraya
@@ -67,7 +72,8 @@ jobs:
             org.opencontainers.image.licenses=AGPL-3.0-or-later
 
       # `latest` is set here rather than by metadata-action's `auto` behaviour,
-      # which would also move it for a prerelease tag.
+      # which would also move it for a prerelease tag. This is the only thing that
+      # sets it; `flavor: latest=false` above is what makes that true.
       - name: Decide whether this moves `latest`
         id: latest
         env:
@@ -101,6 +107,10 @@ jobs:
       - name: Smoke-test the published image
         if: github.event_name != 'pull_request'
         run: |
+          # The first metadata tag, which is the version on a release and `edge` on
+          # main. It used to be `latest`, before `flavor` stopped that being
+          # generated here; either is a valid thing to smoke-test, but the version is
+          # the more precise one.
           tag="$(printf '%s' "${{ steps.meta.outputs.tags }}" | head -n1)"
           docker run -d --name astraya-smoke -p 8080:8080 "$tag"
           for _ in $(seq 1 30); do
