@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    /**
+     * Tests import `src`, which is browser-shaped, but also read fixtures and
+     * build file:// URLs, which is Node. So this config carries both sets of
+     * libs — the one place in the project where that overlap is legitimate.
+     */
+    "types": ["node", "vite/client"],
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo"
+  },
+  "include": ["test"]
+}
