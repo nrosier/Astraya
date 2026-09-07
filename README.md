@@ -57,7 +57,7 @@ silently different chart.
 A single image serves the built application; there is nothing else to deploy.
 
 ```sh
-docker run -p 8080:8080 nrosier/astraya:latest
+docker run -p 8080:8080 niqck/astraya:latest
 ```
 
 Then open <http://localhost:8080>. It works offline once loaded, and needs no

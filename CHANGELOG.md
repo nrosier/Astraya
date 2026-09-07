@@ -14,9 +14,9 @@ to a running application.
 
 ### Added
 
-- **A Docker image**, `nrosier/astraya`, for both `linux/amd64` and `linux/arm64`.
+- **A Docker image**, `niqck/astraya`, for both `linux/amd64` and `linux/arm64`.
   One image holds the application and the server that serves it — `docker run -p
-8080:8080 nrosier/astraya:latest` is the whole deployment.
+8080:8080 niqck/astraya:latest` is the whole deployment.
 - **An in-app changelog.** The version in the footer is a link; clicking it shows
   what changed in the build you are actually running, with no network request.
 - **Published tags you can pin against** — `1.2.3`, `1.2`, `1` and `latest` for
