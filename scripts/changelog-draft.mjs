@@ -45,9 +45,17 @@ const SECTIONS = [
   ['docs', 'Documentation'],
 ];
 // Not shown: chore, test, ci, build, style — real work, but not news to a user.
+//
+// `style` is the trap in that list. Conventionally it means whitespace and
+// formatting, which nobody wants in a changelog, but it also gets used for a
+// visible redesign, which is exactly the kind of thing a user notices. So these are
+// not dropped silently: they are printed on stderr for a human to rule on, the same
+// as an unparseable subject.
+const REVIEW_TYPES = new Set(['style', 'revert']);
 
 const grouped = new Map(SECTIONS.map(([key]) => [key, []]));
 const unconventional = [];
+const needsRuling = [];
 
 for (const subject of subjects) {
   const m = CONVENTIONAL.exec(subject);
@@ -59,6 +67,7 @@ for (const subject of subjects) {
   const key = breaking === '!' ? 'breaking' : type;
   const bucket = grouped.get(key);
   if (bucket !== undefined) bucket.push(scope === undefined ? text : `**${scope}:** ${text}`);
+  else if (REVIEW_TYPES.has(key)) needsRuling.push(subject);
 }
 
 const version = JSON.parse(readFileSync('./package.json', 'utf8')).version;
@@ -76,9 +85,16 @@ if (out.length === 2) out.push('_No user-facing changes in this range._', '');
 
 console.log(out.join('\n'));
 
+// Both lists go to stderr, so neither can end up pasted into the changelog by
+// accident, and neither can be lost without someone having read past the draft.
 if (unconventional.length > 0) {
-  // stderr, so it cannot end up pasted into the changelog by accident.
   console.error(`\n${unconventional.length} commit(s) are not conventional and were skipped:`);
   for (const subject of unconventional) console.error(`  ${subject}`);
   console.error('Check none of these were user-facing before publishing.');
+}
+
+if (needsRuling.length > 0) {
+  console.error(`\n${needsRuling.length} commit(s) need a ruling — usually invisible, sometimes not:`);
+  for (const subject of needsRuling) console.error(`  ${subject}`);
+  console.error('Add any that a user would notice to the draft by hand.');
 }
