@@ -1,5 +1,11 @@
 # Astraya
 
+<p align="center">
+  <a href="https://github.com/nrosier/Astraya/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/nrosier/Astraya/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/nrosier/Astraya/releases"><img alt="Release" src="https://img.shields.io/badge/release-v0.3.0-blue"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue"></a>
+</p>
+
 A genuine astrological calculation and charting application. You enter a birth
 date, time and place; Astraya computes the chart and draws it.
 
@@ -12,7 +18,7 @@ plausible-looking number.
 
 ## Status
 
-Early. Milestone M1 (delivery pipeline) is in progress; see the
+Early. Milestone M3 (local-first data and people) is in progress; see the
 [issues and milestones](https://github.com/nrosier/Astraya/issues) for what is
 planned and what is done.
 
