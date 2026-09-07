@@ -121,14 +121,15 @@ describe('deleting', () => {
     const records = write(A, [...COMPLETE, person(DELETED_FIELD, true)]);
     const state = fold(records);
     expect(state.people.size).toBe(0);
-    expect(state.deleted.people).toEqual([PERSON]);
+    // Named, not merely listed: a restore list has to say who it is offering back.
+    expect(state.deleted.people.get(PERSON)?.displayName).toBe('Ada');
   });
 
   it('restores a person when the tombstone is written back to false', () => {
     // Undo needs no machinery of its own: it is one more write to the same register.
     const state = fold(write(A, [...COMPLETE, person(DELETED_FIELD, true), person(DELETED_FIELD, false)]));
     expect(state.people.get(PERSON)?.displayName).toBe('Ada');
-    expect(state.deleted.people).toEqual([]);
+    expect(state.deleted.people.size).toBe(0);
   });
 
   it('keeps a person deleted when another device edits them offline', () => {
@@ -139,7 +140,9 @@ describe('deleting', () => {
     const editedOffline = write(B, [person('displayName', 'Grace')], T0 + 10_000);
     const state = fold([...deleted, ...editedOffline]);
     expect(state.people.size).toBe(0);
-    expect(state.deleted.people).toEqual([PERSON]);
+    // Hidden, and holding the newer name already — the edit landed on the register even
+    // though the person is not shown.
+    expect(state.deleted.people.get(PERSON)?.displayName).toBe('Grace');
     // The edit is not lost, only hidden: undeleting shows the newer name.
     const undone = fold([...deleted, ...editedOffline, ...write(A, [person(DELETED_FIELD, false)], T0 + 20_000)]);
     expect(undone.people.get(PERSON)?.displayName).toBe('Grace');
@@ -155,7 +158,7 @@ describe('deleting', () => {
     ];
     const state = fold(records);
     expect(state.charts.size).toBe(0);
-    expect(state.deleted.charts).toEqual([]);
+    expect(state.deleted.charts.size).toBe(0);
     // Restoring the person brings its charts back, because nothing was written about them.
     const undone = fold([...records, ...write(A, [person(DELETED_FIELD, false)], T0 + 20_000)]);
     expect(undone.charts.size).toBe(1);

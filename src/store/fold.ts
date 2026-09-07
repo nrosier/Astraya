@@ -137,8 +137,17 @@ export interface State {
   readonly people: ReadonlyMap<string, Person>;
   /** Live charts, by id. Excludes charts whose person is deleted or not yet known. */
   readonly charts: ReadonlyMap<string, Chart>;
-  /** Ids hidden by a tombstone, so "restore deleted" can offer them without a second pass. */
-  readonly deleted: { readonly people: readonly string[]; readonly charts: readonly string[] };
+  /**
+   * Hidden by a tombstone, so "restore deleted" can offer them without a second pass.
+   *
+   * Materialised exactly like the live ones rather than reduced to bare ids: a restore list
+   * that cannot name what it is offering to bring back is not a usable list, and the
+   * registers still hold every field, so building them costs nothing extra.
+   */
+  readonly deleted: {
+    readonly people: ReadonlyMap<string, Person>;
+    readonly charts: ReadonlyMap<string, Chart>;
+  };
   /** Charts naming a person this device does not hold. Retained, not lost — usually a partial sync. */
   readonly orphanCharts: readonly string[];
 }
@@ -153,21 +162,22 @@ export interface State {
  */
 export function materialise(registers: Registers): State {
   const people = new Map<string, Person>();
-  const deletedPeople: string[] = [];
+  const deletedPeople = new Map<string, Person>();
   for (const [id, fields] of Object.entries(registers.person ?? {})) {
-    if (isDeleted(fields)) deletedPeople.push(id);
-    else people.set(id, buildPerson(id, valuesOf(fields)));
+    const person = buildPerson(id, valuesOf(fields));
+    if (isDeleted(fields)) deletedPeople.set(id, person);
+    else people.set(id, person);
   }
 
   const charts = new Map<string, Chart>();
-  const deletedCharts: string[] = [];
+  const deletedCharts = new Map<string, Chart>();
   const orphanCharts: string[] = [];
   for (const [id, fields] of Object.entries(registers.chart ?? {})) {
+    const chart = buildChart(id, valuesOf(fields));
     if (isDeleted(fields)) {
-      deletedCharts.push(id);
+      deletedCharts.set(id, chart);
       continue;
     }
-    const chart = buildChart(id, valuesOf(fields));
     // A chart of a person we do not have is held back rather than dropped. It is not an
     // error: the person's operations may simply not have arrived yet.
     if (people.has(chart.personId)) charts.set(id, chart);

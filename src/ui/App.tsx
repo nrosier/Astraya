@@ -2,16 +2,60 @@ import { useEffect, useState } from 'react';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { About } from './About.js';
 import { Changelog } from './Changelog.js';
+import { People } from './People.js';
+import { PersonForm } from './PersonForm.js';
+import { parseRoute } from './route.js';
+import { StoreProvider, useStoreStatus } from './store-context.js';
 import { TimePlace } from './TimePlace.js';
 import { APP_VERSION } from '../version.js';
 
 /**
+ * The routes that need the local store, wrapped in the one place that opens it.
+ *
+ * Opened here rather than at the app root so a visitor reading /about never touches
+ * IndexedDB — and so a browser that refuses it (private mode, storage disabled) breaks
+ * exactly one part of the app instead of the whole shell. The failure is rendered:
+ * falling back to memory would lose everything typed, silently, at the next reload.
+ */
+function Stored({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const status = useStoreStatus();
+
+  if (status.kind === 'opening') {
+    return (
+      <main className="shell">
+        <p className="status">Opening your local data…</p>
+      </main>
+    );
+  }
+
+  if (status.kind === 'failed') {
+    return (
+      <main className="shell">
+        <p className="back">
+          <a href="#/">&larr; Back</a>
+        </p>
+        <h1>No local storage</h1>
+        <p className="warning" role="alert">
+          Your data is stored in this browser, and this browser will not let us open it. {status.message}
+        </p>
+        <p>
+          Private-browsing windows and blocked site data are the usual causes. Nothing has been lost &mdash; anything
+          saved earlier is still there once storage is available again. The <a href="#/time">when-and-where panel</a>{' '}
+          needs no storage and still works.
+        </p>
+      </main>
+    );
+  }
+
+  return <StoreProvider store={status.store}>{children}</StoreProvider>;
+}
+
+/**
  * Application shell.
  *
- * Deliberately thin: its job is to prove the boundaries hold — worker, CSP,
- * version, AGPL obligations — not to be the chart UI. The person selector and the
- * full birth-data form arrive in M3, once the local-first store exists to hold
- * them; M2's time-and-place panel is what that form will absorb.
+ * Deliberately thin: its job is routing and proving the boundaries hold — worker, CSP,
+ * version, AGPL obligations. Hash routing rather than a router library: the app is a
+ * handful of screens, and a hash keeps every URL shareable as a plain static file.
  */
 export function App(): React.JSX.Element {
   const [route, setRoute] = useState(() => window.location.hash);
@@ -55,10 +99,26 @@ export function App(): React.JSX.Element {
     };
   }, []);
 
-  if (route === '#/about') return <About seVersion={seVersion} />;
-  if (route === '#/changelog') return <Changelog />;
-  // The query carries the birth record, so match on the path part alone.
-  if (route.split('?')[0] === '#/time') return <TimePlace />;
+  const parsed = parseRoute(route);
+  if (parsed.kind === 'about') return <About seVersion={seVersion} />;
+  if (parsed.kind === 'changelog') return <Changelog />;
+  if (parsed.kind === 'time') return <TimePlace />;
+  if (parsed.kind === 'people') {
+    return (
+      <Stored>
+        <People />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'person') {
+    return (
+      <Stored>
+        {/* Keyed on the id so navigating from one person to another remounts the form
+            rather than showing the previous person's draft under a new name. */}
+        <PersonForm key={parsed.personId} personId={parsed.personId} />
+      </Stored>
+    );
+  }
 
   return (
     <main className="shell">
@@ -75,10 +135,14 @@ export function App(): React.JSX.Element {
         )}
       </section>
 
-      <h2>Try it</h2>
+      <h2>Start here</h2>
+      <p>
+        <a href="#/people">People</a> holds the birth records on this device. Everything is stored in this browser and
+        works with no network; signing in to sync across devices comes later and stays optional.
+      </p>
       <p>
         <a href="#/time">When and where</a> resolves a birth record to a UTC offset and shows how it decided &mdash; the
-        step where charts most often go quietly wrong. Chart entry and drawing arrive in milestones M3 to M5.
+        step where charts most often go quietly wrong. Chart drawing arrives in milestones M4 and M5.
       </p>
 
       <footer>

@@ -212,11 +212,11 @@ describe('deleting', () => {
       await store.mutate([named(PERSON, 'Ada')]);
       await store.remove('person', PERSON);
       expect(store.state.people.has(PERSON)).toBe(false);
-      expect(store.state.deleted.people).toContain(PERSON);
+      expect(store.state.deleted.people.has(PERSON)).toBe(true);
 
       await store.restore('person', PERSON);
       expect(store.state.people.get(PERSON)?.displayName).toBe('Ada');
-      expect(store.state.deleted.people).not.toContain(PERSON);
+      expect(store.state.deleted.people.has(PERSON)).toBe(false);
     });
   });
 
