@@ -29,7 +29,7 @@
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
-      "matchPackageNames": ["*", "!typescript", "!typescript-eslint"]
+      "matchPackageNames": ["!typescript", "!typescript-eslint"]
     }
   ],
   "vulnerabilityAlerts": {
