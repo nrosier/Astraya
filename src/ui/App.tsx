@@ -67,7 +67,7 @@ export function App(): React.JSX.Element {
 
       <section aria-live="polite">
         {engineStatus === 'ready' ? (
-          <p>
+          <p className="status" data-state="ready">
             Swiss Ephemeris <strong>{seVersion}</strong> loaded.
           </p>
         ) : (

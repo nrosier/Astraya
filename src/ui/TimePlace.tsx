@@ -91,7 +91,7 @@ export function TimePlace(): React.JSX.Element {
 
   return (
     <main className="shell">
-      <p>
+      <p className="back">
         <a href="#/">&larr; Back</a>
       </p>
       <h1>When and where</h1>
