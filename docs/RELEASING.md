@@ -52,11 +52,11 @@ fixed, without waiting for a milestone — a wrong chart is not something to sit
    changelog, and publishes the GitHub release.
 8. Close the milestone.
 9. Confirm the deployed app's About page shows the new version and commit, and that
-   `docker pull nrosier/astraya:latest` gets that same version.
+   `docker pull niqck/astraya:latest` gets that same version.
 
 ## Docker image tags
 
-The image is `nrosier/astraya` on Docker Hub, built for `linux/amd64` and
+The image is `niqck/astraya` on Docker Hub, built for `linux/amd64` and
 `linux/arm64` from a single `Dockerfile`.
 
 | Trigger        | Tags pushed                   | Notes                                  |
