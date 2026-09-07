@@ -1,19 +1,19 @@
-# Astraea
+# Astraya
 
 A genuine astrological calculation and charting application. You enter a birth
-date, time and place; Astraea computes the chart and draws it.
+date, time and place; Astraya computes the chart and draws it.
 
 The emphasis is on being _correct_. Positions come from the Swiss Ephemeris, and
 the test suite checks them against reference values fetched from NASA JPL
 Horizons rather than values written from memory. Where a calculation is undefined
 — Placidus houses inside the polar circles, Chiron outside its validity window, a
-date outside the shipped ephemeris range — Astraea says so instead of returning a
+date outside the shipped ephemeris range — Astraya says so instead of returning a
 plausible-looking number.
 
 ## Status
 
-Early. Milestone M0 (foundation) is in progress; see the
-[issues and milestones](https://github.com/nrosier/Astraea/issues) for what is
+Early. Milestone M1 (delivery pipeline) is in progress; see the
+[issues and milestones](https://github.com/nrosier/Astraya/issues) for what is
 planned and what is done.
 
 ## What it does
@@ -38,7 +38,7 @@ planned and what is done.
 
 ## Development
 
-Requires Node 22 or newer.
+Requires Node 24 or newer.
 
 ```sh
 npm install
@@ -52,12 +52,28 @@ package into `public/ephe/` and verifies each against a pinned SHA-256. It fails
 loudly if upstream repacks them, because a silently different ephemeris file is a
 silently different chart.
 
+## Running it
+
+A single image serves the built application; there is nothing else to deploy.
+
+```sh
+docker run -p 8080:8080 nrosier/astraya:latest
+```
+
+Then open <http://localhost:8080>. It works offline once loaded, and needs no
+configuration — calculation happens in your browser, and no account is required.
+Images are published for `linux/amd64` and `linux/arm64`; see
+[docs/RELEASING.md](docs/RELEASING.md) for the tagging scheme.
+
+`PORT` (default `8080`), `HOST` and `LOG_LEVEL` are the only settings. Sync and
+sign-in arrive in M8 and are opt-in; until then the server only serves files.
+
 ## Licence
 
-**AGPL-3.0-or-later.** Astraea links the Swiss Ephemeris, which Astrodienst AG
+**AGPL-3.0-or-later.** Astraya links the Swiss Ephemeris, which Astrodienst AG
 licenses under either the AGPL or a commercial licence; the AGPL is the option
-taken here, and it is why Astraea cannot be MIT. See [`LICENSE`](LICENSE) and
+taken here, and it is why Astraya cannot be MIT. See [`LICENSE`](LICENSE) and
 [`NOTICE`](NOTICE) for the full terms and the required attributions.
 
-If you run a modified Astraea as a network service, the AGPL obliges you to offer
+If you run a modified Astraya as a network service, the AGPL obliges you to offer
 its users the corresponding source. The `/about` page carries that link.

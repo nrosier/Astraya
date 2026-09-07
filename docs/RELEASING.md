@@ -4,7 +4,7 @@
 last issue is closed — it is finished when a tagged, versioned release exists and
 the running app reports that version on its About page.
 
-The reason is that Astraea's correctness claims are only meaningful about a
+The reason is that Astraya's correctness claims are only meaningful about a
 specific build. "The golden-chart gate is green" means nothing without a version to
 attach it to, and the AGPL obliges us to offer users the source _for the instance
 they are using_. Releasing per milestone keeps those anchored.
@@ -47,7 +47,31 @@ fixed, without waiting for a milestone — a wrong chart is not something to sit
    The tag triggers `.github/workflows/release.yml`, which builds, attaches the
    changelog, and publishes the GitHub release.
 8. Close the milestone.
-9. Confirm the deployed app's About page shows the new version and commit.
+9. Confirm the deployed app's About page shows the new version and commit, and that
+   `docker pull nrosier/astraya:latest` gets that same version.
+
+## Docker image tags
+
+The image is `nrosier/astraya` on Docker Hub, built for `linux/amd64` and
+`linux/arm64` from a single `Dockerfile`.
+
+| Trigger        | Tags pushed                   | Notes                                  |
+| -------------- | ----------------------------- | -------------------------------------- |
+| `v1.2.3` tag   | `1.2.3`, `1.2`, `1`, `latest` | Pin as tightly or loosely as you like  |
+| `v1.2.3-rc.1`  | `1.2.3-rc.1` only             | A prerelease never moves a rolling tag |
+| push to `main` | `edge`, `sha-<short>`         | Buildable, not a release               |
+| pull request   | _none_ — built but not pushed | A fork PR has no access to the secrets |
+
+`latest` is set by an explicit condition in the workflow rather than by
+`docker/metadata-action`'s automatic behaviour, which would also move it for a
+prerelease tag.
+
+After pushing, the workflow starts the amd64 image it just published and waits for
+`/healthz`, then checks the served page carries its CSP header. A pushed image that
+cannot serve a request is worse than a failed build, because it looks like success.
+
+Credentials come from the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository
+secrets. They are referenced only by `docker/login-action` and are never echoed.
 
 ## Correctness note
 
