@@ -43,6 +43,10 @@ export async function dispatch(engine: EphemerisProvider, request: EphemerisRequ
       return engine.ayanamsaName(...request.args);
     case 'obliquity':
       return engine.obliquity(...request.args);
+    case 'fixedStar':
+      return engine.fixedStar(...request.args);
+    case 'fixedStarMagnitude':
+      return engine.fixedStarMagnitude(...request.args);
     case 'version':
       return engine.version(...request.args);
     case 'dispose':

@@ -20,6 +20,8 @@ import type {
   CalendarSystem,
   Degrees,
   EphemerisProvider,
+  FixedStarMagnitude,
+  FixedStarPosition,
   GeoPosition,
   HousePositions,
   HouseSystem,
@@ -172,6 +174,14 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
 
   obliquity(jd: JulianDayUT): Promise<Degrees> {
     return this.#call('obliquity', [jd]);
+  }
+
+  fixedStar(jd: JulianDayUT, name: string, options?: PositionOptions): Promise<FixedStarPosition> {
+    return this.#call('fixedStar', [jd, name, options]);
+  }
+
+  fixedStarMagnitude(name: string): Promise<FixedStarMagnitude> {
+    return this.#call('fixedStarMagnitude', [name]);
   }
 
   version(): Promise<string> {

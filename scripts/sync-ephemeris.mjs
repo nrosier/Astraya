@@ -1,9 +1,12 @@
 /**
- * Copies the pinned Swiss Ephemeris assets out of node_modules into public/ephe.
+ * Copies the pinned Swiss Ephemeris assets into public/ephe: most out of
+ * node_modules, plus one (the fixed star catalog) fetched over HTTPS since it
+ * is not shipped in the sweph-wasm npm package at all.
  *
  * Runs before dev and build. Verifies size and SHA-256 against the manifest in
- * src/ephemeris/assets.ts, so an upstream repack of sweph-wasm cannot quietly
- * change the ephemeris this app computes from.
+ * src/ephemeris/assets.ts, so an upstream repack of sweph-wasm — or a change
+ * to the externally-fetched file — cannot quietly change the ephemeris this
+ * app computes from.
  */
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile, readdir, stat } from 'node:fs/promises';
@@ -19,9 +22,15 @@ const dest = join(root, 'public', 'ephe');
 const manifestSource = await readFile(join(root, 'src', 'ephemeris', 'assets.ts'), 'utf8');
 const assets = [
   ...manifestSource.matchAll(
-    /\{\s*file:\s*'([^']+)',\s*from:\s*'([^']+)',\s*bytes:\s*([\d_]+),\s*sha256:\s*'([0-9a-f]{64})'/g,
+    /\{\s*file:\s*'([^']+)',\s*(?:from:\s*'([^']+)'|url:\s*'([^']+)'),\s*bytes:\s*([\d_]+),\s*sha256:\s*'([0-9a-f]{64})'/g,
   ),
-].map(([, file, from, bytes, sha256]) => ({ file, from, bytes: Number(bytes.replaceAll('_', '')), sha256 }));
+].map(([, file, from, url, bytes, sha256]) => ({
+  file,
+  from,
+  url,
+  bytes: Number(bytes.replaceAll('_', '')),
+  sha256,
+}));
 
 if (assets.length === 0) {
   throw new Error('sync-ephemeris: could not parse any assets from src/ephemeris/assets.ts');
@@ -31,13 +40,23 @@ await mkdir(dest, { recursive: true });
 
 const problems = [];
 for (const asset of assets) {
-  const source = join(pkg, asset.from);
   let bytes;
-  try {
-    bytes = await readFile(source);
-  } catch {
-    problems.push(`${asset.file}: not found at ${asset.from} — is sweph-wasm installed?`);
-    continue;
+  if (asset.from) {
+    try {
+      bytes = await readFile(join(pkg, asset.from));
+    } catch {
+      problems.push(`${asset.file}: not found at ${asset.from} — is sweph-wasm installed?`);
+      continue;
+    }
+  } else {
+    try {
+      const response = await fetch(asset.url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      bytes = Buffer.from(await response.arrayBuffer());
+    } catch (cause) {
+      problems.push(`${asset.file}: failed to fetch ${asset.url} (${cause.message ?? cause})`);
+      continue;
+    }
   }
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   if (bytes.byteLength !== asset.bytes) {

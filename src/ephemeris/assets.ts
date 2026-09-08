@@ -1,16 +1,20 @@
 /**
  * The exact set of Swiss Ephemeris assets Astraya ships, pinned by digest.
  *
- * `sweph-wasm` is a 110 MB package containing 150 `.se1` files. We ship four
- * assets (~2.5 MB) and deliberately exclude the rest. Pinning size and SHA-256
- * means an upstream repack cannot silently change the numbers this app reports:
- * `npm run ephe:sync` fails loudly instead.
+ * `sweph-wasm` is a 110 MB package containing 150 `.se1` files. We ship three
+ * of them plus the WASM binary (~2.5 MB) and deliberately exclude the rest —
+ * plus one file, the fixed star catalog, that the package does not contain at
+ * all and is fetched separately. Pinning size and SHA-256 means an upstream
+ * repack, or a change to the externally-fetched file, cannot silently change
+ * the numbers this app reports: `npm run ephe:sync` fails loudly instead.
  */
 export interface EphemerisAsset {
   /** Filename as served from `/ephe/` and as named inside the WASM filesystem. */
   readonly file: string;
-  /** Path within the `sweph-wasm` package. */
-  readonly from: string;
+  /** Path within the `sweph-wasm` package. Mutually exclusive with `url`. */
+  readonly from?: string;
+  /** A file not shipped in the npm package, fetched from here instead. Mutually exclusive with `from`. */
+  readonly url?: string;
   readonly bytes: number;
   readonly sha256: string;
   readonly description: string;
@@ -41,6 +45,20 @@ export const EPHEMERIS_DATA_FILES: readonly EphemerisAsset[] = [
   },
 ] as const;
 
+/**
+ * Fixed star names and coordinates (#33). Unlike the files above, this is not
+ * shipped inside the `sweph-wasm` npm package — omitting it makes every
+ * `swe_fixstar2_*` lookup fail — so it is pinned to a fetched copy of
+ * Astrodienst's own file instead of a path inside `node_modules`.
+ */
+export const FIXED_STARS_ASSET: EphemerisAsset = {
+  file: 'sefstars.txt',
+  url: 'https://raw.githubusercontent.com/aloistr/swisseph/master/ephe/sefstars.txt',
+  bytes: 136_618,
+  sha256: '18b0dcafbe5b7240773daba2c038a325f5b3fc4163f61e0a7f4e92abd4f517c6',
+  description: 'Fixed star names, positions and proper motions',
+};
+
 /** The Emscripten build of the Swiss Ephemeris C library. */
 export const WASM_BINARY: EphemerisAsset = {
   file: 'swisseph.wasm',
@@ -50,7 +68,7 @@ export const WASM_BINARY: EphemerisAsset = {
   description: 'Swiss Ephemeris compiled to WebAssembly',
 };
 
-export const ALL_ASSETS: readonly EphemerisAsset[] = [...EPHEMERIS_DATA_FILES, WASM_BINARY];
+export const ALL_ASSETS: readonly EphemerisAsset[] = [...EPHEMERIS_DATA_FILES, FIXED_STARS_ASSET, WASM_BINARY];
 
 /** Public URL prefix the assets are served from. Must stay same-origin for CSP. */
 export const EPHE_BASE_URL = '/ephe/';
