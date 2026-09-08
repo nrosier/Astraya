@@ -170,6 +170,10 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
     return this.#call('ayanamsaName', [mode]);
   }
 
+  obliquity(jd: JulianDayUT): Promise<Degrees> {
+    return this.#call('obliquity', [jd]);
+  }
+
   version(): Promise<string> {
     return this.#call('version', []);
   }
