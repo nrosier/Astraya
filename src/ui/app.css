@@ -700,3 +700,82 @@ label.stacked textarea:focus-visible {
   max-width: 46rem;
   margin-inline: auto;
 }
+
+/* Data tables (#44): every computed quantity, sortable and copyable. Each table is its
+   own panel so the Copy button's scope — which rows it copies — is never ambiguous. */
+.data-table {
+  margin: 0 0 2rem;
+}
+
+.data-table-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.data-table-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 620;
+}
+
+.data-table-head button {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+}
+
+.data-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.data-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.5rem 0.85rem;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid color-mix(in oklab, var(--line) 65%, transparent);
+}
+
+.data-table tbody tr:last-child th,
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table th {
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+}
+
+.data-table th button {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 650;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
+
+.data-table th button:hover {
+  color: var(--fg);
+  background: none;
+}
+
+.data-table th button:focus-visible {
+  outline-offset: 2px;
+}

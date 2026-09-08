@@ -43,6 +43,18 @@ describe('parseRoute', () => {
     expect(parseRoute(`#/person/${ID}`)).toEqual({ kind: 'person', personId: ID });
   });
 
+  it('routes a chart id through', () => {
+    expect(parseRoute(`#/chart/${ID}`)).toEqual({ kind: 'chart', personId: ID });
+    expect(parseRoute(`#/chart/${ID}/`)).toEqual({ kind: 'chart', personId: ID });
+    expect(parseRoute(`#/chart/${ID}?x=1`)).toEqual({ kind: 'chart', personId: ID });
+  });
+
+  it('sends a malformed chart id home rather than to a blank chart', () => {
+    expect(parseRoute('#/chart/')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/chart/nope')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/chart/../about')).toEqual({ kind: 'home' });
+  });
+
   it('sends an id that is not one of ours home rather than to an empty form', () => {
     // The form would render "there is no person with that id — they may have been deleted",
     // which is a confident, wrong explanation for a truncated link.
