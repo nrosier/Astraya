@@ -378,6 +378,23 @@ export class SwissEphemerisEngine implements EphemerisProvider {
     return this.#instance().swe_get_ayanamsa_name(mode);
   }
 
+  async obliquity(jd: JulianDayUT): Promise<Degrees> {
+    let raw: readonly number[];
+    try {
+      // SE_ECL_NUT is a pseudo-body: swe_calc_ut returns [true obliquity, mean
+      // obliquity, nutation in longitude, nutation in obliquity] instead of a
+      // position. Index 0 is what we want.
+      raw = this.#instance().swe_calc_ut(jd, SE.SE_ECL_NUT, SE.SEFLG_SWIEPH);
+    } catch (cause) {
+      throw new EphemerisError(cause instanceof Error ? cause.message : String(cause), {
+        call: 'swe_calc_ut',
+        jd,
+      });
+    }
+    const [trueObliquity] = raw as [number, number, number, number];
+    return trueObliquity;
+  }
+
   /** Underlying Swiss Ephemeris version string, for the About page. */
   async version(): Promise<string> {
     return this.#instance().swe_version();

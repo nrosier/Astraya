@@ -165,6 +165,15 @@ export interface EphemerisProvider {
   ayanamsa(jd: JulianDayUT, mode: number): Promise<Degrees>;
 
   /**
+   * True obliquity of the ecliptic at the given instant, in degrees — the
+   * boundary a body's declination has to cross to be "out of bounds" (more
+   * extreme than the Sun ever gets). Varies by a few arcseconds a year via
+   * nutation, so this is looked up rather than treated as the ~23.44-degree
+   * constant it is often approximated as.
+   */
+  obliquity(jd: JulianDayUT): Promise<Degrees>;
+
+  /**
    * The library's own display name for a sidereal mode, via
    * `swe_get_ayanamsa_name`. Mirrors `houseSystemName`: the canonical id list
    * lives in `src/astrology/ayanamsas.ts`, but the text shown to a user comes
