@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { BODIES, bodyByKey, bodyById, southNode } from '../src/astrology/bodies.js';
 import { getEngine } from './engine-harness.js';
 
+/**
+ * Chiron's own documented validity window is 675-4650 CE — wider than the
+ * 1800-2399 CE the shipped `seas_18.se1` file covers (#18). Since our data can
+ * never reach outside 1800-2399 in the first place, the existing engine-wide
+ * range guard (tested here) already makes Chiron's narrower theoretical
+ * concern unreachable; there is nothing additional to check against.
+ */
+
 describe('the canonical body set (#17)', () => {
   it('has no duplicate ids or keys', () => {
     expect(new Set(BODIES.map((b) => b.id)).size).toBe(BODIES.length);
@@ -36,6 +44,34 @@ describe('the canonical body set (#17)', () => {
       const position = await engine.position(jd, body.id);
       expect(Number.isFinite(position.longitude), body.name).toBe(true);
       expect(Number.isFinite(position.latitude), body.name).toBe(true);
+    }
+  });
+});
+
+describe('Chiron and the asteroids refuse dates outside the shipped range (#18)', () => {
+  it('rejects Chiron before 1800 rather than a plausible-looking longitude', async () => {
+    const engine = await getEngine();
+    const chiron = bodyByKey('chiron');
+    if (!chiron) throw new Error('missing chiron');
+    const jd = await engine.julianDay(1000, 1, 1, 12);
+    await expect(engine.position(jd, chiron.id)).rejects.toThrow(/outside the shipped ephemeris range/);
+  });
+
+  it('rejects Chiron after 2399', async () => {
+    const engine = await getEngine();
+    const chiron = bodyByKey('chiron');
+    if (!chiron) throw new Error('missing chiron');
+    const jd = await engine.julianDay(3000, 1, 1, 12);
+    await expect(engine.position(jd, chiron.id)).rejects.toThrow(/outside the shipped ephemeris range/);
+  });
+
+  it('rejects every main-belt asteroid outside the shipped range', async () => {
+    const engine = await getEngine();
+    const jd = await engine.julianDay(1750, 1, 1, 12);
+    for (const key of ['ceres', 'pallas', 'juno', 'vesta']) {
+      const body = bodyByKey(key);
+      if (!body) throw new Error(`missing body: ${key}`);
+      await expect(engine.position(jd, body.id), body.name).rejects.toThrow(/outside the shipped ephemeris range/);
     }
   });
 });
