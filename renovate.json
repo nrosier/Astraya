@@ -25,6 +25,12 @@
       "groupName": "typescript toolchain"
     },
     {
+      "description": "typescript-eslint 8.70.0's peerDependencies cap typescript at '<6.1.0' — it does not support TS 7 yet. Hold the major bump until a typescript-eslint release raises that peer range; remove this rule once it does (see PR #141).",
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "description": "Dev tooling patch and minor updates are safe to automerge once the check suite passes.",
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
