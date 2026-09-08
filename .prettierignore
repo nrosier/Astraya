@@ -2,6 +2,8 @@ dist/
 coverage/
 public/ephe/
 package-lock.json
+# Local, per-machine tool settings; never part of the repo's own formatting.
+.claude/
 # Generated from a live sweph-wasm instance; formatting is the generator's job.
 src/ephemeris/generated-constants.ts
 # Reference values from JPL Horizons. Reformatting would obscure diffs against

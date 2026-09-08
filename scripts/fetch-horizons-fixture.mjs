@@ -53,6 +53,10 @@ const BODIES = [
   { name: 'Neptune', se: 8, command: '899' },
   { name: 'Pluto', se: 9, command: '999' },
   { name: 'Chiron', se: 15, command: '2060;' },
+  { name: 'Ceres', se: 17, command: '1;' },
+  { name: 'Pallas', se: 18, command: '2;' },
+  { name: 'Juno', se: 19, command: '3;' },
+  { name: 'Vesta', se: 20, command: '4;' },
 ];
 
 const tlist = EPOCHS.map((e) => `'${e.horizons}'`).join(' ');
