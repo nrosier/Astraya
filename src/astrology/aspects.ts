@@ -188,3 +188,26 @@ export function findAspects(
   }
   return aspects;
 }
+
+/**
+ * Every aspect between two distinct sets of subjects — e.g. a directed or
+ * progressed chart against the natal one — checking every pairing between
+ * the two lists rather than only i<j within a single one. A body appearing
+ * in both lists (its directed self against its own natal self, say) is
+ * compared like any other pair: nothing here assumes the two sets are
+ * disjoint.
+ */
+export function findCrossAspects(
+  subjectsA: readonly AspectSubject[],
+  subjectsB: readonly AspectSubject[],
+  config: OrbConfig = DEFAULT_ORB_CONFIG,
+): readonly Aspect[] {
+  const aspects: Aspect[] = [];
+  for (const subjectA of subjectsA) {
+    for (const subjectB of subjectsB) {
+      const match = matchAspect(subjectA.position, subjectA.category, subjectB.position, subjectB.category, config);
+      if (match) aspects.push({ ...match, bodyA: subjectA.body, bodyB: subjectB.body });
+    }
+  }
+  return aspects;
+}
