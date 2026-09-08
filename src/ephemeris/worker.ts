@@ -47,6 +47,10 @@ export async function dispatch(engine: EphemerisProvider, request: EphemerisRequ
       return engine.fixedStar(...request.args);
     case 'fixedStarMagnitude':
       return engine.fixedStarMagnitude(...request.args);
+    case 'nextSunCrossing':
+      return engine.nextSunCrossing(...request.args);
+    case 'nextMoonCrossing':
+      return engine.nextMoonCrossing(...request.args);
     case 'version':
       return engine.version(...request.args);
     case 'dispose':

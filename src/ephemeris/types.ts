@@ -212,6 +212,19 @@ export interface EphemerisProvider {
   fixedStarMagnitude(name: string): Promise<FixedStarMagnitude>;
 
   /**
+   * The next Julian day (UT), searching forward from `fromJd`, at which the
+   * Sun crosses `longitude` — Swiss Ephemeris's own root-finder, exact
+   * rather than a hand-rolled bisection. `longitude` is interpreted in the
+   * given zodiac exactly as `positions` would report it, so a natal
+   * longitude read from a sidereal position search is matched by a
+   * sidereal crossing search, not a tropical one.
+   */
+  nextSunCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT>;
+
+  /** Same as `nextSunCrossing`, for the Moon. */
+  nextMoonCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT>;
+
+  /**
    * Swiss Ephemeris library version. Shown on the About page, which the AGPL
    * network clause obliges us to provide.
    */
