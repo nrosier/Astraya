@@ -252,6 +252,30 @@ footer {
   font-size: 0.9rem;
 }
 
+.field-group {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  border: none;
+}
+
+.field-group legend {
+  padding: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
