@@ -126,160 +126,185 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
       )}
 
       <h2>Birth record</h2>
-      <div className="field-grid">
-        <label>
-          Name
-          <input
-            type="text"
-            value={current.displayName}
-            {...field('displayName')}
-            onChange={(event) => {
-              set('displayName', event.target.value);
-            }}
-          />
-          <Error_ name="displayName" />
-        </label>
-        <label>
-          Place
-          <input
-            type="text"
-            placeholder="Vevay, Indiana"
-            value={current.placeLabel}
-            onChange={(event) => {
-              set('placeLabel', event.target.value);
-            }}
-          />
-          {/* A label, not a lookup: there is no geocoding, so the coordinates below are what
-              the calculation uses and this text is only for the reader. */}
-        </label>
-        <label>
-          Date
-          <input
-            type="date"
-            value={current.date}
-            {...field('date')}
-            onChange={(event) => {
-              set('date', event.target.value);
-            }}
-          />
-          <Error_ name="date" />
-        </label>
-        <label>
-          Time
-          <input
-            type="time"
-            step={1}
-            value={current.time}
-            disabled={current.timeAccuracy === 'unknown'}
-            {...field('time')}
-            onChange={(event) => {
-              set('time', event.target.value);
-            }}
-          />
-          <Error_ name="time" />
-        </label>
-        <label>
-          How the time is known
-          <select
-            value={current.timeAccuracy}
-            onChange={(event) => {
-              set('timeAccuracy', event.target.value as TimeAccuracy);
-            }}
-          >
-            {Object.entries(ACCURACY).map(([value, text]) => (
-              <option key={value} value={value}>
-                {text}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Latitude
-          <input
-            type="number"
-            step="any"
-            inputMode="decimal"
-            placeholder="38.7478"
-            value={current.latitude}
-            {...field('latitude')}
-            onChange={(event) => {
-              // The raw text, not `valueAsNumber`: a half-typed "-" is a work in progress, and
-              // reading it as a number would turn it into a coordinate of zero.
-              set('latitude', event.target.value);
-            }}
-          />
-          <Error_ name="latitude" />
-        </label>
-        <label>
-          Longitude
-          <input
-            type="number"
-            step="any"
-            inputMode="decimal"
-            placeholder="-85.0672"
-            value={current.longitude}
-            {...field('longitude')}
-            onChange={(event) => {
-              set('longitude', event.target.value);
-            }}
-          />
-          <Error_ name="longitude" />
-        </label>
-        <label>
-          Calendar
-          <select
-            value={current.calendar}
-            onChange={(event) => {
-              set('calendar', event.target.value as Calendar);
-            }}
-          >
-            <option value="auto">Automatic</option>
-            <option value="gregorian">Gregorian</option>
-            <option value="julian">Julian</option>
-          </select>
-        </label>
-        <label>
-          UTC offset override
-          <input
-            type="number"
-            step="any"
-            placeholder="minutes, e.g. -300"
-            value={current.offsetOverride}
-            {...field('offsetOverride')}
-            onChange={(event) => {
-              set('offsetOverride', event.target.value);
-            }}
-          />
-          <Error_ name="offsetOverride" />
-        </label>
-        <label>
-          Timezone override
-          <input
-            type="text"
-            placeholder="America/Indiana/Vevay"
-            value={current.zoneOverride}
-            onChange={(event) => {
-              set('zoneOverride', event.target.value);
-            }}
-          />
-        </label>
-      </div>
-      <p className="hint">
-        Leave the override empty to use the timezone database. Enter it in minutes east of UTC &mdash; a birth
-        certificate that states the offset beats any lookup we can do, and 0 means UTC rather than &ldquo;no
-        override&rdquo;.
-      </p>
 
-      <label className="stacked">
-        Notes
-        <textarea
-          rows={3}
-          value={current.notes}
-          onChange={(event) => {
-            set('notes', event.target.value);
-          }}
-        />
-      </label>
+      <fieldset className="field-group">
+        <legend>Who</legend>
+        <div className="field-grid">
+          <label>
+            Name
+            <input
+              type="text"
+              value={current.displayName}
+              {...field('displayName')}
+              onChange={(event) => {
+                set('displayName', event.target.value);
+              }}
+            />
+            <Error_ name="displayName" />
+          </label>
+          <label>
+            Place of birth
+            <input
+              type="text"
+              placeholder="Vevay, Indiana"
+              value={current.placeLabel}
+              onChange={(event) => {
+                set('placeLabel', event.target.value);
+              }}
+            />
+            {/* A label, not a lookup: there is no geocoding, so the coordinates below are what
+                the calculation uses and this text is only for the reader. */}
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="field-group">
+        <legend>When</legend>
+        <div className="field-grid">
+          <label>
+            Date
+            <input
+              type="date"
+              value={current.date}
+              {...field('date')}
+              onChange={(event) => {
+                set('date', event.target.value);
+              }}
+            />
+            <Error_ name="date" />
+          </label>
+          <label>
+            Time
+            <input
+              type="time"
+              step={1}
+              value={current.time}
+              disabled={current.timeAccuracy === 'unknown'}
+              {...field('time')}
+              onChange={(event) => {
+                set('time', event.target.value);
+              }}
+            />
+            <Error_ name="time" />
+          </label>
+          <label>
+            How the time is known
+            <select
+              value={current.timeAccuracy}
+              onChange={(event) => {
+                set('timeAccuracy', event.target.value as TimeAccuracy);
+              }}
+            >
+              {Object.entries(ACCURACY).map(([value, text]) => (
+                <option key={value} value={value}>
+                  {text}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="field-group">
+        <legend>Coordinates</legend>
+        <div className="field-grid">
+          <label>
+            Latitude
+            <input
+              type="number"
+              step="any"
+              inputMode="decimal"
+              placeholder="38.7478"
+              value={current.latitude}
+              {...field('latitude')}
+              onChange={(event) => {
+                // The raw text, not `valueAsNumber`: a half-typed "-" is a work in progress, and
+                // reading it as a number would turn it into a coordinate of zero.
+                set('latitude', event.target.value);
+              }}
+            />
+            <Error_ name="latitude" />
+          </label>
+          <label>
+            Longitude
+            <input
+              type="number"
+              step="any"
+              inputMode="decimal"
+              placeholder="-85.0672"
+              value={current.longitude}
+              {...field('longitude')}
+              onChange={(event) => {
+                set('longitude', event.target.value);
+              }}
+            />
+            <Error_ name="longitude" />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="field-group">
+        <legend>Calendar &amp; time zone</legend>
+        <div className="field-grid">
+          <label>
+            Calendar
+            <select
+              value={current.calendar}
+              onChange={(event) => {
+                set('calendar', event.target.value as Calendar);
+              }}
+            >
+              <option value="auto">Automatic</option>
+              <option value="gregorian">Gregorian</option>
+              <option value="julian">Julian</option>
+            </select>
+          </label>
+          <label>
+            UTC offset override
+            <input
+              type="number"
+              step="any"
+              placeholder="minutes, e.g. -300"
+              value={current.offsetOverride}
+              {...field('offsetOverride')}
+              onChange={(event) => {
+                set('offsetOverride', event.target.value);
+              }}
+            />
+            <Error_ name="offsetOverride" />
+          </label>
+          <label>
+            Timezone override
+            <input
+              type="text"
+              placeholder="America/Indiana/Vevay"
+              value={current.zoneOverride}
+              onChange={(event) => {
+                set('zoneOverride', event.target.value);
+              }}
+            />
+          </label>
+        </div>
+        <p className="hint">
+          Leave the override empty to use the timezone database. Enter it in minutes east of UTC &mdash; a birth
+          certificate that states the offset beats any lookup we can do, and 0 means UTC rather than &ldquo;no
+          override&rdquo;.
+        </p>
+      </fieldset>
+
+      <fieldset className="field-group">
+        <legend>Notes</legend>
+        <label className="stacked">
+          <span className="sr-only">Notes</span>
+          <textarea
+            rows={3}
+            value={current.notes}
+            onChange={(event) => {
+              set('notes', event.target.value);
+            }}
+          />
+        </label>
+      </fieldset>
 
       {resolved !== undefined && (
         <>
