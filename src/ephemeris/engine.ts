@@ -103,6 +103,7 @@ interface SweInstance {
     hsys: string,
   ): { cusps: readonly (number | null)[]; ascmc: readonly number[] };
   swe_get_ayanamsa_ex_ut(jd: number, flags: number): number;
+  swe_house_name(hsys: string): string;
   swe_version(): string;
   swe_close(): void;
 }
@@ -315,6 +316,10 @@ export class SwissEphemerisEngine implements EphemerisProvider {
       polarAscendant: at(ASCMC.polarAscendant),
       system,
     };
+  }
+
+  async houseSystemName(system: HouseSystem): Promise<string> {
+    return this.#instance().swe_house_name(system);
   }
 
   async ayanamsa(jd: JulianDayUT, mode: number): Promise<Degrees> {
