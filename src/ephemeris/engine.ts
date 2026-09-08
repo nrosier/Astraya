@@ -198,10 +198,16 @@ export class SwissEphemerisEngine implements EphemerisProvider {
     if (options?.equatorial) flags |= SE.SEFLG_EQUATORIAL;
     if (options?.truePositions) flags |= SE.SEFLG_TRUEPOS;
     if (options?.observer) {
+      if (options.heliocentric) {
+        throw new EphemerisError('heliocentric and observer (topocentric) options are mutually exclusive', {
+          call: 'swe_calc_ut',
+        });
+      }
       const swe = this.#instance();
       swe.swe_set_topo(options.observer.longitude, options.observer.latitude, options.observer.altitude);
       flags |= SE.SEFLG_TOPOCTR;
     }
+    if (options?.heliocentric) flags |= SE.SEFLG_HELCTR;
     return flags;
   }
 
@@ -234,6 +240,12 @@ export class SwissEphemerisEngine implements EphemerisProvider {
 
   async position(jd: JulianDayUT, body: BodyId, options?: PositionOptions): Promise<BodyPosition> {
     this.#assertInRange(jd, body);
+    if (options?.heliocentric && body === SE.SE_SUN) {
+      // The library returns (0, 0, 0) for this rather than an error — its own
+      // position as seen from itself. That is not a real position, so refuse
+      // rather than hand back a longitude of 0 that looks like Aries.
+      throw new EphemerisError('the Sun has no heliocentric position', { call: 'swe_calc_ut', jd, body });
+    }
     const flags = this.#flagsFor(options);
     let raw: readonly number[];
     try {
