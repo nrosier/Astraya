@@ -5,6 +5,7 @@ import {
   angularSeparation,
   aspectByKey,
   findAspects,
+  findCrossAspects,
   matchAspect,
   orbFor,
   type AspectSubject,
@@ -219,5 +220,31 @@ describe('findAspects (#24)', () => {
   it('returns nothing for a single subject or an empty list', () => {
     expect(findAspects([])).toEqual([]);
     expect(findAspects([subject(1, 0)])).toEqual([]);
+  });
+});
+
+describe('findCrossAspects (#47)', () => {
+  function subject(body: number, longitude: number, longitudeSpeed = 1): AspectSubject {
+    return { body, position: position(longitude, longitudeSpeed), category: 'planet' };
+  }
+
+  it('checks every pairing between two lists, not only i<j within one', () => {
+    const listA = [subject(1, 0), subject(2, 90)];
+    const listB = [subject(10, 60), subject(11, 180)];
+    const aspects = findCrossAspects(listA, listB);
+    const pairs = aspects.map((a) => `${a.bodyA}-${a.bodyB}`);
+    expect(new Set(pairs).size).toBe(pairs.length);
+    // 1-10 sextile, 1-11 opposition, 2-10 square, 2-11 square: all four pairings are in orb.
+    expect(aspects).toHaveLength(4);
+  });
+
+  it('never pairs a body against itself within the same list', () => {
+    const listA = [subject(1, 0)];
+    expect(findCrossAspects(listA, listA)).toHaveLength(1); // 1 vs 1: a conjunction with itself, not a self-skip
+  });
+
+  it('returns nothing when either list is empty', () => {
+    expect(findCrossAspects([], [subject(1, 0)])).toEqual([]);
+    expect(findCrossAspects([subject(1, 0)], [])).toEqual([]);
   });
 });
