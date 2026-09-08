@@ -23,6 +23,22 @@ describe('wheelAngle (#39)', () => {
     // not 0.
     expect(wheelAngle(-10, 350)).toBeCloseTo(180, 9);
   });
+
+  it("orientation 'aries-up' fixes 0 Aries at 90 (12 o'clock), ignoring the ascendant (#43)", () => {
+    expect(wheelAngle(0, 123, { orientation: 'aries-up' })).toBe(90);
+    expect(wheelAngle(90, 123, { orientation: 'aries-up' })).toBeCloseTo(180, 9);
+    expect(wheelAngle(0, 999, { orientation: 'aries-up' })).toBe(wheelAngle(0, -47, { orientation: 'aries-up' }));
+  });
+
+  it("sweep 'clockwise' reverses which way longitude moves around the wheel (#43)", () => {
+    expect(wheelAngle(123, 123, { sweep: 'clockwise' })).toBe(180);
+    expect(wheelAngle(123 + 90, 123, { sweep: 'clockwise' })).toBe(90);
+    expect(wheelAngle(123 + 270, 123, { sweep: 'clockwise' })).toBe(270);
+  });
+
+  it('defaults reproduce the un-optioned result exactly (#43 backward compatibility)', () => {
+    expect(wheelAngle(200, 40, { orientation: 'asc-left', sweep: 'counterclockwise' })).toBe(wheelAngle(200, 40));
+  });
 });
 
 describe('pointOnCircle (#39)', () => {
@@ -125,5 +141,60 @@ describe('renderWheelSvg (#39)', () => {
       expect(y).toBeGreaterThanOrEqual(minY);
       expect(y).toBeLessThanOrEqual(maxY);
     }
+  });
+});
+
+/** Cusps deliberately off sign boundaries, so 'whole-sign' snapping is visible. */
+const UNEQUAL_HOUSES_FIXTURE: HousePositions = {
+  cusps: [0, 17, 40, 80, 100, 140, 170, 197, 220, 260, 280, 320, 350],
+  ascendant: 17,
+  midheaven: 100,
+  armc: 0,
+  vertex: 0,
+  equatorialAscendant: 0,
+  coAscendantKoch: 0,
+  coAscendantMunkasey: 0,
+  polarAscendant: 0,
+  system: 'P',
+};
+
+describe('renderWheelSvg houseWedgeStyle (#43)', () => {
+  it("'equal-degree' (the default) draws each cusp at its literal computed degree", () => {
+    const svg = renderWheelSvg(UNEQUAL_HOUSES_FIXTURE);
+    expect(svg).toContain(">17°0' Aries<"); // house 1 (the ascendant itself)
+    expect(svg).toContain(">10°0' Taurus<"); // house 2, cusp at 40
+  });
+
+  it("'whole-sign' snaps every cusp spoke and label to the boundary of the sign it falls in", () => {
+    const svg = renderWheelSvg(UNEQUAL_HOUSES_FIXTURE, { houseWedgeStyle: 'whole-sign' });
+    expect(svg).toContain(">0°0' Aries<"); // house 1: 17 Aries snaps down to 0 Aries
+    expect(svg).toContain(">0°0' Taurus<"); // house 2: 40 (10 Taurus) snaps down to 0 Taurus
+    expect(svg).not.toContain(">17°0' Aries<");
+    expect(svg).not.toContain(">10°0' Taurus<");
+  });
+
+  it('does not affect the zodiac ring ticks, only the house-cusp spokes and labels', () => {
+    const equalDegree = renderWheelSvg(UNEQUAL_HOUSES_FIXTURE);
+    const wholeSign = renderWheelSvg(UNEQUAL_HOUSES_FIXTURE, { houseWedgeStyle: 'whole-sign' });
+    expect(countClass(equalDegree, 'wheel-sign-boundary')).toBe(countClass(wholeSign, 'wheel-sign-boundary'));
+    expect(countClass(equalDegree, 'wheel-tick-major')).toBe(countClass(wholeSign, 'wheel-tick-major'));
+    expect(countClass(equalDegree, 'wheel-tick-minor')).toBe(countClass(wholeSign, 'wheel-tick-minor'));
+  });
+});
+
+describe('renderWheelSvg orientation and sweep (#43)', () => {
+  it("orientation 'aries-up' keeps the wheel's rings fixed to the zodiac rather than the ascendant", () => {
+    const ascLeft = renderWheelSvg(EQUAL_HOUSES_FIXTURE, { orientation: 'asc-left' });
+    const ariesUp = renderWheelSvg(EQUAL_HOUSES_FIXTURE, { orientation: 'aries-up' });
+    // Same fixture, different orientation: the two renders must differ.
+    expect(ariesUp).not.toBe(ascLeft);
+    // Both still well-formed.
+    expect(ariesUp.startsWith('<svg xmlns="http://www.w3.org/2000/svg"')).toBe(true);
+  });
+
+  it("sweep 'clockwise' changes the drawn geometry relative to the default counterclockwise sweep", () => {
+    const counterclockwise = renderWheelSvg(EQUAL_HOUSES_FIXTURE);
+    const clockwise = renderWheelSvg(EQUAL_HOUSES_FIXTURE, { sweep: 'clockwise' });
+    expect(clockwise).not.toBe(counterclockwise);
   });
 });

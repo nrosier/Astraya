@@ -80,4 +80,13 @@ describe('renderAspectWebSvg (#42)', () => {
   it('renders nothing for an empty aspect list', () => {
     expect(renderAspectWebSvg([], longitudeOf, 0, 300, 300, 200)).toBe('');
   });
+
+  it("threads orientation/sweep options through to wheelAngle, matching renderWheelSvg's layer (#43)", () => {
+    const aspects = [aspect('square', 1, 2, 0.5, true)];
+    const defaultOrientation = renderAspectWebSvg(aspects, longitudeOf, 0, 300, 300, 200);
+    const ariesUp = renderAspectWebSvg(aspects, longitudeOf, 0, 300, 300, 200, { orientation: 'aries-up' });
+    const clockwise = renderAspectWebSvg(aspects, longitudeOf, 0, 300, 300, 200, { sweep: 'clockwise' });
+    expect(ariesUp).not.toBe(defaultOrientation);
+    expect(clockwise).not.toBe(defaultOrientation);
+  });
 });

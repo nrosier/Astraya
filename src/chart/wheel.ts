@@ -6,20 +6,45 @@
  * plain string assertions and directly exportable (e.g. "save as .svg") without
  * a render pass. Bodies (#40), aspect lines (#42) and overlay lines (#148) are
  * layered on top by later issues, drawing into the same coordinate system
- * (`wheelAngle`/`pointOnCircle` below) rather than duplicating it; wheel
- * orientation/style options (#43) are expected to extend `WheelGeometryOptions`
- * rather than replace it.
+ * (`wheelAngle`/`pointOnCircle` below) rather than duplicating it.
  *
- * Orientation is fixed here to the near-universal convention: the Ascendant at
- * the 9 o'clock position, houses running counterclockwise from there (so the
- * Midheaven, wherever it actually falls for the input houses, reads roughly
- * upward rather than at a forced 12 o'clock — real geometry, not an idealised
- * quadrant chart).
+ * Orientation and sweep direction (#43) default to the near-universal
+ * convention: the Ascendant at the 9 o'clock position, houses running
+ * counterclockwise from there (so the Midheaven, wherever it actually falls
+ * for the input houses, reads roughly upward rather than at a forced 12
+ * o'clock — real geometry, not an idealised quadrant chart). Both are
+ * options on `wheelAngle` itself, since bodies (#41, #42) draw into the same
+ * coordinate system and must turn with the wheel rather than staying fixed
+ * to whatever the default happens to be.
  */
 import type { Degrees, HousePositions } from '../ephemeris/types.js';
 import { degreesInSign, signOf } from '../astrology/signs.js';
 
-export interface WheelGeometryOptions {
+/** Where longitude 0 (`asc-left`, the default) or the Ascendant (`aries-up`) is fixed on screen. */
+export type WheelOrientation = 'asc-left' | 'aries-up';
+
+/** Which way increasing longitude sweeps around the wheel. */
+export type WheelSweep = 'counterclockwise' | 'clockwise';
+
+/**
+ * How a house's cusp spoke is drawn (#43): at its literal computed degree
+ * (`equal-degree`, the default — cusps can fall anywhere, so wedges are
+ * generally unequal widths for most house systems), or snapped to the
+ * boundary of the sign it falls in (`whole-sign` — every wedge becomes
+ * exactly one 30-degree sign, the classical whole-sign-wheel look). This is
+ * a display choice only: it never changes which house system computed the
+ * cusps, so the same chart can be viewed either way.
+ */
+export type HouseWedgeStyle = 'equal-degree' | 'whole-sign';
+
+export interface WheelOrientationOptions {
+  /** Whether the Ascendant or 0° Aries is fixed at the anchor position. Defaults to `asc-left`. */
+  readonly orientation?: WheelOrientation;
+  /** Which way longitude sweeps around the wheel. Defaults to `counterclockwise`. */
+  readonly sweep?: WheelSweep;
+}
+
+export interface WheelGeometryOptions extends WheelOrientationOptions {
   /** SVG viewport is `size` x `size` pixels; cusp labels extend beyond it into `labelMargin`. */
   readonly size?: number;
   /** Radial width of the zodiac sign ring, in pixels. */
@@ -32,6 +57,8 @@ export interface WheelGeometryOptions {
   readonly majorTickIntervalDeg?: number;
   /** Extra space reserved outside the wheel for cusp labels, in pixels. */
   readonly labelMargin?: number;
+  /** How house-cusp spokes are drawn. Defaults to `equal-degree`. */
+  readonly houseWedgeStyle?: HouseWedgeStyle;
 }
 
 interface ResolvedOptions {
@@ -41,9 +68,15 @@ interface ResolvedOptions {
   readonly tickIntervalDeg: number;
   readonly majorTickIntervalDeg: number;
   readonly labelMargin: number;
+  readonly houseWedgeStyle: HouseWedgeStyle;
+  readonly orientation: WheelOrientation;
+  readonly sweep: WheelSweep;
 }
 
 const DEFAULT_SIZE = 600;
+const DEFAULT_ORIENTATION: WheelOrientation = 'asc-left';
+const DEFAULT_SWEEP: WheelSweep = 'counterclockwise';
+const DEFAULT_HOUSE_WEDGE_STYLE: HouseWedgeStyle = 'equal-degree';
 
 function resolveOptions(options: WheelGeometryOptions | undefined): ResolvedOptions {
   const size = options?.size ?? DEFAULT_SIZE;
@@ -58,6 +91,9 @@ function resolveOptions(options: WheelGeometryOptions | undefined): ResolvedOpti
     // and inspecting the SVG, which is how this margin's absence was caught
     // in the first place.
     labelMargin: options?.labelMargin ?? size * 0.16,
+    houseWedgeStyle: options?.houseWedgeStyle ?? DEFAULT_HOUSE_WEDGE_STYLE,
+    orientation: options?.orientation ?? DEFAULT_ORIENTATION,
+    sweep: options?.sweep ?? DEFAULT_SWEEP,
   };
 }
 
@@ -73,12 +109,24 @@ function norm360(degrees: Degrees): Degrees {
 /**
  * Wheel-space angle for an ecliptic longitude, in degrees, measured the way
  * `pointOnCircle` expects: 0 = 3 o'clock, increasing counterclockwise on
- * screen. The Ascendant always lands at 180 (9 o'clock); longitude increasing
- * beyond it sweeps counterclockwise through the houses, matching how a chart
- * wheel is conventionally drawn.
+ * screen by default. With the default options, the Ascendant always lands at
+ * 180 (9 o'clock) and longitude increasing beyond it sweeps counterclockwise
+ * through the houses, matching how a chart wheel is conventionally drawn.
+ *
+ * `orientation: 'aries-up'` fixes 0° Aries at 90 (12 o'clock) instead, so the
+ * wheel no longer turns with the Ascendant as the birth time changes — some
+ * readers prefer the zodiac itself to stay put. `sweep: 'clockwise'` reverses
+ * which way increasing longitude goes. Every caller drawing into this same
+ * wheel (glyphs, aspect lines, overlays) must pass the same options, or its
+ * layer will drift out of alignment with the ring and cusps.
  */
-export function wheelAngle(longitude: Degrees, ascendant: Degrees): Degrees {
-  return norm360(180 + longitude - ascendant);
+export function wheelAngle(longitude: Degrees, ascendant: Degrees, options?: WheelOrientationOptions): Degrees {
+  const orientation = options?.orientation ?? DEFAULT_ORIENTATION;
+  const sweep = options?.sweep ?? DEFAULT_SWEEP;
+  const anchorLongitude = orientation === 'aries-up' ? 0 : ascendant;
+  const anchorScreenAngle = orientation === 'aries-up' ? 90 : 180;
+  const delta = longitude - anchorLongitude;
+  return norm360(anchorScreenAngle + (sweep === 'clockwise' ? -delta : delta));
 }
 
 /** A point on a circle of the given radius, for a `wheelAngle`-style angle. */
@@ -102,6 +150,12 @@ function formatDegreeInSign(longitude: Degrees): string {
   return `${String(carry ? degree + 1 : degree)}°${String(carry ? 0 : minute)}' ${sign.name}`;
 }
 
+/** Where a cusp is actually drawn, under the given house-wedge style. */
+function cuspDisplayLongitude(cuspLongitude: Degrees, style: HouseWedgeStyle): Degrees {
+  if (style === 'equal-degree') return cuspLongitude;
+  return Math.floor(norm360(cuspLongitude) / 30) * 30;
+}
+
 function line(x1: number, y1: number, x2: number, y2: number, className: string): string {
   return `<line x1="${fmt(x1)}" y1="${fmt(y1)}" x2="${fmt(x2)}" y2="${fmt(y2)}" class="${className}" />`;
 }
@@ -122,13 +176,23 @@ function text(x: number, y: number, anchor: string, className: string, content: 
  * coordinate system.
  */
 export function renderWheelSvg(houses: HousePositions, options?: WheelGeometryOptions): string {
-  const { size, zodiacRingWidth, innerRadius, tickIntervalDeg, majorTickIntervalDeg, labelMargin } =
-    resolveOptions(options);
+  const {
+    size,
+    zodiacRingWidth,
+    innerRadius,
+    tickIntervalDeg,
+    majorTickIntervalDeg,
+    labelMargin,
+    houseWedgeStyle,
+    orientation,
+    sweep,
+  } = resolveOptions(options);
   const cx = size / 2;
   const cy = size / 2;
   const outerRadius = size / 2 - 2; // small margin so the outer stroke isn't clipped
   const ringInnerRadius = outerRadius - zodiacRingWidth;
   const ascendant = houses.ascendant;
+  const orientationOptions: WheelOrientationOptions = { orientation, sweep };
 
   const parts: string[] = [];
 
@@ -138,7 +202,7 @@ export function renderWheelSvg(houses: HousePositions, options?: WheelGeometryOp
 
   // Degree ticks and sign-boundary divisions around the zodiac ring.
   for (let degree = 0; degree < 360; degree += tickIntervalDeg) {
-    const angle = wheelAngle(degree, ascendant);
+    const angle = wheelAngle(degree, ascendant, orientationOptions);
     const isSignBoundary = degree % 30 === 0;
     const isMajorTick = degree % majorTickIntervalDeg === 0;
     if (isSignBoundary) {
@@ -157,7 +221,8 @@ export function renderWheelSvg(houses: HousePositions, options?: WheelGeometryOp
   for (let house = 1; house <= 12; house += 1) {
     const cuspLongitude = houses.cusps[house];
     if (cuspLongitude === undefined) continue;
-    const angle = wheelAngle(cuspLongitude, ascendant);
+    const displayLongitude = cuspDisplayLongitude(cuspLongitude, houseWedgeStyle);
+    const angle = wheelAngle(displayLongitude, ascendant, orientationOptions);
     const isAngular = ANGULAR_HOUSES.includes(house);
     const outerEnd = pointOnCircle(cx, cy, isAngular ? outerRadius : ringInnerRadius, angle);
     const innerEnd = pointOnCircle(cx, cy, innerRadius, angle);
@@ -171,7 +236,7 @@ export function renderWheelSvg(houses: HousePositions, options?: WheelGeometryOp
         labelPoint.y,
         'middle',
         isAngular ? 'wheel-cusp-label wheel-cusp-label-angle' : 'wheel-cusp-label',
-        formatDegreeInSign(cuspLongitude),
+        formatDegreeInSign(displayLongitude),
       ),
     );
   }
