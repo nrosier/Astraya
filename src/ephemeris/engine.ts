@@ -116,6 +116,7 @@ interface SweInstance {
     hsys: string,
   ): { cusps: readonly (number | null)[]; ascmc: readonly number[] };
   swe_get_ayanamsa_ex_ut(jd: number, flags: number): number;
+  swe_get_ayanamsa_name(mode: number): string;
   swe_house_name(hsys: string): string;
   swe_version(): string;
   swe_close(): void;
@@ -359,6 +360,10 @@ export class SwissEphemerisEngine implements EphemerisProvider {
       this.#sidModeSet = mode;
     }
     return swe.swe_get_ayanamsa_ex_ut(jd, SE.SEFLG_SWIEPH);
+  }
+
+  async ayanamsaName(mode: number): Promise<string> {
+    return this.#instance().swe_get_ayanamsa_name(mode);
   }
 
   /** Underlying Swiss Ephemeris version string, for the About page. */

@@ -166,6 +166,10 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
     return this.#call('ayanamsa', [jd, mode]);
   }
 
+  ayanamsaName(mode: number): Promise<string> {
+    return this.#call('ayanamsaName', [mode]);
+  }
+
   version(): Promise<string> {
     return this.#call('version', []);
   }
