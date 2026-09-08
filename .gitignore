@@ -3,9 +3,10 @@ dist/
 coverage/
 *.tsbuildinfo
 
-# Ephemeris assets are copied from the npm package by `npm run ephe:sync` and
-# verified against the SHA-256 digests in src/ephemeris/assets.ts. They are build
-# output, not source: 2.48 MB of binary that would otherwise be committed twice.
+# Ephemeris assets are copied from the npm package (or fetched, for the one
+# file that isn't in it) by `npm run ephe:sync` and verified against the
+# SHA-256 digests in src/ephemeris/assets.ts. They are build output, not
+# source: 2.6 MB that would otherwise be committed a second time.
 public/ephe/
 
 # Secrets. The sync server's encryption key lives here and must never be

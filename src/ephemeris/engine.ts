@@ -20,7 +20,7 @@
  *    sets them first. Relying on a previous call's setting is how a sidereal
  *    request silently returns tropical longitudes.
  */
-import { EPHEMERIS_DATA_FILES, EPHEMERIS_YEAR_RANGE, EPHE_BASE_URL } from './assets.js';
+import { EPHEMERIS_DATA_FILES, EPHEMERIS_YEAR_RANGE, EPHE_BASE_URL, FIXED_STARS_ASSET } from './assets.js';
 import { SE } from './generated-constants.js';
 import {
   EphemerisError,
@@ -29,6 +29,8 @@ import {
   type CalendarSystem,
   type Degrees,
   type EphemerisProvider,
+  type FixedStarMagnitude,
+  type FixedStarPosition,
   type GeoPosition,
   type HousePositions,
   type HouseSystem,
@@ -118,6 +120,8 @@ interface SweInstance {
   swe_get_ayanamsa_ex_ut(jd: number, flags: number): number;
   swe_get_ayanamsa_name(mode: number): string;
   swe_house_name(hsys: string): string;
+  swe_fixstar2_ut(star: string, tjd_ut: number, iflag: number): { star_name: string; data: readonly number[] };
+  swe_fixstar2_mag(star: string): { star_name: string; magnitude: number };
   swe_version(): string;
   swe_close(): void;
 }
@@ -151,7 +155,7 @@ export class SwissEphemerisEngine implements EphemerisProvider {
     );
 
     const baseUrl = this.#config.epheBaseUrl ?? EPHE_BASE_URL;
-    const files = EPHEMERIS_DATA_FILES.map((asset) => asset.file);
+    const files = [...EPHEMERIS_DATA_FILES.map((asset) => asset.file), FIXED_STARS_ASSET.file];
     await swe.swe_set_ephe_path(baseUrl, files);
 
     // `swe_set_ephe_path` swallows per-file failures and only throws when EVERY
@@ -393,6 +397,50 @@ export class SwissEphemerisEngine implements EphemerisProvider {
     }
     const [trueObliquity] = raw as [number, number, number, number];
     return trueObliquity;
+  }
+
+  async fixedStar(jd: JulianDayUT, name: string, options?: PositionOptions): Promise<FixedStarPosition> {
+    const flags = this.#flagsFor(options);
+    let result: { star_name: string; data: readonly number[] };
+    try {
+      result = this.#instance().swe_fixstar2_ut(name, jd, flags);
+    } catch (cause) {
+      throw new EphemerisError(cause instanceof Error ? cause.message : String(cause), {
+        call: 'swe_fixstar2_ut',
+        jd,
+        star: name,
+      });
+    }
+    const [longitude, latitude, distance, longitudeSpeed, latitudeSpeed, distanceSpeed] = result.data as [
+      number,
+      number,
+      number,
+      number,
+      number,
+      number,
+    ];
+    return {
+      name: result.star_name,
+      longitude: norm360(longitude),
+      latitude,
+      distance,
+      longitudeSpeed,
+      latitudeSpeed,
+      distanceSpeed,
+    };
+  }
+
+  async fixedStarMagnitude(name: string): Promise<FixedStarMagnitude> {
+    let result: { star_name: string; magnitude: number };
+    try {
+      result = this.#instance().swe_fixstar2_mag(name);
+    } catch (cause) {
+      throw new EphemerisError(cause instanceof Error ? cause.message : String(cause), {
+        call: 'swe_fixstar2_mag',
+        star: name,
+      });
+    }
+    return { name: result.star_name, magnitude: result.magnitude };
   }
 
   /** Underlying Swiss Ephemeris version string, for the About page. */

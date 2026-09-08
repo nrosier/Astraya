@@ -90,6 +90,27 @@ export interface HousePositions {
  */
 export type HouseSystem = string;
 
+/** A fixed star's position and motion at an instant. Identified by name, not `BodyId`. */
+export interface FixedStarPosition {
+  /** Full name as resolved from `sefstars.txt`, which may be more specific than the name requested. */
+  readonly name: string;
+  /** Ecliptic longitude, in the requested zodiac. */
+  readonly longitude: Degrees;
+  /** Ecliptic latitude in degrees. */
+  readonly latitude: number;
+  /** Distance in AU. Astronomically meaningless for a star, but returned by the library. */
+  readonly distance: number;
+  readonly longitudeSpeed: number;
+  readonly latitudeSpeed: number;
+  readonly distanceSpeed: number;
+}
+
+/** A fixed star's visual magnitude (brightness; lower is brighter). */
+export interface FixedStarMagnitude {
+  readonly name: string;
+  readonly magnitude: number;
+}
+
 export interface PositionOptions {
   readonly zodiac?: Zodiac;
   /** Compute topocentric rather than geocentric positions. */
@@ -182,6 +203,15 @@ export interface EphemerisProvider {
   ayanamsaName(mode: number): Promise<string>;
 
   /**
+   * A fixed star's position at the given instant, resolved by name against
+   * `sefstars.txt` (traditional name or Bayer/nomenclature designation).
+   */
+  fixedStar(jd: JulianDayUT, name: string, options?: PositionOptions): Promise<FixedStarPosition>;
+
+  /** A fixed star's visual magnitude, resolved by name against `sefstars.txt`. */
+  fixedStarMagnitude(name: string): Promise<FixedStarMagnitude>;
+
+  /**
    * Swiss Ephemeris library version. Shown on the About page, which the AGPL
    * network clause obliges us to provide.
    */
@@ -211,4 +241,5 @@ export interface EphemerisErrorContext {
   readonly call: string;
   readonly jd?: number;
   readonly body?: number;
+  readonly star?: string;
 }
