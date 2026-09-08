@@ -55,18 +55,33 @@ const fixture = loadFixture(resolve(import.meta.dirname, 'fixtures/horizons-posi
  * Hence two tolerances. A blanket 1" would have been indefensible: it would hide a
  * tenfold regression on historical dates, which is precisely the case that matters
  * because natal charts are always in the past.
+ *
+ * A third, independent source shows up only for the four main-belt asteroids
+ * (#17): up to ~2" of disagreement at every epoch, including exact J2000, where
+ * delta-T is irrelevant because it is the reference epoch. That rules out delta-T
+ * as the cause. What is left is genuine perturbation-model disagreement between
+ * Swiss Ephemeris's asteroid theory and JPL's numerical integration — worse for
+ * Pallas, whose orbit is the most inclined and perturbed of the four. Measured
+ * worst case was Pallas at 1.996" (j2000 longitude); the tolerance below adds
+ * margin above that rather than being tuned to just barely pass.
  */
 const TOLERANCE_ARCSEC = {
   /** Dates within the observed delta-T record. The demanding case. */
   historical: 0.2,
   /** Future dates, where predicted delta-T dominates for fast bodies. */
   future: 1.5,
+  /** The four main-belt asteroids, at any epoch — see comment above. */
+  asteroid: 2.5,
 } as const;
 
 /** Epochs after this year depend on predicted rather than observed delta-T. */
 const LAST_OBSERVED_DELTA_T_YEAR = 2025;
 
-function toleranceFor(epochYear: number): number {
+/** Main-belt asteroids disagree with JPL for orbital-theory reasons, not delta-T. */
+const ASTEROID_NAMES = new Set(['Ceres', 'Pallas', 'Juno', 'Vesta']);
+
+function toleranceFor(epochYear: number, name: string): number {
+  if (ASTEROID_NAMES.has(name)) return TOLERANCE_ARCSEC.asteroid;
   return epochYear > LAST_OBSERVED_DELTA_T_YEAR ? TOLERANCE_ARCSEC.future : TOLERANCE_ARCSEC.historical;
 }
 
@@ -76,9 +91,9 @@ describe('golden chart: planetary longitudes match JPL Horizons', () => {
       const bodies = fixture.positions[epochId];
       if (!bodies) throw new Error(`fixture has no positions for epoch ${epochId}`);
 
-      const tolerance = toleranceFor(epoch.utc[0]);
-
       for (const [name, reference] of Object.entries(bodies)) {
+        const tolerance = toleranceFor(epoch.utc[0], name);
+
         it(`${name} longitude within ${tolerance}"`, async () => {
           const engine = await getEngine();
           const [year, month, day, hour, minute, second] = epoch.utc;

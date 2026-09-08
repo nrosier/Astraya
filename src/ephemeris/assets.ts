@@ -62,5 +62,10 @@ export const EPHE_MOUNT = '/ephe';
  * Date range covered by the shipped `_18` data files, as Gregorian years.
  * Requests outside this window must fail with a clear message rather than
  * returning whatever the fallback Moshier theory produces.
+ *
+ * This also happens to close #18 (Chiron and asteroid validity windows) for
+ * free: Chiron's own documented validity is 675-4650 CE, strictly wider than
+ * what we ship, so the file range below is always the tighter — and only
+ * reachable — constraint. There is no narrower Chiron-specific check to add.
  */
 export const EPHEMERIS_YEAR_RANGE = { first: 1800, last: 2399 } as const;

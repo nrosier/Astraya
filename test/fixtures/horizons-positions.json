@@ -2,7 +2,7 @@
   "$provenance": {
     "source": "NASA/JPL Horizons system",
     "api": "https://ssd.jpl.nasa.gov/api/horizons.api",
-    "retrieved": "2026-09-07",
+    "retrieved": "2026-09-08",
     "quantity": "31 (observer ecliptic longitude and latitude)",
     "center": "500@399 (geocentric)",
     "frame": "apparent, light-time corrected, true ecliptic and equinox of date",
@@ -102,6 +102,26 @@
         "se": 15,
         "longitude": 251.617609,
         "latitude": 4.0717061
+      },
+      "Ceres": {
+        "se": 17,
+        "longitude": 184.4530625,
+        "latitude": 11.8375968
+      },
+      "Pallas": {
+        "se": 18,
+        "longitude": 134.043348,
+        "latitude": -48.3508336
+      },
+      "Juno": {
+        "se": 19,
+        "longitude": 277.9960713,
+        "latitude": 9.4510491
+      },
+      "Vesta": {
+        "se": 20,
+        "longitude": 245.9719858,
+        "latitude": 4.2520361
       }
     },
     "apollo11": {
@@ -159,6 +179,26 @@
         "se": 15,
         "longitude": 6.8273565,
         "latitude": 3.0106485
+      },
+      "Ceres": {
+        "se": 17,
+        "longitude": 306.1100959,
+        "latitude": -10.9342932
+      },
+      "Pallas": {
+        "se": 18,
+        "longitude": 266.9286163,
+        "latitude": 45.3923631
+      },
+      "Juno": {
+        "se": 19,
+        "longitude": 274.3702206,
+        "latitude": 17.5154665
+      },
+      "Vesta": {
+        "se": 20,
+        "longitude": 98.3399248,
+        "latitude": -1.1973882
       }
     },
     "future2035": {
@@ -216,6 +256,26 @@
         "se": 15,
         "longitude": 62.0621214,
         "latitude": -3.9776727
+      },
+      "Ceres": {
+        "se": 17,
+        "longitude": 18.8461342,
+        "latitude": -6.5433072
+      },
+      "Pallas": {
+        "se": 18,
+        "longitude": 338.5408518,
+        "latitude": 10.3118117
+      },
+      "Juno": {
+        "se": 19,
+        "longitude": 310.9821125,
+        "latitude": 8.5551072
+      },
+      "Vesta": {
+        "se": 20,
+        "longitude": 95.7650416,
+        "latitude": 2.1451486
       }
     }
   }
