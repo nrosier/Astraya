@@ -28,6 +28,20 @@ describe('boundsOf completeness (#26)', () => {
     expect(() => boundsOf(-1, scheme)).toThrow(RangeError);
     expect(() => boundsOf(12, scheme)).toThrow(RangeError);
   });
+
+  const FIVE_BOUND_RULERS = ['jupiter', 'venus', 'mercury', 'mars', 'saturn'].map(id).sort();
+
+  it.each(SCHEMES)(
+    "assigns each sign's five bounds to exactly Jupiter, Venus, Mercury, Mars and Saturn, each once — never the Sun or Moon, never a repeat (%s)",
+    (scheme) => {
+      for (let sign = 0; sign < 12; sign += 1) {
+        const rulers = boundsOf(sign, scheme)
+          .map((b) => b.ruler)
+          .sort();
+        expect(rulers, `${scheme} sign ${sign}`).toEqual(FIVE_BOUND_RULERS);
+      }
+    },
+  );
 });
 
 describe('boundRulerOf (#26)', () => {
