@@ -69,3 +69,61 @@ describe('the canonical house-system registry (#19)', () => {
     }
   });
 });
+
+describe('polar-latitude house fallback (#20)', () => {
+  // Placidus and Koch are undefined beyond roughly +/-66.5 degrees. Swiss
+  // Ephemeris itself detects this and names Porphyry as its fallback; the
+  // engine must retry with that system and say so rather than silently
+  // returning cusps that look like Placidus but are not.
+  const REYKJAVIK_ARCTIC = { latitude: 70, longitude: -8, altitude: 0 };
+  const ANTARCTIC = { latitude: -70, longitude: -8, altitude: 0 };
+
+  it('falls back to Porphyry for Placidus at 70N, with a warning naming both', async () => {
+    const engine = await getEngine();
+    const jd = await engine.julianDay(2000, 1, 1, 12);
+    const houses = await engine.houses(jd, REYKJAVIK_ARCTIC, 'P');
+
+    expect(houses.system).toBe('O');
+    expect(houses.warning).toMatch(/'P'/);
+    expect(houses.warning).toMatch(/70/);
+    expect(houses.cusps).toHaveLength(13);
+    expect(Number.isFinite(houses.cusps[1])).toBe(true);
+  });
+
+  it('falls back to Porphyry for Koch at 70N', async () => {
+    const engine = await getEngine();
+    const jd = await engine.julianDay(2000, 1, 1, 12);
+    const houses = await engine.houses(jd, REYKJAVIK_ARCTIC, 'K');
+
+    expect(houses.system).toBe('O');
+    expect(houses.warning).toBeDefined();
+  });
+
+  it('falls back the same way in the southern polar circle', async () => {
+    const engine = await getEngine();
+    const jd = await engine.julianDay(2000, 1, 1, 12);
+    const houses = await engine.houses(jd, ANTARCTIC, 'P');
+
+    expect(houses.system).toBe('O');
+    expect(houses.warning).toBeDefined();
+  });
+
+  it('never falls back below the polar circle', async () => {
+    const engine = await getEngine();
+    const jd = await engine.julianDay(2000, 1, 1, 12);
+    const oslo = { latitude: 59.9, longitude: 10.75, altitude: 0 };
+    const houses = await engine.houses(jd, oslo, 'P');
+
+    expect(houses.system).toBe('P');
+    expect(houses.warning).toBeUndefined();
+  });
+
+  it('does not fall back for a system unaffected by the polar circle', async () => {
+    const engine = await getEngine();
+    const jd = await engine.julianDay(2000, 1, 1, 12);
+    const houses = await engine.houses(jd, REYKJAVIK_ARCTIC, 'O');
+
+    expect(houses.system).toBe('O');
+    expect(houses.warning).toBeUndefined();
+  });
+});

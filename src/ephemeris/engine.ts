@@ -49,6 +49,19 @@ const ASCMC = {
   polarAscendant: 7,
 } as const;
 
+/**
+ * Placidus, Koch and their variants are undefined near the poles (roughly
+ * beyond +/-66.5 degrees latitude). `sweph-wasm` detects this itself and
+ * throws rather than silently returning cusps for a different system, naming
+ * the fallback it would have used in the message — e.g. "within polar
+ * circle, switched to Porphyry". Verified empirically across every house
+ * system and both hemispheres (#20): only Placidus, Koch, Gauquelin sectors
+ * and 'Sunshine/alt.' ever fail this way, and the named fallback is always
+ * Porphyry. Keyed by name rather than hardcoded, so an unrecognised fallback
+ * name fails loudly instead of silently mis-rendering.
+ */
+const POLAR_FALLBACK_BY_NAME: Readonly<Record<string, HouseSystem>> = { Porphyry: 'O' };
+
 /** Gregorian calendar, as opposed to Julian. */
 const GREGORIAN = SE.SE_GREG_CAL;
 const JULIAN = SE.SE_JUL_CAL;
@@ -266,18 +279,34 @@ export class SwissEphemerisEngine implements EphemerisProvider {
   async houses(jd: JulianDayUT, place: GeoPosition, system: HouseSystem, zodiac?: Zodiac): Promise<HousePositions> {
     const flags = this.#applyZodiac(zodiac);
     let result: { cusps: readonly (number | null)[]; ascmc: readonly number[] };
+    let effectiveSystem = system;
+    let warning: string | undefined;
     try {
       result = this.#instance().swe_houses_ex2(jd, flags, place.latitude, place.longitude, system);
     } catch (cause) {
-      // Placidus and Koch are undefined beyond roughly +/-66.5 degrees, and this
-      // is how the library reports it. Surfacing it is mandatory: the fallback
-      // cusps the C library would otherwise hand back are not the requested
-      // system, and rendering them unlabelled is a silently wrong chart.
-      throw new EphemerisError(
-        `${cause instanceof Error ? cause.message : String(cause)} ` +
-          `(house system '${system}' at latitude ${place.latitude})`,
-        { call: 'swe_houses_ex2', jd },
-      );
+      const message = cause instanceof Error ? cause.message : String(cause);
+      const fallbackName = /switched to (.+)$/i.exec(message)?.[1];
+      const fallback = fallbackName === undefined ? undefined : POLAR_FALLBACK_BY_NAME[fallbackName];
+      if (fallback === undefined) {
+        // Not the polar-latitude case we know how to recover from — surfacing
+        // it is mandatory either way: rendering unlabelled cusps for whatever
+        // the C library fell back to internally would be a silently wrong chart.
+        throw new EphemerisError(`${message} (house system '${system}' at latitude ${place.latitude})`, {
+          call: 'swe_houses_ex2',
+          jd,
+        });
+      }
+      try {
+        result = this.#instance().swe_houses_ex2(jd, flags, place.latitude, place.longitude, fallback);
+      } catch (fallbackCause) {
+        throw new EphemerisError(
+          `${fallbackCause instanceof Error ? fallbackCause.message : String(fallbackCause)} ` +
+            `(fallback house system '${fallback}' at latitude ${place.latitude})`,
+          { call: 'swe_houses_ex2', jd },
+        );
+      }
+      effectiveSystem = fallback;
+      warning = `House system '${system}' is undefined at latitude ${place.latitude}°: ${message}.`;
     }
 
     // Index 0 is unused; houses are 1..12. See the note at the top of this file.
@@ -304,7 +333,7 @@ export class SwissEphemerisEngine implements EphemerisProvider {
       return norm360(value);
     };
 
-    return {
+    const houses: HousePositions = {
       cusps,
       ascendant: at(ASCMC.ascendant),
       midheaven: at(ASCMC.midheaven),
@@ -314,8 +343,9 @@ export class SwissEphemerisEngine implements EphemerisProvider {
       coAscendantKoch: at(ASCMC.coAscendantKoch),
       coAscendantMunkasey: at(ASCMC.coAscendantMunkasey),
       polarAscendant: at(ASCMC.polarAscendant),
-      system,
+      system: effectiveSystem,
     };
+    return warning === undefined ? houses : { ...houses, warning };
   }
 
   async houseSystemName(system: HouseSystem): Promise<string> {
