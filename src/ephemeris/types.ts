@@ -98,6 +98,16 @@ export interface PositionOptions {
   readonly equatorial?: boolean;
   /** True positions rather than apparent (no light-time correction). */
   readonly truePositions?: boolean;
+  /**
+   * Compute the position as seen from the Sun rather than from Earth.
+   * Mutually exclusive with `observer` — the underlying library accepts both
+   * flags together but silently drops the heliocentric one, which is exactly
+   * the kind of quietly-wrong result this project refuses to hand back, so
+   * the engine rejects the combination instead. Also refused for the Sun
+   * itself, whose heliocentric position is undefined rather than the (0, 0)
+   * the library returns for it.
+   */
+  readonly heliocentric?: boolean;
 }
 
 /**
