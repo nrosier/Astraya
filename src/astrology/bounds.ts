@@ -11,13 +11,40 @@
  * Both tables are transcribed from flatlib (github.com/flatangle/flatlib,
  * MIT-licensed), `flatlib/dignities/tables.py`'s `EGYPTIAN_TERMS` and
  * `TETRABIBLOS_TERMS` constants — the latter is explicitly cited there as
- * sourced from the F.E. Robbins translation of Ptolemy's Tetrabiblos. That
- * table is what most software calls the "Ptolemaic" terms, as distinct from
- * the separate variant recorded in Lilly's Christian Astrology (not
- * implemented here). Each table's five ranges per sign were checked here to
- * be contiguous and sum to exactly 30 degrees (see the completeness test in
- * astrology-bounds.test.ts) as an internal-consistency check on the
- * transcription, independent of the source's own accuracy.
+ * sourced from the F.E. Robbins translation of Ptolemy's Tetrabiblos (Book 1,
+ * Ch. 20-21), which is also the table printed as "Ptolemy's Terms" in
+ * William Lilly's Christian Astrology (1647), p. 104 — alongside a second
+ * table on the same page, "The Terms of the Egyptians", which is the
+ * `'egyptian'` scheme here.
+ *
+ * Cross-checked against a second, independent open-source transcription —
+ * joaoventura/pyastra's `dignities/tables.py` — whose `EGYPTIAN_TERMS` and
+ * `TETRABIBLOS_TERMS` dicts agree with the tables below sign-for-sign. (That
+ * same file also carries a third table, `LILLY_TERMS`, which it labels "the
+ * Ptolemaic terms as described in Christian Astrology" — i.e. a variant
+ * transcription of the Ptolemaic table above, not of the Egyptian one; it
+ * differs from `TETRABIBLOS_TERMS` on a handful of signs, e.g. Leo and
+ * Libra, the kind of small divergence expected between a 1647 printing and a
+ * modern scholarly translation. Not implemented here, since the Robbins
+ * translation is the more commonly cited primary source for "Ptolemaic
+ * terms" in software and the `'ptolemaic'` scheme is documented as such.)
+ * Also spot-checked against Astrodienst's own terms documentation
+ * (astro.com/cgi/h.cgi?f=gch&h=gch_terms&lang=e); its degree-range boundaries
+ * matched throughout, though one planet-to-range label (Gemini) came back
+ * transposed relative to both code sources above when read through an
+ * HTML-summarizing fetch — attributed to that summarization step rather than
+ * to the source page, given two independent, directly-read code sources
+ * agree with each other and disagree with only that one summarized reading.
+ *
+ * Each table's five ranges per sign were checked here to be contiguous, sum
+ * to exactly 30 degrees, and be owned by exactly the five non-luminary
+ * traditional planets — Jupiter, Venus, Mercury, Mars, Saturn, each exactly
+ * once — with no gaps, overlaps, repeats or luminaries (see the completeness
+ * test in astrology-bounds.test.ts) as an internal-consistency check on the
+ * transcription, independent of the source's own accuracy. Bounds are
+ * lower-inclusive, upper-exclusive on [0.0, 30.0) — e.g. Aries's Jupiter
+ * bound is [0, 6), meaning 0°00'00" through 5°59'59", with Venus's bound
+ * starting exactly at 6°00'00" (see `boundRulerOf`'s `>=`/`<` comparison).
  */
 import { bodyByKey } from './bodies.js';
 import type { BodyId, Degrees } from '../ephemeris/types.js';
