@@ -65,7 +65,7 @@ The image is `niqck/astraya` on Docker Hub, built for `linux/amd64` and
 | -------------- | ----------------------------- | -------------------------------------- |
 | `v1.2.3` tag   | `1.2.3`, `1.2`, `1`, `latest` | Pin as tightly or loosely as you like  |
 | `v1.2.3-rc.1`  | `1.2.3-rc.1` only             | A prerelease never moves a rolling tag |
-| push to `main` | `edge`, `sha-<short>`         | Buildable, not a release               |
+| push to `main` | _none_ — the job doesn't run  | Only tagged releases build and push    |
 | pull request   | _none_ — built but not pushed | A fork PR has no access to the secrets |
 
 `latest` is set by an explicit condition in the workflow rather than by

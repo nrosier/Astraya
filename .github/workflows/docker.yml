@@ -4,7 +4,6 @@ name: Docker
 #
 # Tagging strategy (docs/RELEASING.md):
 #   v1.2.3 tag  ->  1.2.3, 1.2, 1, latest   (a user can pin as loosely as they like)
-#   main push   ->  edge, sha-<short>       (never `latest`; main is not a release)
 #   pull request->  built, never pushed     (a fork PR has no access to the secrets
 #                                            anyway, and must not gain any)
 #
@@ -13,7 +12,6 @@ name: Docker
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
   pull_request:
 
@@ -57,8 +55,6 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=edge,branch=main
-            type=sha,format=short,enable={{is_default_branch}}
           # `flavor`, not `flags`: the latter is not an input this action has, so it
           # was accepted in silence and metadata-action kept its default
           # `latest=auto`. That meant two things generated `latest` — its default and
@@ -107,10 +103,9 @@ jobs:
       - name: Smoke-test the published image
         if: github.event_name != 'pull_request'
         run: |
-          # The first metadata tag, which is the version on a release and `edge` on
-          # main. It used to be `latest`, before `flavor` stopped that being
-          # generated here; either is a valid thing to smoke-test, but the version is
-          # the more precise one.
+          # The first metadata tag: the release version. It used to be `latest`,
+          # before `flavor` stopped that being generated here; either is a valid
+          # thing to smoke-test, but the version is the more precise one.
           tag="$(printf '%s' "${{ steps.meta.outputs.tags }}" | head -n1)"
           docker run -d --name astraya-smoke -p 8080:8080 "$tag"
           for _ in $(seq 1 30); do
