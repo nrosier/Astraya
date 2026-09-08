@@ -151,4 +151,13 @@ describe('renderGlyphRingSvg (#41)', () => {
     expect(svg).toContain('<line ');
     expect(svg).toContain('<g transform="translate(');
   });
+
+  it("threads orientation/sweep options through to wheelAngle, matching renderWheelSvg's layer (#43)", () => {
+    const positions = [{ key: 'sun', longitude: 10 }];
+    const defaultOrientation = renderGlyphRingSvg(positions, 0, 300, 300, 250, 280);
+    const ariesUp = renderGlyphRingSvg(positions, 0, 300, 300, 250, 280, { orientation: 'aries-up' });
+    const clockwise = renderGlyphRingSvg(positions, 0, 300, 300, 250, 280, { sweep: 'clockwise' });
+    expect(ariesUp).not.toBe(defaultOrientation);
+    expect(clockwise).not.toBe(defaultOrientation);
+  });
 });

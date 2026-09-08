@@ -20,6 +20,7 @@
 import type { AspectFamily } from '../astrology/aspects.js';
 import type { Aspect } from '../astrology/aspects.js';
 import type { BodyId, Degrees } from '../ephemeris/types.js';
+import type { WheelOrientationOptions } from './wheel.js';
 import { pointOnCircle, wheelAngle } from './wheel.js';
 
 export interface AspectDisplayFilter {
@@ -54,7 +55,9 @@ function fmt(value: number): string {
  * Renders one `<line>` per aspect, chording the circle of radius `radius`
  * centered at `(cx, cy)`. `longitudeOf` resolves each aspect's two bodies to
  * their true ecliptic longitude; `cx`/`cy`/`ascendant` must match the
- * `renderWheelSvg` call this is layered onto (#39).
+ * `renderWheelSvg` call this is layered onto (#39), and so must
+ * `orientation`/`sweep` (#43) if that call used anything other than the
+ * defaults.
  */
 export function renderAspectWebSvg(
   aspects: readonly Aspect[],
@@ -63,11 +66,12 @@ export function renderAspectWebSvg(
   cx: number,
   cy: number,
   radius: number,
+  orientationOptions?: WheelOrientationOptions,
 ): string {
   const parts: string[] = [];
   for (const aspect of aspects) {
-    const angleA = wheelAngle(longitudeOf(aspect.bodyA), ascendant);
-    const angleB = wheelAngle(longitudeOf(aspect.bodyB), ascendant);
+    const angleA = wheelAngle(longitudeOf(aspect.bodyA), ascendant, orientationOptions);
+    const angleB = wheelAngle(longitudeOf(aspect.bodyB), ascendant, orientationOptions);
     const pointA = pointOnCircle(cx, cy, radius, angleA);
     const pointB = pointOnCircle(cx, cy, radius, angleB);
     const direction = aspect.applying ? 'applying' : 'separating';

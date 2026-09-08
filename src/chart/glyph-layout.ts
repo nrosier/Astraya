@@ -29,6 +29,7 @@
  */
 import type { Degrees } from '../ephemeris/types.js';
 import { bodyGlyph, renderGlyph } from './glyphs.js';
+import type { WheelOrientationOptions } from './wheel.js';
 import { pointOnCircle, wheelAngle } from './wheel.js';
 
 export interface GlyphLayoutInput {
@@ -126,7 +127,7 @@ export function spreadGlyphs(
   });
 }
 
-export interface GlyphRingOptions {
+export interface GlyphRingOptions extends WheelOrientationOptions {
   /** Minimum longitude gap kept between adjacent glyphs. Defaults to 6°. */
   readonly minSeparationDeg?: number;
   /** Glyph box size, in pixels (see `renderGlyph`). Defaults to 24. */
@@ -143,7 +144,8 @@ function fmt(value: number): string {
  * true degree) back to the glyph — drawn only for glyphs that actually
  * moved, since most points in a typical chart have no close neighbours.
  * `cx`/`cy`/`ascendant` must match the `renderWheelSvg` call this is layered
- * onto (#39).
+ * onto (#39), and so must `orientation`/`sweep` (#43) if that call used
+ * anything other than the defaults.
  */
 export function renderGlyphRingSvg(
   positions: readonly GlyphLayoutInput[],
@@ -163,11 +165,11 @@ export function renderGlyphRingSvg(
     const definition = bodyGlyph(placement.key);
     if (!definition) continue; // unknown key: nothing to draw for it
 
-    const displayAngle = wheelAngle(placement.displayLongitude, ascendant);
+    const displayAngle = wheelAngle(placement.displayLongitude, ascendant, options);
     const glyphPoint = pointOnCircle(cx, cy, glyphRadius, displayAngle);
 
     if (Math.abs(placement.displayLongitude - placement.longitude) > 1e-9) {
-      const trueAngle = wheelAngle(placement.longitude, ascendant);
+      const trueAngle = wheelAngle(placement.longitude, ascendant, options);
       const truePoint = pointOnCircle(cx, cy, trueRadius, trueAngle);
       parts.push(
         `<line x1="${fmt(truePoint.x)}" y1="${fmt(truePoint.y)}" x2="${fmt(glyphPoint.x)}" y2="${fmt(glyphPoint.y)}" class="chart-glyph-leader" />`,
