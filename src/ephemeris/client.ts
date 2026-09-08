@@ -184,6 +184,14 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
     return this.#call('fixedStarMagnitude', [name]);
   }
 
+  nextSunCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT> {
+    return this.#call('nextSunCrossing', [fromJd, longitude, zodiac]);
+  }
+
+  nextMoonCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT> {
+    return this.#call('nextMoonCrossing', [fromJd, longitude, zodiac]);
+  }
+
   version(): Promise<string> {
     return this.#call('version', []);
   }

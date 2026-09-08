@@ -122,6 +122,8 @@ interface SweInstance {
   swe_house_name(hsys: string): string;
   swe_fixstar2_ut(star: string, tjd_ut: number, iflag: number): { star_name: string; data: readonly number[] };
   swe_fixstar2_mag(star: string): { star_name: string; magnitude: number };
+  swe_solcross_ut(x2cross: number, jd_ut: number, flag: number): number;
+  swe_mooncross_ut(x2cross: number, jd_ut: number, flag: number): number;
   swe_version(): string;
   swe_close(): void;
 }
@@ -441,6 +443,38 @@ export class SwissEphemerisEngine implements EphemerisProvider {
       });
     }
     return { name: result.star_name, magnitude: result.magnitude };
+  }
+
+  async nextSunCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT> {
+    return this.#crossing('swe_solcross_ut', longitude, fromJd, zodiac);
+  }
+
+  async nextMoonCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT> {
+    return this.#crossing('swe_mooncross_ut', longitude, fromJd, zodiac);
+  }
+
+  #crossing(
+    call: 'swe_solcross_ut' | 'swe_mooncross_ut',
+    x2cross: Degrees,
+    fromJd: JulianDayUT,
+    zodiac: Zodiac | undefined,
+  ): JulianDayUT {
+    const flags = this.#applyZodiac(zodiac) | SE.SEFLG_SWIEPH;
+    let jd: number;
+    try {
+      jd = this.#instance()[call](x2cross, fromJd, flags);
+    } catch (cause) {
+      throw new EphemerisError(cause instanceof Error ? cause.message : String(cause), { call, jd: fromJd });
+    }
+    // Per the library's own doc comment, a result smaller than the search start
+    // signals failure rather than a genuine (impossible) backward crossing.
+    if (jd < fromJd) {
+      throw new EphemerisError(`${call} found no crossing of ${x2cross}° forward of Julian day ${fromJd}`, {
+        call,
+        jd: fromJd,
+      });
+    }
+    return jd;
   }
 
   /** Underlying Swiss Ephemeris version string, for the About page. */

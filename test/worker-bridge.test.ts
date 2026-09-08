@@ -88,6 +88,14 @@ describe('worker bridge', () => {
     expect(houses.cusps[10]).toBeCloseTo(houses.midheaven, 10);
   });
 
+  it('returns Sun and Moon crossings identical to the direct engine', async () => {
+    const direct = await getEngine();
+    const client = await bridged();
+
+    expect(await client.nextSunCrossing(JD_2024, 100)).toBe(await direct.nextSunCrossing(JD_2024, 100));
+    expect(await client.nextMoonCrossing(JD_2024, 200)).toBe(await direct.nextMoonCrossing(JD_2024, 200));
+  });
+
   it('preserves EphemerisError identity and context across the boundary', async () => {
     const client = await bridged();
     // Year 1500 is outside the shipped 1800-2399 data range, so the engine refuses.
