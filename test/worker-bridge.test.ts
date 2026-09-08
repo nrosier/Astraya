@@ -203,4 +203,11 @@ describe('worker bridge', () => {
     const client = await bridged();
     expect(await client.houseSystemName('P')).toBe(await (await getEngine()).houseSystemName('P'));
   });
+
+  it('resolves an ayanamsa display name through the bridge', async () => {
+    const client = await bridged();
+    expect(await client.ayanamsaName(SE.SE_SIDM_LAHIRI)).toBe(
+      await (await getEngine()).ayanamsaName(SE.SE_SIDM_LAHIRI),
+    );
+  });
 });

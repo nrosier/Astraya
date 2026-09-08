@@ -155,6 +155,14 @@ export interface EphemerisProvider {
   ayanamsa(jd: JulianDayUT, mode: number): Promise<Degrees>;
 
   /**
+   * The library's own display name for a sidereal mode, via
+   * `swe_get_ayanamsa_name`. Mirrors `houseSystemName`: the canonical id list
+   * lives in `src/astrology/ayanamsas.ts`, but the text shown to a user comes
+   * from here so it cannot drift from a second, hand-maintained copy.
+   */
+  ayanamsaName(mode: number): Promise<string>;
+
+  /**
    * Swiss Ephemeris library version. Shown on the About page, which the AGPL
    * network clause obliges us to provide.
    */
