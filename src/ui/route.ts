@@ -17,9 +17,11 @@ export type Route =
   | { readonly kind: 'changelog' }
   | { readonly kind: 'time' }
   | { readonly kind: 'people' }
-  | { readonly kind: 'person'; readonly personId: string };
+  | { readonly kind: 'person'; readonly personId: string }
+  | { readonly kind: 'chart'; readonly personId: string };
 
 const PERSON_PATH = /^#\/person\/(.+)$/;
+const CHART_PATH = /^#\/chart\/(.+)$/;
 
 export function parseRoute(hash: string): Route {
   // The query carries a birth record on #/time, so every match is on the path part alone.
@@ -46,5 +48,9 @@ export function parseRoute(hash: string): Route {
   // mistyped. Home is the honest answer.
   const person = PERSON_PATH.exec(path);
   if (person !== null && isPersonId(person[1])) return { kind: 'person', personId: person[1] };
+
+  const chart = CHART_PATH.exec(path);
+  if (chart !== null && isPersonId(chart[1])) return { kind: 'chart', personId: chart[1] };
+
   return { kind: 'home' };
 }

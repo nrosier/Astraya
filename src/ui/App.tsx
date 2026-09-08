@@ -4,6 +4,7 @@ import { registerServiceWorker } from '../pwa/register.js';
 import { startWarming } from '../pwa/warm-status.js';
 import { About } from './About.js';
 import { Changelog } from './Changelog.js';
+import { ChartView } from './ChartView.js';
 import { People } from './People.js';
 import { PersonForm } from './PersonForm.js';
 import { PwaStatus } from './PwaStatus.js';
@@ -151,6 +152,13 @@ function renderScreen(
         {/* Keyed on the id so navigating from one person to another remounts the form
             rather than showing the previous person's draft under a new name. */}
         <PersonForm key={parsed.personId} personId={parsed.personId} />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'chart') {
+    return (
+      <Stored>
+        <ChartView key={parsed.personId} personId={parsed.personId} />
       </Stored>
     );
   }

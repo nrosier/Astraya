@@ -119,6 +119,12 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
         below the fields that produced them.
       </p>
 
+      {person.moment !== undefined && (
+        <p>
+          <a href={`#/chart/${personId}`}>View chart</a>
+        </p>
+      )}
+
       {saveError !== undefined && (
         <p className="warning" role="alert">
           That did not save, so nothing was changed. {saveError}
