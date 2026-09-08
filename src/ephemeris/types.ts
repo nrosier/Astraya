@@ -143,6 +143,14 @@ export interface EphemerisProvider {
 
   houses(jd: JulianDayUT, place: GeoPosition, system: HouseSystem, zodiac?: Zodiac): Promise<HousePositions>;
 
+  /**
+   * The library's own display name for a house system, via `swe_house_name`.
+   * The authoritative source for UI labels: the canonical code list lives in
+   * `src/astrology/houses.ts`, but the text shown to a user comes from here
+   * rather than a second, hand-maintained copy that could drift from it.
+   */
+  houseSystemName(system: HouseSystem): Promise<string>;
+
   /** Ayanamsa value in degrees for the given instant and sidereal mode. */
   ayanamsa(jd: JulianDayUT, mode: number): Promise<Degrees>;
 

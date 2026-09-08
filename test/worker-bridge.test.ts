@@ -198,4 +198,9 @@ describe('worker bridge', () => {
     // The About page needs this; it only reaches it via the worker.
     expect(await (await bridged()).version()).toMatch(/^\d+\.\d+/);
   });
+
+  it('resolves a house system display name through the bridge', async () => {
+    const client = await bridged();
+    expect(await client.houseSystemName('P')).toBe(await (await getEngine()).houseSystemName('P'));
+  });
 });

@@ -158,6 +158,10 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
     return this.#call('houses', [jd, place, system, zodiac]);
   }
 
+  houseSystemName(system: HouseSystem): Promise<string> {
+    return this.#call('houseSystemName', [system]);
+  }
+
   ayanamsa(jd: JulianDayUT, mode: number): Promise<Degrees> {
     return this.#call('ayanamsa', [jd, mode]);
   }
