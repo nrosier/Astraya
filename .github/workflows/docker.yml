@@ -38,7 +38,7 @@ jobs:
         run: echo "name=${OWNER:-fork-pr-build}/astraya" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       # A pull request builds to verify the Dockerfile still works, and stops there.
       - name: Log in to Docker Hub
