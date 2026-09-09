@@ -779,3 +779,128 @@ label.stacked textarea:focus-visible {
 .data-table th button:focus-visible {
   outline-offset: 2px;
 }
+
+/* Chart data tabs (#44, grouped): one table's worth of rows at a time rather than
+   the whole chart stacked, so jumping straight to (say) aspects doesn't mean
+   scrolling past everything above it. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 1.75rem 0 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: none;
+  color: var(--muted);
+  font-weight: 550;
+}
+
+.tab:hover:not(.active) {
+  background: var(--surface-hover);
+  color: var(--fg);
+}
+
+.tab.active {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+}
+
+/*
+ * The chart wheel (#39-#42, #52's single-ring case). Every shape in the generated
+ * markup carries a class and no inline colour, by design (see `src/chart/glyphs.ts`'s
+ * own doc comment) — this is the one place those classes get a colour. The svg's own
+ * `width`/`height` attributes are overridden to make it responsive; `viewBox` (set by
+ * the renderer) keeps it square regardless.
+ */
+.chart-wheel {
+  margin: 1.5rem auto 2rem;
+  max-width: 30rem;
+}
+
+.chart-wheel svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart-multiwheel text {
+  font:
+    550 0.68rem system-ui,
+    sans-serif;
+  fill: var(--muted);
+}
+
+.wheel-ring-outer,
+.wheel-ring-inner,
+.chart-multiwheel-ring {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
+.wheel-sign-boundary {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.wheel-tick-major {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.wheel-tick-minor {
+  stroke: var(--line);
+  stroke-width: 0.5;
+}
+
+.chart-multiwheel-cusp {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-multiwheel-cusp-angle {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.chart-glyph circle,
+.chart-glyph path,
+.chart-glyph rect {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-glyph .glyph-fill {
+  fill: var(--fg);
+  stroke: none;
+}
+
+.chart-glyph-leader {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+
+.chart-aspect {
+  stroke: var(--muted);
+  stroke-width: 1;
+  opacity: 0.45;
+}
+
+.chart-aspect-applying {
+  stroke: var(--accent);
+  opacity: 0.8;
+}
+
+.chart-multiwheel-legend-swatch {
+  fill: var(--accent);
+}

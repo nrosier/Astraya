@@ -30,7 +30,7 @@
  */
 import type { Aspect } from '../astrology/aspects.js';
 import type { BodyId, Degrees, HousePositions } from '../ephemeris/types.js';
-import { renderCrossRingAspectWebSvg } from './aspect-web.js';
+import { renderAspectWebSvg, renderCrossRingAspectWebSvg } from './aspect-web.js';
 import type { GlyphLayoutInput } from './glyph-layout.js';
 import { renderGlyphRingSvg } from './glyph-layout.js';
 import type { HouseWedgeStyle, WheelOrientationOptions } from './wheel.js';
@@ -45,6 +45,15 @@ export interface WheelRingInput {
   readonly label: string;
   readonly houses: HousePositions;
   readonly bodies: readonly { readonly body: BodyId; readonly key: string; readonly longitude: Degrees }[];
+  /**
+   * This ring's own aspects (e.g. a natal chart's aspect set), drawn as a
+   * chord web at the ring's `trueRadius` — the same convention a single
+   * wheel's aspect web uses relative to its inner circle. Distinct from
+   * `CrossRingAspects`, which connects two different rings; omit for rings
+   * that shouldn't show their own aspect web (typically anything but the
+   * base ring).
+   */
+  readonly aspects?: readonly Aspect[];
 }
 
 /**
@@ -282,6 +291,17 @@ export function renderMultiWheelSvg(
         glyphSize,
       }),
     );
+    if (ring.aspects !== undefined && ring.aspects.length > 0) {
+      const longitudeByBody = new Map(ring.bodies.map((b) => [b.body, b.longitude]));
+      const longitudeOf = (body: BodyId): Degrees => {
+        const longitude = longitudeByBody.get(body);
+        if (longitude === undefined) {
+          throw new Error(`renderMultiWheelSvg: aspect body ${String(body)} is not present in ring ${String(index)}`);
+        }
+        return longitude;
+      };
+      parts.push(renderAspectWebSvg(ring.aspects, longitudeOf, ascendant, cx, cy, band.trueRadius, orientationOptions));
+    }
   });
 
   for (const cross of crossAspects) {

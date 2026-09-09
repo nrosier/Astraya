@@ -185,7 +185,7 @@ function renderScreen(
       </p>
       <p>
         <a href="#/time">When and where</a> resolves a birth record to a UTC offset and shows how it decided &mdash; the
-        step where charts most often go quietly wrong. Chart drawing arrives in milestones M4 and M5.
+        step where charts most often go quietly wrong.
       </p>
 
       <footer>
