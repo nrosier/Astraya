@@ -82,3 +82,38 @@ export function renderAspectWebSvg(
   }
   return parts.join('');
 }
+
+/**
+ * Cross-ring variant for a bi-wheel or tri-wheel (#52): like
+ * `renderAspectWebSvg`, but the aspect's two bodies live on different rings at
+ * different radii, so each side gets its own resolver rather than one shared
+ * `longitudeOf`/`radius`. `resolveA`/`resolveB` order matches every #51
+ * `contacts` field (`bodyA` is the moving/outer side, `bodyB` the fixed/inner
+ * side) — pass the outer ring's resolver as `resolveA` and the inner ring's
+ * as `resolveB` to draw them correctly.
+ */
+export function renderCrossRingAspectWebSvg(
+  aspects: readonly Aspect[],
+  resolveA: (body: BodyId) => { readonly longitude: Degrees; readonly radius: number },
+  resolveB: (body: BodyId) => { readonly longitude: Degrees; readonly radius: number },
+  ascendant: Degrees,
+  cx: number,
+  cy: number,
+  orientationOptions?: WheelOrientationOptions,
+): string {
+  const parts: string[] = [];
+  for (const aspect of aspects) {
+    const a = resolveA(aspect.bodyA);
+    const b = resolveB(aspect.bodyB);
+    const angleA = wheelAngle(a.longitude, ascendant, orientationOptions);
+    const angleB = wheelAngle(b.longitude, ascendant, orientationOptions);
+    const pointA = pointOnCircle(cx, cy, a.radius, angleA);
+    const pointB = pointOnCircle(cx, cy, b.radius, angleB);
+    const direction = aspect.applying ? 'applying' : 'separating';
+    const className = `chart-aspect chart-cross-aspect chart-aspect-${aspect.aspect.key} chart-aspect-${direction}`;
+    parts.push(
+      `<line x1="${fmt(pointA.x)}" y1="${fmt(pointA.y)}" x2="${fmt(pointB.x)}" y2="${fmt(pointB.y)}" class="${className}" />`,
+    );
+  }
+  return parts.join('');
+}
