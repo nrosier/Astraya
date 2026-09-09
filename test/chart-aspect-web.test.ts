@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Aspect } from '../src/astrology/aspects.js';
 import { aspectByKey } from '../src/astrology/aspects.js';
 import { pointOnCircle, wheelAngle } from '../src/chart/wheel.js';
-import { filterAspectsForDisplay, renderAspectWebSvg } from '../src/chart/aspect-web.js';
+import { filterAspectsForDisplay, renderAspectWebSvg, renderCrossRingAspectWebSvg } from '../src/chart/aspect-web.js';
 
 function aspect(key: string, bodyA: number, bodyB: number, orb: number, applying = true): Aspect {
   const definition = aspectByKey(key);
@@ -88,5 +88,39 @@ describe('renderAspectWebSvg (#42)', () => {
     const clockwise = renderAspectWebSvg(aspects, longitudeOf, 0, 300, 300, 200, { sweep: 'clockwise' });
     expect(ariesUp).not.toBe(defaultOrientation);
     expect(clockwise).not.toBe(defaultOrientation);
+  });
+});
+
+describe('renderCrossRingAspectWebSvg (#52)', () => {
+  const resolveA = (body: number): { longitude: number; radius: number } => {
+    if (body === 1) return { longitude: 10, radius: 250 };
+    throw new Error(`test fixture bug: no outer-ring longitude for body ${body}`);
+  };
+  const resolveB = (body: number): { longitude: number; radius: number } => {
+    if (body === 2) return { longitude: 100, radius: 100 };
+    throw new Error(`test fixture bug: no inner-ring longitude for body ${body}`);
+  };
+
+  it('draws one line per aspect, chording each side at its own radius', () => {
+    const aspects = [aspect('square', 1, 2, 0.5, true)];
+    const svg = renderCrossRingAspectWebSvg(aspects, resolveA, resolveB, 0, 300, 300);
+    expect(svg.split('<line').length - 1).toBe(1);
+
+    const angleA = wheelAngle(10, 0);
+    const angleB = wheelAngle(100, 0);
+    const pointA = pointOnCircle(300, 300, 250, angleA);
+    const pointB = pointOnCircle(300, 300, 100, angleB);
+    expect(svg).toContain(`x1="${pointA.x.toFixed(2)}" y1="${pointA.y.toFixed(2)}"`);
+    expect(svg).toContain(`x2="${pointB.x.toFixed(2)}" y2="${pointB.y.toFixed(2)}"`);
+  });
+
+  it('styles each line with the shared aspect classes plus a cross-ring marker', () => {
+    const aspects = [aspect('square', 1, 2, 0.5, true)];
+    const svg = renderCrossRingAspectWebSvg(aspects, resolveA, resolveB, 0, 300, 300);
+    expect(svg).toContain('chart-aspect chart-cross-aspect chart-aspect-square chart-aspect-applying');
+  });
+
+  it('renders nothing for an empty aspect list', () => {
+    expect(renderCrossRingAspectWebSvg([], resolveA, resolveB, 0, 300, 300)).toBe('');
   });
 });
