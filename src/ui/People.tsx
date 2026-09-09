@@ -45,6 +45,16 @@ export function People(): React.JSX.Element {
     });
   };
 
+  const purge = (id: string, name: string): void => {
+    // Confirmed here rather than left to a second screen: purge has no undo, unlike every
+    // other action this page offers, so the warning has to land before the store call, not
+    // instead of it.
+    if (!window.confirm(`Permanently delete ${name}? This cannot be undone.`)) return;
+    void store.purge('person', id).catch((cause: unknown) => {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    });
+  };
+
   return (
     <main className="shell">
       <p className="back">
@@ -117,6 +127,15 @@ export function People(): React.JSX.Element {
                   }}
                 >
                   Restore
+                </button>
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => {
+                    purge(person.id, person.displayName === '' ? 'this person' : person.displayName);
+                  }}
+                >
+                  Delete permanently
                 </button>
               </li>
             ))}

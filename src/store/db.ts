@@ -152,6 +152,19 @@ export async function allRecords(db: IDBDatabase): Promise<readonly OpRecord[]> 
   return records;
 }
 
+/**
+ * Remove specific records by their `hlc` key — the one place a record actually leaves the
+ * store rather than being tombstoned. Reserved for an explicit, user-initiated purge; every
+ * ordinary delete goes through `putRecords` writing a `deleted` field instead (see fold.ts).
+ */
+export async function deleteRecords(db: IDBDatabase, hlcs: readonly string[]): Promise<void> {
+  if (hlcs.length === 0) return;
+  const transaction = db.transaction(OPS_STORE, 'readwrite');
+  const store = transaction.objectStore(OPS_STORE);
+  for (const hlc of hlcs) store.delete(hlc);
+  await committed(transaction);
+}
+
 export async function countRecords(db: IDBDatabase): Promise<number> {
   const transaction = db.transaction(OPS_STORE, 'readonly');
   return promisify(transaction.objectStore(OPS_STORE).count());

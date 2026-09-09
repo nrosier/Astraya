@@ -8,7 +8,16 @@
  */
 import { describe, expect, it } from 'vitest';
 import { createClock, decodeHlc, DRIFT_REPORT_THRESHOLD_MS } from '../src/store/hlc.js';
-import { append, emptyLog, latest, receiveRecords, since, type Log, type Mutation } from '../src/store/oplog.js';
+import {
+  append,
+  emptyLog,
+  latest,
+  purgeEntity,
+  receiveRecords,
+  since,
+  type Log,
+  type Mutation,
+} from '../src/store/oplog.js';
 import type { OpRecord } from '../src/store/ops.js';
 
 const A = 'a1b2c3d4e5f60718';
@@ -211,5 +220,42 @@ describe('the sync cursor', () => {
   it('has no cursor for an empty log', () => {
     expect(latest(logFor(A))).toBeUndefined();
     expect(since(logFor(A))).toEqual([]);
+  });
+});
+
+describe('purging an entity', () => {
+  it('removes every record naming that entity and reports them', () => {
+    const log = appendAll(logFor(A), [set('p-1', 'a', 1), set('p-2', 'a', 1), set('p-1', 'b', 2)]);
+    const { log: purged, removed } = purgeEntity(log, 'person', 'p-1');
+    expect(purged.records.map((record) => record.entityId)).toEqual(['p-2']);
+    expect(removed).toHaveLength(2);
+    expect(removed.every((record) => record.entityId === 'p-1')).toBe(true);
+  });
+
+  it('leaves the log untouched, and reports nothing removed, for an id it never held', () => {
+    const log = appendAll(logFor(A), [set('p-1', 'a', 1)]);
+    const { log: purged, removed } = purgeEntity(log, 'person', 'p-2');
+    expect(purged.records).toEqual(log.records);
+    expect(removed).toEqual([]);
+  });
+
+  it('does not match a record it cannot read the body of', () => {
+    // A future-versioned record's entity/entityId are uninterpretable at this build, so a
+    // purge must keep it rather than guess — the same rule `decode` applies everywhere.
+    const log = appendAll(logFor(A), [set('p-1', 'a', 1)]);
+    const [original] = log.records;
+    if (original === undefined) throw new Error('fixture');
+    const future = { ...original, opVersion: 99, somethingNew: true };
+    const withFuture: Log = { clock: log.clock, records: [future] };
+    const { log: purged, removed } = purgeEntity(withFuture, 'person', 'p-1');
+    expect(purged.records).toEqual([future]);
+    expect(removed).toEqual([]);
+  });
+
+  it('only matches the named entity kind, not any id collision across kinds', () => {
+    const log = appendAll(logFor(A), [set('p-1', 'a', 1)]);
+    const { log: purged, removed } = purgeEntity(log, 'chart', 'p-1');
+    expect(purged.records).toEqual(log.records);
+    expect(removed).toEqual([]);
   });
 });
