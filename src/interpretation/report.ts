@@ -6,11 +6,11 @@
  *
  * Built entirely on prior interpretation pieces: #60's rule engine picks
  * which placements the "Aspect patterns" section shows and in what order,
- * and #59's `resolvePlacementText` guarantees every paragraph that comes
- * from a placement is non-empty, corpus or no corpus. The handful of
- * paragraphs that aren't placement text (temperament, sect, dispositor
- * chain, chart shape) are plain locale-templated sentences over data this
- * module already has, so they can't be empty either.
+ * and #59's corpus lookup guarantees every paragraph that comes from a
+ * placement is non-empty, corpus or no corpus. The handful of paragraphs
+ * that aren't placement text (temperament, sect, dispositor chain, chart
+ * shape) are plain locale-templated sentences over data this module already
+ * has, so they can't be empty either.
  *
  * A pure, synchronous function of one `ChartData`: no ephemeris access, no
  * "now". That is a deliberate scope cut on this issue's last checklist item,
@@ -29,6 +29,20 @@
  * key to resolve text for, and isn't given its own paragraph here. That's a
  * scoping note, not a bug: nothing currently feeding this module treats the
  * South Node as an independent placement.
+ *
+ * #62 extends every paragraph with its own provenance: the placement it
+ * resolves (if any), whether its text came from the corpus or the mechanical
+ * fallback (#59), and the salience factors that explain why it's here, when
+ * the section that produced it ranks by salience rather than simply
+ * enumerating. "Aspect patterns" is the only section that ranks — #60's rule
+ * engine is what picks and orders its placements — so it's the only section
+ * whose paragraphs carry a non-empty `factors` list from that engine. The
+ * temperament, chart-ruler and sect paragraphs still carry `factors`, but a
+ * locally-built list describing the tallies/steps behind that one sentence,
+ * not a ranking rationale — there's nothing to rank when a section always
+ * says the same handful of things. Houses, dignities and the nodes/Chiron
+ * axis paragraphs carry no factors at all: they're enumerated in full, not
+ * selected, so there is nothing a factor would explain.
  */
 import { bodyById, bodyByKey, type BodyDefinition } from '../astrology/bodies.js';
 import { rulerOf } from '../astrology/dignities.js';
@@ -39,18 +53,41 @@ import type { Element, Modality } from '../astrology/signs.js';
 import { signIndex } from '../astrology/signs.js';
 import type { ChartData } from '../domain/chart-compute.js';
 import type { BodyId, Degrees } from '../ephemeris/types.js';
-import { resolvePlacementText } from './compose.js';
-import { derivePlacements, rankPlacements } from './rules.js';
+import { composeFallbackText, findCorpusEntry } from './compose.js';
+import { derivePlacements, rankPlacements, type SalienceFactor } from './rules.js';
 import { dignityState, type CorpusEntry, type CorpusPlacement, type Locale } from './schema.js';
 
 export type ReportSectionId =
   'core-identity' | 'temperament' | 'chart-ruler' | 'houses' | 'aspect-patterns' | 'dignities-sect' | 'nodes-chiron';
 
+/**
+ * Where a paragraph's text came from. `'corpus'` carries the matching entry
+ * itself, so a viewer (#62's provenance view) can show its `provenance`
+ * (model, prompt version, generation date) without a second lookup.
+ * `'fallback'` is #59's mechanical sentence — no corpus entry existed for
+ * this placement yet. `'derived'` is neither: a sentence synthesized
+ * directly from chart data (temperament, sect, dispositor chain, chart
+ * shape), with no corpus placement of its own to look up.
+ */
+export type ParagraphSource =
+  | { readonly kind: 'corpus'; readonly entry: CorpusEntry }
+  | { readonly kind: 'fallback' }
+  | { readonly kind: 'derived' };
+
+export interface ReportParagraph {
+  readonly text: string;
+  /** The placement this text resolves. Absent for a `'derived'` paragraph, which has no `CorpusPlacement` of its own. */
+  readonly placement?: CorpusPlacement;
+  readonly source: ParagraphSource;
+  /** Why this paragraph is here, when that's a rank rather than a foregone conclusion. Empty for enumerated (not selected) paragraphs. */
+  readonly factors: readonly SalienceFactor[];
+}
+
 export interface ReportSection {
   readonly id: ReportSectionId;
   readonly title: string;
-  /** Ordered, each already guaranteed non-empty. */
-  readonly paragraphs: readonly string[];
+  /** Ordered, each already guaranteed non-empty text. */
+  readonly paragraphs: readonly ReportParagraph[];
 }
 
 export interface Report {
@@ -82,33 +119,57 @@ function bodyPosition(chart: ChartData, key: string): { readonly body: BodyDefin
   return { body, longitude: position.longitude };
 }
 
-function section(id: ReportSectionId, locale: Locale, paragraphs: readonly string[]): ReportSection {
+function section(id: ReportSectionId, locale: Locale, paragraphs: readonly ReportParagraph[]): ReportSection {
   return { id, title: SECTION_TITLES[id][locale], paragraphs };
 }
 
-function placementText(placement: CorpusPlacement, locale: Locale, corpus: readonly CorpusEntry[]): string {
-  return resolvePlacementText(placement, locale, corpus);
+/** A paragraph for a real placement: corpus text if the corpus has an entry for it, `composeFallbackText`'s sentence otherwise. */
+function resolveParagraph(
+  placement: CorpusPlacement,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+  factors: readonly SalienceFactor[] = [],
+): ReportParagraph {
+  const entry = findCorpusEntry(placement, locale, corpus);
+  const text = entry !== undefined ? entry.text : composeFallbackText(placement, locale);
+  const source: ParagraphSource = entry !== undefined ? { kind: 'corpus', entry } : { kind: 'fallback' };
+  return { text, placement, source, factors };
 }
 
-function planetInSignText(chart: ChartData, key: string, locale: Locale, corpus: readonly CorpusEntry[]): string {
+/** A paragraph synthesized directly from chart data, with no corpus placement of its own. */
+function derivedParagraph(text: string, factors: readonly SalienceFactor[] = []): ReportParagraph {
+  return { text, source: { kind: 'derived' }, factors };
+}
+
+function planetInSignParagraph(
+  chart: ChartData,
+  key: string,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+): ReportParagraph {
   const { longitude } = bodyPosition(chart, key);
-  return placementText({ category: 'planet-in-sign', body: key, sign: signIndex(longitude) }, locale, corpus);
+  return resolveParagraph({ category: 'planet-in-sign', body: key, sign: signIndex(longitude) }, locale, corpus);
 }
 
-function planetInHouseText(chart: ChartData, key: string, locale: Locale, corpus: readonly CorpusEntry[]): string {
+function planetInHouseParagraph(
+  chart: ChartData,
+  key: string,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+): ReportParagraph {
   const { longitude } = bodyPosition(chart, key);
   const house = houseOf(longitude, chart.houses.cusps);
-  return placementText({ category: 'planet-in-house', body: key, house }, locale, corpus);
+  return resolveParagraph({ category: 'planet-in-house', body: key, house }, locale, corpus);
 }
 
 function coreIdentitySection(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[]): ReportSection {
   const ascendantSign = signIndex(chart.houses.ascendant);
   return section('core-identity', locale, [
-    planetInSignText(chart, 'sun', locale, corpus),
-    planetInHouseText(chart, 'sun', locale, corpus),
-    planetInSignText(chart, 'moon', locale, corpus),
-    planetInHouseText(chart, 'moon', locale, corpus),
-    placementText({ category: 'sign-on-cusp', sign: ascendantSign, house: 1 }, locale, corpus),
+    planetInSignParagraph(chart, 'sun', locale, corpus),
+    planetInHouseParagraph(chart, 'sun', locale, corpus),
+    planetInSignParagraph(chart, 'moon', locale, corpus),
+    planetInHouseParagraph(chart, 'moon', locale, corpus),
+    resolveParagraph({ category: 'sign-on-cusp', sign: ascendantSign, house: 1 }, locale, corpus),
   ]);
 }
 
@@ -146,6 +207,14 @@ function dominantOf<K extends string>(balance: Readonly<Record<K, number>>, orde
   return best;
 }
 
+function tallyFactors<K extends string>(
+  rule: string,
+  balance: Readonly<Record<K, number>>,
+  order: readonly K[],
+): SalienceFactor[] {
+  return order.map((key) => ({ rule, weight: balance[key], detail: `${key}: ${String(balance[key])}` }));
+}
+
 function temperamentSection(chart: ChartData, locale: Locale): ReportSection {
   const positions = positionsMap(chart);
   const elements = elementBalance(positions);
@@ -163,7 +232,13 @@ function temperamentSection(chart: ChartData, locale: Locale): ReportSection {
       ? `Dat wijst op een ${ELEMENT_TEMPERAMENT[dominantElement].nl} temperament, met een ${MODALITY_NAMES[dominantModality].nl.toLowerCase()} inslag.`
       : `That points to a ${ELEMENT_TEMPERAMENT[dominantElement].en} temperament, with a ${MODALITY_NAMES[dominantModality].en.toLowerCase()} bent.`;
 
-  return section('temperament', locale, [elementSentence, temperamentSentence]);
+  const elementFactors = tallyFactors('element-balance', elements, ELEMENT_ORDER);
+  const modalityFactors = tallyFactors('modality-balance', modalities, MODALITY_ORDER);
+
+  return section('temperament', locale, [
+    derivedParagraph(elementSentence, elementFactors),
+    derivedParagraph(temperamentSentence, [...elementFactors, ...modalityFactors]),
+  ]);
 }
 
 function chainBodyName(id: BodyId): string {
@@ -193,14 +268,22 @@ function chartRulerSection(chart: ChartData, locale: Locale, corpus: readonly Co
     throw new Error('unreachable: the ascendant ruler is always one of BODIES with a computed position');
   }
 
-  const rulerSignText = placementText(
+  const rulerSignParagraph = resolveParagraph(
     { category: 'planet-in-sign', body: ruler.key, sign: signIndex(rulerPosition.longitude) },
     locale,
     corpus,
   );
   const chain = dispositorChain(rulerId, positionsMap(chart));
+  const chainFactors: SalienceFactor[] = chain.chain.map((id, index) => ({
+    rule: 'dispositor-step',
+    weight: index,
+    detail: chainBodyName(id),
+  }));
 
-  return section('chart-ruler', locale, [rulerSignText, describeDispositorChain(chain, locale)]);
+  return section('chart-ruler', locale, [
+    rulerSignParagraph,
+    derivedParagraph(describeDispositorChain(chain, locale), chainFactors),
+  ]);
 }
 
 function housesSection(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[]): ReportSection {
@@ -213,15 +296,15 @@ function housesSection(chart: ChartData, locale: Locale, corpus: readonly Corpus
     else bodiesByHouse.set(house, [position.body]);
   }
 
-  const paragraphs: string[] = [];
+  const paragraphs: ReportParagraph[] = [];
   for (let house = 1; house <= houseCount; house++) {
     const cusp = chart.houses.cusps[house];
     if (cusp === undefined) continue;
-    paragraphs.push(placementText({ category: 'sign-on-cusp', sign: signIndex(cusp), house }, locale, corpus));
+    paragraphs.push(resolveParagraph({ category: 'sign-on-cusp', sign: signIndex(cusp), house }, locale, corpus));
     for (const bodyId of bodiesByHouse.get(house) ?? []) {
       const body = bodyById(bodyId);
       if (body === undefined) continue;
-      paragraphs.push(placementText({ category: 'planet-in-house', body: body.key, house }, locale, corpus));
+      paragraphs.push(resolveParagraph({ category: 'planet-in-house', body: body.key, house }, locale, corpus));
     }
   }
   return section('houses', locale, paragraphs);
@@ -247,10 +330,12 @@ function aspectPatternsSection(chart: ChartData, locale: Locale, corpus: readonl
   const aspectPlacements = rankPlacements(derivePlacements(chart))
     .filter((placement) => placement.placement.category === 'aspect-pair')
     .slice(0, ASPECT_PATTERNS_LIMIT);
-  const paragraphs = aspectPlacements.map((placement) => placementText(placement.placement, locale, corpus));
+  const paragraphs = aspectPlacements.map((placement) =>
+    resolveParagraph(placement.placement, locale, corpus, placement.factors),
+  );
 
   // jonesShapeOf needs at least 2 positions; every real ChartData has far more, but a minimal fixture might not.
-  const shape = chart.positions.length >= 2 ? [jonesShapeSentence(chart, locale)] : [];
+  const shape = chart.positions.length >= 2 ? [derivedParagraph(jonesShapeSentence(chart, locale))] : [];
 
   return section('aspect-patterns', locale, [...shape, ...paragraphs]);
 }
@@ -264,16 +349,19 @@ function dignitiesSectSection(chart: ChartData, locale: Locale, corpus: readonly
       : chart.sect === 'day'
         ? 'This is a day chart: the Sun is above the horizon.'
         : 'This is a night chart: the Sun is below the horizon.';
+  const sectParagraph = derivedParagraph(sectSentence, [
+    { rule: 'sect', weight: chart.sect === 'day' ? 1 : 0, detail: `${chart.sect} chart` },
+  ]);
 
   const dignityParagraphs = Array.from(chart.dignities.entries()).flatMap(([id, dignities]) => {
     const state = dignityState(dignities);
     if (state === undefined) return [];
     const body = bodyById(id);
     if (body === undefined) return [];
-    return [placementText({ category: 'dignity-state', body: body.key, state }, locale, corpus)];
+    return [resolveParagraph({ category: 'dignity-state', body: body.key, state }, locale, corpus)];
   });
 
-  return section('dignities-sect', locale, [sectSentence, ...dignityParagraphs]);
+  return section('dignities-sect', locale, [sectParagraph, ...dignityParagraphs]);
 }
 
 const NODE_CHIRON_KEYS = ['trueNode', 'chiron'] as const;
@@ -282,7 +370,7 @@ function nodesChironSection(chart: ChartData, locale: Locale, corpus: readonly C
   const paragraphs = NODE_CHIRON_KEYS.flatMap((key) => {
     const body = bodyByKey(key);
     if (body === undefined || !chart.positions.some((position) => position.body === body.id)) return [];
-    return [planetInSignText(chart, key, locale, corpus), planetInHouseText(chart, key, locale, corpus)];
+    return [planetInSignParagraph(chart, key, locale, corpus), planetInHouseParagraph(chart, key, locale, corpus)];
   });
   return section('nodes-chiron', locale, paragraphs);
 }

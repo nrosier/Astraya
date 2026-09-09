@@ -130,11 +130,24 @@ describe('validateCorpusEntries (#53)', () => {
     if (!result.ok) expect(result.issues[0]?.message).toMatch(/provenance.source/);
   });
 
-  it('accepts generated provenance with model/generatedAt fields', () => {
+  it('accepts generated provenance with model/promptVersion/generatedAt fields', () => {
     const result = validateCorpusEntries([
-      validEntry({ provenance: { source: 'generated', model: 'gemini-2.5-pro', generatedAt: '2026-09-09' } }),
+      validEntry({
+        provenance: {
+          source: 'generated',
+          model: 'gemini-2.5-pro',
+          promptVersion: 'corpus-generator-v1',
+          generatedAt: '2026-09-09',
+        },
+      }),
     ]);
     expect(result.ok).toBe(true);
+  });
+
+  it('rejects a non-string promptVersion', () => {
+    const result = validateCorpusEntries([validEntry({ provenance: { source: 'generated', promptVersion: 42 } })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues[0]?.message).toMatch(/provenance.promptVersion/);
   });
 
   it('rejects duplicate keys within the array', () => {

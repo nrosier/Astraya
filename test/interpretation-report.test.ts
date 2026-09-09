@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assembleReport, type ReportSectionId } from '../src/interpretation/report.js';
+import { assembleReport, type ReportParagraph, type ReportSectionId } from '../src/interpretation/report.js';
 import { composeFallbackText } from '../src/interpretation/compose.js';
 import { bodyByKey } from '../src/astrology/bodies.js';
 import type { Aspect } from '../src/astrology/aspects.js';
@@ -109,8 +109,16 @@ function makeAspect(bodyAKey: string, bodyBKey: string, angle: number, orb: numb
 
 const LOCALES: readonly Locale[] = ['en', 'nl'];
 
-function allParagraphs(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[] = []): readonly string[] {
+function allParagraphs(
+  chart: ChartData,
+  locale: Locale,
+  corpus: readonly CorpusEntry[] = [],
+): readonly ReportParagraph[] {
   return assembleReport(chart, locale, corpus).sections.flatMap((section) => section.paragraphs);
+}
+
+function texts(paragraphs: readonly ReportParagraph[]): readonly string[] {
+  return paragraphs.map((p) => p.text);
 }
 
 describe('assembleReport (#61)', () => {
@@ -141,7 +149,7 @@ describe('assembleReport (#61)', () => {
     for (const locale of LOCALES) {
       const paragraphs = allParagraphs(chart, locale);
       expect(paragraphs.length).toBeGreaterThan(0);
-      expect(paragraphs.every((p) => p.trim() !== '')).toBe(true);
+      expect(paragraphs.every((p) => p.text.trim() !== '')).toBe(true);
     }
   });
 
@@ -157,7 +165,7 @@ describe('assembleReport (#61)', () => {
     expect(en).not.toEqual(nl);
   });
 
-  it('prefers a matching corpus entry over the fallback for a section paragraph', () => {
+  it('prefers a matching corpus entry over the fallback for a section paragraph, and tags its source', () => {
     const chart = makeFullChart();
     const entry: CorpusEntry = {
       key: 'planet-in-sign:sun:0',
@@ -168,21 +176,38 @@ describe('assembleReport (#61)', () => {
       provenance: { source: 'hand-written' },
     };
     const report = assembleReport(chart, 'en', [entry]);
-    expect(report.sections[0]?.paragraphs).toContain(entry.text);
+    const paragraph = report.sections[0]?.paragraphs[0];
+    expect(paragraph?.text).toBe(entry.text);
+    expect(paragraph?.source).toEqual({ kind: 'corpus', entry });
+  });
+
+  it('tags a placement paragraph with no matching corpus entry as fallback', () => {
+    const chart = makeFullChart();
+    const paragraph = assembleReport(chart, 'en', []).sections[0]?.paragraphs[0];
+    expect(paragraph?.source).toEqual({ kind: 'fallback' });
+    expect(paragraph?.placement).toEqual({ category: 'planet-in-sign', body: 'sun', sign: 0 });
+  });
+
+  it('tags a non-placement paragraph as derived, with no placement of its own', () => {
+    const chart = makeFullChart();
+    const paragraph = assembleReport(chart, 'en', []).sections[1]?.paragraphs[0];
+    expect(paragraph?.source).toEqual({ kind: 'derived' });
+    expect(paragraph?.placement).toBeUndefined();
   });
 });
 
 describe('core identity section (#61)', () => {
   it('covers Sun sign, Sun house, Moon sign, Moon house and the Ascendant', () => {
     const chart = makeFullChart();
-    const paragraphs = assembleReport(chart, 'en', []).sections[0]?.paragraphs;
-    expect(paragraphs).toEqual([
+    const paragraphs = assembleReport(chart, 'en', []).sections[0]?.paragraphs ?? [];
+    expect(texts(paragraphs)).toEqual([
       composeFallbackText({ category: 'planet-in-sign', body: 'sun', sign: 0 }, 'en'),
       composeFallbackText({ category: 'planet-in-house', body: 'sun', house: 1 }, 'en'),
       composeFallbackText({ category: 'planet-in-sign', body: 'moon', sign: 3 }, 'en'),
       composeFallbackText({ category: 'planet-in-house', body: 'moon', house: 4 }, 'en'),
       composeFallbackText({ category: 'sign-on-cusp', sign: 0, house: 1 }, 'en'),
     ]);
+    expect(paragraphs.every((p) => p.factors.length === 0)).toBe(true);
   });
 });
 
@@ -192,15 +217,23 @@ describe('temperament section (#61)', () => {
     // are fire, and fire has the most placements (sun, mars, trueNode).
     const chart = makeFullChart();
     const paragraphs = assembleReport(chart, 'en', []).sections[1]?.paragraphs ?? [];
-    expect(paragraphs.some((p) => /choleric/i.test(p))).toBe(true);
+    expect(paragraphs.some((p) => /choleric/i.test(p.text))).toBe(true);
   });
 
   it('produces a Dutch temperament label distinct from the English one', () => {
     const chart = makeFullChart();
-    const en = assembleReport(chart, 'en', []).sections[1]?.paragraphs.join(' ') ?? '';
-    const nl = assembleReport(chart, 'nl', []).sections[1]?.paragraphs.join(' ') ?? '';
+    const en = texts(assembleReport(chart, 'en', []).sections[1]?.paragraphs ?? []).join(' ');
+    const nl = texts(assembleReport(chart, 'nl', []).sections[1]?.paragraphs ?? []).join(' ');
     expect(en).not.toBe(nl);
     expect(nl).toMatch(/cholerisch/i);
+  });
+
+  it('carries the element and modality tallies as factors, not a salience ranking', () => {
+    const chart = makeFullChart();
+    const paragraphs = assembleReport(chart, 'en', []).sections[1]?.paragraphs ?? [];
+    expect(paragraphs[0]?.factors.some((f) => f.rule === 'element-balance')).toBe(true);
+    expect(paragraphs[1]?.factors.some((f) => f.rule === 'modality-balance')).toBe(true);
+    expect(paragraphs.every((p) => p.source.kind === 'derived')).toBe(true);
   });
 });
 
@@ -208,9 +241,10 @@ describe('chart ruler and dispositor chain section (#61)', () => {
   it('names Mars as the Aries ascendant ruler, terminating at itself', () => {
     const chart = makeFullChart();
     const paragraphs = assembleReport(chart, 'en', []).sections[2]?.paragraphs ?? [];
-    expect(paragraphs[0]).toBe(composeFallbackText({ category: 'planet-in-sign', body: 'mars', sign: 0 }, 'en'));
-    expect(paragraphs[1]).toContain('Mars');
-    expect(paragraphs[1]).toContain('ultimately terminates at its own rulership');
+    expect(paragraphs[0]?.text).toBe(composeFallbackText({ category: 'planet-in-sign', body: 'mars', sign: 0 }, 'en'));
+    expect(paragraphs[1]?.text).toContain('Mars');
+    expect(paragraphs[1]?.text).toContain('ultimately terminates at its own rulership');
+    expect(paragraphs[1]?.source).toEqual({ kind: 'derived' });
   });
 
   it('describes a multi-step chain when the ruler does not rule its own sign', () => {
@@ -219,7 +253,8 @@ describe('chart ruler and dispositor chain section (#61)', () => {
       positions: makeFullChart().positions.map((p) => (p.body === bodyId('mars') ? { ...p, longitude: 95 } : p)),
     });
     const paragraphs = assembleReport(chart, 'en', []).sections[2]?.paragraphs ?? [];
-    expect(paragraphs[1]).toContain('Mars → Moon');
+    expect(paragraphs[1]?.text).toContain('Mars → Moon');
+    expect(paragraphs[1]?.factors.map((f) => f.detail)).toEqual(['Mars', 'Moon']);
   });
 
   it('describes a cycle rather than claiming a final dispositor that does not exist', () => {
@@ -232,7 +267,7 @@ describe('chart ruler and dispositor chain section (#61)', () => {
     });
     const chart = makeFullChart({ positions });
     const paragraphs = assembleReport(chart, 'en', []).sections[2]?.paragraphs ?? [];
-    expect(paragraphs[1]).toContain('closes in a cycle');
+    expect(paragraphs[1]?.text).toContain('closes in a cycle');
   });
 });
 
@@ -241,8 +276,12 @@ describe('houses section (#61)', () => {
     const chart = makeFullChart();
     const paragraphs = assembleReport(chart, 'en', []).sections[3]?.paragraphs ?? [];
     expect(paragraphs).toHaveLength(12 + chart.positions.length);
-    expect(paragraphs).toContain(composeFallbackText({ category: 'sign-on-cusp', sign: 0, house: 1 }, 'en'));
-    expect(paragraphs).toContain(composeFallbackText({ category: 'planet-in-house', body: 'moon', house: 4 }, 'en'));
+    const paragraphTexts = texts(paragraphs);
+    expect(paragraphTexts).toContain(composeFallbackText({ category: 'sign-on-cusp', sign: 0, house: 1 }, 'en'));
+    expect(paragraphTexts).toContain(
+      composeFallbackText({ category: 'planet-in-house', body: 'moon', house: 4 }, 'en'),
+    );
+    expect(paragraphs.every((p) => p.factors.length === 0)).toBe(true);
   });
 });
 
@@ -250,14 +289,16 @@ describe('aspect patterns section (#61)', () => {
   it('leads with a whole-chart Jones shape sentence', () => {
     const chart = makeFullChart();
     const paragraphs = assembleReport(chart, 'en', []).sections[4]?.paragraphs ?? [];
-    expect(paragraphs[0]).toMatch(/Your chart forms a .+ pattern\./);
+    expect(paragraphs[0]?.text).toMatch(/Your chart forms a .+ pattern\./);
+    expect(paragraphs[0]?.source).toEqual({ kind: 'derived' });
   });
 
-  it("lists aspect-pair text for the chart's aspects, tightest first", () => {
+  it("lists aspect-pair text for the chart's aspects, tightest first, carrying the rule engine's salience factors", () => {
     const tight = makeAspect('venus', 'mars', 120, 0.1);
     const wide = makeAspect('sun', 'moon', 90, 6);
     const chart = makeFullChart({ aspects: [wide, tight] });
     const paragraphs = assembleReport(chart, 'en', []).sections[4]?.paragraphs ?? [];
+    const paragraphTexts = texts(paragraphs);
     const tightText = composeFallbackText(
       { category: 'aspect-pair', aspect: 'trine', bodyA: 'mars', bodyB: 'venus' },
       'en',
@@ -266,9 +307,18 @@ describe('aspect patterns section (#61)', () => {
       { category: 'aspect-pair', aspect: 'square', bodyA: 'moon', bodyB: 'sun' },
       'en',
     );
-    expect(paragraphs.indexOf(tightText)).toBeGreaterThan(-1);
-    expect(paragraphs.indexOf(wideText)).toBeGreaterThan(-1);
-    expect(paragraphs.indexOf(tightText)).toBeLessThan(paragraphs.indexOf(wideText));
+    expect(paragraphTexts.indexOf(tightText)).toBeGreaterThan(-1);
+    expect(paragraphTexts.indexOf(wideText)).toBeGreaterThan(-1);
+    expect(paragraphTexts.indexOf(tightText)).toBeLessThan(paragraphTexts.indexOf(wideText));
+
+    const tightParagraph = paragraphs.find((p) => p.text === tightText);
+    expect(tightParagraph?.factors.length).toBeGreaterThan(0);
+    expect(tightParagraph?.placement).toEqual({
+      category: 'aspect-pair',
+      aspect: 'trine',
+      bodyA: 'mars',
+      bodyB: 'venus',
+    });
   });
 
   it('caps the number of aspects shown even when the chart has many', () => {
@@ -295,20 +345,22 @@ describe('dignities and sect section (#61)', () => {
   it('states the sect and lists every dignified body, but no peregrine one', () => {
     const chart = makeFullChart();
     const paragraphs = assembleReport(chart, 'en', []).sections[5]?.paragraphs ?? [];
-    expect(paragraphs[0]).toContain('day chart');
-    expect(paragraphs).toContain(
+    const paragraphTexts = texts(paragraphs);
+    expect(paragraphs[0]?.text).toContain('day chart');
+    expect(paragraphs[0]?.source).toEqual({ kind: 'derived' });
+    expect(paragraphTexts).toContain(
       composeFallbackText({ category: 'dignity-state', body: 'mars', state: 'ruler' }, 'en'),
     );
-    expect(paragraphs).toContain(
+    expect(paragraphTexts).toContain(
       composeFallbackText({ category: 'dignity-state', body: 'jupiter', state: 'ruler' }, 'en'),
     );
-    expect(paragraphs.some((p) => p.includes('Mercury') && p.includes('ruler'))).toBe(false);
+    expect(paragraphTexts.some((p) => p.includes('Mercury') && p.includes('ruler'))).toBe(false);
   });
 
   it('states a night chart correctly', () => {
     const chart = makeFullChart({ sect: 'night' });
     const paragraphs = assembleReport(chart, 'en', []).sections[5]?.paragraphs ?? [];
-    expect(paragraphs[0]).toContain('night chart');
+    expect(paragraphs[0]?.text).toContain('night chart');
   });
 });
 
@@ -316,7 +368,7 @@ describe('nodes and Chiron axis section (#61)', () => {
   it('covers both the True Node and Chiron sign and house placements', () => {
     const chart = makeFullChart();
     const paragraphs = assembleReport(chart, 'en', []).sections[6]?.paragraphs ?? [];
-    expect(paragraphs).toEqual([
+    expect(texts(paragraphs)).toEqual([
       composeFallbackText({ category: 'planet-in-sign', body: 'trueNode', sign: 4 }, 'en'),
       composeFallbackText({ category: 'planet-in-house', body: 'trueNode', house: 5 }, 'en'),
       composeFallbackText({ category: 'planet-in-sign', body: 'chiron', sign: 5 }, 'en'),
@@ -330,6 +382,6 @@ describe('nodes and Chiron axis section (#61)', () => {
     });
     const paragraphs = assembleReport(chart, 'en', []).sections[6]?.paragraphs ?? [];
     expect(paragraphs).toHaveLength(2);
-    expect(paragraphs.every((p) => !p.includes('Chiron'))).toBe(true);
+    expect(paragraphs.every((p) => !p.text.includes('Chiron'))).toBe(true);
   });
 });

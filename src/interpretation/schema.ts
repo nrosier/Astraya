@@ -174,6 +174,8 @@ export interface CorpusProvenance {
   readonly source: CorpusProvenanceSource;
   /** Set when `source` is `"generated"`, e.g. `"gemini-2.5-pro"`. */
   readonly model?: string;
+  /** Identifies which generator prompt produced this entry, e.g. `"corpus-generator-v1"`. Set when `source` is `"generated"`. */
+  readonly promptVersion?: string;
   /** ISO 8601 date. Set when `source` is `"generated"`. */
   readonly generatedAt?: string;
   /** Set once #63's human review has covered this entry. */
@@ -299,7 +301,7 @@ function validateProvenance(value: unknown): string[] {
   if (source !== 'hand-written' && source !== 'generated') {
     errors.push(`provenance.source must be "hand-written" or "generated", got ${JSON.stringify(source)}`);
   }
-  for (const field of ['model', 'generatedAt', 'reviewedBy', 'reviewedAt']) {
+  for (const field of ['model', 'promptVersion', 'generatedAt', 'reviewedBy', 'reviewedAt']) {
     const fieldValue = value[field];
     if (fieldValue !== undefined && typeof fieldValue !== 'string') {
       errors.push(`provenance.${field} must be a string if present`);

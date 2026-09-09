@@ -43,6 +43,7 @@ import { computeChartData, type ChartData } from '../domain/chart-compute.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderMultiWheelSvg } from '../chart/multi-wheel.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
+import { ReportView } from './ReportView.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
@@ -110,7 +111,7 @@ const DERIVED_POINT_COLUMNS: readonly TableColumn<DerivedPointRow>[] = [
   ...degreeColumns<DerivedPointRow>(),
 ];
 
-type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived';
+type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived' | 'report';
 
 const TAB_LABELS: Record<TabKey, string> = {
   positions: 'Positions',
@@ -118,10 +119,17 @@ const TAB_LABELS: Record<TabKey, string> = {
   aspects: 'Aspects',
   dignities: 'Dignities',
   derived: 'Derived points',
+  report: 'Report',
 };
 
-/** Every tab in display order; `houses` and `derived` are dropped by the caller when `!showHouses`. */
-const TAB_ORDER: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived'];
+/**
+ * Every tab in display order; `houses`, `derived` and `report` are dropped by
+ * the caller when `!showHouses` — the report's core-identity and houses
+ * sections both read the Ascendant, so it is gated the same way those two
+ * existing tabs already are, rather than showing a report with a missing
+ * first section.
+ */
+const TAB_ORDER: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived', 'report'];
 
 export function ChartView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
@@ -192,7 +200,9 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
     return renderMultiWheelSvg([ring], [], resolveWheelDisplayOptions({}));
   }, [load, showHouses, person.displayName]);
 
-  const tabs = showHouses ? TAB_ORDER : TAB_ORDER.filter((tab) => tab !== 'houses' && tab !== 'derived');
+  const tabs = showHouses
+    ? TAB_ORDER
+    : TAB_ORDER.filter((tab) => tab !== 'houses' && tab !== 'derived' && tab !== 'report');
 
   const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
     const currentIndex = tabs.indexOf(activeTab);
@@ -331,6 +341,8 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
                 />
               </>
             )}
+
+            {activeTab === 'report' && showHouses && <ReportView chart={load.data} />}
           </div>
         </>
       )}

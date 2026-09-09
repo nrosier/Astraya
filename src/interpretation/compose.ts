@@ -236,6 +236,22 @@ export function composeFallbackText(placement: CorpusPlacement, locale: Locale):
 }
 
 /**
+ * The corpus entry matching `placement` in `locale`, if the corpus has one.
+ * The same lookup `resolvePlacementText` uses internally, exposed on its own
+ * so a caller that needs to tell corpus text apart from the mechanical
+ * fallback — #62's provenance view — doesn't have to re-derive the key or
+ * duplicate the lookup.
+ */
+export function findCorpusEntry(
+  placement: CorpusPlacement,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+): CorpusEntry | undefined {
+  const key = placementKey(placement);
+  return corpus.find((candidate) => candidate.key === key && candidate.locale === locale);
+}
+
+/**
  * The text a report should show for `placement` in `locale`: a matching
  * corpus entry if one exists, otherwise `composeFallbackText`'s mechanical
  * sentence. This is the guarantee #59 asks for — never `""`, whatever the
@@ -246,7 +262,6 @@ export function resolvePlacementText(
   locale: Locale,
   corpus: readonly CorpusEntry[],
 ): string {
-  const key = placementKey(placement);
-  const entry = corpus.find((candidate) => candidate.key === key && candidate.locale === locale);
+  const entry = findCorpusEntry(placement, locale, corpus);
   return entry !== undefined ? entry.text : composeFallbackText(placement, locale);
 }
