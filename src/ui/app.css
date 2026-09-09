@@ -811,6 +811,37 @@ label.stacked textarea:focus-visible {
   border-bottom-color: var(--accent);
 }
 
+/* Report tab (#62): named sections of paragraphs, with an optional per-paragraph provenance line. */
+.report-controls {
+  margin-bottom: 1.25rem;
+}
+
+.report-section {
+  margin-bottom: 1.75rem;
+}
+
+.report-section h3 {
+  margin-bottom: 0.5rem;
+}
+
+.report-section ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.report-paragraph {
+  margin-bottom: 0.9rem;
+}
+
+.report-paragraph p {
+  margin: 0;
+}
+
+.report-provenance {
+  margin-top: 0.2rem;
+}
+
 /*
  * The chart wheel (#39-#42, #52's single-ring case). Every shape in the generated
  * markup carries a class and no inline colour, by design (see `src/chart/glyphs.ts`'s
