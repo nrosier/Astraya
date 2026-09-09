@@ -4,6 +4,45 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.7.0] — 2026-09-09
+
+**Milestone M6 — progressions & returns.**
+
+A chart is no longer just a fixed moment: Astraya now moves it forward, and
+compares the result against the original.
+
+### Added
+
+- **Secondary progressions**, with a choice of Midheaven method — the
+  progressed angles are one of the few places where astrologers genuinely
+  disagree on the technique, so both are offered rather than picking one
+  silently.
+- **Solar arc directions**, advancing every body by the Sun's own secondary
+  progression arc.
+- **Tertiary and minor progressions**, the faster day-for-a-lunar-month and
+  day-for-a-lunar-day variants, for the traditions that use them.
+- **Solar and lunar returns**, found by root-finding directly against the
+  Swiss Ephemeris rather than approximated, so a return's exact moment is as
+  accurate as a natal chart's.
+- **Planetary returns and the demibirthday** — a body's return to its natal
+  degree, and the chart drawn for the midpoint of the solar year.
+- **A cross-chart aspect engine**, comparing any two charts' bodies against
+  each other — the same engine that powers progressions-to-natal and
+  return-to-natal aspects, and every bi-wheel and tri-wheel drawn from here on.
+- **A bi-wheel and tri-wheel renderer**, extending M5's chart wheel to show
+  two or three charts at once, with a shared outer zodiac ring, per-ring house
+  cusps, a fixed legend, and cross-ring aspect lines.
+
+### Notes on correctness
+
+- Return-finding is checked against its own root — a found return's body is
+  re-measured at the found moment and must land within the same tolerance the
+  golden-chart gate uses, rather than trusting the root-finder's convergence
+  claim alone.
+- The golden-chart gate continues to pass at its 0.2″ historical tolerance;
+  none of this milestone's work touches how a single chart's positions are
+  computed.
+
 ## [0.6.0] — 2026-09-09
 
 **Milestone M5 — chart rendering.**
