@@ -4,6 +4,40 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.6.0] — 2026-09-09
+
+**Milestone M5 — chart rendering.**
+
+The wheel is drawn: a chart is now a picture, not just a table of numbers.
+
+### Added
+
+- **The SVG chart wheel.** Rings, degree ticks and house cusps, drawn as
+  clean vector paths rather than a canvas bitmap, so the chart stays sharp at
+  any size and its markup can be styled or queried like any other DOM.
+- **A full glyph set** for every body, sign and aspect, with **collision spreading**:
+  glyphs that would overlap at a shared longitude are nudged apart and given a
+  short leader line back to their true position, so a crowded stellium stays
+  readable instead of stacking illegibly.
+- **The aspect web**, drawn as chords across the wheel's inner circle, with
+  toggles for aspect type and orb tightness.
+- **Wheel orientation and style options** — Ascendant-left or Aries-up,
+  clockwise or counterclockwise — for the house and cultural conventions
+  different traditions expect.
+- **Overlay lines** for antiscia, declination parallels, and a 90° dial view
+  of midpoint structures.
+- **Data tables** for every computed quantity from M4 (positions, houses,
+  aspects, dignities and the rest), so nothing computed is picture-only.
+
+### Notes on correctness
+
+- Every rendering module is pure and framework-free — it takes computed chart
+  data and returns an SVG string, with no dependency on how or whether the
+  app is running in a browser — so the geometry itself is unit-tested
+  directly against the markup it produces.
+- The golden-chart gate continues to pass at its 0.2″ historical tolerance;
+  rendering builds on M4's data without touching how any of it is computed.
+
 ## [0.5.0] — 2026-09-09
 
 **Milestone M4 — calculation core.**
