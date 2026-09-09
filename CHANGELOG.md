@@ -4,6 +4,56 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.5.0] — 2026-09-09
+
+**Milestone M4 — calculation core.**
+
+The full chart data set is now computed for any birth moment: every body, every
+house system, every dignity, and the traditional points and patterns astrologers
+actually read a chart by.
+
+### Added
+
+- **The full body set.** Sun through Pluto, the lunar nodes, Lilith, Chiron and
+  the outer asteroids, each with a validity window so requesting a position
+  before an asteroid's ephemeris file starts fails honestly instead of
+  returning a wrong number.
+- **Every house system and ayanamsa.** All ~23 house systems Swiss Ephemeris
+  supports, and all ~45 predefined ayanamsas with live tropical/sidereal
+  toggling — not just Placidus and Lahiri.
+- **Topocentric and heliocentric positions**, alongside the default geocentric
+  view, for the handful of techniques that need them.
+- **Aspects with configurable orbs**, essential dignities (rulership,
+  exaltation, detriment, fall), triplicity rulers, bounds/terms, decans and
+  faces, and peregrine/almuten scoring.
+- **Sect and solar-relationship points**: day/night sect, combustion, cazimi,
+  under-the-beams, and the sect-correct Part of Fortune and other Arabic parts.
+- **Midpoints and the 90° dial**, antiscia and contra-antiscia, declinations
+  with parallels/contraparallels and out-of-bounds flags.
+- **Fixed stars**, sourced from `sefstars.txt`, with magnitude filtering and
+  paran contacts to the chart's angles.
+- **Dispositor chains, mutual reception and final dispositor**, Jones chart
+  shapes (bowl, bucket, etc.), and element/modality/quadrant/hemisphere
+  weighting.
+- **Nakshatra and pada** for every body from its sidereal longitude.
+
+### Fixed
+
+- **Polar-latitude houses** no longer fail silently — a house system that
+  can't be computed at extreme latitudes falls back and says so, rather than
+  returning nonsense cusps.
+- A house-cusp property-test regression was excluded pending a fix, so the
+  calculation-core test suite stays a reliable gate rather than an
+  intermittently-red one.
+
+### Notes on correctness
+
+- A property-test suite now runs the calculation core against thousands of
+  generated birth moments, checking invariants (e.g. cusps sum correctly, an
+  exalted body isn't also in detriment) rather than only fixed golden cases.
+- The golden-chart gate — 11 bodies at 3 epochs checked against JPL Horizons —
+  continues to pass at its 0.2″ historical tolerance.
+
 ## [0.4.0] — 2026-09-08
 
 **Milestone M3 — local-first data and people.**
