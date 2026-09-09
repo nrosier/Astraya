@@ -34,6 +34,11 @@ describe('parseRoute', () => {
     expect(parseRoute(`#/person/${ID}?x=1`)).toEqual({ kind: 'person', personId: ID });
   });
 
+  it('routes a shared chart link (#65), which also carries its whole record in the query', () => {
+    expect(parseRoute('#/shared?v=1&d=1960-06-15&t=14:30&la=38.7478&lo=-85.0672')).toEqual({ kind: 'shared' });
+    expect(parseRoute('#/shared')).toEqual({ kind: 'shared' });
+  });
+
   it('tolerates a trailing slash', () => {
     expect(parseRoute('#/people/')).toEqual({ kind: 'people' });
     expect(parseRoute(`#/person/${ID}/`)).toEqual({ kind: 'person', personId: ID });

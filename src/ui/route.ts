@@ -18,7 +18,8 @@ export type Route =
   | { readonly kind: 'time' }
   | { readonly kind: 'people' }
   | { readonly kind: 'person'; readonly personId: string }
-  | { readonly kind: 'chart'; readonly personId: string };
+  | { readonly kind: 'chart'; readonly personId: string }
+  | { readonly kind: 'shared' };
 
 const PERSON_PATH = /^#\/person\/(.+)$/;
 const CHART_PATH = /^#\/chart\/(.+)$/;
@@ -38,6 +39,9 @@ export function parseRoute(hash: string): Route {
       return { kind: 'time' };
     case '#/people':
       return { kind: 'people' };
+    // #65: a chart shared by link — everything it needs is in the query, not the store.
+    case '#/shared':
+      return { kind: 'shared' };
     default:
       break;
   }

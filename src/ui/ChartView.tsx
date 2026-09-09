@@ -40,6 +40,7 @@ import {
   type PositionRow,
 } from '../domain/chart-tables.js';
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
+import { encodeChartShareLink } from '../domain/chart-share.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderMultiWheelSvg } from '../chart/multi-wheel.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
@@ -47,6 +48,7 @@ import { ReportView } from './ReportView.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
+import type { BirthMomentInput } from '../time/types.js';
 
 type Load =
   | { readonly kind: 'loading' }
@@ -131,74 +133,70 @@ const TAB_LABELS: Record<TabKey, string> = {
  */
 const TAB_ORDER: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived', 'report'];
 
-export function ChartView({ personId }: { personId: string }): React.JSX.Element {
-  const state = useStoreState();
-  const person = state.people.get(personId);
-  const [load, setLoad] = useState<Load>({ kind: 'loading' });
+/**
+ * Copies a #65 share link for one birth moment to the clipboard — the chart itself is
+ * always recomputed from `moment` on the recipient's end, so this is the entire payload;
+ * nothing is sent anywhere to produce it.
+ */
+function ShareLink({
+  moment,
+  housesKnown,
+}: {
+  readonly moment: BirthMomentInput;
+  readonly housesKnown: boolean;
+}): React.JSX.Element {
+  const [copied, setCopied] = useState(false);
+
+  const copy = (): void => {
+    const query = encodeChartShareLink({ moment, settings: {}, housesKnown }).toString();
+    const url = `${window.location.origin}${window.location.pathname}#/shared?${query}`;
+    void navigator.clipboard.writeText(url).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => {
+          setCopied(false);
+        }, 2000);
+      },
+      // A denied clipboard permission leaves the screen exactly as it was; there is
+      // nothing else to recover from, so this is deliberately silent.
+      () => undefined,
+    );
+  };
+
+  return (
+    <p>
+      <button type="button" className="quiet" onClick={copy}>
+        {copied ? 'Link copied' : 'Copy share link'}
+      </button>{' '}
+      <span className="hint">
+        The link holds the whole birth record and settings &mdash; nothing is sent to us to create it, and opening it
+        needs no account.
+      </span>
+    </p>
+  );
+}
+
+/**
+ * The wheel and data tables for one computed chart, independent of where the data came
+ * from — the local store (`ChartView`) or a decoded share link (`SharedChartView`, #65).
+ * Kept separate so both callers get the same tabs, wheel, and loading/error states.
+ */
+export function ChartDataView({
+  load,
+  displayName,
+  showHouses,
+}: {
+  readonly load: Load;
+  readonly displayName: string;
+  readonly showHouses: boolean;
+}): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<TabKey>('positions');
-
-  useEffect(() => {
-    if (person?.moment === undefined) return undefined;
-    const moment = person.moment;
-    const provider = new WorkerEphemerisProvider();
-    // A mutable holder rather than a `let`, matching `App.tsx`'s own effect below.
-    const effect = { cancelled: false };
-    setLoad({ kind: 'loading' });
-
-    void (async () => {
-      try {
-        await provider.initialize();
-        const data = await computeChartData(moment, provider);
-        if (!effect.cancelled) setLoad({ kind: 'ready', data });
-      } catch (error) {
-        if (!effect.cancelled)
-          setLoad({ kind: 'error', message: error instanceof Error ? error.message : String(error) });
-      }
-    })();
-
-    return () => {
-      effect.cancelled = true;
-      void provider.dispose();
-    };
-  }, [personId, person]);
-
-  if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
-  }
-
-  if (person.moment === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
-        </p>
-        <h1>Chart</h1>
-        <p>
-          {person.displayName || 'This person'}&rsquo;s birth record is not complete enough to calculate a chart yet.
-          Fill in the missing fields on the <a href={`#/person/${personId}`}>person page</a>.
-        </p>
-      </main>
-    );
-  }
-
-  const showHouses = person.timeAccuracy !== 'unknown';
 
   const wheelSvg = useMemo(() => {
     if (load.kind !== 'ready' || !showHouses) return undefined;
-    const ring = chartWheelRing(load.data, person.displayName || 'Natal');
+    const ring = chartWheelRing(load.data, displayName || 'Natal');
     return renderMultiWheelSvg([ring], [], resolveWheelDisplayOptions({}));
-  }, [load, showHouses, person.displayName]);
+  }, [load, showHouses, displayName]);
 
   const tabs = showHouses
     ? TAB_ORDER
@@ -220,15 +218,10 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
   };
 
   return (
-    <main className="shell">
-      <p className="back">
-        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
-      </p>
-      <h1>{person.displayName || 'Chart'}</h1>
-
+    <>
       {!showHouses && (
         <p className="hint">
-          The birth time for {person.displayName || 'this person'} is unknown, so houses, angles and the Ascendant-based
+          The birth time for {displayName || 'this person'} is unknown, so houses, angles and the Ascendant-based
           derived points cannot be calculated &mdash; they are not shown below. Positions, aspects and dignities are
           still meaningful, though the Moon&rsquo;s sign may be uncertain.
         </p>
@@ -346,6 +339,80 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
           </div>
         </>
       )}
+    </>
+  );
+}
+
+export function ChartView({ personId }: { personId: string }): React.JSX.Element {
+  const state = useStoreState();
+  const person = state.people.get(personId);
+  const [load, setLoad] = useState<Load>({ kind: 'loading' });
+
+  useEffect(() => {
+    if (person?.moment === undefined) return undefined;
+    const moment = person.moment;
+    const provider = new WorkerEphemerisProvider();
+    // A mutable holder rather than a `let`, matching `App.tsx`'s own effect below.
+    const effect = { cancelled: false };
+    setLoad({ kind: 'loading' });
+
+    void (async () => {
+      try {
+        await provider.initialize();
+        const data = await computeChartData(moment, provider);
+        if (!effect.cancelled) setLoad({ kind: 'ready', data });
+      } catch (error) {
+        if (!effect.cancelled)
+          setLoad({ kind: 'error', message: error instanceof Error ? error.message : String(error) });
+      }
+    })();
+
+    return () => {
+      effect.cancelled = true;
+      void provider.dispose();
+    };
+  }, [personId, person]);
+
+  if (person === undefined) {
+    return (
+      <main className="shell">
+        <p className="back">
+          <a href="#/people">&larr; People</a>
+        </p>
+        <h1>Not found</h1>
+        <p>
+          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
+          <a href="#/people">people list</a>.
+        </p>
+      </main>
+    );
+  }
+
+  if (person.moment === undefined) {
+    return (
+      <main className="shell">
+        <p className="back">
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+        </p>
+        <h1>Chart</h1>
+        <p>
+          {person.displayName || 'This person'}&rsquo;s birth record is not complete enough to calculate a chart yet.
+          Fill in the missing fields on the <a href={`#/person/${personId}`}>person page</a>.
+        </p>
+      </main>
+    );
+  }
+
+  const showHouses = person.timeAccuracy !== 'unknown';
+
+  return (
+    <main className="shell">
+      <p className="back">
+        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+      </p>
+      <h1>{person.displayName || 'Chart'}</h1>
+      <ShareLink moment={person.moment} housesKnown={showHouses} />
+      <ChartDataView load={load} displayName={person.displayName} showHouses={showHouses} />
     </main>
   );
 }
