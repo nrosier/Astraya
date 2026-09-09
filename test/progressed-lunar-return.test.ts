@@ -4,6 +4,8 @@
  * Runs against the real Swiss Ephemeris engine, never a mock.
  */
 import { describe, expect, it } from 'vitest';
+import { angularSeparation } from '../src/astrology/aspects.js';
+import { BODIES } from '../src/astrology/bodies.js';
 import { SYNODIC_MONTH_DAYS } from '../src/astrology/minor-progressions.js';
 import { computeProgressedLunarReturn } from '../src/domain/progressed-lunar-return.js';
 import { SE } from '../src/ephemeris/generated-constants.js';
@@ -53,5 +55,38 @@ describe('computeProgressedLunarReturn (#50)', () => {
     const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
     const result = await computeProgressedLunarReturn(NATAL, natalJd + 365.2425 * 3, engine, { houseSystem: 'K' });
     expect(result.houses.system).toBe('K');
+  });
+
+  it('finds contacts between the return positions and the natal chart (#51)', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+    const targetJd = natalJd + 365.2425 * 20;
+    const natalPositions = await engine.positions(
+      natalJd,
+      BODIES.map((b) => b.id),
+    );
+
+    const result = await computeProgressedLunarReturn(NATAL, targetJd, engine);
+    expect(result.contacts.length).toBeGreaterThan(0);
+
+    for (const contact of result.contacts) {
+      const returnPosition = result.positions.find((p) => p.body === contact.bodyA);
+      const natalPosition = natalPositions.find((p) => p.body === contact.bodyB);
+      expect(returnPosition).toBeDefined();
+      expect(natalPosition).toBeDefined();
+      const separation = angularSeparation(returnPosition?.longitude ?? 0, natalPosition?.longitude ?? 0);
+      expect(Math.abs(separation - contact.aspect.angle)).toBeCloseTo(contact.orb, 6);
+    }
+  });
+
+  it('narrows to fewer contacts with a tighter orb config (#51)', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+    const targetJd = natalJd + 365.2425 * 20;
+
+    const wide = await computeProgressedLunarReturn(NATAL, targetJd, engine);
+    const tight = await computeProgressedLunarReturn(NATAL, targetJd, engine, {}, { baseOrbs: {}, luminaryBonus: 0 });
+    expect(tight.contacts).toHaveLength(0);
+    expect(wide.contacts.length).toBeGreaterThan(0);
   });
 });

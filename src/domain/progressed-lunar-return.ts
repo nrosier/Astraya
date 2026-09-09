@@ -6,11 +6,13 @@
  * secondary progression itself, used the way a solar return chart is used
  * but roughly monthly instead of yearly.
  */
-import { BODIES } from '../astrology/bodies.js';
+import { findCrossAspects, fixedSubjects, subjectsFrom, type Aspect, type OrbConfig } from '../astrology/aspects.js';
+import { BODIES, bodyById, type BodyCategory } from '../astrology/bodies.js';
 import { progressedMoonLongitude, progressedLunarReturnOnOrBefore } from '../astrology/planetary-returns.js';
 import { julianDayFor } from '../time/julian.js';
 import { resolveMoment } from '../time/resolve.js';
 import type {
+  BodyId,
   BodyPosition,
   Degrees,
   EphemerisProvider,
@@ -23,6 +25,12 @@ import type {
 import type { BirthMomentInput } from '../time/types.js';
 
 const DEFAULT_HOUSE_SYSTEM: HouseSystem = 'P';
+
+function categoryOf(body: BodyId): BodyCategory {
+  const definition = bodyById(body);
+  if (definition === undefined) throw new Error(`unreachable: ${String(body)} is always one of BODIES`);
+  return definition.category;
+}
 
 export interface ProgressedLunarReturnOptions {
   readonly place?: GeoPosition;
@@ -38,6 +46,8 @@ export interface ProgressedLunarReturnData {
   readonly place: GeoPosition;
   readonly positions: readonly BodyPosition[];
   readonly houses: HousePositions;
+  /** Aspects between the return positions and the fixed natal chart. */
+  readonly contacts: readonly Aspect[];
 }
 
 export async function computeProgressedLunarReturn(
@@ -45,6 +55,7 @@ export async function computeProgressedLunarReturn(
   targetJd: JulianDayUT,
   provider: EphemerisProvider,
   options: ProgressedLunarReturnOptions = {},
+  orbConfig?: OrbConfig,
 ): Promise<ProgressedLunarReturnData> {
   const resolved = resolveMoment(natalMoment);
   const natalJd = await julianDayFor(provider, resolved);
@@ -55,7 +66,12 @@ export async function computeProgressedLunarReturn(
   const place: GeoPosition = options.place ?? { ...natalMoment.coordinates, altitude: 0 };
   const houseSystem = options.houseSystem ?? DEFAULT_HOUSE_SYSTEM;
 
-  const [positions, houses] = await Promise.all([
+  const [natalPositions, positions, houses] = await Promise.all([
+    provider.positions(
+      natalJd,
+      BODIES.map((b) => b.id),
+      positionOptions,
+    ),
     provider.positions(
       returnJd,
       BODIES.map((b) => b.id),
@@ -64,5 +80,20 @@ export async function computeProgressedLunarReturn(
     provider.houses(returnJd, place, houseSystem, options.zodiac),
   ]);
 
-  return { natalJd, targetJd, progressedMoonLongitude: progressedLongitude, returnJd, place, positions, houses };
+  const contacts = findCrossAspects(
+    subjectsFrom(positions, categoryOf),
+    fixedSubjects(natalPositions, categoryOf),
+    orbConfig,
+  );
+
+  return {
+    natalJd,
+    targetJd,
+    progressedMoonLongitude: progressedLongitude,
+    returnJd,
+    place,
+    positions,
+    houses,
+    contacts,
+  };
 }

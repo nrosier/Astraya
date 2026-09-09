@@ -13,6 +13,8 @@
  * fabricating an external source.
  */
 import { describe, expect, it } from 'vitest';
+import { angularSeparation } from '../src/astrology/aspects.js';
+import { BODIES } from '../src/astrology/bodies.js';
 import { SE } from '../src/ephemeris/generated-constants.js';
 import { computeSolarReturn } from '../src/domain/solar-return.js';
 import { julianDayFor } from '../src/time/julian.js';
@@ -74,5 +76,34 @@ describe('computeSolarReturn (#49)', () => {
     const engine = await getEngine();
     const result = await computeSolarReturn(NATAL, 2015, engine, { houseSystem: 'K' });
     expect(result.houses.system).toBe('K');
+  });
+
+  it('finds contacts between the return positions and the natal chart (#51)', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+    const natalPositions = await engine.positions(
+      natalJd,
+      BODIES.map((b) => b.id),
+    );
+
+    const result = await computeSolarReturn(NATAL, 2015, engine);
+    expect(result.contacts.length).toBeGreaterThan(0);
+
+    for (const contact of result.contacts) {
+      const returnPosition = result.positions.find((p) => p.body === contact.bodyA);
+      const natalPosition = natalPositions.find((p) => p.body === contact.bodyB);
+      expect(returnPosition).toBeDefined();
+      expect(natalPosition).toBeDefined();
+      const separation = angularSeparation(returnPosition?.longitude ?? 0, natalPosition?.longitude ?? 0);
+      expect(Math.abs(separation - contact.aspect.angle)).toBeCloseTo(contact.orb, 6);
+    }
+  });
+
+  it('narrows to fewer contacts with a tighter orb config (#51)', async () => {
+    const engine = await getEngine();
+    const wide = await computeSolarReturn(NATAL, 2015, engine);
+    const tight = await computeSolarReturn(NATAL, 2015, engine, {}, { baseOrbs: {}, luminaryBonus: 0 });
+    expect(tight.contacts).toHaveLength(0);
+    expect(wide.contacts.length).toBeGreaterThan(0);
   });
 });

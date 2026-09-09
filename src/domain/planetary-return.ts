@@ -5,7 +5,8 @@
  * (Moon) to decades (outer planets), so the caller supplies the search start
  * directly rather than a year.
  */
-import { BODIES } from '../astrology/bodies.js';
+import { findCrossAspects, fixedSubjects, subjectsFrom, type Aspect, type OrbConfig } from '../astrology/aspects.js';
+import { BODIES, bodyById, type BodyCategory } from '../astrology/bodies.js';
 import { nextReturnOfBody } from '../astrology/planetary-returns.js';
 import { julianDayFor } from '../time/julian.js';
 import { resolveMoment } from '../time/resolve.js';
@@ -23,6 +24,12 @@ import type { BirthMomentInput } from '../time/types.js';
 
 const DEFAULT_HOUSE_SYSTEM: HouseSystem = 'P';
 
+function categoryOf(body: BodyId): BodyCategory {
+  const definition = bodyById(body);
+  if (definition === undefined) throw new Error(`unreachable: ${String(body)} is always one of BODIES`);
+  return definition.category;
+}
+
 export interface PlanetaryReturnOptions {
   readonly place?: GeoPosition;
   readonly houseSystem?: HouseSystem;
@@ -36,6 +43,8 @@ export interface PlanetaryReturnData {
   readonly place: GeoPosition;
   readonly positions: readonly BodyPosition[];
   readonly houses: HousePositions;
+  /** Aspects between the return positions and the fixed natal chart. */
+  readonly contacts: readonly Aspect[];
 }
 
 export async function computePlanetaryReturn(
@@ -44,12 +53,18 @@ export async function computePlanetaryReturn(
   searchFromJd: JulianDayUT,
   provider: EphemerisProvider,
   options: PlanetaryReturnOptions = {},
+  orbConfig?: OrbConfig,
 ): Promise<PlanetaryReturnData> {
   const resolved = resolveMoment(natalMoment);
   const natalJd = await julianDayFor(provider, resolved);
   const positionOptions = options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
 
-  const [natalPosition] = await provider.positions(natalJd, [body], positionOptions);
+  const natalPositions = await provider.positions(
+    natalJd,
+    BODIES.map((b) => b.id),
+    positionOptions,
+  );
+  const natalPosition = natalPositions.find((position) => position.body === body);
   if (natalPosition === undefined) {
     throw new Error(`unreachable: the ephemeris returned no position for body ${body}`);
   }
@@ -67,5 +82,11 @@ export async function computePlanetaryReturn(
     provider.houses(returnJd, place, houseSystem, options.zodiac),
   ]);
 
-  return { body, natalJd, returnJd, place, positions, houses };
+  const contacts = findCrossAspects(
+    subjectsFrom(positions, categoryOf),
+    fixedSubjects(natalPositions, categoryOf),
+    orbConfig,
+  );
+
+  return { body, natalJd, returnJd, place, positions, houses, contacts };
 }

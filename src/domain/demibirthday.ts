@@ -4,12 +4,14 @@
  * the real midpoint of the solar year, roughly (but not exactly, since the
  * Sun's speed varies) half a year after the birthday.
  */
-import { BODIES } from '../astrology/bodies.js';
+import { findCrossAspects, fixedSubjects, subjectsFrom, type Aspect, type OrbConfig } from '../astrology/aspects.js';
+import { BODIES, bodyById, type BodyCategory } from '../astrology/bodies.js';
 import { demibirthdayInYear } from '../astrology/planetary-returns.js';
 import { SE } from '../ephemeris/generated-constants.js';
 import { julianDayFor } from '../time/julian.js';
 import { resolveMoment } from '../time/resolve.js';
 import type {
+  BodyId,
   BodyPosition,
   EphemerisProvider,
   GeoPosition,
@@ -21,6 +23,12 @@ import type {
 import type { BirthMomentInput } from '../time/types.js';
 
 const DEFAULT_HOUSE_SYSTEM: HouseSystem = 'P';
+
+function categoryOf(body: BodyId): BodyCategory {
+  const definition = bodyById(body);
+  if (definition === undefined) throw new Error(`unreachable: ${String(body)} is always one of BODIES`);
+  return definition.category;
+}
 
 export interface DemibirthdayOptions {
   readonly place?: GeoPosition;
@@ -35,6 +43,8 @@ export interface DemibirthdayData {
   readonly place: GeoPosition;
   readonly positions: readonly BodyPosition[];
   readonly houses: HousePositions;
+  /** Aspects between the demibirthday positions and the fixed natal chart. */
+  readonly contacts: readonly Aspect[];
 }
 
 export async function computeDemibirthday(
@@ -42,12 +52,18 @@ export async function computeDemibirthday(
   year: number,
   provider: EphemerisProvider,
   options: DemibirthdayOptions = {},
+  orbConfig?: OrbConfig,
 ): Promise<DemibirthdayData> {
   const resolved = resolveMoment(natalMoment);
   const natalJd = await julianDayFor(provider, resolved);
   const positionOptions = options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
 
-  const [natalSun] = await provider.positions(natalJd, [SE.SE_SUN], positionOptions);
+  const natalPositions = await provider.positions(
+    natalJd,
+    BODIES.map((b) => b.id),
+    positionOptions,
+  );
+  const natalSun = natalPositions.find((position) => position.body === SE.SE_SUN);
   if (natalSun === undefined) throw new Error('unreachable: the ephemeris returned no position for the Sun');
 
   const demibirthdayJd = await demibirthdayInYear(provider, natalSun.longitude, year, options.zodiac);
@@ -63,5 +79,11 @@ export async function computeDemibirthday(
     provider.houses(demibirthdayJd, place, houseSystem, options.zodiac),
   ]);
 
-  return { natalJd, demibirthdayJd, year, place, positions, houses };
+  const contacts = findCrossAspects(
+    subjectsFrom(positions, categoryOf),
+    fixedSubjects(natalPositions, categoryOf),
+    orbConfig,
+  );
+
+  return { natalJd, demibirthdayJd, year, place, positions, houses, contacts };
 }

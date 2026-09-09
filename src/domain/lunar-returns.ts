@@ -4,12 +4,14 @@
  * the Sun, so this returns a list rather than a single chart. Each return is
  * cast at a chosen location (defaulting to the birthplace, overridable).
  */
-import { BODIES } from '../astrology/bodies.js';
+import { findCrossAspects, fixedSubjects, subjectsFrom, type Aspect, type OrbConfig } from '../astrology/aspects.js';
+import { BODIES, bodyById, type BodyCategory } from '../astrology/bodies.js';
 import { lunarReturnsInPeriod } from '../astrology/solar-lunar-returns.js';
 import { SE } from '../ephemeris/generated-constants.js';
 import { julianDayFor } from '../time/julian.js';
 import { resolveMoment } from '../time/resolve.js';
 import type {
+  BodyId,
   BodyPosition,
   EphemerisProvider,
   GeoPosition,
@@ -22,6 +24,12 @@ import type { BirthMomentInput } from '../time/types.js';
 
 const DEFAULT_HOUSE_SYSTEM: HouseSystem = 'P';
 
+function categoryOf(body: BodyId): BodyCategory {
+  const definition = bodyById(body);
+  if (definition === undefined) throw new Error(`unreachable: ${String(body)} is always one of BODIES`);
+  return definition.category;
+}
+
 export interface LunarReturnsOptions {
   readonly place?: GeoPosition;
   readonly houseSystem?: HouseSystem;
@@ -33,6 +41,8 @@ export interface LunarReturnChart {
   readonly place: GeoPosition;
   readonly positions: readonly BodyPosition[];
   readonly houses: HousePositions;
+  /** Aspects between this return's positions and the fixed natal chart. */
+  readonly contacts: readonly Aspect[];
 }
 
 export interface LunarReturnsData {
@@ -46,12 +56,18 @@ export async function computeLunarReturns(
   periodEndJd: JulianDayUT,
   provider: EphemerisProvider,
   options: LunarReturnsOptions = {},
+  orbConfig?: OrbConfig,
 ): Promise<LunarReturnsData> {
   const resolved = resolveMoment(natalMoment);
   const natalJd = await julianDayFor(provider, resolved);
   const positionOptions = options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
 
-  const [natalMoon] = await provider.positions(natalJd, [SE.SE_MOON], positionOptions);
+  const natalPositions = await provider.positions(
+    natalJd,
+    BODIES.map((body) => body.id),
+    positionOptions,
+  );
+  const natalMoon = natalPositions.find((position) => position.body === SE.SE_MOON);
   if (natalMoon === undefined) throw new Error('unreachable: the ephemeris returned no position for the Moon');
   const natalMoonLongitude = natalMoon.longitude;
 
@@ -64,6 +80,7 @@ export async function computeLunarReturns(
   );
   const place: GeoPosition = options.place ?? { ...natalMoment.coordinates, altitude: 0 };
   const houseSystem = options.houseSystem ?? DEFAULT_HOUSE_SYSTEM;
+  const natalSide = fixedSubjects(natalPositions, categoryOf);
 
   const returns = await Promise.all(
     returnJds.map(async (returnJd): Promise<LunarReturnChart> => {
@@ -75,7 +92,8 @@ export async function computeLunarReturns(
         ),
         provider.houses(returnJd, place, houseSystem, options.zodiac),
       ]);
-      return { returnJd, place, positions, houses };
+      const contacts = findCrossAspects(subjectsFrom(positions, categoryOf), natalSide, orbConfig);
+      return { returnJd, place, positions, houses, contacts };
     }),
   );
 
