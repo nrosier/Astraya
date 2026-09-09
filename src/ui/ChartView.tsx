@@ -1,21 +1,33 @@
 /**
- * Data tables for every quantity a chart computes (#44).
+ * The chart wheel (#39/#40/#41/#42, wired into the UI here) plus data tables
+ * for every quantity a chart computes (#44).
  *
  * Every number here is recalculated on the fly from the person's stored birth
  * moment — nothing is read from a saved `Chart`, because `Chart` holds no
  * computed positions by design (see `chart.ts`'s own doc comment) and no
  * screen yet exists to create one. `chart-compute.ts` does the one pass over
- * the ephemeris; `chart-tables.ts` shapes the result into the rows below.
+ * the ephemeris; `chart-tables.ts` shapes the result into the wheel ring and
+ * the table rows below.
  *
- * Houses, angles and the two derived points (both built on the Ascendant) are
- * hidden when `person.timeAccuracy === 'unknown'` — not merely approximated —
- * matching the warning `PersonForm.tsx` already gives about the same person:
- * an unknown birth time makes them meaningless rather than imprecise.
+ * The wheel and the houses/angles/derived-points tables are all built on the
+ * Ascendant, so all of them are hidden when `person.timeAccuracy === 'unknown'`
+ * — not merely approximated — matching the warning `PersonForm.tsx` already
+ * gives about the same person: an unknown birth time makes them meaningless
+ * rather than imprecise. Positions, aspects and dignities don't depend on the
+ * Ascendant and stay available.
+ *
+ * The tables are grouped into tabs — one page per concern — rather than
+ * stacked, since a chart's full data easily runs to six tables' worth of rows
+ * and reading it top-to-bottom on every visit gets in the way of jumping
+ * straight to, say, aspects. The WAI-ARIA APG's "manual activation" tabs
+ * pattern is small enough to inline here rather than factor into its own
+ * component for a single caller.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   angleRows,
   aspectRows,
+  chartWheelRing,
   derivedPointRows,
   dignityRows,
   houseCuspRows,
@@ -29,6 +41,8 @@ import {
 } from '../domain/chart-tables.js';
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { renderMultiWheelSvg } from '../chart/multi-wheel.js';
+import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
@@ -96,10 +110,24 @@ const DERIVED_POINT_COLUMNS: readonly TableColumn<DerivedPointRow>[] = [
   ...degreeColumns<DerivedPointRow>(),
 ];
 
+type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived';
+
+const TAB_LABELS: Record<TabKey, string> = {
+  positions: 'Positions',
+  houses: 'Houses',
+  aspects: 'Aspects',
+  dignities: 'Dignities',
+  derived: 'Derived points',
+};
+
+/** Every tab in display order; `houses` and `derived` are dropped by the caller when `!showHouses`. */
+const TAB_ORDER: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived'];
+
 export function ChartView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
+  const [activeTab, setActiveTab] = useState<TabKey>('positions');
 
   useEffect(() => {
     if (person?.moment === undefined) return undefined;
@@ -158,6 +186,29 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
 
   const showHouses = person.timeAccuracy !== 'unknown';
 
+  const wheelSvg = useMemo(() => {
+    if (load.kind !== 'ready' || !showHouses) return undefined;
+    const ring = chartWheelRing(load.data, person.displayName || 'Natal');
+    return renderMultiWheelSvg([ring], [], resolveWheelDisplayOptions({}));
+  }, [load, showHouses, person.displayName]);
+
+  const tabs = showHouses ? TAB_ORDER : TAB_ORDER.filter((tab) => tab !== 'houses' && tab !== 'derived');
+
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    const currentIndex = tabs.indexOf(activeTab);
+    let nextIndex: number | undefined;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = tabs.length - 1;
+    if (nextIndex === undefined) return;
+    event.preventDefault();
+    const next = tabs[nextIndex];
+    if (next === undefined) return;
+    setActiveTab(next);
+    document.getElementById(`chart-tab-${next}`)?.focus();
+  };
+
   return (
     <main className="shell">
       <p className="back">
@@ -189,60 +240,98 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
             </p>
           )}
 
-          <h2>Positions</h2>
-          <SortableTable
-            caption="Positions"
-            columns={POSITION_COLUMNS}
-            rows={positionRows(load.data)}
-            getRowKey={(row) => row.bodyKey}
-          />
-
-          {showHouses && (
-            <>
-              <h2>House cusps</h2>
-              <SortableTable
-                caption="Houses"
-                columns={HOUSE_CUSP_COLUMNS}
-                rows={houseCuspRows(load.data)}
-                getRowKey={(row) => String(row.house)}
-              />
-              <SortableTable
-                caption="Angles"
-                columns={ANGLE_COLUMNS}
-                rows={angleRows(load.data)}
-                getRowKey={(row) => row.label}
-              />
-            </>
+          {wheelSvg !== undefined && (
+            <div
+              className="chart-wheel"
+              // The wheel is generated entirely by this app from data it just computed — never
+              // user-supplied markup — so injecting it is the same trust boundary as any other
+              // value this component renders, just carried as a string instead of JSX.
+              dangerouslySetInnerHTML={{ __html: wheelSvg }}
+            />
           )}
 
-          <h2>Aspects</h2>
-          <SortableTable
-            caption="Aspects"
-            columns={ASPECT_COLUMNS}
-            rows={aspectRows(load.data)}
-            getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
-          />
+          <div className="tabs" role="tablist" aria-label="Chart data" onKeyDown={onTabKeyDown}>
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                id={`chart-tab-${tab}`}
+                role="tab"
+                aria-selected={activeTab === tab}
+                aria-controls={`chart-tabpanel-${tab}`}
+                tabIndex={activeTab === tab ? 0 : -1}
+                className={activeTab === tab ? 'tab active' : 'tab'}
+                onClick={() => {
+                  setActiveTab(tab);
+                }}
+              >
+                {TAB_LABELS[tab]}
+              </button>
+            ))}
+          </div>
 
-          <h2>Dignities</h2>
-          <SortableTable
-            caption="Dignities"
-            columns={DIGNITY_COLUMNS}
-            rows={dignityRows(load.data)}
-            getRowKey={(row) => row.bodyKey}
-          />
-
-          {showHouses && (
-            <>
-              <h2>Derived points</h2>
-              <p className="hint">Sect: {load.data.sect === 'day' ? 'Day chart' : 'Night chart'}</p>
+          <div
+            role="tabpanel"
+            id={`chart-tabpanel-${activeTab}`}
+            aria-labelledby={`chart-tab-${activeTab}`}
+            tabIndex={0}
+          >
+            {activeTab === 'positions' && (
               <SortableTable
-                caption="Derived points"
-                columns={DERIVED_POINT_COLUMNS}
-                rows={derivedPointRows(load.data)}
-                getRowKey={(row) => row.label}
+                caption="Positions"
+                columns={POSITION_COLUMNS}
+                rows={positionRows(load.data)}
+                getRowKey={(row) => row.bodyKey}
               />
-            </>
-          )}
+            )}
+
+            {activeTab === 'houses' && showHouses && (
+              <>
+                <SortableTable
+                  caption="Houses"
+                  columns={HOUSE_CUSP_COLUMNS}
+                  rows={houseCuspRows(load.data)}
+                  getRowKey={(row) => String(row.house)}
+                />
+                <SortableTable
+                  caption="Angles"
+                  columns={ANGLE_COLUMNS}
+                  rows={angleRows(load.data)}
+                  getRowKey={(row) => row.label}
+                />
+              </>
+            )}
+
+            {activeTab === 'aspects' && (
+              <SortableTable
+                caption="Aspects"
+                columns={ASPECT_COLUMNS}
+                rows={aspectRows(load.data)}
+                getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
+              />
+            )}
+
+            {activeTab === 'dignities' && (
+              <SortableTable
+                caption="Dignities"
+                columns={DIGNITY_COLUMNS}
+                rows={dignityRows(load.data)}
+                getRowKey={(row) => row.bodyKey}
+              />
+            )}
+
+            {activeTab === 'derived' && showHouses && (
+              <>
+                <p className="hint">Sect: {load.data.sect === 'day' ? 'Day chart' : 'Night chart'}</p>
+                <SortableTable
+                  caption="Derived points"
+                  columns={DERIVED_POINT_COLUMNS}
+                  rows={derivedPointRows(load.data)}
+                  getRowKey={(row) => row.label}
+                />
+              </>
+            )}
+          </div>
         </>
       )}
     </main>

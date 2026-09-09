@@ -6,6 +6,7 @@ import type { ChartData } from '../src/domain/chart-compute.js';
 import {
   angleRows,
   aspectRows,
+  chartWheelRing,
   degreeParts,
   derivedPointRows,
   dignityRows,
@@ -226,5 +227,49 @@ describe('derivedPointRows (#44)', () => {
       { label: 'Part of Fortune', longitude: 45, ...degreeParts(45) },
       { label: 'Part of Spirit', longitude: 200, ...degreeParts(200) },
     ]);
+  });
+});
+
+describe('chartWheelRing (#52)', () => {
+  it('shapes positions, houses and aspects into a WheelRingInput, defaulting the label to Natal', () => {
+    const aspect: Aspect = {
+      bodyA: SUN,
+      bodyB: MARS,
+      aspect: { key: 'square', name: 'Square', angle: 90, family: 'major' },
+      separation: 91,
+      orb: 1,
+      applying: true,
+    };
+    const data: ChartData = {
+      positions: [position(SUN, 10), position(MOON, 100)],
+      houses: HOUSES,
+      aspects: [aspect],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(chartWheelRing(data)).toEqual({
+      label: 'Natal',
+      houses: HOUSES,
+      bodies: [
+        { body: SUN, key: 'sun', longitude: 10 },
+        { body: MOON, key: 'moon', longitude: 100 },
+      ],
+      aspects: [aspect],
+    });
+  });
+
+  it('uses a given label instead of the default', () => {
+    const data: ChartData = {
+      positions: [],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(chartWheelRing(data, 'Transiting').label).toBe('Transiting');
   });
 });

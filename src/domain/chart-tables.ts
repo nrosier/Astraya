@@ -13,6 +13,7 @@ import { degreesInSign, signOf } from '../astrology/signs.js';
 import type { ChartData } from './chart-compute.js';
 import type { Aspect } from '../astrology/aspects.js';
 import type { Degrees } from '../ephemeris/types.js';
+import type { WheelRingInput } from '../chart/multi-wheel.js';
 
 export interface DegreeParts {
   readonly sign: string;
@@ -174,4 +175,18 @@ export function derivedPointRows(data: ChartData): readonly DerivedPointRow[] {
     { label: 'Part of Fortune', longitude: data.partOfFortune, ...degreeParts(data.partOfFortune) },
     { label: 'Part of Spirit', longitude: data.partOfSpirit, ...degreeParts(data.partOfSpirit) },
   ];
+}
+
+/** Shapes a computed chart as the single ring `renderMultiWheelSvg` (#52) needs to draw it. */
+export function chartWheelRing(data: ChartData, label = 'Natal'): WheelRingInput {
+  return {
+    label,
+    houses: data.houses,
+    bodies: data.positions.map((position) => ({
+      body: position.body,
+      key: bodyById(position.body)?.key ?? String(position.body),
+      longitude: position.longitude,
+    })),
+    aspects: data.aspects,
+  };
 }

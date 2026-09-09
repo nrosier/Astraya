@@ -135,6 +135,24 @@ describe('renderMultiWheelSvg (#52)', () => {
     expect(svg).toContain('chart-aspect chart-cross-aspect chart-aspect-square chart-aspect-applying');
   });
 
+  it("draws a ring's own aspect web when it carries an `aspects` list", () => {
+    const natalWithAspects: WheelRingInput = { ...natalRing, aspects: [aspect('square', 1, 2, 0.5)] };
+    const svg = renderMultiWheelSvg([natalWithAspects, transitRing]);
+    expect(svg).toContain('chart-aspect chart-aspect-square chart-aspect-applying');
+    expect(svg).not.toContain('chart-cross-aspect');
+  });
+
+  it('omits the aspect web for a ring with no `aspects` field, without affecting other rings', () => {
+    const svg = renderMultiWheelSvg([natalRing, { ...transitRing, aspects: [aspect('trine', 1, 3, 0.2)] }]);
+    expect(svg).toContain('chart-aspect-trine');
+    expect(svg.match(/class="chart-aspect /g)).toHaveLength(1);
+  });
+
+  it("throws when one of a ring's own aspects references a body not present in that ring", () => {
+    const natalWithBadAspect: WheelRingInput = { ...natalRing, aspects: [aspect('square', 1, 999, 0.5)] };
+    expect(() => renderMultiWheelSvg([natalWithBadAspect, transitRing])).toThrow(/not present in ring 0/);
+  });
+
   it('throws when crossAspects references a ring index out of range', () => {
     const crossAspects: readonly CrossRingAspects[] = [
       { innerRingIndex: 0, outerRingIndex: 5, aspects: [aspect('square', 1, 2, 0.5)] },
