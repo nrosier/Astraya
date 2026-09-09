@@ -193,3 +193,33 @@ export function latest(log: Log): Hlc | undefined {
   const last = log.records.at(-1);
   return last === undefined ? undefined : String(last.hlc);
 }
+
+export interface Purged {
+  readonly log: Log;
+  /** The records taken out, so the caller can delete the same rows from storage. */
+  readonly removed: readonly OpRecord[];
+}
+
+/**
+ * Take every record naming this entity out of the log — an actual removal, not a tombstone.
+ *
+ * Only records this device can read are matched: a future-versioned record's body is
+ * uninterpretable here, so it is kept rather than guessed at, the same conservative rule
+ * `decode` applies everywhere else. That means a purge cannot promise to remove an
+ * operation written by a newer client — an acceptable gap for a same-version device, and
+ * one a future sync design (M8) will need its own answer for, since a peer that still holds
+ * the original records has nothing here telling it they were purged.
+ */
+export function purgeEntity(log: Log, entity: string, entityId: string): Purged {
+  const removed: OpRecord[] = [];
+  const kept: OpRecord[] = [];
+  for (const record of log.records) {
+    const decoded = decode(record);
+    if (decoded.kind === 'known' && decoded.body.entity === entity && decoded.body.entityId === entityId) {
+      removed.push(record);
+    } else {
+      kept.push(record);
+    }
+  }
+  return { log: { clock: log.clock, records: kept }, removed };
+}

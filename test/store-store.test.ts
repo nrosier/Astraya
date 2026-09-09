@@ -233,6 +233,77 @@ describe('deleting', () => {
   });
 });
 
+describe('purging', () => {
+  it('erases a person from both the live and deleted lists', async () => {
+    await withStore(async (store) => {
+      await store.mutate([named(PERSON, 'Ada')]);
+      await store.remove('person', PERSON);
+      await store.purge('person', PERSON);
+      expect(store.state.people.has(PERSON)).toBe(false);
+      expect(store.state.deleted.people.has(PERSON)).toBe(false);
+    });
+  });
+
+  it('removes the rows from the database, not merely from state', async () => {
+    await withStore(async (store, name) => {
+      await store.mutate([named(PERSON, 'Ada'), named(OTHER, 'Grace')]);
+      await store.purge('person', PERSON);
+      const observer = await openDatabase(name);
+      const remaining = await allRecords(observer);
+      expect(remaining).toHaveLength(1);
+      expect(remaining[0]?.entityId).toBe(OTHER);
+      observer.close();
+    });
+  });
+
+  it('leaves every other entity untouched', async () => {
+    await withStore(async (store) => {
+      await store.mutate([named(PERSON, 'Ada'), named(OTHER, 'Grace')]);
+      await store.purge('person', PERSON);
+      expect(store.state.people.get(OTHER)?.displayName).toBe('Grace');
+    });
+  });
+
+  it('does nothing, and does not notify subscribers, when there is nothing to purge', async () => {
+    await withStore(async (store) => {
+      let calls = 0;
+      store.subscribe(() => {
+        calls += 1;
+      });
+      await store.purge('person', PERSON);
+      expect(calls).toBe(0);
+    });
+  });
+
+  it('stays gone after the store is reopened', async () => {
+    const name = freshName();
+    const first = await openStore({ name, now: ticking() });
+    await first.mutate([named(PERSON, 'Ada'), named(OTHER, 'Grace')]);
+    await first.purge('person', PERSON);
+    first.close();
+
+    const second = await openStore({ name, now: ticking() });
+    expect(second.state.people.has(PERSON)).toBe(false);
+    expect(second.state.deleted.people.has(PERSON)).toBe(false);
+    expect(second.state.people.get(OTHER)?.displayName).toBe('Grace');
+    second.close();
+  });
+
+  it('replaces the snapshot too, so reopening does not pay for a full refold', async () => {
+    const name = freshName();
+    const first = await openStore({ name, now: ticking() });
+    for (let i = 0; i < 50; i += 1) await first.mutate([named(OTHER, `name ${String(i)}`)]);
+    await first.mutate([named(PERSON, 'Ada')]);
+    await first.purge('person', PERSON);
+
+    const db = await openDatabase(name);
+    const snapshot = await getSnapshot(db);
+    expect(snapshot?.applied).toBe(50);
+    db.close();
+    first.close();
+  });
+});
+
 describe('reopening', () => {
   it('comes back with the same people', async () => {
     const name = freshName();

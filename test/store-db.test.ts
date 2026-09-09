@@ -18,6 +18,7 @@ import {
   META_STORE,
   allRecords,
   countRecords,
+  deleteRecords,
   getMeta,
   getSnapshot,
   openDatabase,
@@ -223,6 +224,35 @@ describe('records', () => {
     await putRecords(db, PERSON.records);
     const [first] = await allRecords(db);
     expect(first).toEqual(PERSON.records[0]);
+    db.close();
+    await deleteDatabase(name);
+  });
+
+  it('deletes only the named rows, permanently', async () => {
+    const db = await openDatabase(name);
+    await putRecords(db, PERSON.records);
+    const [first, second] = PERSON.records;
+    if (first === undefined || second === undefined) throw new Error('fixture');
+    await deleteRecords(db, [String(first.hlc)]);
+    expect(await allRecords(db)).toEqual([second]);
+    db.close();
+    await deleteDatabase(name);
+  });
+
+  it('does nothing and opens no transaction for an empty list of keys', async () => {
+    const db = await openDatabase(name);
+    await putRecords(db, PERSON.records);
+    await deleteRecords(db, []);
+    expect(await countRecords(db)).toBe(PERSON.records.length);
+    db.close();
+    await deleteDatabase(name);
+  });
+
+  it('tolerates a key that is not actually stored', async () => {
+    const db = await openDatabase(name);
+    await putRecords(db, PERSON.records);
+    await deleteRecords(db, ['000001700000099000-00000-00000000000000aa']);
+    expect(await countRecords(db)).toBe(PERSON.records.length);
     db.close();
     await deleteDatabase(name);
   });

@@ -21,6 +21,7 @@
 import {
   DEVICE_ID_KEY,
   allRecords,
+  deleteRecords,
   getMeta,
   getSnapshot,
   openDatabase,
@@ -29,7 +30,7 @@ import {
   putSnapshot,
 } from './db.js';
 import { EMPTY_REGISTERS, DELETED_FIELD, applyRecords, materialise, resume, snapshotOf } from './fold.js';
-import { append, emptyLog, latest, since } from './oplog.js';
+import { append, emptyLog, latest, purgeEntity, since } from './oplog.js';
 import { createClock, isNodeId, randomNodeId, receive } from './hlc.js';
 import { requestPersistence } from './persist.js';
 import type { Registers, State } from './fold.js';
@@ -70,6 +71,14 @@ export interface Store {
   remove(entity: string, entityId: string): Promise<void>;
   /** Undo a delete. Possible precisely because the tombstone was never a real deletion. */
   restore(entity: string, entityId: string): Promise<void>;
+  /**
+   * Permanently erase every record naming this entity. Unlike `remove`, there is no undo —
+   * this is the only way a person's data actually leaves the device rather than being
+   * hidden. Local only: with no sync engine yet (M8), it cannot reach a copy already on
+   * another device, and a purge that must do that is a problem for that engine's own
+   * design, not this one's.
+   */
+  purge(entity: string, entityId: string): Promise<void>;
   /** Records a peer has not seen, for the sync engine in M8. */
   outgoing(cursor?: Hlc): readonly OpRecord[];
   /** Newest timestamp in the log, or undefined when it is empty. */
@@ -205,6 +214,39 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
     mutate: write,
     remove: (entity, entityId) => write([{ entity, entityId, field: DELETED_FIELD, value: true }]),
     restore: (entity, entityId) => write([{ entity, entityId, field: DELETED_FIELD, value: false }]),
+    purge: (entity, entityId) =>
+      serialise(async () => {
+        const { log: purgedLog, removed } = purgeEntity(log, entity, entityId);
+        if (removed.length === 0) return;
+
+        // Durable removal first, matching `write`'s own rule: the UI must not be told an
+        // erase happened until the rows are actually gone from disk.
+        await deleteRecords(
+          db,
+          removed.map((record) => String(record.hlc)),
+        );
+
+        log = purgedLog;
+        // Rebuilt from scratch rather than patched: registers have no notion of "unwrite
+        // this field", only "here is its latest value", so removing a record's effect
+        // means refolding what is left. Purging is a rare, explicit action, not a hot
+        // path, so the O(records) cost is not one worth avoiding.
+        registers = applyRecords(EMPTY_REGISTERS, log.records).registers;
+        state = materialise(registers);
+
+        // Best effort, like the snapshot write in `write` below: a stale snapshot left on
+        // disk is still safe, because `resume` rebuilds whenever the log holds a different
+        // number of records at-or-below the snapshot's watermark than the snapshot recorded
+        // — which purging guarantees here.
+        try {
+          await putSnapshot(db, snapshotOf(registers, log.records));
+          sinceSnapshot = 0;
+        } catch {
+          /* rebuilt from the log next time instead */
+        }
+
+        for (const listener of listeners) listener();
+      }),
     outgoing: (cursor) => since(log, cursor),
     head: () => latest(log),
     subscribe(listener) {
