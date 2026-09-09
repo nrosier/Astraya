@@ -44,19 +44,27 @@ export function loadCorpus(byLocale: CorpusByLocale): readonly CorpusEntry[] {
   }
 
   if (problems.length === 0) {
-    const keysByLocale = new Map(
-      CORPUS_LOCALES.map((locale) => [locale, new Set(entriesByLocale[locale].map((entry) => entry.key))]),
+    /** `key::persona` (empty suffix for the neutral entry) — parity must hold per persona, not just per key. */
+    const identityOf = (entry: CorpusEntry): string => `${entry.key}::${entry.persona ?? ''}`;
+    const describeIdentity = (entry: CorpusEntry): string =>
+      entry.persona === undefined ? `key "${entry.key}"` : `key "${entry.key}" for persona "${entry.persona}"`;
+
+    const identitiesByLocale = new Map(
+      CORPUS_LOCALES.map((locale) => [
+        locale,
+        new Map(entriesByLocale[locale].map((entry) => [identityOf(entry), entry])),
+      ]),
     );
     for (const locale of CORPUS_LOCALES) {
-      const ownKeys = keysByLocale.get(locale);
-      if (ownKeys === undefined) continue;
+      const ownIdentities = identitiesByLocale.get(locale);
+      if (ownIdentities === undefined) continue;
       for (const otherLocale of CORPUS_LOCALES) {
         if (otherLocale === locale) continue;
-        const otherKeys = keysByLocale.get(otherLocale);
-        if (otherKeys === undefined) continue;
-        for (const key of ownKeys) {
-          if (!otherKeys.has(key))
-            problems.push(`key "${key}" exists in locale "${locale}" but not in "${otherLocale}"`);
+        const otherIdentities = identitiesByLocale.get(otherLocale);
+        if (otherIdentities === undefined) continue;
+        for (const [identity, entry] of ownIdentities) {
+          if (!otherIdentities.has(identity))
+            problems.push(`${describeIdentity(entry)} exists in locale "${locale}" but not in "${otherLocale}"`);
         }
       }
     }

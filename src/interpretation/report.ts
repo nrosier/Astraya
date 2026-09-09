@@ -55,7 +55,7 @@ import type { ChartData } from '../domain/chart-compute.js';
 import type { BodyId, Degrees } from '../ephemeris/types.js';
 import { composeFallbackText, findCorpusEntry } from './compose.js';
 import { derivePlacements, rankPlacements, type SalienceFactor } from './rules.js';
-import { dignityState, type CorpusEntry, type CorpusPlacement, type Locale } from './schema.js';
+import { dignityState, type CorpusEntry, type CorpusPlacement, type Locale, type PersonaId } from './schema.js';
 
 export type ReportSectionId =
   'core-identity' | 'temperament' | 'chart-ruler' | 'houses' | 'aspect-patterns' | 'dignities-sect' | 'nodes-chiron';
@@ -128,9 +128,10 @@ function resolveParagraph(
   placement: CorpusPlacement,
   locale: Locale,
   corpus: readonly CorpusEntry[],
+  persona: PersonaId | undefined,
   factors: readonly SalienceFactor[] = [],
 ): ReportParagraph {
-  const entry = findCorpusEntry(placement, locale, corpus);
+  const entry = findCorpusEntry(placement, locale, corpus, persona);
   const text = entry !== undefined ? entry.text : composeFallbackText(placement, locale);
   const source: ParagraphSource = entry !== undefined ? { kind: 'corpus', entry } : { kind: 'fallback' };
   return { text, placement, source, factors };
@@ -146,9 +147,10 @@ function planetInSignParagraph(
   key: string,
   locale: Locale,
   corpus: readonly CorpusEntry[],
+  persona: PersonaId | undefined,
 ): ReportParagraph {
   const { longitude } = bodyPosition(chart, key);
-  return resolveParagraph({ category: 'planet-in-sign', body: key, sign: signIndex(longitude) }, locale, corpus);
+  return resolveParagraph({ category: 'planet-in-sign', body: key, sign: signIndex(longitude) }, locale, corpus, persona);
 }
 
 function planetInHouseParagraph(
@@ -156,20 +158,26 @@ function planetInHouseParagraph(
   key: string,
   locale: Locale,
   corpus: readonly CorpusEntry[],
+  persona: PersonaId | undefined,
 ): ReportParagraph {
   const { longitude } = bodyPosition(chart, key);
   const house = houseOf(longitude, chart.houses.cusps);
-  return resolveParagraph({ category: 'planet-in-house', body: key, house }, locale, corpus);
+  return resolveParagraph({ category: 'planet-in-house', body: key, house }, locale, corpus, persona);
 }
 
-function coreIdentitySection(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[]): ReportSection {
+function coreIdentitySection(
+  chart: ChartData,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+  persona: PersonaId | undefined,
+): ReportSection {
   const ascendantSign = signIndex(chart.houses.ascendant);
   return section('core-identity', locale, [
-    planetInSignParagraph(chart, 'sun', locale, corpus),
-    planetInHouseParagraph(chart, 'sun', locale, corpus),
-    planetInSignParagraph(chart, 'moon', locale, corpus),
-    planetInHouseParagraph(chart, 'moon', locale, corpus),
-    resolveParagraph({ category: 'sign-on-cusp', sign: ascendantSign, house: 1 }, locale, corpus),
+    planetInSignParagraph(chart, 'sun', locale, corpus, persona),
+    planetInHouseParagraph(chart, 'sun', locale, corpus, persona),
+    planetInSignParagraph(chart, 'moon', locale, corpus, persona),
+    planetInHouseParagraph(chart, 'moon', locale, corpus, persona),
+    resolveParagraph({ category: 'sign-on-cusp', sign: ascendantSign, house: 1 }, locale, corpus, persona),
   ]);
 }
 
@@ -259,7 +267,12 @@ function describeDispositorChain(chain: DispositorChain, locale: Locale): string
     : `Dispositor chain: ${path} — ultimately terminates at its own rulership.`;
 }
 
-function chartRulerSection(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[]): ReportSection {
+function chartRulerSection(
+  chart: ChartData,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+  persona: PersonaId | undefined,
+): ReportSection {
   const ascendantSign = signIndex(chart.houses.ascendant);
   const rulerId = rulerOf(ascendantSign);
   const ruler = bodyById(rulerId);
@@ -272,6 +285,7 @@ function chartRulerSection(chart: ChartData, locale: Locale, corpus: readonly Co
     { category: 'planet-in-sign', body: ruler.key, sign: signIndex(rulerPosition.longitude) },
     locale,
     corpus,
+    persona,
   );
   const chain = dispositorChain(rulerId, positionsMap(chart));
   const chainFactors: SalienceFactor[] = chain.chain.map((id, index) => ({
@@ -286,7 +300,12 @@ function chartRulerSection(chart: ChartData, locale: Locale, corpus: readonly Co
   ]);
 }
 
-function housesSection(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[]): ReportSection {
+function housesSection(
+  chart: ChartData,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+  persona: PersonaId | undefined,
+): ReportSection {
   const houseCount = chart.houses.cusps.length - 1;
   const bodiesByHouse = new Map<number, BodyId[]>();
   for (const position of chart.positions) {
@@ -300,11 +319,11 @@ function housesSection(chart: ChartData, locale: Locale, corpus: readonly Corpus
   for (let house = 1; house <= houseCount; house++) {
     const cusp = chart.houses.cusps[house];
     if (cusp === undefined) continue;
-    paragraphs.push(resolveParagraph({ category: 'sign-on-cusp', sign: signIndex(cusp), house }, locale, corpus));
+    paragraphs.push(resolveParagraph({ category: 'sign-on-cusp', sign: signIndex(cusp), house }, locale, corpus, persona));
     for (const bodyId of bodiesByHouse.get(house) ?? []) {
       const body = bodyById(bodyId);
       if (body === undefined) continue;
-      paragraphs.push(resolveParagraph({ category: 'planet-in-house', body: body.key, house }, locale, corpus));
+      paragraphs.push(resolveParagraph({ category: 'planet-in-house', body: body.key, house }, locale, corpus, persona));
     }
   }
   return section('houses', locale, paragraphs);
@@ -326,12 +345,17 @@ function jonesShapeSentence(chart: ChartData, locale: Locale): string {
   return locale === 'nl' ? `Je horoscoop vormt een ${name}-patroon.` : `Your chart forms a ${name} pattern.`;
 }
 
-function aspectPatternsSection(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[]): ReportSection {
+function aspectPatternsSection(
+  chart: ChartData,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+  persona: PersonaId | undefined,
+): ReportSection {
   const aspectPlacements = rankPlacements(derivePlacements(chart))
     .filter((placement) => placement.placement.category === 'aspect-pair')
     .slice(0, ASPECT_PATTERNS_LIMIT);
   const paragraphs = aspectPlacements.map((placement) =>
-    resolveParagraph(placement.placement, locale, corpus, placement.factors),
+    resolveParagraph(placement.placement, locale, corpus, persona, placement.factors),
   );
 
   // jonesShapeOf needs at least 2 positions; every real ChartData has far more, but a minimal fixture might not.
@@ -340,7 +364,12 @@ function aspectPatternsSection(chart: ChartData, locale: Locale, corpus: readonl
   return section('aspect-patterns', locale, [...shape, ...paragraphs]);
 }
 
-function dignitiesSectSection(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[]): ReportSection {
+function dignitiesSectSection(
+  chart: ChartData,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+  persona: PersonaId | undefined,
+): ReportSection {
   const sectSentence =
     locale === 'nl'
       ? chart.sect === 'day'
@@ -358,7 +387,7 @@ function dignitiesSectSection(chart: ChartData, locale: Locale, corpus: readonly
     if (state === undefined) return [];
     const body = bodyById(id);
     if (body === undefined) return [];
-    return [resolveParagraph({ category: 'dignity-state', body: body.key, state }, locale, corpus)];
+    return [resolveParagraph({ category: 'dignity-state', body: body.key, state }, locale, corpus, persona)];
   });
 
   return section('dignities-sect', locale, [sectParagraph, ...dignityParagraphs]);
@@ -366,25 +395,39 @@ function dignitiesSectSection(chart: ChartData, locale: Locale, corpus: readonly
 
 const NODE_CHIRON_KEYS = ['trueNode', 'chiron'] as const;
 
-function nodesChironSection(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[]): ReportSection {
+function nodesChironSection(
+  chart: ChartData,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+  persona: PersonaId | undefined,
+): ReportSection {
   const paragraphs = NODE_CHIRON_KEYS.flatMap((key) => {
     const body = bodyByKey(key);
     if (body === undefined || !chart.positions.some((position) => position.body === body.id)) return [];
-    return [planetInSignParagraph(chart, key, locale, corpus), planetInHouseParagraph(chart, key, locale, corpus)];
+    return [
+      planetInSignParagraph(chart, key, locale, corpus, persona),
+      planetInHouseParagraph(chart, key, locale, corpus, persona),
+    ];
   });
   return section('nodes-chiron', locale, paragraphs);
 }
 
-export function assembleReport(chart: ChartData, locale: Locale, corpus: readonly CorpusEntry[]): Report {
+/** `persona` prefers that persona's corpus voice throughout, falling back to the neutral entry wherever it hasn't been written yet. */
+export function assembleReport(
+  chart: ChartData,
+  locale: Locale,
+  corpus: readonly CorpusEntry[],
+  persona?: PersonaId,
+): Report {
   return {
     sections: [
-      coreIdentitySection(chart, locale, corpus),
+      coreIdentitySection(chart, locale, corpus, persona),
       temperamentSection(chart, locale),
-      chartRulerSection(chart, locale, corpus),
-      housesSection(chart, locale, corpus),
-      aspectPatternsSection(chart, locale, corpus),
-      dignitiesSectSection(chart, locale, corpus),
-      nodesChironSection(chart, locale, corpus),
+      chartRulerSection(chart, locale, corpus, persona),
+      housesSection(chart, locale, corpus, persona),
+      aspectPatternsSection(chart, locale, corpus, persona),
+      dignitiesSectSection(chart, locale, corpus, persona),
+      nodesChironSection(chart, locale, corpus, persona),
     ],
   };
 }

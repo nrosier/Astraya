@@ -1,1 +1,591 @@
-[]
+[
+  {
+    "key": "dignity-state:sun:ruler",
+    "locale": "nl",
+    "text": "Wanneer de Zon in zijn eigen heerschappij in Leeuw staat, bevindt het kernbewustzijn zich in zijn meest natuurlijke en vorstelijke staat. Dit geeft het karakter een natuurlijke autoriteit, edelmoedigheid en een sterke dragende vitaliteit, al ligt de valkuil in een te grote verwachting dat de omgeving als vanzelfsprekend om dit eigen middelpunt blijft draaien.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:moon:ruler",
+    "locale": "nl",
+    "text": "In haar eigen heerschappij in Kreeft stroomt de Maan volkomen vrij in haar natuurlijk element van gevoeligheid, bescherming en emotionele voeding. De emotionele reacties zijn meebewegend en intuïtief, al vraagt deze stand om het bewust bewaken van de eigen grenzen om te voorkomen dat men overspoeld raakt door wisselende stemmingen of een te grote afhankelijkheid van de vertrouwde omgeving.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:mercury:ruler",
+    "locale": "nl",
+    "text": "Wanneer Mercurius in zijn eigen domicilie in Tweelingen staat, opereert het verstand op zijn snelst en meest flexibel. De intellectuele wendbaarheid is een grote kracht, al ligt de schaduwzijde in een mogelijke mentale rusteloosheid of een oppervlakkige versnippering wanneer de verwerkingssnelheid prioriteit krijgt boven verdieping.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:mars:ruler",
+    "locale": "nl",
+    "text": "Mars in zijn heerschappij in Ram vertegenwoordigt de zuiverste vorm van initiatief, wilskracht en fysieke daadkracht. Het handelen is direct, moedig en gericht op het doorbreken van weerstand zonder te dralen. Het karakter schroomt niet om pionierswerk te verrichten en op te treden als de situatie om directe actie vraagt. De keerzijde van deze directe vurigheid is een verhoogde kans op impulsiviteit, ongeduld of strijdlust wanneer obstakels niet snel genoeg wijken.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:jupiter:ruler",
+    "locale": "nl",
+    "text": "Met Jupiter in zijn heerschappij in Boogschutter is de drang naar expansie, betekenisgeving en intellectuele of spirituele horizonverbreding optimaal aanwezig. Binnen het karakter uit zich dit als een onverbeterlijk optimisme, een ruimdenkende filosofische blik en een natuurlijk vertrouwen in het leven. De valkuil van deze weidse blik ligt in een neiging tot overmoed, het overzien van praktische details of het doceren van eigen overtuigingen als universele waarheid.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:venus:exalted",
+    "locale": "nl",
+    "text": "Venus in haar verhoging in Vissen tilt het verlangen naar verbinding, harmonie en liefde naar een universeel en gesublimeerd niveau. De uiting van de liefde is zacht, vergevingsgezind en harmoniezoekend, al vraagt deze stand om een waakzaam oog voor het niet laten vervagen van de eigen persoonlijke grenzen uit louter overgave.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:saturn:exalted",
+    "locale": "nl",
+    "text": "Saturnus vindt in het luchtteken Weegschaal zijn verhoging doordat zijn principes van structuur, discipline en begrenzing hier worden inzetbaar gemaakt voor rechtvaardigheid, sociaal evenwicht en duurzame afspraken. Dit schenkt de geborene een rijpe verantwoordelijkheid in verplichtingen en samenwerkingsverbanden, waarbij geduld en integriteit als fundament dienen voor het opbouwen van duurzame structuren.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:sun:exalted",
+    "locale": "nl",
+    "text": "De Zon vindt haar verhoging in Ram doordat de universele levenskracht hier samenvalt met de frisse, ontwakende energie van het voorjaar. Binnen het karakter uit zich dit als een krachtige en enthousiaste ondernemingsgeest. Waar de Zon in Leeuw rust op een ingeschapen centrum, zoekt de Zon in Ram haar kracht via de uitdaging van het pionieren, wat vraagt om het doseren van de eigen doordrukkingskracht.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:moon:exalted",
+    "locale": "nl",
+    "text": "In haar verhoging in Stier krijgt de beweeglijke, wisselvallige natuur van de Maan een stevig en tastbaar fundament. De emotionele behoeften worden gestabiliseerd door een diep verlangen naar rust, fysieke veiligheid en de eenvoudige vreugden van de natuur. De schaduwzijde van deze stabiliteit is een sterke behoudendheid of een hardnekkige weerstand tegen noodzakelijke veranderingen die de vertrouwde comfortzone verstoren.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:mercury:exalted",
+    "locale": "nl",
+    "text": "In Maagd valt de verhoging van Mercurius samen met zijn domicilie, wat het denkklimaat een uitzonderlijk analytische en kritische scherpte geeft. De geest is gericht op observatie, precisie, ordening en de praktische toepasbaarheid van kennis. De valkuil van deze hoge intellectuele standaard is een neiging tot perfectionisme, overmatig piekeren of het verliezen van het grotere geheel door te sterk in te zoomen op details.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:jupiter:exalted",
+    "locale": "nl",
+    "text": "Wanneer Jupiter in Kreeft verhoogd staat, wordt de filosofische en expansieve kracht van de planeet gesublimeerd door de beschermende, verzorgende kwaliteiten van het waterteken. De groei van de geborene vindt plaats door het bieden van een veilige haven aan anderen, al ligt de uitdaging erin dat de beschermingsdrang niet omslaat in bezitterigheid of emotioneel sentiment.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:mars:detriment",
+    "locale": "nl",
+    "text": "Wanneer Mars zich in zijn ballingschap in Stier bevindt, makkelt de van nature vurige, snelle en directe daadkracht zich vast op vreemd terrein. Eenmaal in beweging is de volharding enorm, maar het karakter kan worstelen met opgekropte frustratie of een koppige passiviteit, omdat de natuurlijke gisting van het handelen te lang wordt vastgehouden voor het tot ontlading komt.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "detriment"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:mercury:detriment",
+    "locale": "nl",
+    "text": "Wanneer Mercurius in Boogschutter staat, bevindt het principe van detailwaarneming en concrete analyse zich tegenover zijn eigen heerschappij. De geest is eerder gericht op de grote lijn, de visie en het overkoepelende idee dan op de precieze feiten. De gedachten vliegen snel naar de horizon, wat leidt tot een inspirerende doorkijk, al blijft het risico dat men concrete stappen of essentiële details over het hoofd ziet.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "detriment"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:venus:detriment",
+    "locale": "nl",
+    "text": "Venus in haar ballingschap in Schorpioen ziet haar streven naar oppervlakkige vrede en lichte harmonie doorkruist door de intensiteit van het waterteken. Er is een diep vermogen tot loyaliteit en transformatie via de liefde, al kan het karakter geworsteld worden door bezittingsdrang, achterdocht of het op de proef stellen van de partner.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "detriment"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:jupiter:detriment",
+    "locale": "nl",
+    "text": "Jupiter in Tweelingen bevindt zich in ballingschap doordat zijn zoektocht naar overkoepelende betekenis en universele synthese wordt opgeknipt in een veelheid aan losse feiten, meningen en informatiefragmenten. De expansieve blik wordt afgeleid door de directe omgeving en de constante stroom van weetjes. De uitdaging ligt in het smeden van al die losse kennis tot een werkelijk diepgaand en richtinggevend inzicht.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "detriment"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:moon:fall",
+    "locale": "nl",
+    "text": "De Maan in haar val in Schorpioen bevindt zich op emotioneel terrein dat wezenlijk haaks staat op haar behoefte aan rust, koestering en zachte bescherming. Dit geeft een enorm vermogen tot emotionele transformatie, psychologisch inzicht en veerkracht bij crisis, maar brengt ook een blijvende taak met zich mee om innerlijk wantrouwen en verbrandende emotionele intensiteit om te zetten in vertrouwen.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:saturn:fall",
+    "locale": "nl",
+    "text": "Met Saturnus in zijn val in Ram stuit het principe van grens, remming, structuur en geduld op de onstuimige, ongecontroleerde drang van het eerste vuur. Wanneer deze spanning echter bewust wordt uitgewerkt, leert het karakter om op een zeer doelgerichte, volhardende wijze persoonlijke obstakels te overwinnen en een eigen, onafhankelijke autoriteit op te bouwen.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:mercury:fall",
+    "locale": "nl",
+    "text": "Mercurius in Vissen staat tegenover zijn verhogingspositie; het logische, analytische verstand vervloeit hier in een oceaan van beelden, gevoelens en intuïtieve indrukken. De gedachten volgen geen strakke lijn van oorzaak en gevolg, maar bewegen zich via associaties, verbeelding en poëtische perceptie. Wat aan logische scherpte verloren gaat, wordt gewonnen aan empathisch begrip en verbeeldingskracht.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:mars:fall",
+    "locale": "nl",
+    "text": "Mars in zijn val in Kreeft ziet zijn natuurlijke drang tot directe, voorwaartse actie afgeremd door emotionele voorwaarden en de behoefte aan veiligheid. De energie ontlaadt zich zelden rechtstreeks, maar beweegt zich omzichtig, beschermend of defensief. Het karakter handelt primair als het voelt dat de eigen kring of het persoonlijke welzijn bedreigd wordt. De ontplooiing vraagt om het aanleren van een gezonde, directe assertiviteit.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:jupiter:fall",
+    "locale": "nl",
+    "text": "Jupiter in zijn val in Steenbok ziet zijn natuurlijke optimisme, overvloed en geloof in de ruimte begrensd door de eisen van de harde werkelijkheid, plicht en structuur. Dit schenkt een grote maatschappelijke betrouwbaarheid en realistisch bouwwerk, al is de uitdaging voor de geborene om het innerlijke vertrouwen en de levensvreugde niet te laten verstikken door overmatige bezorgdheid of een te strakke controle.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:venus:ruler",
+    "locale": "nl",
+    "text": "Met Venus in Stier vertrouw je genegenheid met warmte en gemak, en bestendigheid geeft het gewicht. Je toont interesse door tijd vrij te maken voor iemand, een goede maaltijd te delen, een fijne herinnering te koesteren, of een rustige aanwezigheid te bieden waarop iemand kan rekenen. Aantrekkingskracht merk je eerst in het lichaam, via stem, geur, aanraking en het gemak van iemands nabijheid. Zodra een persoon of band ertoe doet, laat je die zelden zomaar los.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "reviewedBy": "user",
+      "reviewedAt": "2026-09-09"
+    },
+    "anchor": true
+  },
+  {
+    "key": "dignity-state:saturn:ruler",
+    "locale": "nl",
+    "text": "Saturnus in Steenbok maakt je zeer hardwerkend, en je kunt met volhardende inspanning naar je doelen toewerken. Je kunt anderen inspireren en aansturen met een natuurlijk leiderschap dat volwassenheid en motivatie uitstraalt.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:mars:exalted",
+    "locale": "nl",
+    "text": "Mars, de planeet van actie, in zijn verhoging in Steenbok zet je aan tot handelen en het voor elkaar krijgen van zaken. Deze energieke invloed stuurt je meest oerse kant en de manier waarop je je verlangens omzet in gerichte actie.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:sun:detriment",
+    "locale": "nl",
+    "text": "De Zon in Waterman staat voor het opnieuw verbinden met de wereld. Of je dat nu bewust wilt of niet, het pad naar sociaal contact dient zich toch aan. Je mengt je onder mensen en deelt graag de kennis die je hebt opgedaan.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:saturn:detriment",
+    "locale": "nl",
+    "text": "Saturnus in Kreeft moedigt emotionele expressie, gezinsgerichtheid en het opbouwen van relaties aan. Het leert je flexibiliteit en het belang van het beschermen van je gevoelens. Deze stand kan ongemak met emotionele kwetsbaarheid met zich meebrengen.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "dignity-state:sun:fall",
+    "locale": "nl",
+    "text": "De Zon in Weegschaal heeft balans nodig om tot bloei te komen. Deze val-positie van de Zon maakt je positief ingesteld, maar kan je ook wisselvallig en besluiteloos maken.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:0",
+    "locale": "nl",
+    "text": "Met de Zon in Ram projecteer je je innerlijk licht, moed en energie naar buiten om invloed te vestigen, maar dat kan je later opgebrand of uitgeput maken door te veel op eigen kracht te vertrouwen.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:1",
+    "locale": "nl",
+    "text": "De Zon in Stier staat voor iemand die elke bron van schoonheid en waardering najaagt om waardigheid op te bouwen, maar die daarbij gezondheid en persoonlijke kracht uit het oog kan verliezen.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:2",
+    "locale": "nl",
+    "text": "In Tweelingen maakt de Zon je bijzonder snel, slim, aanpasbaar en nieuwsgierig. Al deze waardevolle eigenschappen maken je een interessant persoon om mee om te gaan. Wel ben je makkelijk afgeleid en laat je je niet graag vastpinnen.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:3",
+    "locale": "nl",
+    "text": "Mensen met de Zon in Kreeft zijn zorgzaam en beschermend naar anderen toe. Kreeft wordt geregeerd door de Maan, wat wisselende stemmingen en voortdurend veranderende emoties met zich meebrengt. Kreeften zijn ook gericht op zekerheid en hechten veel waarde aan het thuisleven. Ze kunnen passief overkomen en vertrouwen bij het maken van keuzes vaak op hun gevoel.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:4",
+    "locale": "nl",
+    "text": "De Zon in Leeuw maakt je zelfverzekerd en op je gemak in het middelpunt van de aandacht, dramatisch, ambitieus, loyaal, fel beschermend, gul en gericht op luxe, met een groot hart. Je bent innerlijk gul en leeft het leven op grote voet.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:5",
+    "locale": "nl",
+    "text": "De Zon in Maagd geeft je een gevoel van zekerheid wanneer je leven geordend is. Met deze stand voel je je op je gemak zolang alles onder controle is; anders slaan paniek en onrust snel toe.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:9",
+    "locale": "nl",
+    "text": "Met de Zon in Steenbok toon je ambitie, praktisch inzicht, besluitvaardigheid en harde arbeid. Ondanks alle uitdagingen kun je succes behalen in je vakgebied. Je kijkt altijd al vooruit naar het volgende doel.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:11",
+    "locale": "nl",
+    "text": "De Zon in Vissen verzacht agressie en zelfverheerlijking in je persoonlijkheid. Je hebt een artistieke aanleg met creatieve ideeen. Je manier van uiten is bijzonder diep, wat je kan maken tot een persoon met een eigen stem en een succesvol schrijver.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:7",
+    "locale": "nl",
+    "text": "De Maan in Schorpioen staat voor diepe en krachtige emoties, met een magnetische maar geheimzinnige persoonlijkheid. Je beschikt over emotionele veerkracht en een scherp vermogen om jezelf te transformeren tijdens de omwentelingen van het leven.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:6",
+    "locale": "nl",
+    "text": "Mensen met de Maan in Weegschaal zijn over het algemeen vredelievend. Ze proberen op een veilige afstand een goede band te onderhouden met vrienden en familie. Ze blijven graag weg van controverse en werken graag samen met anderen.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:5",
+    "locale": "nl",
+    "text": "Met de Maan in Maagd voel je je zeker wanneer je leven geordend is, en voel je je op je gemak zolang je de touwtjes in handen hebt; anders raak je in paniek en eindig je gespannen.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "reviewedBy": "user",
+      "reviewedAt": "2026-09-09"
+    },
+    "anchor": true
+  },
+  {
+    "key": "planet-in-sign:moon:4",
+    "locale": "nl",
+    "text": "De Maan in Leeuw staat voor een gedurfde, moedige en intelligente persoonlijkheid. Je bent vriendelijk naar vrienden en familie toe, maar aarzelt niet om je mening te laten horen.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:3",
+    "locale": "nl",
+    "text": "De Maan in Kreeft maakt je beschermend, introspectief en emotioneel, omdat je van nature de emotionele onderstroom om je heen aanvoelt. Je begrijpt de problemen van anderen en probeert de zorgen van je naasten op te lossen, en zorgt voor hen met liefde en begrip.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:2",
+    "locale": "nl",
+    "text": "Wanneer de Maan in Tweelingen staat, brengt dit gevoel en verstand samen, wat communicatie en aanpassingsvermogen versterkt. Deze combinatie voedt nieuwsgierigheid en veelzijdigheid, en geeft je een levendige en dynamische persoonlijkheid.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:1",
+    "locale": "nl",
+    "text": "Met de Maan in Stier toon je een sterke wilskracht, emotionele stabiliteit en een voorkeur voor luxe en materiele zaken. Je hebt een sterk gevoel van eigenaarschap, praktische zin, geduld en betrouwbaarheid, met een diepgewortelde behoefte aan zowel emotionele als financiele zekerheid.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-house:moon:4",
+    "locale": "nl",
+    "text": "De Maan in het vierde huis brengt je alle luxe die het leven te bieden heeft, en je geniet er volop van. Je bent vrijgevig, gelukkig, blijft doorgaans positief en hebt een uitstekende band met je familie en naasten.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-house:sun:10",
+    "locale": "nl",
+    "text": "Presidenten, politici en CEO's hebben vaak de Zon in het tiende huis. Hoeveel weerstand je ook ondervindt, de Zon geeft je de kracht om de negativiteit te overstijgen. Je beschikt over een enorme wilskracht en doorzettingsvermogen om succesvol te worden.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-house:sun:8",
+    "locale": "nl",
+    "text": "Met de Zon in het achtste huis versterk je je verborgen kennis, onderzoeksvaardigheden, geheime zaken en andere eigenschappen van dit huis. Je zult breed bekend worden in je gemeenschap en door iedereen worden erkend.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-house:sun:6",
+    "locale": "nl",
+    "text": "De Zon in het zesde huis helpt je conflicten op te lossen en tegenstanders voor je te winnen. Je vindt aansluiting bij je concurrenten en werkt op een vriendschappelijke manier samen.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-house:sun:5",
+    "locale": "nl",
+    "text": "Met de Zon in het vijfde huis sta je in het middelpunt van de belangstelling binnen je vakgebied en heb je veel vertrouwen in je intellectuele vermogens. Je zet je ervoor in om je kinderen tot leiders binnen de gemeenschap te laten uitgroeien.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-house:moon:5",
+    "locale": "nl",
+    "text": "De Maan in het vijfde huis stimuleert je creativiteit via je kinderen; via hen kun je je gevoelens uitdrukken. Je bent emotioneel in balans zodra je bezig bent met het leren van iets nieuws.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "planet-in-house:moon:12",
+    "locale": "nl",
+    "text": "In het twaalfde huis maakt de Maan je empathisch en emotioneel, met het vermogen om mee te resoneren met de gevoelens van anderen. Je bent een echte huismens en stelt je familie en naasten altijd op de eerste plaats.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "sign-on-cusp:7:1",
+    "locale": "nl",
+    "text": "Mensen met Schorpioen als ascendant hebben een sterke, gedurfde persoonlijkheid en kunnen behoorlijk gepassioneerd, jaloers en territoriaal zijn in hun relaties.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "sign-on-cusp:8:9",
+    "locale": "nl",
+    "text": "Boogschutter in het negende huis - Een belangrijke kracht van deze stand is je onverzadigbare nieuwsgierigheid en liefde voor leren. Je hebt een natuurlijk vermogen om het grotere geheel te doorzien en complexe theorieen en filosofieen te begrijpen. Je optimistische en open blik op het leven brengt je vaak op spannende reizen van zelfontdekking en intellectuele groei.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "aspect-pair:square:mars:venus",
+    "locale": "nl",
+    "text": "Venus vierkant Mars brengt intense liefde-haatgevoelens in bijzonder intieme relaties. Elke irritatie met een geliefde kan snel escaleren tot woede en driftbuien. Toch ebt deze intensiteit even snel weg als ze opkomt, zodra de druk een uitweg heeft gevonden.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated"
+    }
+  },
+  {
+    "key": "aspect-pair:trine:jupiter:sun",
+    "locale": "nl",
+    "text": "Begiftigd met vrijgevigheid en vriendelijkheid, lijk je geluk aan je zijde te hebben. Met een positieve instelling en een gulle inslag trek je goede dingen aan. Zelden echt “aan de grond”, word je meestal goed ontvangen, ben je hulpvaardig en goed geinformeerd. Je houdt mogelijk van reizen en voelt een bijzondere affiniteit met vreemde plekken en mensen. Je bent niet erg competitief of strijdlustig, en ligt daardoor doorgaans goed bij anderen.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "reviewedBy": "user",
+      "reviewedAt": "2026-09-09"
+    },
+    "anchor": true
+  }
+]

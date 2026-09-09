@@ -65,3 +65,22 @@ describe('loadCorpus (#53)', () => {
     ).not.toThrow(/exists in locale/);
   });
 });
+
+describe('loadCorpus persona parity (#211)', () => {
+  it('combines a neutral entry and a persona entry present in both locales', () => {
+    const combined = loadCorpus({
+      en: [entry('planet-in-sign:sun:0', 'en'), entry('planet-in-sign:sun:0', 'en', { persona: 'mystic' })],
+      nl: [entry('planet-in-sign:sun:0', 'nl'), entry('planet-in-sign:sun:0', 'nl', { persona: 'mystic' })],
+    });
+    expect(combined).toHaveLength(4);
+  });
+
+  it('throws when a persona-specific entry exists in en but not nl, even though the neutral entry matches', () => {
+    expect(() =>
+      loadCorpus({
+        en: [entry('planet-in-sign:sun:0', 'en'), entry('planet-in-sign:sun:0', 'en', { persona: 'mystic' })],
+        nl: [entry('planet-in-sign:sun:0', 'nl')],
+      }),
+    ).toThrow(/key "planet-in-sign:sun:0" for persona "mystic" exists in locale "en" but not in "nl"/);
+  });
+});

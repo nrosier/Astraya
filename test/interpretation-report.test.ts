@@ -181,6 +181,39 @@ describe('assembleReport (#61)', () => {
     expect(paragraph?.source).toEqual({ kind: 'corpus', entry });
   });
 
+  it('falls back to the neutral corpus entry when the requested persona has none for this placement', () => {
+    const chart = makeFullChart();
+    const neutral: CorpusEntry = {
+      key: 'planet-in-sign:sun:0',
+      locale: 'en',
+      text: 'The neutral exemplar for Sun in Aries.',
+      tier: 'core',
+      tags: [],
+      provenance: { source: 'hand-written' },
+    };
+    const report = assembleReport(chart, 'en', [neutral], 'mystic');
+    const paragraph = report.sections[0]?.paragraphs[0];
+    expect(paragraph?.text).toBe(neutral.text);
+    expect(paragraph?.source).toEqual({ kind: 'corpus', entry: neutral });
+  });
+
+  it('prefers a persona-specific entry over the neutral one when both exist', () => {
+    const chart = makeFullChart();
+    const neutral: CorpusEntry = {
+      key: 'planet-in-sign:sun:0',
+      locale: 'en',
+      text: 'The neutral exemplar for Sun in Aries.',
+      tier: 'core',
+      tags: [],
+      provenance: { source: 'hand-written' },
+    };
+    const mystic: CorpusEntry = { ...neutral, text: 'The mystic voice for Sun in Aries.', persona: 'mystic' };
+    const report = assembleReport(chart, 'en', [neutral, mystic], 'mystic');
+    const paragraph = report.sections[0]?.paragraphs[0];
+    expect(paragraph?.text).toBe(mystic.text);
+    expect(paragraph?.source).toEqual({ kind: 'corpus', entry: mystic });
+  });
+
   it('tags a placement paragraph with no matching corpus entry as fallback', () => {
     const chart = makeFullChart();
     const paragraph = assembleReport(chart, 'en', []).sections[0]?.paragraphs[0];

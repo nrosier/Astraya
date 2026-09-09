@@ -34,12 +34,12 @@
 import { bodyByKey } from '../astrology/bodies.js';
 import { aspectByKey } from '../astrology/aspects.js';
 import { SIGNS } from '../astrology/signs.js';
-import type { CorpusEntry, CorpusPlacement, DignityState, Locale } from './schema.js';
+import type { CorpusEntry, CorpusPlacement, DignityState, Locale, PersonaId } from './schema.js';
 import { placementKey } from './schema.js';
 
 type NameTable = Readonly<Record<string, string>>;
 
-const SIGN_NAMES: Readonly<Record<Locale, readonly string[]>> = {
+export const SIGN_NAMES: Readonly<Record<Locale, readonly string[]>> = {
   en: SIGNS.map((sign) => sign.name),
   nl: [
     'Ram',
@@ -57,7 +57,7 @@ const SIGN_NAMES: Readonly<Record<Locale, readonly string[]>> = {
   ],
 };
 
-const BODY_NAMES: Readonly<Record<Locale, NameTable>> = {
+export const BODY_NAMES: Readonly<Record<Locale, NameTable>> = {
   en: {
     sun: 'the Sun',
     moon: 'the Moon',
@@ -241,27 +241,39 @@ export function composeFallbackText(placement: CorpusPlacement, locale: Locale):
  * so a caller that needs to tell corpus text apart from the mechanical
  * fallback — #62's provenance view — doesn't have to re-derive the key or
  * duplicate the lookup.
+ *
+ * When `persona` is given, prefers that persona's entry but falls back to
+ * the neutral entry (no `persona`) if that persona hasn't been written for
+ * this placement yet. Omitting `persona` matches only the neutral entry.
  */
 export function findCorpusEntry(
   placement: CorpusPlacement,
   locale: Locale,
   corpus: readonly CorpusEntry[],
+  persona?: PersonaId,
 ): CorpusEntry | undefined {
   const key = placementKey(placement);
-  return corpus.find((candidate) => candidate.key === key && candidate.locale === locale);
+  const candidates = corpus.filter((candidate) => candidate.key === key && candidate.locale === locale);
+  if (persona !== undefined) {
+    const specific = candidates.find((candidate) => candidate.persona === persona);
+    if (specific !== undefined) return specific;
+  }
+  return candidates.find((candidate) => candidate.persona === undefined);
 }
 
 /**
  * The text a report should show for `placement` in `locale`: a matching
- * corpus entry if one exists, otherwise `composeFallbackText`'s mechanical
- * sentence. This is the guarantee #59 asks for — never `""`, whatever the
- * corpus currently holds.
+ * corpus entry if one exists (preferring `persona`'s voice, falling back to
+ * the neutral entry), otherwise `composeFallbackText`'s mechanical sentence.
+ * This is the guarantee #59 asks for — never `""`, whatever the corpus
+ * currently holds.
  */
 export function resolvePlacementText(
   placement: CorpusPlacement,
   locale: Locale,
   corpus: readonly CorpusEntry[],
+  persona?: PersonaId,
 ): string {
-  const entry = findCorpusEntry(placement, locale, corpus);
+  const entry = findCorpusEntry(placement, locale, corpus, persona);
   return entry !== undefined ? entry.text : composeFallbackText(placement, locale);
 }

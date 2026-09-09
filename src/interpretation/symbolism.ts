@@ -14,6 +14,8 @@
  */
 import { BODIES } from '../astrology/bodies.js';
 import { SIGNS } from '../astrology/signs.js';
+import { BODY_NAMES, SIGN_NAMES } from './compose.js';
+import type { Locale } from './schema.js';
 
 export interface PlanetSymbolism {
   readonly key: string;
@@ -157,6 +159,143 @@ export const VOICE_GUIDE: readonly string[] = [
   'Never use disclaimers, hedging about astrology’s validity, or references to the entry being AI-generated.',
 ];
 
+/**
+ * Dutch symbol sheets and voice guide (#211), same structure and order as
+ * the English tables above so `buildSymbolismContext` can pick either set
+ * without the caller needing to know the difference. Content is original
+ * Dutch phrasing of the same concepts, not a literal word-for-word
+ * translation.
+ */
+export const PLANET_SYMBOLISM_NL: readonly PlanetSymbolism[] = [
+  {
+    key: 'sun',
+    core: 'Identiteit, wil en het zelf dat je bewust aan het opbouwen bent.',
+    keywords: ['identiteit', 'vitaliteit', 'doel', 'ego', 'erkenning'],
+  },
+  {
+    key: 'moon',
+    core: 'Instinctieve emotionele reactie — wat veilig aanvoelt, en wat nodig is om dat te voelen.',
+    keywords: ['emotie', 'instinct', 'gewoonte', 'koestering', 'herinnering'],
+  },
+  {
+    key: 'mercury',
+    core: 'Hoe informatie wordt verzameld, verwerkt en uitgewisseld — de geest in beweging.',
+    keywords: ['communicatie', 'redenering', 'waarneming', 'leren', 'uitwisseling'],
+  },
+  {
+    key: 'venus',
+    core: 'Wat aantrekkelijk of waardevol wordt gevonden, en hoe genegenheid en middelen worden gegeven en ontvangen.',
+    keywords: ['aantrekking', 'waarde', 'harmonie', 'plezier', 'verbinding'],
+  },
+  {
+    key: 'mars',
+    core: 'Hoe verlangen wordt nagejaagd en doorgezet — de drang om te handelen, te concurreren en te verdedigen.',
+    keywords: ['drijfveer', 'assertiviteit', 'verlangen', 'conflict', 'initiatief'],
+  },
+  {
+    key: 'jupiter',
+    core: 'Waar vertrouwen, groei en betekenis worden gezocht buiten de eigen directe omstandigheden.',
+    keywords: ['expansie', 'vertrouwen', 'overtuiging', 'overvloed', 'kans'],
+  },
+  {
+    key: 'saturn',
+    core: 'Waar discipline, beperking en langetermijnverantwoordelijkheid worden geleerd, vaak op de moeilijke manier.',
+    keywords: ['discipline', 'beperking', 'verantwoordelijkheid', 'meesterschap', 'vertraging'],
+  },
+  {
+    key: 'uranus',
+    core: 'De plotselinge breuk met conventie — verstoring die ruimte maakt voor iets werkelijk nieuws.',
+    keywords: ['verstoring', 'onafhankelijkheid', 'innovatie', 'opstandigheid', 'inzicht'],
+  },
+  {
+    key: 'neptune',
+    core: 'Waar grenzen vervagen — verbeelding, idealisme, en het risico op zelfbedrog dat daarmee gepaard gaat.',
+    keywords: ['verbeelding', 'idealisme', 'vervaging', 'gevoeligheid', 'illusie'],
+  },
+  {
+    key: 'pluto',
+    core: 'Waar transformatie plaatsvindt door wat eerst afgebroken of losgelaten moet worden.',
+    keywords: ['transformatie', 'macht', 'intensiteit', 'vernieuwing', 'het onzichtbare'],
+  },
+];
+
+export const SIGN_SYMBOLISM_NL: readonly SignSymbolism[] = [
+  {
+    index: 0,
+    core: 'Directe, zelfstartende energie die handelt voordat ze overweegt.',
+    keywords: ['initiatiefrijk', 'moedig', 'impulsief', 'competitief'],
+  },
+  {
+    index: 1,
+    core: 'Stabiele, zintuiglijke energie die langzaam opbouwt en standvastig blijft eenmaal toegewijd.',
+    keywords: ['gegrond', 'geduldig', 'zintuiglijk', 'bezitterig'],
+  },
+  {
+    index: 2,
+    core: 'Snelle, nieuwsgierige energie die verzamelt en verbindt in plaats van zich op één antwoord vast te leggen.',
+    keywords: ['nieuwsgierig', 'veelzijdig', 'spraakzaam', 'onrustig'],
+  },
+  {
+    index: 3,
+    core: 'Beschermende, gevoelsgeleide energie gericht op thuis en emotionele veiligheid.',
+    keywords: ['zorgzaam', 'beschermend', 'wisselvallig', 'gehecht'],
+  },
+  {
+    index: 4,
+    core: 'Warme, expressieve energie die wil dat wat ze doet gezien wordt en telt.',
+    keywords: ['expressief', 'zelfverzekerd', 'gul', 'trots'],
+  },
+  {
+    index: 5,
+    core: 'Precieze, dienstbare energie die dingen verbetert door op details te letten.',
+    keywords: ['analytisch', 'nauwgezet', 'praktisch', 'zelfkritisch'],
+  },
+  {
+    index: 6,
+    core: 'Relationele, evenwichtszoekende energie die beide kanten afweegt voor ze kiest.',
+    keywords: ['diplomatiek', 'rechtvaardig', 'besluiteloos', 'sociaal'],
+  },
+  {
+    index: 7,
+    core: 'Intense, private energie die tot de wortel van dingen gaat in plaats van het oppervlak.',
+    keywords: ['intens', 'gesloten', 'doorziend', 'transformerend'],
+  },
+  {
+    index: 8,
+    core: 'Expansieve, betekenisgerichte energie gericht op het verre en het nog-niet-geprobeerde.',
+    keywords: ['avontuurlijk', 'filosofisch', 'onomwonden', 'optimistisch'],
+  },
+  {
+    index: 9,
+    core: 'Gedisciplineerde, structuurbouwende energie die vooruitgang op de lange termijn meet.',
+    keywords: ['gedisciplineerd', 'ambitieus', 'gereserveerd', 'doorzettend'],
+  },
+  {
+    index: 10,
+    core: 'Afstandelijke, ideeëngedreven energie gericht op het collectief in plaats van het persoonlijke.',
+    keywords: ['onafhankelijk', 'onconventioneel', 'idealistisch', 'afstandelijk'],
+  },
+  {
+    index: 11,
+    core: 'Absorberende, grensvervagende energie die voelt wat rondom is meer dan ze het benoemt.',
+    keywords: ['empathisch', 'dromerig', 'ongrijpbaar', 'aanpasbaar'],
+  },
+];
+
+export const VOICE_GUIDE_NL: readonly string[] = [
+  'Schrijf in de tweede persoon, spreek de eigenaar van de horoscoop direct aan.',
+  'Zeg de betekenis van de plaatsing eerst gewoon voordat je nuanceert — leid met de bewering, niet met het voorbehoud.',
+  'Vermijd fatalisme: beschrijf een neiging of een drang, nooit een zekerheid of een oordeel.',
+  'Herhaal de naam van de plaatsing niet letterlijk als de eerste woorden van de tekst (bijv. begin niet met "Mars in Ram...").',
+  'Houd elke tekst tot één tot drie zinnen; diepgang komt van precisie, niet van lengte.',
+  'Gebruik nooit disclaimers, twijfel over de geldigheid van astrologie, of verwijzingen naar het feit dat de tekst door AI is gegenereerd.',
+];
+
+const SECTION_HEADERS: Readonly<Record<Locale, Readonly<{ planet: string; sign: string; voice: string }>>> = {
+  en: { planet: 'PLANET SYMBOLISM', sign: 'SIGN SYMBOLISM', voice: 'VOICE AND TONE RULES' },
+  nl: { planet: 'PLANEETSYMBOLIEK', sign: 'TEKENSYMBOLIEK', voice: 'STEM- EN TOONREGELS' },
+};
+
 function bySymbolismKey<T extends { readonly key?: string; readonly index?: number }>(
   items: readonly T[],
   key: string | number,
@@ -178,41 +317,48 @@ const PLANET_BODY_KEYS = new Set(
 
 /**
  * Assembles the full symbolism reference as plain text, ready to be
- * injected into #56's generation prompt. Verifies its own coverage at
- * build time — a `BODIES` entry added without a matching symbolism sheet,
- * or a symbolism sheet for a body that doesn't exist, throws rather than
- * silently shipping an incomplete prompt.
+ * injected into #56's generation prompt, in the given locale's own tables
+ * and section headers — a Dutch generation request should read as Dutch
+ * throughout, not English scaffolding around Dutch fragments. Verifies its
+ * own coverage at build time — a `BODIES` entry added without a matching
+ * symbolism sheet, or a symbolism sheet for a body that doesn't exist,
+ * throws rather than silently shipping an incomplete prompt.
  */
-export function buildSymbolismContext(): string {
-  const symbolismKeys = new Set(PLANET_SYMBOLISM.map((entry) => entry.key));
+export function buildSymbolismContext(locale: Locale = 'en'): string {
+  const planetTable = locale === 'nl' ? PLANET_SYMBOLISM_NL : PLANET_SYMBOLISM;
+  const signTable = locale === 'nl' ? SIGN_SYMBOLISM_NL : SIGN_SYMBOLISM;
+  const voiceGuide = locale === 'nl' ? VOICE_GUIDE_NL : VOICE_GUIDE;
+
+  const symbolismKeys = new Set(planetTable.map((entry) => entry.key));
   const missing = [...PLANET_BODY_KEYS].filter((key) => !symbolismKeys.has(key));
   const extra = [...symbolismKeys].filter((key) => !PLANET_BODY_KEYS.has(key));
   if (missing.length > 0 || extra.length > 0) {
     throw new Error(
-      `PLANET_SYMBOLISM is out of sync with BODIES — missing: [${missing.join(', ')}], unexpected: [${extra.join(', ')}]`,
+      `PLANET_SYMBOLISM (${locale}) is out of sync with BODIES — missing: [${missing.join(', ')}], unexpected: [${extra.join(', ')}]`,
     );
   }
-  if (SIGN_SYMBOLISM.length !== SIGNS.length) {
-    throw new Error(`SIGN_SYMBOLISM has ${String(SIGN_SYMBOLISM.length)} entries, expected ${String(SIGNS.length)}`);
+  if (signTable.length !== SIGNS.length) {
+    throw new Error(`SIGN_SYMBOLISM (${locale}) has ${String(signTable.length)} entries, expected ${String(SIGNS.length)}`);
   }
 
-  const planetLines = PLANET_SYMBOLISM.map((entry) => {
-    const name = BODIES.find((body) => body.key === entry.key)?.name ?? entry.key;
+  const planetLines = planetTable.map((entry) => {
+    const name = BODY_NAMES[locale][entry.key] ?? BODIES.find((body) => body.key === entry.key)?.name ?? entry.key;
     return `- ${name}: ${entry.core} (${entry.keywords.join(', ')})`;
   });
-  const signLines = SIGN_SYMBOLISM.map((entry) => {
-    const name = SIGNS[entry.index]?.name ?? String(entry.index);
+  const signLines = signTable.map((entry) => {
+    const name = SIGN_NAMES[locale][entry.index] ?? SIGNS[entry.index]?.name ?? String(entry.index);
     return `- ${name}: ${entry.core} (${entry.keywords.join(', ')})`;
   });
 
+  const headers = SECTION_HEADERS[locale];
   return [
-    'PLANET SYMBOLISM',
+    headers.planet,
     ...planetLines,
     '',
-    'SIGN SYMBOLISM',
+    headers.sign,
     ...signLines,
     '',
-    'VOICE AND TONE RULES',
-    ...VOICE_GUIDE.map((rule) => `- ${rule}`),
+    headers.voice,
+    ...voiceGuide.map((rule) => `- ${rule}`),
   ].join('\n');
 }

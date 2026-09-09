@@ -134,12 +134,22 @@ describe('resolvePlacementText (#59)', () => {
     expect(resolvePlacementText(placement, 'nl', [entry])).toBe(composeFallbackText(placement, 'nl'));
   });
 
-  it('the shipped (currently empty) corpus resolves every category through the fallback path today', () => {
-    // Documents the current state rather than asserting a permanent one: this
-    // starts failing the moment #55/#56 add a real entry, which is the point —
-    // it will need updating to `expect(CORPUS.length).toBeGreaterThan(0)` once they do.
-    expect(CORPUS).toEqual([]);
-    const placement: CorpusPlacement = { category: 'planet-in-house', body: 'moon', house: 4 };
+  it('the shipped corpus resolves every category through the fallback path except where it now has real entries', () => {
+    expect(CORPUS.length).toBeGreaterThan(0);
+    const placement: CorpusPlacement = { category: 'planet-in-house', body: 'moon', house: 1 };
     expect(resolvePlacementText(placement, 'en', CORPUS)).toBe(composeFallbackText(placement, 'en'));
+  });
+
+  it('falls back to the neutral corpus entry, not the mechanical fallback, when a persona has no dedicated entry', () => {
+    const placement: CorpusPlacement = { category: 'planet-in-sign', body: 'sun', sign: 0 };
+    const neutral: CorpusEntry = {
+      key: 'planet-in-sign:sun:0',
+      locale: 'en',
+      text: 'The neutral exemplar for Sun in Aries.',
+      tier: 'core',
+      tags: [],
+      provenance: { source: 'hand-written' },
+    };
+    expect(resolvePlacementText(placement, 'en', [neutral], 'mystic')).toBe(neutral.text);
   });
 });

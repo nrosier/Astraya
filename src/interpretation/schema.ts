@@ -48,6 +48,15 @@ export const CORPUS_LOCALES = ['en', 'nl'] as const;
 export type Locale = (typeof CORPUS_LOCALES)[number];
 
 /**
+ * Mirrors the `id`s in `tools/corpus-gen/personas.json` — kept as a plain
+ * literal here rather than read from that file so this module stays a pure,
+ * synchronous value with no filesystem access (`test/no-runtime-llm-access.
+ * test.ts`'s spirit). A test asserts the two lists stay in sync.
+ */
+export const PERSONA_IDS = ['traditionalist', 'big_sister', 'cynic', 'mystic', 'pragmatist'] as const;
+export type PersonaId = (typeof PERSONA_IDS)[number];
+
+/**
  * A body has at most one of these true under a given rulership scheme
  * (`essentialDignities`, #25) — this is that state, not a separate taxonomy
  * invented for the corpus.
@@ -191,6 +200,15 @@ export interface CorpusEntry {
   readonly tier: CorpusTier;
   readonly tags: readonly string[];
   readonly provenance: CorpusProvenance;
+  /** Absent means the neutral, persona-agnostic entry used when no persona-specific one exists. */
+  readonly persona?: PersonaId;
+  /**
+   * Marks one of the "gold-standard exemplars" #56's generator injects into
+   * every request, regardless of persona. Never combined with `persona` —
+   * an anchor is neutral by definition. See `validateProvenance` for what
+   * provenance an anchor requires.
+   */
+  readonly anchor?: boolean;
 }
 
 /**
@@ -204,9 +222,8 @@ export const CORPUS_ENTRY_RESPONSE_SCHEMA = {
   properties: {
     text: { type: 'string' },
     tier: { type: 'string', enum: CORPUS_TIERS },
-    tags: { type: 'array', items: { type: 'string' } },
   },
-  required: ['text', 'tier', 'tags'],
+  required: ['text', 'tier'],
 } as const;
 
 export interface CorpusValidationIssue {
@@ -310,6 +327,21 @@ function validateProvenance(value: unknown): string[] {
   return errors;
 }
 
+function isPersonaId(value: unknown): value is PersonaId {
+  return (PERSONA_IDS as readonly unknown[]).includes(value);
+}
+
+/**
+ * An anchor's provenance must show a human stands behind the exact words:
+ * either it was hand-written, or it was generated and has since been
+ * reviewed (`reviewedBy`/`reviewedAt` both set) — the same fields #63's
+ * review pass already uses to mark generated text as checked.
+ */
+function isAcceptableAnchorProvenance(provenance: CorpusProvenance): boolean {
+  if (provenance.source === 'hand-written') return true;
+  return provenance.source === 'generated' && provenance.reviewedBy !== undefined && provenance.reviewedAt !== undefined;
+}
+
 /** Validates one raw entry's shape and placement-key correctness, without checking cross-locale parity. */
 export function validateCorpusEntries(raw: readonly unknown[]): CorpusValidationResult {
   const issues: CorpusValidationIssue[] = [];
@@ -324,14 +356,20 @@ export function validateCorpusEntries(raw: readonly unknown[]): CorpusValidation
       report('entry must be an object');
       return;
     }
-    const { key, locale, text, tier, tags, provenance } = item;
+    const { key, locale, text, tier, tags, provenance, persona, anchor } = item;
     if (typeof key !== 'string') {
       report('key must be a string');
       return;
     }
     for (const error of validateKey(key)) report(error);
-    if (seenKeys.has(key)) report(`duplicate key "${key}"`);
-    seenKeys.add(key);
+    if (persona !== undefined && !isPersonaId(persona)) {
+      report(`persona must be one of ${PERSONA_IDS.join(', ')}, got ${JSON.stringify(persona)}`);
+    }
+    const dedupeKey = `${key}::${typeof persona === 'string' ? persona : ''}`;
+    if (seenKeys.has(dedupeKey)) {
+      report(persona === undefined ? `duplicate key "${key}"` : `duplicate key "${key}" for persona "${String(persona)}"`);
+    }
+    seenKeys.add(dedupeKey);
 
     if (!(CORPUS_LOCALES as readonly unknown[]).includes(locale))
       report(`locale must be one of ${CORPUS_LOCALES.join(', ')}`);
@@ -340,6 +378,16 @@ export function validateCorpusEntries(raw: readonly unknown[]): CorpusValidation
     if (!Array.isArray(tags) || !tags.every((tag) => typeof tag === 'string'))
       report('tags must be an array of strings');
     for (const error of validateProvenance(provenance)) report(error);
+
+    if (anchor !== undefined) {
+      if (typeof anchor !== 'boolean') report('anchor must be a boolean if present');
+      else if (anchor) {
+        if (persona !== undefined) report('anchor entries must not declare a persona — anchors are neutral');
+        if (isRecord(provenance) && !isAcceptableAnchorProvenance(provenance as unknown as CorpusProvenance)) {
+          report('anchor entries must be hand-written, or generated and reviewed (reviewedBy + reviewedAt set)');
+        }
+      }
+    }
 
     const hasErrorsForThisEntry = issues.some((issue) => issue.index === index);
     if (!hasErrorsForThisEntry) {
@@ -350,6 +398,8 @@ export function validateCorpusEntries(raw: readonly unknown[]): CorpusValidation
         tier: tier as CorpusTier,
         tags: tags as readonly string[],
         provenance: provenance as CorpusProvenance,
+        ...(persona !== undefined ? { persona: persona as PersonaId } : {}),
+        ...(anchor !== undefined ? { anchor: anchor as boolean } : {}),
       });
     }
   });

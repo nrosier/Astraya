@@ -1,1 +1,625 @@
-[]
+[
+  {
+    "key": "dignity-state:sun:ruler",
+    "locale": "en",
+    "text": "The Sun's core vitality reaches its most natural and sovereign state in its own rulership, in Leo. Life-force radiates warmly from a settled center; there is an innate sense of worth and a wish to create and lead from an open, generous heart. This gives a natural authority and sturdy vitality — though the pitfall is expecting the world to keep orbiting that center as a matter of course.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:moon:ruler",
+    "locale": "en",
+    "text": "The Moon flows freely in its native element of feeling, nurture and protection in its own rulership, in Cancer. There's an instinctive empathy and a deep anchoring in the emotional life, with a natural pull toward building a safe harbor for oneself and others. Response to life is receptive and intuitive, though this asks for a conscious watch on boundaries, so shifting moods or reliance on the familiar don't leave the self awash.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:mercury:ruler",
+    "locale": "en",
+    "text": "Mercury's mind runs fastest and most flexibly in its own domicile, in Gemini. Thought is curious, quick to learn and constantly in motion, driven to gather, connect and pass along information. The character communicates in a bright, adaptable style that can hold several angles on a subject at once. This mental agility is a real strength, though its shadow is a restlessness or a scattering of attention when speed is chosen over depth.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:mars:ruler",
+    "locale": "en",
+    "text": "Mars in its own rulership in Aries represents initiative, will and physical action in their purest form. Action is direct, courageous and aimed at breaking through resistance without hesitation. The character has no reluctance to go first, or to act the moment a situation calls for it — the flip side being a heightened risk of impulsiveness, impatience or combativeness when obstacles refuse to yield quickly.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:jupiter:ruler",
+    "locale": "en",
+    "text": "With Jupiter in its own rulership in Sagittarius, the drive to expand, find meaning and widen the intellectual or spiritual horizon is at its fullest. The character shows an incorrigible optimism, a broad philosophical outlook and a basic trust in life, often inspiring others with that same enthusiasm — though the pitfall of that wide view is overconfidence, missing practical detail, or preaching one's own convictions as universal fact.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "ruler"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:venus:exalted",
+    "locale": "en",
+    "text": "Venus in its exaltation in Pisces lifts the longing for connection, harmony and love to a universal, sublimated level. Personal affection here outgrows the merely possessive or sensory and becomes a current of compassion, artistic surrender and unconditional devotion. Love's expression is gentle, forgiving and harmony-seeking — though this calls for a watchful eye, so personal boundaries don't dissolve in sheer self-giving.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:saturn:exalted",
+    "locale": "en",
+    "text": "Saturn finds its exaltation in the air sign Libra because its principles of structure, discipline and limit become usable there in service of fairness, social balance and durable agreements. The character expresses itself in relationships with composure, diplomacy and seriousness. This grants a mature sense of responsibility in commitments and partnerships, with patience and integrity as the foundation for lasting structures.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:sun:exalted",
+    "locale": "en",
+    "text": "The Sun finds its exaltation in Aries because the universal life-force here meets the fresh, awakening energy of early spring. In the character this shows as a vigorous, enthusiastic spirit of enterprise, expressed through bold self-assertion and an unguarded confidence in one's own path. Where the Sun in Leo rests on an innate center, the Sun in Aries finds its strength through the challenge of pioneering — which asks for pacing one's own forcefulness.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:moon:exalted",
+    "locale": "en",
+    "text": "The Moon's normally shifting, changeable nature gains a solid, tangible foundation in its exaltation, in Taurus. Emotional needs are steadied by a deep longing for calm, physical security and the simple pleasures of the natural world. Feelings are not easily startled, lending a grounding, reassuring presence to those nearby — though the shadow side of that stability is a stubborn resistance to necessary change that disturbs the familiar comfort zone.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:mercury:exalted",
+    "locale": "en",
+    "text": "Mercury's exaltation coincides with its own domicile in Virgo, giving the mental climate an unusually analytical and critical sharpness. The mind is oriented toward observation, precision, order and the practical usefulness of knowledge, showing as a talent for taking complex processes apart and organizing efficient solutions. The pitfall of this high standard is a tendency toward perfectionism, or losing the larger picture by zooming too far into detail.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:jupiter:exalted",
+    "locale": "en",
+    "text": "When Jupiter stands exalted in Cancer, the planet's philosophical, expansive power is refined by the protective, nurturing qualities of the water sign. The character is marked by a great moral generosity, compassion and a protective open-handedness toward one's own circle or community. Growth comes through offering others a safe harbor — though the challenge is keeping that protective urge from tipping into possessiveness or sentimentality.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "exalted"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:mars:detriment",
+    "locale": "en",
+    "text": "With Mars in its detriment in Taurus, the naturally fiery, quick and direct drive to act gets bogged down on foreign ground, because an impulsive principle must express itself through a patient, conservative earth sign. Motives center on tangible possession and security, so initiatives are slow to get moving. Once in motion, persistence is considerable, but the character can struggle with bottled-up frustration or stubborn passivity.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "detriment"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:mercury:detriment",
+    "locale": "en",
+    "text": "With Mercury in Sagittarius, the principle of detail-noticing and concrete analysis stands opposite its own rulership. The mind leans toward the big picture, the vision, the overarching idea rather than the precise fact. The character communicates with enthusiasm and philosophical flair, but can struggle to verify data carefully — thought flies quickly toward the horizon, at the risk of overlooking concrete steps or essential detail.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "detriment"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:venus:detriment",
+    "locale": "en",
+    "text": "Venus in its detriment in Scorpio finds its pull toward light peace and easy harmony cut across by the water sign's intensity. Affection here is not casual or merely charming, but seeks fusion, loyalty to the bone and absolute truthfulness. There's a deep capacity for loyalty and transformation through love, though the character can wrestle with possessiveness, suspicion, or testing a partner to their limits.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "detriment"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:jupiter:detriment",
+    "locale": "en",
+    "text": "Jupiter in Gemini finds itself in detriment because its search for overarching meaning and universal synthesis gets chopped up into a multitude of loose facts, opinions and fragments of information. The character carries an intellectual curiosity and talks easily across many subjects, but can struggle to build a consistent life philosophy. The task is forging that scattered knowledge into a genuinely deep, guiding insight.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "detriment"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:moon:fall",
+    "locale": "en",
+    "text": "The Moon in its fall in Scorpio sits on emotional ground that runs essentially against its need for rest, nurture and gentle protection. Here the feeling-world is entered by the intense, instinctive waters of the depths, so the emotional response turns intense, guarded and self-protective. This grants a considerable capacity for emotional transformation and resilience in crisis, but an ongoing task of turning inner mistrust into trust.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:saturn:fall",
+    "locale": "en",
+    "text": "With Saturn in its fall in Aries, the principle of limit, restraint, structure and patience runs up against the unruly, uncontained urge of the first fire sign. This can show as an inner conflict between the drive to break through independently and the fear of acting without certainty of success. Once that tension is consciously worked through, the character learns to overcome obstacles in a focused, persistent way and build its own authority.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:mercury:fall",
+    "locale": "en",
+    "text": "Mercury in Pisces stands opposite its exaltation; the logical, analytical mind here dissolves into an ocean of images, feelings and intuitive impressions. Thought follows no strict line of cause and effect, but moves by association, imagination and poetic perception. The character has a considerable artistic imagination, but can founder for lack of mental structure or clear boundaries in communication — what is lost in sharpness is gained in empathic understanding.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:mars:fall",
+    "locale": "en",
+    "text": "Mars in its fall in Cancer finds its natural drive toward direct, forward action slowed by emotional conditions and the need for safety. Energy rarely discharges straightforwardly, moving instead cautiously, protectively or defensively. The character acts chiefly when it senses that its own circle or well-being is under threat. Growth here calls for learning a healthy, direct assertiveness rather than bottled-up tension.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:jupiter:fall",
+    "locale": "en",
+    "text": "Jupiter in its fall in Capricorn finds its natural optimism, abundance and faith in room to grow bounded by the demands of hard reality, duty and structure. Expansion here has to prove itself through tangible results, restraint and disciplined work. This grants considerable social reliability and a realistic capacity to build, though the challenge is not letting inner trust and joy be smothered by excessive worry or overly tight control.",
+    "tier": "core",
+    "tags": [
+      "dignity",
+      "fall"
+    ],
+    "provenance": {
+      "source": "generated",
+      "model": "claude-sonnet-5",
+      "generatedAt": "2026-09-09"
+    }
+  },
+  {
+    "key": "dignity-state:venus:ruler",
+    "locale": "en",
+    "text": "With Venus in Taurus, you trust affection with warmth and ease, and continuity gives it weight. You show interest by making time for someone, sharing a good meal, remembering a pleasure, or offering a calm presence they can count on. You first notice attraction in the body, through voice, scent, touch, and the ease of being near someone. Once a person or bond matters, you rarely release it casually.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    },
+    "anchor": true
+  },
+  {
+    "key": "dignity-state:saturn:ruler",
+    "locale": "en",
+    "text": "Saturn in Capricorn makes you very hard-working and you can work consistently with efforts to achieve your goals. You can inspire and lead others with an inherent leadership that reflects maturity and motivation.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "dignity-state:mars:exalted",
+    "locale": "en",
+    "text": "Mars, the planet of action, in the exalted sign of Capricorn will push you to action and get things done. Its energetic influence governs your primal side and how you approach your desires to act accordingly.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "dignity-state:sun:detriment",
+    "locale": "en",
+    "text": "Sun in Aquarius is a sign of reconnecting with the world. Despite of you willing to reconnect or not, you will be shown the path towards socializing. You will mingle with people and will be keen to spread the knowledge acquired.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "dignity-state:saturn:detriment",
+    "locale": "en",
+    "text": "Saturn in Cancer encourages emotional expression, family focus, and relationship building. It teaches flexibility and the importance of protecting your emotions. This period may bring discomfort with emotional vulnerability.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "dignity-state:sun:fall",
+    "locale": "en",
+    "text": "Sun in Libra requires balance to thrive in life. This position of the Sun in its debilitated sign makes you positive but may make you fickle minded and indecisive.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:0",
+    "locale": "en",
+    "text": "Sun in Aries represents the one who projects their inner light, courage, and energy to establish influence but later gets burnt out or exhausted due to over empowerment.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:1",
+    "locale": "en",
+    "text": "Sun in Taurus represents the one who chases each and every source of beauty and appreciation to establish dignity but lose health and power of self.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:2",
+    "locale": "en",
+    "text": "Sun in Gemini makes an individual extremely fast, smart, adaptable, and curious. All these valuable qualities make you an interesting individual to be around. Also, you can be easily distracted, cannot be chained.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:3",
+    "locale": "en",
+    "text": "Sun in Cancer individuals are nurturing and protective of others. Cancer's ruling planet is the Moon and makes one moody with constantly changing emotions. Cancerians are also security-conscious and highly value home life. They may appear passive and tend to rely on their feelings to make decisions.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:4",
+    "locale": "en",
+    "text": "Sun in Leo makes one confident, comfortable in being the center of attention, dramatic, ambitious, loyal, fiercely protective, generous, luxury seeking, and big-hearted. You are generous at heart and live life king size.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:5",
+    "locale": "en",
+    "text": "Sun in Virgo makes one feel secure when organized in life. With this placement, one feels relaxed when things are under control, or else panic and anxiety prevail.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:9",
+    "locale": "en",
+    "text": "Sun in Capricorn represents ambition, practical, decision making and hard work. Despite all challenges, they can achieve success in their profession. They are forward in searching for the next goal or aim.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:sun:11",
+    "locale": "en",
+    "text": "Sun in Pisces is a placement which mellows your aggression and self-gloating personality. You are an artistic personality with creative ideas. Your expressions are very deep which can make you a self-defined person and a successful writer.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:7",
+    "locale": "en",
+    "text": "Moon in Scorpio represents deep and powerful emotions with a magnetic but secretive persona. They possess emotional resilience and a keen ability to transform through life's upheavals.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:6",
+    "locale": "en",
+    "text": "Moon in Libra are generally peace-loving people. They try to maintain a good relationship with all their friends and relatives from a safe distance. They like to remain away from controversies and are cooperative with others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:5",
+    "locale": "en",
+    "text": "Moon in Virgo makes you feel secure when you are organized in life and feel relaxed when things are under your control, or else you panic and end up being anxious.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    },
+    "anchor": true
+  },
+  {
+    "key": "planet-in-sign:moon:4",
+    "locale": "en",
+    "text": "Moon in Leo represents the bold, brave and intelligent personality of an individual. They are kind people with friends and family members but do not hesitate to voice their opinions.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:3",
+    "locale": "en",
+    "text": "Moon in Cancer makes an individual protective, introspective, and emotional since you possess the innate ability of understanding the emotional undercurrents around you. You understand others' problems and try to resolve the issues of your loved ones and take care of them with love and understanding.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:2",
+    "locale": "en",
+    "text": "When the Moon is in Gemini, it brings together emotions and intellect, enhancing communication and adaptability. This combination fosters curiosity and versatility, giving the individual a vibrant and dynamic personality.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-sign:moon:1",
+    "locale": "en",
+    "text": "Moon in Taurus signifies a strong willpower, emotional stability and inclination towards luxuries and materialistic possessions. Individuals with this placement have a strong sense of ownership, practicality, patience, and trustworthiness with a deep-rooted need for both emotional and financial security.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-house:moon:4",
+    "locale": "en",
+    "text": "Moon in fourth house will give you all the luxuries in life and you will enjoy them to the fullest. You will be charitable, happy, always remain positive and have an excellent relationship with your family and loved ones.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-house:sun:10",
+    "locale": "en",
+    "text": "Presidents, politicians & CEOs often have Sun in the 10th house. No matter how much opposition you face, the Sun will give you the power to overshadow the negativity. You will have immense willpower and determination to become successful.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-house:sun:8",
+    "locale": "en",
+    "text": "Sun in eighth house will amplify your hidden knowledge, research abilities, secretive dealings, & other qualities of the house. You shall be widely known in your community & be recognized by everyone.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-house:sun:6",
+    "locale": "en",
+    "text": "Sun in sixth house will make you resolve conflicts & win over enemies. You will merge with your competitors & work together in an amicable way.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-house:sun:5",
+    "locale": "en",
+    "text": "With the Sun in fifth house, you will be the center of attraction in your academic field & be highly confident of your intellectual capabilities. You will work towards making your children leader of the community.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-house:moon:5",
+    "locale": "en",
+    "text": "Moon in the fifth house will boost your creativity through your children; you will be able to express your feelings through your children. You will be emotionally balanced whenever you are in the process of learning something.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "planet-in-house:moon:12",
+    "locale": "en",
+    "text": "Moon in twelfth house will make you empathetic, who is emotional and can resonate with others' emotions. You will be a home loving person and will always prioritize your family and loved ones.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "sign-on-cusp:7:1",
+    "locale": "en",
+    "text": "Scorpio ascendant individuals have a strong and daring personality and can be quite passionate, jealous and territorial in their relationships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "sign-on-cusp:8:9",
+    "locale": "en",
+    "text": "Sagittarius in 9th house - A key strength of this placement is your unquenchable curiosity and love for learning. You possess an innate ability to grasp the bigger picture and understand complex theories and philosophies. Your optimistic and open-minded approach to life often leads you on thrilling journeys of self-discovery and intellectual growth.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "aspect-pair:square:mars:venus",
+    "locale": "en",
+    "text": "Venus square Mars natal brings intense love-hate feelings into incredibly intimate relationships. Any irritation with loved ones can rapidly escalate to anger and temper tantrums. Yet this intensity subsides as quickly as it builds once the pressure valve is released.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    }
+  },
+  {
+    "key": "aspect-pair:trine:jupiter:sun",
+    "locale": "en",
+    "text": "Endowed with generosity and friendliness, you appear to be lucky in life. You attract good things with a positive frame of mind and a charitable disposition. Rarely entirely “down and out”, you are usually well-received, helpful, and well-informed. You may enjoy travel and have a special affection for foreign places and people. You’re generally not very competitive, and for the most part not combative either. As a result, you are usually well-liked.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "hand-written"
+    },
+    "anchor": true
+  }
+]
