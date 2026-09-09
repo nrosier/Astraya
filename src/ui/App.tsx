@@ -9,6 +9,7 @@ import { People } from './People.js';
 import { PersonForm } from './PersonForm.js';
 import { PwaStatus } from './PwaStatus.js';
 import { parseRoute } from './route.js';
+import { SharedChartView } from './SharedChartView.js';
 import { StatusBar } from './StatusBar.js';
 import { StoreProvider, useStoreStatus } from './store-context.js';
 import { TimePlace } from './TimePlace.js';
@@ -139,6 +140,7 @@ function renderScreen(
   if (parsed.kind === 'about') return <About seVersion={seVersion} />;
   if (parsed.kind === 'changelog') return <Changelog />;
   if (parsed.kind === 'time') return <TimePlace />;
+  if (parsed.kind === 'shared') return <SharedChartView />;
   if (parsed.kind === 'people') {
     return (
       <Stored>
