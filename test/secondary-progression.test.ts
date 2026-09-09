@@ -6,6 +6,7 @@
  * genuine ephemeris behaviour, not arithmetic a mock could stand in for.
  */
 import { describe, expect, it } from 'vitest';
+import { angularSeparation } from '../src/astrology/aspects.js';
 import { NAIBOD_DAILY_MOTION } from '../src/astrology/progressions.js';
 import { computeSecondaryProgression } from '../src/domain/secondary-progression.js';
 import { julianDayFor } from '../src/time/julian.js';
@@ -82,5 +83,35 @@ describe('computeSecondaryProgression (#46)', () => {
     const engine = await getEngine();
     const progressed = await computeSecondaryProgression(NATAL, 2460000, engine, { houseSystem: 'K' });
     expect(progressed.houses.system).toBe('K');
+  });
+
+  it('finds contacts between the progressed positions and the fixed natal chart (#51)', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+    const targetJd = natalJd + 365.2425 * 30;
+
+    const progressed = await computeSecondaryProgression(NATAL, targetJd, engine);
+    const natal = await computeSecondaryProgression(NATAL, natalJd, engine);
+    expect(progressed.contacts.length).toBeGreaterThan(0);
+
+    for (const contact of progressed.contacts) {
+      const progressedPosition = progressed.positions.find((p) => p.body === contact.bodyA);
+      const natalPosition = natal.positions.find((p) => p.body === contact.bodyB);
+      expect(progressedPosition).toBeDefined();
+      expect(natalPosition).toBeDefined();
+      const separation = angularSeparation(progressedPosition?.longitude ?? 0, natalPosition?.longitude ?? 0);
+      expect(Math.abs(separation - contact.aspect.angle)).toBeCloseTo(contact.orb, 6);
+    }
+  });
+
+  it('narrows to fewer contacts with a tighter orb config (#51)', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+    const targetJd = natalJd + 365.2425 * 30;
+
+    const wide = await computeSecondaryProgression(NATAL, targetJd, engine);
+    const tight = await computeSecondaryProgression(NATAL, targetJd, engine, {}, { baseOrbs: {}, luminaryBonus: 0 });
+    expect(tight.contacts).toHaveLength(0);
+    expect(wide.contacts.length).toBeGreaterThan(0);
   });
 });

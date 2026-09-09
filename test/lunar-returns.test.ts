@@ -5,6 +5,8 @@
  * chart's moment is an exact crossing found by the engine's own root-finder.
  */
 import { describe, expect, it } from 'vitest';
+import { angularSeparation } from '../src/astrology/aspects.js';
+import { BODIES } from '../src/astrology/bodies.js';
 import { SE } from '../src/ephemeris/generated-constants.js';
 import { computeLunarReturns } from '../src/domain/lunar-returns.js';
 import { julianDayFor } from '../src/time/julian.js';
@@ -80,5 +82,46 @@ describe('computeLunarReturns (#49)', () => {
     const result = await computeLunarReturns(NATAL, natalJd, natalJd + 40, engine, { houseSystem: 'K' });
     const [first] = result.returns;
     expect(first?.houses.system).toBe('K');
+  });
+
+  it('finds contacts between each return and the natal chart (#51)', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+    const natalPositions = await engine.positions(
+      natalJd,
+      BODIES.map((b) => b.id),
+    );
+
+    const result = await computeLunarReturns(NATAL, natalJd, natalJd + 90, engine);
+    expect(result.returns.length).toBeGreaterThan(0);
+
+    for (const chart of result.returns) {
+      expect(chart.contacts.length).toBeGreaterThan(0);
+      for (const contact of chart.contacts) {
+        const returnPosition = chart.positions.find((p) => p.body === contact.bodyA);
+        const natalPosition = natalPositions.find((p) => p.body === contact.bodyB);
+        expect(returnPosition).toBeDefined();
+        expect(natalPosition).toBeDefined();
+        const separation = angularSeparation(returnPosition?.longitude ?? 0, natalPosition?.longitude ?? 0);
+        expect(Math.abs(separation - contact.aspect.angle)).toBeCloseTo(contact.orb, 6);
+      }
+    }
+  });
+
+  it('narrows to fewer contacts with a tighter orb config (#51)', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+
+    const wide = await computeLunarReturns(NATAL, natalJd, natalJd + 90, engine);
+    const tight = await computeLunarReturns(
+      NATAL,
+      natalJd,
+      natalJd + 90,
+      engine,
+      {},
+      { baseOrbs: {}, luminaryBonus: 0 },
+    );
+    expect(tight.returns.every((chart) => chart.contacts.length === 0)).toBe(true);
+    expect(wide.returns.some((chart) => chart.contacts.length > 0)).toBe(true);
   });
 });

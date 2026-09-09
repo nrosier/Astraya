@@ -16,11 +16,13 @@
  * the natural unit here — a caller with a calendar date already has
  * `julianDayFor`/`provider.julianDay` to produce one.
  */
-import { BODIES, bodyByKey } from '../astrology/bodies.js';
+import { findCrossAspects, fixedSubjects, subjectsFrom, type Aspect, type OrbConfig } from '../astrology/aspects.js';
+import { BODIES, bodyById, bodyByKey, type BodyCategory } from '../astrology/bodies.js';
 import { computeProgressedHouses, type ProgressedMcMethod } from '../astrology/progressions.js';
 import { julianDayFor } from '../time/julian.js';
 import { resolveMoment } from '../time/resolve.js';
 import type {
+  BodyId,
   BodyPosition,
   EphemerisProvider,
   GeoPosition,
@@ -30,6 +32,12 @@ import type {
   Zodiac,
 } from '../ephemeris/types.js';
 import type { BirthMomentInput } from '../time/types.js';
+
+function categoryOf(body: BodyId): BodyCategory {
+  const definition = bodyById(body);
+  if (definition === undefined) throw new Error(`unreachable: ${String(body)} is always one of BODIES`);
+  return definition.category;
+}
 
 /** Placidus, matching `chart-compute.ts`'s default so the two are directly comparable. */
 const DEFAULT_HOUSE_SYSTEM: HouseSystem = 'P';
@@ -50,6 +58,8 @@ export interface SecondaryProgressionData {
   readonly mcMethod: ProgressedMcMethod;
   readonly positions: readonly BodyPosition[];
   readonly houses: HousePositions;
+  /** Aspects between the progressed positions and the fixed natal chart. */
+  readonly contacts: readonly Aspect[];
 }
 
 /**
@@ -64,6 +74,7 @@ export async function computeSecondaryProgression(
   targetJd: JulianDayUT,
   provider: EphemerisProvider,
   options: SecondaryProgressionOptions = {},
+  orbConfig?: OrbConfig,
 ): Promise<SecondaryProgressionData> {
   const resolved = resolveMoment(natalMoment);
   const natalJd = await julianDayFor(provider, resolved);
@@ -75,10 +86,15 @@ export async function computeSecondaryProgression(
   const sun = bodyByKey('sun');
   if (sun === undefined) throw new Error('unreachable: sun is always in BODIES');
 
-  const [natalHouses, [natalSun]] = await Promise.all([
+  const [natalHouses, natalPositions] = await Promise.all([
     provider.houses(natalJd, place, houseSystem, options.zodiac),
-    provider.positions(natalJd, [sun.id], positionOptions),
+    provider.positions(
+      natalJd,
+      BODIES.map((body) => body.id),
+      positionOptions,
+    ),
   ]);
+  const natalSun = natalPositions.find((position) => position.body === sun.id);
   if (natalSun === undefined) throw new Error('unreachable: the ephemeris returned no position for the Sun');
 
   const progressed = await computeProgressedHouses(
@@ -100,6 +116,12 @@ export async function computeSecondaryProgression(
     positionOptions,
   );
 
+  const contacts = findCrossAspects(
+    subjectsFrom(positions, categoryOf),
+    fixedSubjects(natalPositions, categoryOf),
+    orbConfig,
+  );
+
   return {
     natalJd,
     progressedJd: progressed.progressedJd,
@@ -107,5 +129,6 @@ export async function computeSecondaryProgression(
     mcMethod: progressed.mcMethod,
     positions,
     houses: progressed.houses,
+    contacts,
   };
 }

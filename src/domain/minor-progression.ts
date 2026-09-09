@@ -12,12 +12,14 @@
  * apart in behaviour by construction, not just by convention — and to avoid
  * any name that could be confused with `computeSecondaryProgression` itself.
  */
-import { BODIES } from '../astrology/bodies.js';
+import { findCrossAspects, fixedSubjects, subjectsFrom, type Aspect, type OrbConfig } from '../astrology/aspects.js';
+import { BODIES, bodyById, type BodyCategory } from '../astrology/bodies.js';
 import { minorProgressedJulianDay, type MinorProgressionMethod } from '../astrology/minor-progressions.js';
 import { ageInYears } from '../astrology/progressions.js';
 import { julianDayFor } from '../time/julian.js';
 import { resolveMoment } from '../time/resolve.js';
 import type {
+  BodyId,
   BodyPosition,
   EphemerisProvider,
   GeoPosition,
@@ -31,6 +33,12 @@ import type { BirthMomentInput } from '../time/types.js';
 /** Placidus, matching `chart-compute.ts` and `secondary-progression.ts`'s default. */
 const DEFAULT_HOUSE_SYSTEM: HouseSystem = 'P';
 
+function categoryOf(body: BodyId): BodyCategory {
+  const definition = bodyById(body);
+  if (definition === undefined) throw new Error(`unreachable: ${String(body)} is always one of BODIES`);
+  return definition.category;
+}
+
 export interface MinorProgressionOptions {
   readonly houseSystem?: HouseSystem;
   readonly zodiac?: Zodiac;
@@ -43,6 +51,8 @@ export interface MinorProgressionData {
   readonly ageInYears: number;
   readonly positions: readonly BodyPosition[];
   readonly houses: HousePositions;
+  /** Aspects between the progressed positions and the fixed natal chart. */
+  readonly contacts: readonly Aspect[];
 }
 
 /**
@@ -56,6 +66,7 @@ export async function computeMinorProgression(
   targetJd: JulianDayUT,
   provider: EphemerisProvider,
   options: MinorProgressionOptions = {},
+  orbConfig?: OrbConfig,
 ): Promise<MinorProgressionData> {
   const resolved = resolveMoment(natalMoment);
   const natalJd = await julianDayFor(provider, resolved);
@@ -64,7 +75,12 @@ export async function computeMinorProgression(
   const positionOptions = options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
 
   const progressedJd = minorProgressedJulianDay(method, natalJd, targetJd);
-  const [positions, houses] = await Promise.all([
+  const [natalPositions, positions, houses] = await Promise.all([
+    provider.positions(
+      natalJd,
+      BODIES.map((body) => body.id),
+      positionOptions,
+    ),
     provider.positions(
       progressedJd,
       BODIES.map((body) => body.id),
@@ -73,5 +89,11 @@ export async function computeMinorProgression(
     provider.houses(progressedJd, place, houseSystem, options.zodiac),
   ]);
 
-  return { method, natalJd, progressedJd, ageInYears: ageInYears(natalJd, targetJd), positions, houses };
+  const contacts = findCrossAspects(
+    subjectsFrom(positions, categoryOf),
+    fixedSubjects(natalPositions, categoryOf),
+    orbConfig,
+  );
+
+  return { method, natalJd, progressedJd, ageInYears: ageInYears(natalJd, targetJd), positions, houses, contacts };
 }

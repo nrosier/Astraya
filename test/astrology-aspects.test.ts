@@ -6,11 +6,14 @@ import {
   aspectByKey,
   findAspects,
   findCrossAspects,
+  fixedSubjects,
   matchAspect,
   orbFor,
+  subjectsFrom,
   type AspectSubject,
 } from '../src/astrology/aspects.js';
-import type { BodyPosition } from '../src/ephemeris/types.js';
+import type { BodyCategory } from '../src/astrology/bodies.js';
+import type { BodyId, BodyPosition } from '../src/ephemeris/types.js';
 
 function position(longitude: number, longitudeSpeed = 1): BodyPosition {
   return {
@@ -246,5 +249,38 @@ describe('findCrossAspects (#47)', () => {
   it('returns nothing when either list is empty', () => {
     expect(findCrossAspects([], [subject(1, 0)])).toEqual([]);
     expect(findCrossAspects([subject(1, 0)], [])).toEqual([]);
+  });
+});
+
+describe('subjectsFrom and fixedSubjects (#51)', () => {
+  const categoryOf = (body: BodyId): BodyCategory => (body === 0 ? 'luminary' : 'planet');
+
+  it('subjectsFrom carries each position through with its own real speed', () => {
+    const positions = [position(10, 1), { ...position(60, 13), body: 1 }];
+    const subjects = subjectsFrom(positions, categoryOf);
+
+    expect(subjects).toHaveLength(2);
+    expect(subjects[0]).toEqual({ body: 0, category: 'luminary', position: positions[0] });
+    expect(subjects[1]).toEqual({ body: 1, category: 'planet', position: positions[1] });
+  });
+
+  it('fixedSubjects zeroes longitude and latitude speed but keeps the longitude', () => {
+    const positions = [position(10, 1)];
+    const [subject] = fixedSubjects(positions, categoryOf);
+
+    expect(subject?.position.longitude).toBe(10);
+    expect(subject?.position.longitudeSpeed).toBe(0);
+    expect(subject?.position.latitudeSpeed).toBe(0);
+  });
+
+  it('a moving side applies toward a fixed side the same way a real chart-to-chart contact would', () => {
+    // A fast body at 87 deg/1 closing on a fixed square at 90 (0 + 90): with
+    // the fixed side's speed zeroed, applying depends only on the mover.
+    const moving = subjectsFrom([{ ...position(87, 13), body: 1 }], categoryOf);
+    const fixed = fixedSubjects([position(0, 1)], categoryOf);
+    const [aspect] = findCrossAspects(moving, fixed);
+
+    expect(aspect?.aspect.key).toBe('square');
+    expect(aspect?.applying).toBe(true);
   });
 });

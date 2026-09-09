@@ -171,6 +171,38 @@ export interface Aspect extends AspectMatch {
   readonly bodyB: BodyId;
 }
 
+/**
+ * Aspect subjects using each position's own real speed — the everyday case
+ * for a single chart, or for the moving side of a cross-chart comparison
+ * (a progressed, directed, returned or transiting position genuinely moving
+ * at that moment).
+ */
+export function subjectsFrom(
+  positions: readonly BodyPosition[],
+  categoryOf: (body: BodyId) => BodyCategory,
+): readonly AspectSubject[] {
+  return positions.map((position) => ({ body: position.body, category: categoryOf(position.body), position }));
+}
+
+/**
+ * Aspect subjects with speed forced to zero, for the side of a cross-chart
+ * comparison being held fixed as a reference — a natal chart being checked
+ * against a progression, direction, return or transit. Without this, the
+ * fixed side's own speed *at its own moment* (e.g. natal motion at birth)
+ * would leak into the applying/separating calculation, which only makes
+ * sense relative to the side that is actually moving now.
+ */
+export function fixedSubjects(
+  positions: readonly BodyPosition[],
+  categoryOf: (body: BodyId) => BodyCategory,
+): readonly AspectSubject[] {
+  return positions.map((position) => ({
+    body: position.body,
+    category: categoryOf(position.body),
+    position: { ...position, longitudeSpeed: 0, latitudeSpeed: 0 },
+  }));
+}
+
 /** Every aspect among a set of bodies, one entry per pair that is in orb. */
 export function findAspects(
   subjects: readonly AspectSubject[],
