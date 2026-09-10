@@ -61,33 +61,56 @@ function jaccard(a: Set<string>, b: Set<string>): number {
 
 /**
  * Flags every pair of entries, within a locale, whose text is at or above
- * `threshold` similar. Quadratic in the size of each locale's entry list —
- * fine at corpus scale (low thousands), not something to run per keystroke.
+ * `threshold` similar. Comparison is further scoped to entries that share a
+ * persona (including the neutral, persona-less group): a persona is a
+ * deliberately distinct voice for the same fact, so two entries in different
+ * personas reading alike is not the "sounds templated" signal this pass
+ * exists to catch — it's two personas doing their job on the same placement.
+ * Scoping this way also keeps each compared group at one persona's slice of
+ * the corpus (a few thousand entries) rather than all five-plus-neutral
+ * pooled together, which is what makes the remaining pruning effective.
+ *
+ * Within a group, the scan is quadratic but pruned: a pair's Jaccard
+ * similarity can never exceed the ratio of its smaller trigram set to its
+ * larger one (intersection ≤ the smaller set, union ≥ the larger one), so
+ * sorting each group by trigram-set size lets the inner loop stop the moment
+ * that ratio bound drops below `threshold` — every later (larger) entry
+ * would only push the bound lower still.
  */
 export function findNearDuplicates(
   entries: readonly CorpusEntry[],
   threshold = DEFAULT_SIMILARITY_THRESHOLD,
 ): SimilarityReport {
-  const byLocale = new Map<Locale, CorpusEntry[]>();
+  const byGroup = new Map<string, { locale: Locale; group: CorpusEntry[] }>();
   for (const entry of entries) {
-    const group = byLocale.get(entry.locale) ?? [];
-    group.push(entry);
-    byLocale.set(entry.locale, group);
+    const groupKey = `${entry.locale}::${entry.persona ?? ''}`;
+    const existing = byGroup.get(groupKey);
+    if (existing) {
+      existing.group.push(entry);
+    } else {
+      byGroup.set(groupKey, { locale: entry.locale, group: [entry] });
+    }
   }
 
   const pairs: DuplicatePair[] = [];
-  for (const [locale, group] of byLocale) {
-    const grams = group.map((entry) => trigramsOf(entry.text));
-    for (let i = 0; i < group.length; i += 1) {
-      for (let j = i + 1; j < group.length; j += 1) {
-        const a = grams[i];
-        const b = grams[j];
-        const entryA = group[i];
-        const entryB = group[j];
-        if (a === undefined || b === undefined || entryA === undefined || entryB === undefined) continue;
-        const similarity = jaccard(a, b);
+  for (const { locale, group } of byGroup.values()) {
+    const items = group
+      .map((entry) => ({ entry, grams: trigramsOf(entry.text) }))
+      .sort((a, b) => a.grams.size - b.grams.size);
+    for (let i = 0; i < items.length; i += 1) {
+      const a = items[i];
+      if (!a) continue;
+      for (let j = i + 1; j < items.length; j += 1) {
+        const b = items[j];
+        if (!b) continue;
+        if (b.grams.size === 0 || a.grams.size / b.grams.size < threshold) break;
+        const similarity = jaccard(a.grams, b.grams);
         if (similarity >= threshold) {
-          pairs.push({ keyA: entryA.key, keyB: entryB.key, locale, similarity });
+          // Reported key order is lexicographic, not size-sort order — a pair's
+          // identity shouldn't depend on which of its two entries happens to have
+          // the smaller trigram set.
+          const [keyA, keyB] = a.entry.key <= b.entry.key ? [a.entry.key, b.entry.key] : [b.entry.key, a.entry.key];
+          pairs.push({ keyA, keyB, locale, similarity });
         }
       }
     }

@@ -42,11 +42,11 @@ chart in front of it rather than templated.
 
 ### Notes on correctness
 
-- **The corpus was linted and deduplicated as data, not just written and
-  trusted.** An automated lint pass checks every entry's placement fields
-  against the real astrology reference tables, and a similarity pass flags
-  any two entries in the same locale that read too much alike; one flagged
-  pair was rewritten and reverified before this release.
+- **The corpus was linted and deduplicated as data, not just written and trusted.**
+  An automated lint pass checks every entry's placement fields against the real
+  astrology reference tables, and a similarity pass flags any two entries in the
+  same locale that read too much alike; one flagged pair was rewritten and
+  reverified before this release.
 - **A CI check keeps the model out of the running app.** The corpus is
   generated at build time and committed as data — a lint rule fails the
   build if any code path in `src/` could reach a language-model client at
