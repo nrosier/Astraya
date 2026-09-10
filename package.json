@@ -1,6 +1,6 @@
 {
   "name": "astraya",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "private": true,
   "type": "module",
   "description": "Astrological calculation and charting webapp powered by the Swiss Ephemeris",
