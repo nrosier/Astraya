@@ -26,12 +26,11 @@ under the hood, or a cosmetic wheel option — no new calculation capability.
   (10° with a luminary), sextile at 4° (5°30′ with a luminary), and every
   minor aspect at a flat 2°30′ — replacing Astraya's previous per-aspect orb
   table. A ±90% scale slider widens or narrows all three tiers at once.
-- **Minor aspects, and aspects to Chiron/Lilith/the Lunar Nodes, now default
-  off** rather than on, matching Astro-Seek's own defaults. Each is an
-  individual toggle: six minor-aspect checkboxes, and one "aspects to"
-  checkbox per body. This narrows what the Aspects tab and matrix show by
-  default; nothing is hidden that isn't computed — turning a toggle on
-  computes and shows it for real.
+- **Minor aspects, and aspects to Chiron/Lilith/the Lunar Nodes, default off**,
+  matching Astro-Seek's own defaults. Each is an individual toggle: six
+  minor-aspect checkboxes, and one "aspects to" checkbox per body. This
+  narrows what the Aspects tab and matrix show by default; nothing is hidden
+  that isn't computed — turning a toggle on computes and shows it for real.
 - **Point-display toggles** for the Part of Fortune, the Vertex, Chiron and
   a new pair of **ASC/MC and Sun/Moon midpoint rows** in the Derived points
   tab (the same two Astro-Seek shows inline on its own chart page). Chiron
