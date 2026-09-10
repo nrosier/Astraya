@@ -8,11 +8,11 @@ describe('resolveSheetGeometry', () => {
   it('reproduces the reference layout exactly at size 800', () => {
     const geometry = resolveSheetGeometry(REFERENCE_SIZE);
     expect(geometry.outerBorder).toBe(380);
-    expect(geometry.zodiacOuter).toBe(340);
-    expect(geometry.zodiacInner).toBe(300);
-    expect(geometry.houseRing).toBe(220);
-    expect(geometry.aspectCircle).toBe(150);
-    expect(geometry.signGlyphRadius).toBe(320);
+    expect(geometry.zodiacOuter).toBe(376);
+    expect(geometry.zodiacInner).toBe(320);
+    expect(geometry.houseRing).toBe(280);
+    expect(geometry.aspectCircle).toBe(190);
+    expect(geometry.signGlyphRadius).toBe(348);
   });
 
   it('puts the reference tick lengths on the three tiers', () => {
@@ -66,7 +66,7 @@ describe('resolveRingBands', () => {
 
   it('gives a single ring the reference layout planetary radius', () => {
     const [band] = resolveRingBands(resolveSheetGeometry(REFERENCE_SIZE), 1);
-    expect(band?.glyphRadius).toBe(185);
+    expect(band?.glyphRadius).toBe(235);
   });
 
   it('spans exactly the aspect circle to the house ring, leaving the aspect disk free', () => {

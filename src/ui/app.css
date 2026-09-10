@@ -33,9 +33,15 @@
 
   /* Structural accent. */
   --accent: #a390fb;
-  /* Aspect families, by the convention every printed chart uses: hard tension red, soft flow blue. */
+  /*
+   * Aspect families, by the convention every printed chart uses: hard tension
+   * red, harmonious flow blue, and the quintile family (quintile, biquintile,
+   * quincunx — no tension, no flow, just a distinct minor rhythm) their own
+   * third hue so they read as neither.
+   */
   --aspect-hard: #ff8189;
   --aspect-soft: #6ec3ff;
+  --aspect-minor: #8fe0a0;
   /* Attention accent: warnings, and the sun in anything we draw. */
   --solar: #f2b75e;
 
@@ -60,6 +66,7 @@
     --solar: #8f5a0e;
     --aspect-hard: #b3261e;
     --aspect-soft: #1857c4;
+    --aspect-minor: #1f8a4c;
 
     --glow-a: rgb(124 92 255 / 8%);
     --glow-b: rgb(242 183 94 / 7%);
@@ -87,6 +94,7 @@
   --solar: #f2b75e;
   --aspect-hard: #ff8189;
   --aspect-soft: #6ec3ff;
+  --aspect-minor: #8fe0a0;
 
   --glow-a: rgb(124 92 255 / 18%);
   --glow-b: rgb(242 183 94 / 8%);
@@ -105,6 +113,7 @@
   --solar: #8f5a0e;
   --aspect-hard: #b3261e;
   --aspect-soft: #1857c4;
+  --aspect-minor: #1f8a4c;
 
   --glow-a: rgb(124 92 255 / 8%);
   --glow-b: rgb(242 183 94 / 7%);
@@ -949,16 +958,33 @@ label.stacked textarea:focus-visible {
 
 .wheel-ring-outer,
 .wheel-ring-zodiac,
-.wheel-ring-inner,
 .chart-multiwheel-ring {
   fill: none;
   stroke: var(--line);
   stroke-width: 1.5;
 }
 
+/*
+ * These two circles both fill (not just stroke) their disk, one drawn under
+ * the other, purely for the layering: the zodiac-inner boundary shades the
+ * whole area inside it a little, and the aspect circle sitting on top of the
+ * middle of that shades its own smaller disk again — so the ring where
+ * bodies sit reads as a lightly tinted band and the aspect-web centre reads
+ * as a visibly deeper panel, without either needing its own flat fill colour.
+ * This is the one Astrodienst-style convention Astraya's flat, outline-only
+ * rings previously had no equivalent for at all.
+ */
+.wheel-ring-inner {
+  fill: var(--surface);
+  fill-opacity: 0.3;
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
 /* The chord boundary, not a drawn edge of the chart: present but recessive. */
 .wheel-ring-aspect {
-  fill: none;
+  fill: var(--surface);
+  fill-opacity: 0.85;
   stroke: var(--line);
   stroke-width: 1;
   opacity: 0.6;
@@ -1012,9 +1038,12 @@ label.stacked textarea:focus-visible {
   stroke-width: 2.5;
 }
 
+/* A house cusp is a reference line, not a feature to look at — dashed and faint, unlike an angle. */
 .chart-multiwheel-cusp {
   stroke: var(--line);
   stroke-width: 1;
+  stroke-dasharray: 3 2;
+  stroke-opacity: 0.4;
 }
 
 .chart-multiwheel-cusp-angle {
@@ -1051,23 +1080,36 @@ label.stacked textarea:focus-visible {
 
 /*
  * Aspect colour carries the family and nothing else — hard aspects red and
- * heavier, soft blue and lighter, the minors left on the neutral rule above.
- * Applying/separating is therefore shown by weight rather than by hue, which
- * it has to be: hue is already spent on the distinction a reader looks for
- * first, and two colour axes on one line read as neither.
+ * heaviest, harmonious ones blue and a shade lighter, the quintile-family
+ * minors a third hue lighter still. Applying/separating is therefore shown by
+ * weight rather than by hue, which it has to be: hue is already spent on the
+ * distinction a reader looks for first, and two colour axes on one line read
+ * as neither.
  */
+.chart-aspect-semisquare,
 .chart-aspect-square,
+.chart-aspect-sesquiquadrate,
 .chart-aspect-opposition {
   stroke: var(--aspect-hard);
   stroke-width: 2;
   opacity: 0.75;
 }
 
-.chart-aspect-trine,
-.chart-aspect-sextile {
+.chart-aspect-conjunction,
+.chart-aspect-semisextile,
+.chart-aspect-sextile,
+.chart-aspect-trine {
   stroke: var(--aspect-soft);
   stroke-width: 1.5;
   opacity: 0.7;
+}
+
+.chart-aspect-quintile,
+.chart-aspect-biquintile,
+.chart-aspect-quincunx {
+  stroke: var(--aspect-minor);
+  stroke-width: 1.5;
+  opacity: 0.6;
 }
 
 .chart-aspect.chart-aspect-applying {
@@ -1142,20 +1184,38 @@ label.stacked textarea:focus-visible {
  * The grid repeats the wheel's family colouring, so "is this chart full of
  * squares?" is answerable from either one.
  */
+.chart-matrix-cell-semisquare,
 .chart-matrix-cell-square,
+.chart-matrix-cell-sesquiquadrate,
 .chart-matrix-cell-opposition {
   fill: color-mix(in oklab, var(--aspect-hard) 12%, transparent);
 }
 
-.chart-matrix-cell-trine,
-.chart-matrix-cell-sextile {
+.chart-matrix-cell-conjunction,
+.chart-matrix-cell-semisextile,
+.chart-matrix-cell-sextile,
+.chart-matrix-cell-trine {
   fill: color-mix(in oklab, var(--aspect-soft) 12%, transparent);
 }
 
+.chart-matrix-cell-quintile,
+.chart-matrix-cell-biquintile,
+.chart-matrix-cell-quincunx {
+  fill: color-mix(in oklab, var(--aspect-minor) 12%, transparent);
+}
+
+.chart-aspect-glyph-semisquare circle,
+.chart-aspect-glyph-semisquare path,
+.chart-aspect-glyph-semisquare rect,
+.chart-aspect-glyph-semisquare line,
 .chart-aspect-glyph-square circle,
 .chart-aspect-glyph-square path,
 .chart-aspect-glyph-square rect,
 .chart-aspect-glyph-square line,
+.chart-aspect-glyph-sesquiquadrate circle,
+.chart-aspect-glyph-sesquiquadrate path,
+.chart-aspect-glyph-sesquiquadrate rect,
+.chart-aspect-glyph-sesquiquadrate line,
 .chart-aspect-glyph-opposition circle,
 .chart-aspect-glyph-opposition path,
 .chart-aspect-glyph-opposition rect,
@@ -1163,6 +1223,14 @@ label.stacked textarea:focus-visible {
   stroke: var(--aspect-hard);
 }
 
+.chart-aspect-glyph-conjunction circle,
+.chart-aspect-glyph-conjunction path,
+.chart-aspect-glyph-conjunction rect,
+.chart-aspect-glyph-conjunction line,
+.chart-aspect-glyph-semisextile circle,
+.chart-aspect-glyph-semisextile path,
+.chart-aspect-glyph-semisextile rect,
+.chart-aspect-glyph-semisextile line,
 .chart-aspect-glyph-trine circle,
 .chart-aspect-glyph-trine path,
 .chart-aspect-glyph-trine rect,
@@ -1172,6 +1240,21 @@ label.stacked textarea:focus-visible {
 .chart-aspect-glyph-sextile rect,
 .chart-aspect-glyph-sextile line {
   stroke: var(--aspect-soft);
+}
+
+.chart-aspect-glyph-quintile circle,
+.chart-aspect-glyph-quintile path,
+.chart-aspect-glyph-quintile rect,
+.chart-aspect-glyph-quintile line,
+.chart-aspect-glyph-biquintile circle,
+.chart-aspect-glyph-biquintile path,
+.chart-aspect-glyph-biquintile rect,
+.chart-aspect-glyph-biquintile line,
+.chart-aspect-glyph-quincunx circle,
+.chart-aspect-glyph-quincunx path,
+.chart-aspect-glyph-quincunx rect,
+.chart-aspect-glyph-quincunx line {
+  stroke: var(--aspect-minor);
 }
 
 .chart-emphasis-total {
