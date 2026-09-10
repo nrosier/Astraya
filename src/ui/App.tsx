@@ -12,6 +12,7 @@ import { parseRoute } from './route.js';
 import { SharedChartView } from './SharedChartView.js';
 import { StatusBar } from './StatusBar.js';
 import { StoreProvider, useStoreStatus } from './store-context.js';
+import { ThemeToggle } from './ThemeToggle.js';
 import { TimePlace } from './TimePlace.js';
 import { APP_VERSION } from '../version.js';
 
@@ -127,6 +128,7 @@ export function App(): React.JSX.Element {
   return (
     <>
       {screen}
+      <ThemeToggle />
       <PwaStatus />
     </>
   );
