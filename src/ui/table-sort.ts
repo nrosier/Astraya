@@ -62,3 +62,16 @@ export function rowsToTsv<T>(columns: readonly TableColumn<T>[], rows: readonly 
   const lines = rows.map((row) => columns.map((column) => cellText(column, row)).join('\t'));
   return [header, ...lines].join('\n');
 }
+
+/** RFC 4180 quoting: only fields containing a comma, quote or newline are quoted, quotes doubled within them. */
+function csvField(value: string): string {
+  if (!/[",\n\r]/.test(value)) return value;
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+/** CSV text of `rows` under `columns` (#68), for a file download rather than the clipboard `rowsToTsv` serves. */
+export function rowsToCsv<T>(columns: readonly TableColumn<T>[], rows: readonly T[]): string {
+  const header = columns.map((column) => csvField(column.label)).join(',');
+  const lines = rows.map((row) => columns.map((column) => csvField(cellText(column, row))).join(','));
+  return [header, ...lines].join('\r\n');
+}

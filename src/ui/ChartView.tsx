@@ -27,7 +27,8 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   angleRows,
   aspectRows,
-  chartWheelRing,
+  chartSheetInput,
+  chartSheetMetaLines,
   derivedPointRows,
   dignityRows,
   houseCuspRows,
@@ -40,10 +41,14 @@ import {
   type PositionRow,
 } from '../domain/chart-tables.js';
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
+import { deriveExportFilename } from '../domain/export-filename.js';
 import { encodeChartShareLink } from '../domain/chart-share.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
-import { renderMultiWheelSvg } from '../chart/multi-wheel.js';
+import { renderChartSheetSvg } from '../chart/chart-sheet.js';
+import { standaloneSvg } from '../chart/standalone-svg.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
+import { svgToPngBlob } from './chart-raster.js';
+import { downloadBlob, downloadText } from './download.js';
 import { ReportView } from './ReportView.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
@@ -115,6 +120,81 @@ const DERIVED_POINT_COLUMNS: readonly TableColumn<DerivedPointRow>[] = [
 
 type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived' | 'report';
 
+/**
+ * The table(s) for one non-report tab, factored out of the tab panel below so the same
+ * markup can also be stacked for every tab at once in the PDF export (#67) without being
+ * duplicated. `undefined` for `'report'`, which isn't a data table and is rendered by its
+ * caller instead.
+ */
+function renderTableTab(tab: TabKey, data: ChartData, displayName: string): React.ReactNode {
+  switch (tab) {
+    case 'positions':
+      return (
+        <SortableTable
+          caption="Positions"
+          columns={POSITION_COLUMNS}
+          rows={positionRows(data)}
+          getRowKey={(row) => row.bodyKey}
+          downloadFilename={deriveExportFilename(displayName, 'positions', 'csv')}
+        />
+      );
+    case 'houses':
+      return (
+        <>
+          <SortableTable
+            caption="Houses"
+            columns={HOUSE_CUSP_COLUMNS}
+            rows={houseCuspRows(data)}
+            getRowKey={(row) => String(row.house)}
+            downloadFilename={deriveExportFilename(displayName, 'houses', 'csv')}
+          />
+          <SortableTable
+            caption="Angles"
+            columns={ANGLE_COLUMNS}
+            rows={angleRows(data)}
+            getRowKey={(row) => row.label}
+            downloadFilename={deriveExportFilename(displayName, 'angles', 'csv')}
+          />
+        </>
+      );
+    case 'aspects':
+      return (
+        <SortableTable
+          caption="Aspects"
+          columns={ASPECT_COLUMNS}
+          rows={aspectRows(data)}
+          getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
+          downloadFilename={deriveExportFilename(displayName, 'aspects', 'csv')}
+        />
+      );
+    case 'dignities':
+      return (
+        <SortableTable
+          caption="Dignities"
+          columns={DIGNITY_COLUMNS}
+          rows={dignityRows(data)}
+          getRowKey={(row) => row.bodyKey}
+          downloadFilename={deriveExportFilename(displayName, 'dignities', 'csv')}
+        />
+      );
+    case 'derived':
+      return (
+        <>
+          <p className="hint">Sect: {data.sect === 'day' ? 'Day chart' : 'Night chart'}</p>
+          <SortableTable
+            caption="Derived points"
+            columns={DERIVED_POINT_COLUMNS}
+            rows={derivedPointRows(data)}
+            getRowKey={(row) => row.label}
+            downloadFilename={deriveExportFilename(displayName, 'derived-points', 'csv')}
+          />
+        </>
+      );
+    case 'report':
+      return undefined;
+  }
+}
+
 const TAB_LABELS: Record<TabKey, string> = {
   positions: 'Positions',
   houses: 'Houses',
@@ -132,6 +212,13 @@ const TAB_LABELS: Record<TabKey, string> = {
  * first section.
  */
 const TAB_ORDER: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived', 'report'];
+
+/** PNG export resolutions (#67): the wheel's own default pixel size, and 2x/4x of it. */
+const PNG_SIZES: readonly { readonly label: string; readonly size: number }[] = [
+  { label: 'Small (600px)', size: 600 },
+  { label: 'Medium (1200px)', size: 1200 },
+  { label: 'Large (2400px)', size: 2400 },
+];
 
 /**
  * Copies a #65 share link for one birth moment to the clipboard — the chart itself is
@@ -177,26 +264,95 @@ function ShareLink({
 }
 
 /**
- * The wheel and data tables for one computed chart, independent of where the data came
- * from — the local store (`ChartView`) or a decoded share link (`SharedChartView`, #65).
- * Kept separate so both callers get the same tabs, wheel, and loading/error states.
+ * The chart sheet and data tables for one computed chart, independent of where the data
+ * came from — the local store (`ChartView`) or a decoded share link (`SharedChartView`,
+ * #65). Kept separate so both callers get the same tabs, sheet, and loading/error states.
  */
 export function ChartDataView({
   load,
   displayName,
   showHouses,
+  metaLines,
 }: {
   readonly load: Load;
   readonly displayName: string;
   readonly showHouses: boolean;
+  /**
+   * Header lines for the sheet. Passed in rather than derived here because only
+   * the caller holds the birth moment the date/place lines come from; omitted,
+   * the sheet is headed by the display name alone.
+   */
+  readonly metaLines?: readonly string[];
 }): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<TabKey>('positions');
+  const [pngSize, setPngSize] = useState(PNG_SIZES[1]?.size ?? 1200);
+  const [pngError, setPngError] = useState<string | undefined>(undefined);
+  const [pngBusy, setPngBusy] = useState(false);
+  // True only for the moment between clicking "Export PDF" and the print dialog closing
+  // (see `exportPdf` below): while true, every table renders at once instead of just the
+  // active tab, so the PDF the browser's own "Save as PDF" produces has all of them (#67).
+  const [printAll, setPrintAll] = useState(false);
 
-  const wheelSvg = useMemo(() => {
+  const sheet = useMemo(() => {
     if (load.kind !== 'ready' || !showHouses) return undefined;
-    const ring = chartWheelRing(load.data, displayName || 'Natal');
-    return renderMultiWheelSvg([ring], [], resolveWheelDisplayOptions({}));
-  }, [load, showHouses, displayName]);
+    return renderChartSheetSvg(
+      chartSheetInput(load.data, metaLines ?? [displayName || 'Chart'], displayName || 'Natal'),
+      {
+        ...resolveWheelDisplayOptions({}),
+      },
+    );
+  }, [load, showHouses, displayName, metaLines]);
+
+  useEffect(() => {
+    if (!printAll) return undefined;
+    // document.title seeds the filename most browsers' print-to-PDF dialogs suggest, so a
+    // saved PDF gets the same person-and-chart-derived name as the SVG/CSV downloads do.
+    const previousTitle = document.title;
+    document.title = deriveExportFilename(displayName, 'chart', 'pdf');
+    const restore = (): void => {
+      document.title = previousTitle;
+      setPrintAll(false);
+    };
+    window.addEventListener('afterprint', restore, { once: true });
+    // Deferred a tick so the all-tables markup this triggers is committed to the DOM
+    // before the browser captures the page to print.
+    const timer = setTimeout(() => {
+      window.print();
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('afterprint', restore);
+    };
+  }, [printAll, displayName]);
+
+  const exportPdf = (): void => {
+    setPrintAll(true);
+  };
+
+  const downloadSvg = (): void => {
+    if (sheet === undefined) return;
+    downloadText(deriveExportFilename(displayName, 'chart', 'svg'), standaloneSvg(sheet.markup), 'image/svg+xml');
+  };
+
+  const downloadPng = (): void => {
+    if (sheet === undefined) return;
+    setPngError(undefined);
+    setPngBusy(true);
+    // The sheet is taller than it is wide, so the chosen size is its width and
+    // the height follows its own aspect ratio — rasterizing it square would
+    // squash the wheel into an ellipse.
+    const pngHeight = Math.round((pngSize * sheet.height) / sheet.width);
+    void svgToPngBlob(standaloneSvg(sheet.markup), pngSize, pngHeight)
+      .then((blob) => {
+        downloadBlob(deriveExportFilename(displayName, 'chart', 'png'), blob);
+      })
+      .catch((error: unknown) => {
+        setPngError(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => {
+        setPngBusy(false);
+      });
+  };
 
   const tabs = showHouses
     ? TAB_ORDER
@@ -243,100 +399,102 @@ export function ChartDataView({
             </p>
           )}
 
-          {wheelSvg !== undefined && (
-            <div
-              className="chart-wheel"
-              // The wheel is generated entirely by this app from data it just computed — never
-              // user-supplied markup — so injecting it is the same trust boundary as any other
-              // value this component renders, just carried as a string instead of JSX.
-              dangerouslySetInnerHTML={{ __html: wheelSvg }}
-            />
+          {sheet !== undefined && (
+            <>
+              <div
+                className="chart-wheel"
+                // Hidden from assistive tech rather than given an aria-label (#69): a chart
+                // wheel packs dozens of positions/aspects into overlapping glyphs, and no short
+                // label does that justice. The data tables right below are the actual accessible
+                // equivalent — they carry every value the wheel draws, as text a screen reader
+                // can read directly.
+                aria-hidden="true"
+                // The wheel is generated entirely by this app from data it just computed — never
+                // user-supplied markup — so injecting it is the same trust boundary as any other
+                // value this component renders, just carried as a string instead of JSX.
+                dangerouslySetInnerHTML={{ __html: sheet.markup }}
+              />
+
+              <div className="chart-export-actions">
+                <button type="button" className="quiet" onClick={downloadSvg}>
+                  Download SVG
+                </button>
+                <span className="chart-export-png">
+                  <select
+                    aria-label="PNG resolution"
+                    value={pngSize}
+                    onChange={(event) => {
+                      setPngSize(Number(event.target.value));
+                    }}
+                  >
+                    {PNG_SIZES.map((option) => (
+                      <option key={option.size} value={option.size}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" className="quiet" onClick={downloadPng} disabled={pngBusy}>
+                    {pngBusy ? 'Rendering…' : 'Download PNG'}
+                  </button>
+                </span>
+                <button type="button" className="quiet" onClick={exportPdf}>
+                  Export PDF&hellip;
+                </button>
+              </div>
+              {pngError !== undefined && (
+                <p className="warning" role="alert">
+                  {pngError}
+                </p>
+              )}
+              <p className="hint">
+                &ldquo;Export PDF&rdquo; opens your browser&rsquo;s print dialog with the wheel and every data table
+                laid out for paper &mdash; choose &ldquo;Save as PDF&rdquo; there.
+              </p>
+            </>
           )}
 
-          <div className="tabs" role="tablist" aria-label="Chart data" onKeyDown={onTabKeyDown}>
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                id={`chart-tab-${tab}`}
-                role="tab"
-                aria-selected={activeTab === tab}
-                aria-controls={`chart-tabpanel-${tab}`}
-                tabIndex={activeTab === tab ? 0 : -1}
-                className={activeTab === tab ? 'tab active' : 'tab'}
-                onClick={() => {
-                  setActiveTab(tab);
-                }}
+          {printAll ? (
+            <div className="chart-print-all">
+              {tabs
+                .filter((tab) => tab !== 'report')
+                .map((tab) => (
+                  <div key={tab}>{renderTableTab(tab, load.data, displayName)}</div>
+                ))}
+            </div>
+          ) : (
+            <>
+              <div className="tabs" role="tablist" aria-label="Chart data" onKeyDown={onTabKeyDown}>
+                {tabs.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    id={`chart-tab-${tab}`}
+                    role="tab"
+                    aria-selected={activeTab === tab}
+                    aria-controls={`chart-tabpanel-${tab}`}
+                    tabIndex={activeTab === tab ? 0 : -1}
+                    className={activeTab === tab ? 'tab active' : 'tab'}
+                    onClick={() => {
+                      setActiveTab(tab);
+                    }}
+                  >
+                    {TAB_LABELS[tab]}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                role="tabpanel"
+                id={`chart-tabpanel-${activeTab}`}
+                aria-labelledby={`chart-tab-${activeTab}`}
+                tabIndex={0}
               >
-                {TAB_LABELS[tab]}
-              </button>
-            ))}
-          </div>
-
-          <div
-            role="tabpanel"
-            id={`chart-tabpanel-${activeTab}`}
-            aria-labelledby={`chart-tab-${activeTab}`}
-            tabIndex={0}
-          >
-            {activeTab === 'positions' && (
-              <SortableTable
-                caption="Positions"
-                columns={POSITION_COLUMNS}
-                rows={positionRows(load.data)}
-                getRowKey={(row) => row.bodyKey}
-              />
-            )}
-
-            {activeTab === 'houses' && showHouses && (
-              <>
-                <SortableTable
-                  caption="Houses"
-                  columns={HOUSE_CUSP_COLUMNS}
-                  rows={houseCuspRows(load.data)}
-                  getRowKey={(row) => String(row.house)}
-                />
-                <SortableTable
-                  caption="Angles"
-                  columns={ANGLE_COLUMNS}
-                  rows={angleRows(load.data)}
-                  getRowKey={(row) => row.label}
-                />
-              </>
-            )}
-
-            {activeTab === 'aspects' && (
-              <SortableTable
-                caption="Aspects"
-                columns={ASPECT_COLUMNS}
-                rows={aspectRows(load.data)}
-                getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
-              />
-            )}
-
-            {activeTab === 'dignities' && (
-              <SortableTable
-                caption="Dignities"
-                columns={DIGNITY_COLUMNS}
-                rows={dignityRows(load.data)}
-                getRowKey={(row) => row.bodyKey}
-              />
-            )}
-
-            {activeTab === 'derived' && showHouses && (
-              <>
-                <p className="hint">Sect: {load.data.sect === 'day' ? 'Day chart' : 'Night chart'}</p>
-                <SortableTable
-                  caption="Derived points"
-                  columns={DERIVED_POINT_COLUMNS}
-                  rows={derivedPointRows(load.data)}
-                  getRowKey={(row) => row.label}
-                />
-              </>
-            )}
-
-            {activeTab === 'report' && showHouses && <ReportView chart={load.data} />}
-          </div>
+                {activeTab === 'report'
+                  ? showHouses && <ReportView chart={load.data} />
+                  : renderTableTab(activeTab, load.data, displayName)}
+              </div>
+            </>
+          )}
         </>
       )}
     </>
@@ -412,7 +570,12 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
       </p>
       <h1>{person.displayName || 'Chart'}</h1>
       <ShareLink moment={person.moment} housesKnown={showHouses} />
-      <ChartDataView load={load} displayName={person.displayName} showHouses={showHouses} />
+      <ChartDataView
+        load={load}
+        displayName={person.displayName}
+        showHouses={showHouses}
+        metaLines={chartSheetMetaLines(person.displayName, person.moment)}
+      />
     </main>
   );
 }

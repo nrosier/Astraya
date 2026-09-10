@@ -1,25 +1,30 @@
 /**
- * A generic data table with sortable, clickable column headers and a Copy button (#44).
+ * A generic data table with sortable, clickable column headers, a Copy button (#44) and a
+ * CSV download (#68).
  *
- * Thin wiring only: all the actual sorting and TSV-serialization logic lives in
+ * Thin wiring only: all the actual sorting and TSV/CSV-serialization logic lives in
  * `table-sort.ts`, which is plain and Vitest-testable. This component just holds the
  * current sort in state and renders it — the same "thin `.tsx`, tested `.ts`" split
  * `PersonForm.tsx`/`person-form.ts` already use, needed here too since the project has
  * no jsdom/`@testing-library/react` to test a component's rendered output directly.
  */
 import { useState } from 'react';
-import { rowsToTsv, sortRows, toggleSort, type SortState, type TableColumn } from './table-sort.js';
+import { downloadText } from './download.js';
+import { rowsToCsv, rowsToTsv, sortRows, toggleSort, type SortState, type TableColumn } from './table-sort.js';
 
 export function SortableTable<T>({
   caption,
   columns,
   rows,
   getRowKey,
+  downloadFilename,
 }: {
   readonly caption: string;
   readonly columns: readonly TableColumn<T>[];
   readonly rows: readonly T[];
   readonly getRowKey: (row: T) => string;
+  /** Filename for this table's CSV download (#68), already derived from the person and chart. */
+  readonly downloadFilename: string;
 }): React.JSX.Element {
   const [sort, setSort] = useState<SortState>();
   const [copied, setCopied] = useState(false);
@@ -39,13 +44,22 @@ export function SortableTable<T>({
     );
   };
 
+  const download = (): void => {
+    downloadText(downloadFilename, rowsToCsv(columns, sorted), 'text/csv;charset=utf-8');
+  };
+
   return (
     <section className="data-table">
       <div className="data-table-head">
         <h3>{caption}</h3>
-        <button type="button" className="quiet" onClick={copy}>
-          {copied ? 'Copied' : 'Copy'}
-        </button>
+        <div className="data-table-actions">
+          <button type="button" className="quiet" onClick={copy}>
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+          <button type="button" className="quiet" onClick={download}>
+            Download CSV
+          </button>
+        </div>
       </div>
       <div className="data-table-scroll">
         <table>

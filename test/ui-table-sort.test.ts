@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rowsToTsv, sortRows, toggleSort, type SortState, type TableColumn } from '../src/ui/table-sort.js';
+import { rowsToCsv, rowsToTsv, sortRows, toggleSort, type SortState, type TableColumn } from '../src/ui/table-sort.js';
 
 interface Row {
   readonly name: string;
@@ -79,5 +79,36 @@ describe('rowsToTsv (#44)', () => {
 
   it('renders an empty row list as just the header', () => {
     expect(rowsToTsv(COLUMNS, [])).toBe('Name\tCount\tFlagged');
+  });
+});
+
+describe('rowsToCsv (#68)', () => {
+  it('renders a header row followed by one comma-separated line per row, CRLF-terminated', () => {
+    const csv = rowsToCsv(COLUMNS, [{ name: 'Alice', count: 1, flagged: true }]);
+    expect(csv).toBe('Name,Count,Flagged\r\nAlice,1,yes');
+  });
+
+  it('renders an empty row list as just the header', () => {
+    expect(rowsToCsv(COLUMNS, [])).toBe('Name,Count,Flagged');
+  });
+
+  it('quotes a field containing a comma', () => {
+    const csv = rowsToCsv(COLUMNS, [{ name: 'Doe, Jane', count: 1, flagged: false }]);
+    expect(csv).toContain('"Doe, Jane"');
+  });
+
+  it('quotes and doubles embedded quotes in a field', () => {
+    const csv = rowsToCsv(COLUMNS, [{ name: 'The "Great" One', count: 1, flagged: false }]);
+    expect(csv).toContain('"The ""Great"" One"');
+  });
+
+  it('quotes a field containing a newline', () => {
+    const csv = rowsToCsv(COLUMNS, [{ name: 'Line1\nLine2', count: 1, flagged: false }]);
+    expect(csv).toContain('"Line1\nLine2"');
+  });
+
+  it('leaves a plain field unquoted', () => {
+    const csv = rowsToCsv(COLUMNS, [{ name: 'Alice', count: 1, flagged: true }]);
+    expect(csv.split('\r\n')[1]).toBe('Alice,1,yes');
   });
 });

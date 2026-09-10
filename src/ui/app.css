@@ -33,6 +33,9 @@
 
   /* Structural accent. */
   --accent: #a390fb;
+  /* Aspect families, by the convention every printed chart uses: hard tension red, soft flow blue. */
+  --aspect-hard: #ff8189;
+  --aspect-soft: #6ec3ff;
   /* Attention accent: warnings, and the sun in anything we draw. */
   --solar: #f2b75e;
 
@@ -55,10 +58,76 @@
 
     --accent: #5b3fd4;
     --solar: #8f5a0e;
+    --aspect-hard: #b3261e;
+    --aspect-soft: #1857c4;
 
     --glow-a: rgb(124 92 255 / 8%);
     --glow-b: rgb(242 183 94 / 7%);
   }
+}
+
+/*
+ * The explicit override (#70): `ThemeToggle` sets `data-theme` on the root element to
+ * pin a palette regardless of the OS setting. An attribute selector outranks a bare
+ * `:root` on specificity whether or not that `:root` is inside the media query above, so
+ * these two blocks win over both the default (dark) tokens and the light-media block
+ * without needing `!important` or a media guard of their own — leaving `data-theme`
+ * unset (the `'system'` choice) falls straight through to the OS-driven rules as before.
+ */
+:root[data-theme='dark'] {
+  --bg: #0b0c18;
+  --surface: #15162a;
+  --surface-hover: #1d1e36;
+  --line: #2a2b45;
+
+  --fg: #eceafa;
+  --muted: #a09dc0;
+
+  --accent: #a390fb;
+  --solar: #f2b75e;
+  --aspect-hard: #ff8189;
+  --aspect-soft: #6ec3ff;
+
+  --glow-a: rgb(124 92 255 / 18%);
+  --glow-b: rgb(242 183 94 / 8%);
+}
+
+:root[data-theme='light'] {
+  --bg: #fbfaff;
+  --surface: #f3f1fa;
+  --surface-hover: #ebe8f6;
+  --line: #e2dff0;
+
+  --fg: #16152b;
+  --muted: #5c5878;
+
+  --accent: #5b3fd4;
+  --solar: #8f5a0e;
+  --aspect-hard: #b3261e;
+  --aspect-soft: #1857c4;
+
+  --glow-a: rgb(124 92 255 / 8%);
+  --glow-b: rgb(242 183 94 / 7%);
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background: var(--surface-hover);
 }
 
 *,
@@ -721,7 +790,12 @@ label.stacked textarea:focus-visible {
   font-weight: 620;
 }
 
-.data-table-head button {
+.data-table-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.data-table-actions button {
   padding: 0.35rem 0.85rem;
   font-size: 0.8rem;
 }
@@ -851,7 +925,12 @@ label.stacked textarea:focus-visible {
  */
 .chart-wheel {
   margin: 1.5rem auto 2rem;
-  max-width: 30rem;
+  /*
+   * Wider than a bare wheel would need: the sheet stacks an aspect grid, an
+   * element table and a degree strip under the wheel, and those carry text that
+   * stops being legible if the whole sheet is squeezed to wheel width.
+   */
+  max-width: 44rem;
 }
 
 .chart-wheel svg {
@@ -860,7 +939,8 @@ label.stacked textarea:focus-visible {
   height: auto;
 }
 
-.chart-multiwheel text {
+.chart-multiwheel text,
+.chart-sheet text {
   font:
     550 0.68rem system-ui,
     sans-serif;
@@ -868,11 +948,20 @@ label.stacked textarea:focus-visible {
 }
 
 .wheel-ring-outer,
+.wheel-ring-zodiac,
 .wheel-ring-inner,
 .chart-multiwheel-ring {
   fill: none;
   stroke: var(--line);
   stroke-width: 1.5;
+}
+
+/* The chord boundary, not a drawn edge of the chart: present but recessive. */
+.wheel-ring-aspect {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+  opacity: 0.6;
 }
 
 .wheel-sign-boundary {
@@ -885,9 +974,42 @@ label.stacked textarea:focus-visible {
   stroke-width: 1;
 }
 
+.wheel-tick-medium {
+  stroke: var(--muted);
+  stroke-width: 0.75;
+  opacity: 0.7;
+}
+
 .wheel-tick-minor {
   stroke: var(--line);
   stroke-width: 0.5;
+}
+
+/* The twelve sign glyphs in the zodiac ring: same vector-glyph treatment as a body, in the accent. */
+.chart-sign-glyph circle,
+.chart-sign-glyph path,
+.chart-sign-glyph rect,
+.chart-sign-glyph line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-house-number {
+  fill: var(--muted);
+  opacity: 0.85;
+}
+
+.chart-degree-label {
+  fill: var(--muted);
+}
+
+/* Horizon and meridian: the two lines a reader orients the whole chart by. */
+.chart-multiwheel-axis {
+  stroke: var(--accent);
+  stroke-width: 2.5;
 }
 
 .chart-multiwheel-cusp {
@@ -927,11 +1049,219 @@ label.stacked textarea:focus-visible {
   opacity: 0.45;
 }
 
-.chart-aspect-applying {
-  stroke: var(--accent);
-  opacity: 0.8;
+/*
+ * Aspect colour carries the family and nothing else — hard aspects red and
+ * heavier, soft blue and lighter, the minors left on the neutral rule above.
+ * Applying/separating is therefore shown by weight rather than by hue, which
+ * it has to be: hue is already spent on the distinction a reader looks for
+ * first, and two colour axes on one line read as neither.
+ */
+.chart-aspect-square,
+.chart-aspect-opposition {
+  stroke: var(--aspect-hard);
+  stroke-width: 2;
+  opacity: 0.75;
+}
+
+.chart-aspect-trine,
+.chart-aspect-sextile {
+  stroke: var(--aspect-soft);
+  stroke-width: 1.5;
+  opacity: 0.7;
+}
+
+.chart-aspect.chart-aspect-applying {
+  opacity: 0.95;
 }
 
 .chart-multiwheel-legend-swatch {
   fill: var(--accent);
+}
+
+.chart-multiwheel-legend-label {
+  fill: var(--fg);
+}
+
+/*
+ * The stacked sheet: header, then the aspect grid, element table and degree
+ * strip below the wheel. Cells are drawn as rects with no fill of their own so
+ * the sheet keeps the page background rather than punching a light box into the
+ * dark theme.
+ */
+.chart-sheet-title {
+  fill: var(--fg);
+  font-weight: 650;
+}
+
+.chart-sheet-meta {
+  fill: var(--muted);
+}
+
+.chart-panel-heading {
+  fill: var(--fg);
+  opacity: 0.75;
+}
+
+.chart-panel-rule {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-matrix-cell,
+.chart-matrix-diagonal,
+.chart-emphasis-cell {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-matrix-diagonal {
+  fill: var(--surface);
+}
+
+.chart-matrix-label {
+  fill: var(--fg);
+}
+
+.chart-matrix-orb {
+  fill: var(--muted);
+}
+
+.chart-aspect-glyph circle,
+.chart-aspect-glyph path,
+.chart-aspect-glyph rect,
+.chart-aspect-glyph line {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/*
+ * The grid repeats the wheel's family colouring, so "is this chart full of
+ * squares?" is answerable from either one.
+ */
+.chart-matrix-cell-square,
+.chart-matrix-cell-opposition {
+  fill: color-mix(in oklab, var(--aspect-hard) 12%, transparent);
+}
+
+.chart-matrix-cell-trine,
+.chart-matrix-cell-sextile {
+  fill: color-mix(in oklab, var(--aspect-soft) 12%, transparent);
+}
+
+.chart-aspect-glyph-square circle,
+.chart-aspect-glyph-square path,
+.chart-aspect-glyph-square rect,
+.chart-aspect-glyph-square line,
+.chart-aspect-glyph-opposition circle,
+.chart-aspect-glyph-opposition path,
+.chart-aspect-glyph-opposition rect,
+.chart-aspect-glyph-opposition line {
+  stroke: var(--aspect-hard);
+}
+
+.chart-aspect-glyph-trine circle,
+.chart-aspect-glyph-trine path,
+.chart-aspect-glyph-trine rect,
+.chart-aspect-glyph-trine line,
+.chart-aspect-glyph-sextile circle,
+.chart-aspect-glyph-sextile path,
+.chart-aspect-glyph-sextile rect,
+.chart-aspect-glyph-sextile line {
+  stroke: var(--aspect-soft);
+}
+
+.chart-emphasis-total {
+  fill: var(--fg);
+}
+
+.chart-strip-axis {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.chart-strip-tick-major {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.chart-strip-tick {
+  stroke: var(--line);
+  stroke-width: 0.5;
+}
+
+.chart-strip-label {
+  fill: var(--muted);
+}
+
+/* Export controls under the wheel (#67): Download SVG/PNG and Export PDF. */
+.chart-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: -0.5rem auto 1rem;
+}
+
+.chart-export-actions button,
+.chart-export-actions select {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+}
+
+.chart-export-png {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* All tables stacked at once for the "Export PDF" print pass (#67); see the print rules below. */
+.chart-print-all {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/*
+ * Print stylesheet (#68/#67): normally the wheel plus whichever data table is on screen;
+ * during the "Export PDF" flow `ChartDataView` swaps in `.chart-print-all`, which stacks
+ * every table instead, so this same block also has to keep those from splitting mid-row.
+ * Either way, every control that only means something on a screen (Copy/Download, the
+ * export buttons themselves, the tab switcher, the back link, the status/update banners)
+ * is hidden — answering the issue's "usable paper chart".
+ */
+@media print {
+  .back,
+  .tabs,
+  .chart-export-actions,
+  .data-table-actions,
+  .statusbar,
+  .pwastatus,
+  .theme-toggle,
+  .hint {
+    display: none !important;
+  }
+
+  .shell {
+    max-width: none;
+  }
+
+  .chart-wheel,
+  .data-table {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .data-table-scroll {
+    overflow: visible;
+    border: none;
+  }
+
+  .data-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }

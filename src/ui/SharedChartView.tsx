@@ -6,6 +6,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { ChartDataView } from './ChartView.js';
+import { chartSheetMetaLines } from '../domain/chart-tables.js';
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
 import { decodeChartShareLink, type ChartShareData } from '../domain/chart-share.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
@@ -71,7 +72,12 @@ export function SharedChartView(): React.JSX.Element {
       )}
 
       {initial.data !== undefined && (
-        <ChartDataView load={load} displayName="Shared chart" showHouses={initial.data.housesKnown} />
+        <ChartDataView
+          load={load}
+          displayName="Shared chart"
+          showHouses={initial.data.housesKnown}
+          metaLines={chartSheetMetaLines('Shared chart', initial.data.moment)}
+        />
       )}
     </main>
   );

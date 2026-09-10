@@ -4,6 +4,66 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.8.1] — 2026-09-10
+
+**Chart rendering, theming and export.**
+
+A patch number carrying feature work rather than only fixes: the version table
+reserves `0.9.0` for milestone M8, and nothing here changes how a chart is
+computed.
+
+### Added
+
+- **A full chart sheet, not just a wheel.** One drawing now carries the
+  birth details, the wheel itself, and a data panel beneath it: an aspect
+  grid pairing every two bodies exactly once, an element and modality
+  breakdown, and a strip showing how the chart's degrees cluster within a
+  sign.
+- **The wheel says what it is drawing.** Zodiac sign glyphs around the ring,
+  degree ticks in three tiers, numbered houses, and each body annotated with
+  its exact degree and minute — none of which the wheel had before.
+- **Drawn at any size.** The sheet is described proportionally rather than in
+  fixed pixels, so it is rendered at the size asked for instead of at one
+  size and stretched. This is what makes a 2400px export sharp rather than
+  enlarged.
+- **Bi- and tri-wheels draw the same rings as the natal chart.** Comparing
+  two charts previously lost the sign glyphs, tick tiers and house numbers a
+  single chart got; there is now one renderer, and the natal chart is its
+  one-ring case.
+- **Hard and soft aspects are told apart at a glance**, red and blue, by the
+  convention printed charts use — and an aspect is drawn only if the Aspects
+  table on the same screen agrees it exists.
+- **Export a chart as SVG, PNG or PDF.** The saved file carries its own
+  styling, so it stays legible somewhere that has never loaded Astraya's
+  stylesheet; PNG is rasterised at a size you pick.
+- **A light/dark override** ([#70](https://github.com/nrosier/Astraya/issues/70)),
+  for disagreeing with the OS setting. The stored choice is applied before the
+  first render, so it never flashes the other palette first.
+- **Sortable chart tables**, by any column.
+
+### Fixed
+
+- **Four zodiac glyphs were wrong.** Aries was drawn inverted, which made it
+  the lunar node's symbol rather than its own; Sagittarius' crossbar lay along
+  its own arrow shaft and so drew nothing at all; Cancer and Capricorn were
+  redrawn to be recognisable as their signs.
+- **Crowded charts no longer print text on top of itself.** Where a cluster
+  of bodies has no room for every degree label, labels are dropped rather
+  than overlapped — the glyph and its pointer still carry the position, and
+  the exact figure is in the table. The aspect grid's orb notation likewise
+  shortens, then gives way to the aspect symbol alone, instead of being set
+  at a size no renderer honours.
+
+### Notes on correctness
+
+- The golden-chart gate continues to pass at its 0.2″ historical tolerance.
+  This release is rendering only; no calculation path was touched.
+- **Not verified in a browser for this release.** The export buttons and
+  print output were exercised through the rendering pipeline and by
+  rasterising the result, but not by clicking them in a real browser. The
+  sheet is also now taller than a printed page, so how a PDF splits it is
+  unconfirmed.
+
 ## [0.8.0] — 2026-09-10
 
 **Milestone M7 — interpretation.**
@@ -365,6 +425,7 @@ Astraya is **AGPL-3.0-or-later**. This is required, not chosen: Swiss Ephemeris 
 offered under either the AGPL or a commercial licence, and the AGPL cannot be
 combined with MIT in this direction.
 
+[0.8.1]: https://github.com/nrosier/Astraya/releases/tag/v0.8.1
 [0.8.0]: https://github.com/nrosier/Astraya/releases/tag/v0.8.0
 [0.4.0]: https://github.com/nrosier/Astraya/releases/tag/v0.4.0
 [0.3.0]: https://github.com/nrosier/Astraya/releases/tag/v0.3.0
