@@ -41,7 +41,7 @@ import { renderAspectWebSvg, renderCrossRingAspectWebSvg } from './aspect-web.js
 import type { GlyphLayoutInput } from './glyph-layout.js';
 import { renderGlyphRingSvg, spreadGlyphs } from './glyph-layout.js';
 import { renderGlyph, signGlyph } from './glyphs.js';
-import { baselineOffset, circle, escapeXml, fmt, line, text } from './svg-primitives.js';
+import { baselineOffset, circle, escapeXml, fmt, line, polygon, text } from './svg-primitives.js';
 import type { RingBand, SheetGeometry } from './sheet-geometry.js';
 import {
   TICK_MAJOR_INTERVAL_DEG,
@@ -49,7 +49,7 @@ import {
   resolveRingBands,
   resolveSheetGeometry,
 } from './sheet-geometry.js';
-import type { HouseWedgeStyle, WheelOrientationOptions } from './wheel.js';
+import type { HouseWedgeStyle, SignWedgeStyle, WheelOrientationOptions } from './wheel.js';
 import { pointOnCircle, wheelAngle } from './wheel.js';
 
 /** The four angular houses, by the standard convention (1=ASC, 4=IC, 7=DC, 10=MC). */
@@ -89,6 +89,8 @@ export interface MultiWheelOptions extends WheelOrientationOptions {
   readonly size?: number;
   /** How each ring's house-cusp spokes are drawn. Defaults to `equal-degree`. */
   readonly houseWedgeStyle?: HouseWedgeStyle;
+  /** Cosmetic fill for the zodiac ring's twelve sign wedges. Defaults to `default` (no fill). */
+  readonly signWedgeStyle?: SignWedgeStyle;
   /** Minimum longitude gap kept between adjacent glyphs within a ring. Defaults to 6°. */
   readonly minSeparationDeg?: number;
   /** Omits the outer border, zodiac ring and corner legend, for embedding in a larger sheet. */
@@ -97,7 +99,10 @@ export interface MultiWheelOptions extends WheelOrientationOptions {
 
 const DEFAULT_SIZE = 800;
 const DEFAULT_HOUSE_WEDGE_STYLE: HouseWedgeStyle = 'equal-degree';
+const DEFAULT_SIGN_WEDGE_STYLE: SignWedgeStyle = 'default';
 const DEFAULT_MIN_SEPARATION_DEG = 6;
+/** Degree step the rainbow wedge's arc edges are approximated with (a straight-edged polygon, per this module's `polygon` primitive). */
+const WEDGE_ARC_STEP_DEG = 3;
 
 function norm360(degrees: Degrees): Degrees {
   const value = degrees % 360;
@@ -130,14 +135,50 @@ function labelWidth(fontSize: number): number {
   return fontSize * DEGREE_LABEL_EMS;
 }
 
-/** The zodiac ring: its two edges, three tiers of degree ticks, sign divisions and the twelve sign glyphs. */
+/**
+ * One sign's wedge in the zodiac ring, as a straight-edged polygon tracing
+ * the outer arc then back along the inner arc — an approximation good enough
+ * at any sheet size given how fine `WEDGE_ARC_STEP_DEG` is, and it reuses
+ * `wheelAngle`/`pointOnCircle` exactly like every tick and glyph here, so it
+ * can never drift out of alignment with them under any orientation or sweep.
+ */
+function signWedgePolygon(
+  geometry: SheetGeometry,
+  ascendant: Degrees,
+  orientationOptions: WheelOrientationOptions,
+  signIndex: number,
+): string {
+  const { cx, cy, zodiacOuter, zodiacInner } = geometry;
+  const start = signIndex * 30;
+  const steps: number[] = [];
+  for (let degree = start; degree < start + 30; degree += WEDGE_ARC_STEP_DEG) steps.push(degree);
+  steps.push(start + 30);
+
+  const outerPoints = steps.map((degree) =>
+    pointOnCircle(cx, cy, zodiacOuter, wheelAngle(degree, ascendant, orientationOptions)),
+  );
+  const innerPoints = steps
+    .map((degree) => pointOnCircle(cx, cy, zodiacInner, wheelAngle(degree, ascendant, orientationOptions)))
+    .reverse();
+  const sign = SIGNS[signIndex];
+  const signName = sign === undefined ? String(signIndex) : sign.name.toLowerCase();
+  return polygon([...outerPoints, ...innerPoints], `wheel-sign-wedge wheel-sign-wedge-${signName}`);
+}
+
+/** The zodiac ring: its two edges, an optional rainbow sign-wedge fill, three tiers of degree ticks, sign divisions and the twelve sign glyphs. */
 function renderZodiacRingSvg(
   geometry: SheetGeometry,
   ascendant: Degrees,
   orientationOptions: WheelOrientationOptions,
+  signWedgeStyle: SignWedgeStyle = 'default',
 ): string {
   const { cx, cy, zodiacOuter, zodiacInner } = geometry;
   const parts: string[] = [circle(cx, cy, geometry.outerBorder, 'wheel-ring-outer')];
+  if (signWedgeStyle === 'rainbow') {
+    for (let signIndex = 0; signIndex < SIGNS.length; signIndex++) {
+      parts.push(signWedgePolygon(geometry, ascendant, orientationOptions, signIndex));
+    }
+  }
   parts.push(circle(cx, cy, zodiacOuter, 'wheel-ring-zodiac'));
   parts.push(circle(cx, cy, zodiacInner, 'wheel-ring-inner'));
 
@@ -357,6 +398,7 @@ export function renderMultiWheelSvg(
 
   const size = options?.size ?? DEFAULT_SIZE;
   const houseWedgeStyle = options?.houseWedgeStyle ?? DEFAULT_HOUSE_WEDGE_STYLE;
+  const signWedgeStyle = options?.signWedgeStyle ?? DEFAULT_SIGN_WEDGE_STYLE;
   const minSeparationDeg = options?.minSeparationDeg ?? DEFAULT_MIN_SEPARATION_DEG;
   const bare = options?.bare ?? false;
   const orientationOptions: WheelOrientationOptions = {
@@ -369,7 +411,7 @@ export function renderMultiWheelSvg(
   const ascendant = baseRing.houses.ascendant;
   const bands = resolveRingBands(geometry, rings.length);
 
-  const parts: string[] = [renderZodiacRingSvg(geometry, ascendant, orientationOptions)];
+  const parts: string[] = [renderZodiacRingSvg(geometry, ascendant, orientationOptions, signWedgeStyle)];
   parts.push(circle(cx, cy, geometry.aspectCircle, 'wheel-ring-aspect'));
 
   const baseBand = bands[0];

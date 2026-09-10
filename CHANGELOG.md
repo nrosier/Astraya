@@ -4,6 +4,64 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.8.4] — 2026-09-11
+
+**Extended chart settings, Astro-Seek style.**
+
+Another patch carrying feature work: `0.9.0` is still reserved for milestone
+M8, and everything here is either wiring up options Astraya already computed
+under the hood, or a cosmetic wheel option — no new calculation capability.
+
+### Added
+
+- **An "Extended settings" panel on the chart view**, modeled on Astro-Seek's
+  own panel of the same name: house system, zodiac, orb rules, minor
+  aspects, which points are shown, which points participate in aspect-
+  finding, and a cosmetic wheel option, all editable as a draft with one
+  "Redraw" action.
+- **House system selector**, covering all 24 systems Astraya already
+  supports, and a **Tropical/Sidereal zodiac switch** with an ayanamsa
+  picker for every ayanamsa Astraya knows.
+- **The default orb rules now match Astro-Seek's own**: major aspects at 7°
+  (10° with a luminary), sextile at 4° (5°30′ with a luminary), and every
+  minor aspect at a flat 2°30′ — replacing Astraya's previous per-aspect orb
+  table. A ±90% scale slider widens or narrows all three tiers at once.
+- **Minor aspects, and aspects to Chiron/Lilith/the Lunar Nodes, now default
+  off** rather than on, matching Astro-Seek's own defaults. Each is an
+  individual toggle: six minor-aspect checkboxes, and one "aspects to"
+  checkbox per body. This narrows what the Aspects tab and matrix show by
+  default; nothing is hidden that isn't computed — turning a toggle on
+  computes and shows it for real.
+- **Point-display toggles** for the Part of Fortune, the Vertex, Chiron and
+  a new pair of **ASC/MC and Sun/Moon midpoint rows** in the Derived points
+  tab (the same two Astro-Seek shows inline on its own chart page). Chiron
+  defaults visible; the other three default hidden.
+- **Lilith and the Lunar Nodes each get a Mean/True variant switch** — Astro-
+  Seek's "True Lilith" maps to Swiss Ephemeris's osculating apogee, since
+  there is no literal "true Lilith" flag in the ephemeris.
+- **Rainbow Color Zodiac**, a cosmetic wheel option coloring each of the
+  twelve sign wedges individually, available on both of Astraya's wheel
+  renderings (its own, and the AstroChart alternate from 0.8.3).
+
+### Notes on correctness
+
+- The golden-chart gate continues to pass at its 0.2″ historical tolerance;
+  no calculation path was touched by the point-visibility or panel work.
+  The orb-rule and aspect-participation defaults are a deliberate, called-
+  out behavior change (see above), not a regression.
+- **Verified manually in a running browser**: every toggle in the panel
+  (house system, sidereal + ayanamsa, orb scale, a minor aspect, Chiron/
+  Fortune/Vertex/midpoints visibility, Lilith's True variant, aspects to
+  Chiron, Rainbow Color Zodiac) was exercised against a live chart and
+  produced the expected change.
+- **A known, deliberate interaction**: turning "aspects to Chiron" on adds
+  Chiron's resulting aspects to the wheel's chords as well as the tab and
+  matrix, whenever those aspects are in the major family — the wheel's
+  major-only aspect filter (shipped just before this release) filters by
+  aspect family only, not by which bodies are involved, so it has no reason
+  to treat Chiron differently from any other body once its aspects are
+  turned on.
+
 ## [0.8.3] — 2026-09-10
 
 **A second wheel rendering, drawn by AstroChart.**

@@ -37,6 +37,14 @@ export type WheelSweep = 'counterclockwise' | 'clockwise';
  */
 export type HouseWedgeStyle = 'equal-degree' | 'whole-sign';
 
+/**
+ * Cosmetic fill for the twelve sign wedges of the zodiac ring: the usual flat
+ * ring (`default`) or the "Rainbow Color Zodiac" look some tools offer, one
+ * hue per sign around the color wheel. Purely a fill choice — it never
+ * changes what a sign boundary or glyph means, only what sits behind it.
+ */
+export type SignWedgeStyle = 'default' | 'rainbow';
+
 export interface WheelOrientationOptions {
   /** Whether the Ascendant or 0° Aries is fixed at the anchor position. Defaults to `asc-left`. */
   readonly orientation?: WheelOrientation;

@@ -88,8 +88,11 @@ describe('computePlanetaryReturn (#50)', () => {
       engine,
       {},
       {
-        baseOrbs: {},
-        luminaryBonus: 0,
+        majorOrb: { base: -1, luminaryBonus: 0 },
+        sextileOrb: { base: -1, luminaryBonus: 0 },
+        minorOrb: -1,
+        scalePercent: 0,
+        enabledMinorAspects: [],
       },
     );
     expect(tight.contacts).toHaveLength(0);

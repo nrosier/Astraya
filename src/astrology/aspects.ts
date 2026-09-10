@@ -45,34 +45,42 @@ export function aspectByKey(key: string): AspectDefinition | undefined {
 }
 
 /**
- * Orb configuration: a base orb per aspect, widened when either body in the
- * pair is a luminary (Sun or Moon) — the traditional allowance for how much
- * more an aspect involving a luminary is felt to "reach".
+ * Orb configuration: three tiers (the four non-sextile major aspects,
+ * sextile on its own, and the six minors as a single flat tier), each widened
+ * when either body in the pair is a luminary (Sun or Moon) — the traditional
+ * allowance for how much more an aspect involving a luminary is felt to
+ * "reach" — followed by a global percentage scale applied to every tier at
+ * once.
  *
- * Base orbs default to the customary tight-minor/wide-major split; both the
- * table and the bonus are plain data so a caller can override either without
- * touching this module.
+ * These three tiers and their numbers are the ones most astrology sites,
+ * including Astro-Seek, use as their own defaults: major aspects at 7°,
+ * enlarged to 10° with a luminary; sextile at 4°, enlarged to 5°30'; every
+ * minor aspect at a flat 2°30' regardless of which bodies are involved.
+ * `enabledMinorAspects` is which of the six minor aspects `matchAspect`
+ * considers at all — empty by default, since minor aspects are opt-in on
+ * most tools rather than shown alongside the majors unconditionally.
  */
-export interface OrbConfig {
-  readonly baseOrbs: Readonly<Record<string, Degrees>>;
+export interface OrbRule {
+  readonly base: Degrees;
   readonly luminaryBonus: Degrees;
 }
 
+export interface OrbConfig {
+  readonly majorOrb: OrbRule;
+  readonly sextileOrb: OrbRule;
+  readonly minorOrb: Degrees;
+  /** Percentage adjustment applied to every orb above, e.g. -90..90. */
+  readonly scalePercent: number;
+  /** Which minor-family aspect keys `matchAspect` considers; empty means none. */
+  readonly enabledMinorAspects: readonly string[];
+}
+
 export const DEFAULT_ORB_CONFIG: OrbConfig = {
-  baseOrbs: {
-    conjunction: 8,
-    opposition: 8,
-    square: 7,
-    trine: 7,
-    sextile: 5,
-    semisextile: 2,
-    semisquare: 2,
-    sesquiquadrate: 2,
-    quincunx: 2,
-    quintile: 1,
-    biquintile: 1,
-  },
-  luminaryBonus: 2,
+  majorOrb: { base: 7, luminaryBonus: 3 },
+  sextileOrb: { base: 4, luminaryBonus: 1.5 },
+  minorOrb: 2.5,
+  scalePercent: 0,
+  enabledMinorAspects: [],
 };
 
 export function orbFor(
@@ -81,12 +89,22 @@ export function orbFor(
   categoryB: BodyCategory,
   config: OrbConfig = DEFAULT_ORB_CONFIG,
 ): Degrees {
-  const base = config.baseOrbs[aspectKey];
-  if (base === undefined) {
+  const aspect = aspectByKey(aspectKey);
+  if (aspect === undefined) {
     throw new RangeError(`no orb configured for aspect "${aspectKey}"`);
   }
   const hasLuminary = categoryA === 'luminary' || categoryB === 'luminary';
-  return hasLuminary ? base + config.luminaryBonus : base;
+  const raw =
+    aspectKey === 'sextile'
+      ? hasLuminary
+        ? config.sextileOrb.base + config.sextileOrb.luminaryBonus
+        : config.sextileOrb.base
+      : aspect.family === 'major'
+        ? hasLuminary
+          ? config.majorOrb.base + config.majorOrb.luminaryBonus
+          : config.majorOrb.base
+        : config.minorOrb;
+  return raw * (1 + config.scalePercent / 100);
 }
 
 /** Normalise to the half-open interval [0, 360). */
@@ -151,7 +169,7 @@ export function matchAspect(
   const separation = angularSeparation(a.longitude, b.longitude);
   let best: AspectMatch | undefined;
   for (const aspect of ASPECTS) {
-    if (config.baseOrbs[aspect.key] === undefined) continue; // not configured: not considered
+    if (aspect.family === 'minor' && !config.enabledMinorAspects.includes(aspect.key)) continue;
     const orb = Math.abs(separation - aspect.angle);
     if (orb > orbFor(aspect.key, categoryA, categoryB, config)) continue;
     if (best !== undefined && orb >= best.orb) continue;

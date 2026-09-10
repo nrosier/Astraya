@@ -110,7 +110,19 @@ describe('computeSecondaryProgression (#46)', () => {
     const targetJd = natalJd + 365.2425 * 30;
 
     const wide = await computeSecondaryProgression(NATAL, targetJd, engine);
-    const tight = await computeSecondaryProgression(NATAL, targetJd, engine, {}, { baseOrbs: {}, luminaryBonus: 0 });
+    const tight = await computeSecondaryProgression(
+      NATAL,
+      targetJd,
+      engine,
+      {},
+      {
+        majorOrb: { base: -1, luminaryBonus: 0 },
+        sextileOrb: { base: -1, luminaryBonus: 0 },
+        minorOrb: -1,
+        scalePercent: 0,
+        enabledMinorAspects: [],
+      },
+    );
     expect(tight.contacts).toHaveLength(0);
     expect(wide.contacts.length).toBeGreaterThan(0);
   });

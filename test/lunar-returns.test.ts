@@ -119,7 +119,13 @@ describe('computeLunarReturns (#49)', () => {
       natalJd + 90,
       engine,
       {},
-      { baseOrbs: {}, luminaryBonus: 0 },
+      {
+        majorOrb: { base: -1, luminaryBonus: 0 },
+        sextileOrb: { base: -1, luminaryBonus: 0 },
+        minorOrb: -1,
+        scalePercent: 0,
+        enabledMinorAspects: [],
+      },
     );
     expect(tight.returns.every((chart) => chart.contacts.length === 0)).toBe(true);
     expect(wide.returns.some((chart) => chart.contacts.length > 0)).toBe(true);

@@ -7,6 +7,7 @@ describe('resolveWheelDisplayOptions (#43)', () => {
       orientation: 'asc-left',
       sweep: 'counterclockwise',
       houseWedgeStyle: 'equal-degree',
+      signWedgeStyle: 'default',
     });
   });
 
@@ -16,11 +17,13 @@ describe('resolveWheelDisplayOptions (#43)', () => {
         wheelOrientation: 'aries-up',
         wheelSweep: 'clockwise',
         houseWedgeStyle: 'whole-sign',
+        signWedgeStyle: 'rainbow',
       }),
     ).toEqual({
       orientation: 'aries-up',
       sweep: 'clockwise',
       houseWedgeStyle: 'whole-sign',
+      signWedgeStyle: 'rainbow',
     });
   });
 
@@ -30,11 +33,13 @@ describe('resolveWheelDisplayOptions (#43)', () => {
         wheelOrientation: 'sideways', // a newer build's value, or plain corruption
         wheelSweep: 3, // wrong type entirely
         houseWedgeStyle: null,
+        signWedgeStyle: 'psychedelic',
       }),
     ).toEqual({
       orientation: 'asc-left',
       sweep: 'counterclockwise',
       houseWedgeStyle: 'equal-degree',
+      signWedgeStyle: 'default',
     });
   });
 

@@ -237,6 +237,23 @@ describe('renderMultiWheelSvg zodiac ring', () => {
     expect(geometry.tickMediumLength).toBeLessThan(geometry.tickMajorLength);
     expect(geometry.zodiacInner + geometry.tickMajorLength).toBeLessThan(geometry.zodiacOuter);
   });
+
+  it('draws no sign-wedge fill by default', () => {
+    const svg = renderMultiWheelSvg([natalRing]);
+    expect(svg).not.toContain('wheel-sign-wedge');
+  });
+
+  it("draws all twelve sign wedges once signWedgeStyle is 'rainbow', without touching the ticks or glyphs", () => {
+    const withoutRainbow = renderMultiWheelSvg([natalRing]);
+    const rainbow = renderMultiWheelSvg([natalRing], [], { signWedgeStyle: 'rainbow' });
+    expect(rainbow.split('wheel-sign-wedge wheel-sign-wedge-').length - 1).toBe(12);
+    expect(rainbow).toContain('wheel-sign-wedge wheel-sign-wedge-aries');
+    expect(rainbow).toContain('wheel-sign-wedge wheel-sign-wedge-pisces');
+    for (const className of ['wheel-sign-boundary', 'wheel-tick-major', 'wheel-tick-medium', 'wheel-tick-minor']) {
+      expect(countClass(rainbow, className)).toBe(countClass(withoutRainbow, className));
+    }
+    expect(rainbow.split('chart-sign-glyph chart-sign-glyph-').length - 1).toBe(12);
+  });
 });
 
 describe('renderMultiWheelSvg house structure', () => {
