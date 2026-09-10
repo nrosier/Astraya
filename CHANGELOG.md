@@ -4,6 +4,34 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.8.3] — 2026-09-10
+
+**A second wheel rendering, drawn by AstroChart.**
+
+Another patch carrying feature work: `0.9.0` is still reserved for milestone
+M8, and this adds an alternate on-screen view rather than changing how a
+chart is computed.
+
+### Added
+
+- **A toggle between two wheel renderings.** Alongside Astraya's own wheel
+  (redrawn in 0.8.2), the chart view can now render the radix wheel with the
+  third-party [AstroChart](https://github.com/AstroDraw/AstroChart) library
+  (MIT) instead. AstroChart is the default view; a small toggle switches
+  back to Astraya's own rendering.
+- **Exports are unaffected either way.** The SVG/PNG/PDF export buttons
+  always export Astraya's own rendering, regardless of which wheel is shown
+  on screen, so downloaded charts are unchanged from 0.8.2.
+
+### Notes on correctness
+
+- The golden-chart gate continues to pass at its 0.2″ historical tolerance;
+  no calculation path was touched.
+- **Not verified in a browser for this release.** The new adapter and
+  component are covered by unit and DOM-smoke tests, and the full suite and
+  `npm run check` pass, but the toggle itself was not visually checked in a
+  running browser before release.
+
 ## [0.8.2] — 2026-09-10
 
 **The wheel redrawn in the Astrodienst style.**

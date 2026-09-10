@@ -925,6 +925,20 @@ label.stacked textarea:focus-visible {
   margin-top: 0.2rem;
 }
 
+/* Toggle between the two wheel renderings. `aria-pressed`, not a class, is the single
+   source of which one is active (#43-adjacent AstroChart addition). */
+.wheel-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 1.5rem 0 0;
+}
+
+.wheel-toggle button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
 /*
  * The chart wheel (#39-#42, #52's single-ring case). Every shape in the generated
  * markup carries a class and no inline colour, by design (see `src/chart/glyphs.ts`'s
@@ -1319,6 +1333,7 @@ label.stacked textarea:focus-visible {
 @media print {
   .back,
   .tabs,
+  .wheel-toggle,
   .chart-export-actions,
   .data-table-actions,
   .statusbar,
