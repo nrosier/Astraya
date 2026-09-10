@@ -60,6 +60,15 @@ under the hood, or a cosmetic wheel option — no new calculation capability.
   aspect family only, not by which bodies are involved, so it has no reason
   to treat Chiron differently from any other body once its aspects are
   turned on.
+- **The Horizon house system ('H') is now excluded from the property test**,
+  alongside Gauquelin sectors and the alternative Sunshine system. Its
+  degenerate zone turned out not to be a fixed neighborhood around the
+  equator, as a prior fix assumed, but to track the RAMC for the date and
+  hour under test — sweeping latitude found it winding 11x across roughly
+  ten degrees on one date, and only right at the equator on another. No
+  fixed exclusion is safe against a property test that generates a random
+  date and hour on every run, so 'H' is excluded outright rather than
+  narrowing the latitude range for every other system to accommodate it.
 
 ## [0.8.3] — 2026-09-10
 
