@@ -162,17 +162,27 @@ export function bodyGlyph(key: string): GlyphDefinition | undefined {
 // --- Zodiac signs (SIGNS, by name) ------------------------------------------
 
 const SIGN_GLYPHS: Readonly<Record<string, GlyphDefinition>> = {
-  Aries: glyph('Aries', [path('M35 25 Q30 55 50 55 Q70 55 65 25')]),
+  // Two horns curling outward from a central stem. Drawn stem-down deliberately:
+  // the mirror image is the north-node glyph, so an upside-down Aries reads as a
+  // completely different symbol rather than as a rotated one.
+  Aries: glyph('Aries', [
+    path('M50 75 L50 46'),
+    path('M50 48 Q50 25 34 25 Q22 25 24 42'),
+    path('M50 48 Q50 25 66 25 Q78 25 76 42'),
+  ]),
 
   Taurus: glyph('Taurus', [circle(50, 60, 15), path('M30 25 Q30 45 45 47 M70 25 Q70 45 55 47')]),
 
   Gemini: glyph('Gemini', [path('M40 25 L40 75 M60 25 L60 75 M30 25 L70 25 M30 75 L70 75')]),
 
+  // A sideways "69": two spirals in point symmetry about the centre, each a
+  // circle trailing a long stroke away from the other. Joining the two circles
+  // instead (as this once did) reads as a chain link, not as Cancer.
   Cancer: glyph('Cancer', [
-    circle(35, 35, 8),
-    path('M35 43 Q35 60 55 60'),
-    circle(65, 65, 8),
-    path('M65 57 Q65 40 45 40'),
+    circle(30, 56, 10),
+    path('M30 46 Q30 30 50 30 L74 30'),
+    circle(70, 44, 10),
+    path('M70 54 Q70 70 50 70 L26 70'),
   ]),
 
   Leo: glyph('Leo', [circle(42, 42, 14), path('M56 42 Q75 42 75 60 Q75 75 60 72')]),
@@ -193,10 +203,18 @@ const SIGN_GLYPHS: Readonly<Record<string, GlyphDefinition>> = {
   Sagittarius: glyph('Sagittarius', [
     path('M30 70 L70 30'),
     path('M70 30 L58 30 M70 30 L70 42'),
-    path('M35 65 L45 55'),
+    // Perpendicular to the shaft, so it reads as a crossbar; along it, it would
+    // be invisible.
+    path('M33 53 L47 67'),
   ]),
 
-  Capricorn: glyph('Capricorn', [path('M30 30 Q30 60 45 60 Q55 60 55 45 Q55 30 70 30 Q85 30 85 45 Q85 55 75 55')]),
+  // Goat horn then fish tail: an arch whose left leg drops long and whose right
+  // leg curls into a closed loop. A single continuous squiggle (as this once
+  // was) has neither landmark and reads as no sign in particular.
+  Capricorn: glyph('Capricorn', [
+    path('M20 76 L20 44 Q20 28 35 28 Q50 28 50 44 L50 56'),
+    path('M50 56 Q54 72 66 70 Q80 68 78 54 Q76 42 62 46'),
+  ]),
 
   Aquarius: glyph('Aquarius', [
     path('M20 40 L32 30 L44 40 L56 30 L68 40 L80 30'),

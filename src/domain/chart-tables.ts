@@ -13,7 +13,9 @@ import { degreesInSign, signOf } from '../astrology/signs.js';
 import type { ChartData } from './chart-compute.js';
 import type { Aspect } from '../astrology/aspects.js';
 import type { Degrees } from '../ephemeris/types.js';
+import type { BirthMomentInput } from '../time/types.js';
 import type { WheelRingInput } from '../chart/multi-wheel.js';
+import type { ChartSheetInput } from '../chart/chart-sheet.js';
 
 export interface DegreeParts {
   readonly sign: string;
@@ -188,5 +190,70 @@ export function chartWheelRing(data: ChartData, label = 'Natal'): WheelRingInput
       longitude: position.longitude,
     })),
     aspects: data.aspects,
+  };
+}
+
+function pad2(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+/**
+ * The header lines a chart sheet is titled with: who, when, where.
+ *
+ * The civil date and time are printed exactly as the user entered them, with no
+ * zone conversion — a chart's header states the birth record, and a reader
+ * checking the sheet against a birth certificate needs the figures on the
+ * certificate, not the UTC instant derived from them. Coordinates are given in
+ * decimal degrees with a hemisphere letter, which is unambiguous at any
+ * precision (unlike a signed number, whose sign convention differs by source).
+ */
+export function chartSheetMetaLines(displayName: string, moment: BirthMomentInput): readonly string[] {
+  const { civil, coordinates } = moment;
+  const date = `${String(civil.year)}-${pad2(civil.month)}-${pad2(civil.day)}`;
+  const time = `${pad2(civil.hour)}:${pad2(civil.minute)}`;
+  const latitude = `${Math.abs(coordinates.latitude).toFixed(2)}°${coordinates.latitude < 0 ? 'S' : 'N'}`;
+  const longitude = `${Math.abs(coordinates.longitude).toFixed(2)}°${coordinates.longitude < 0 ? 'W' : 'E'}`;
+  const zone = moment.zoneOverride ?? (moment.offsetOverrideMinutes === undefined ? undefined : 'stated offset');
+  return [
+    displayName || 'Chart',
+    zone === undefined ? `${date} ${time}` : `${date} ${time} (${zone})`,
+    `${latitude} ${longitude}`,
+  ];
+}
+
+/**
+ * Shapes a computed chart as the whole sheet `renderChartSheetSvg` draws.
+ *
+ * All three data panels take their bodies from `data.positions` in its own
+ * order, so a chart computed with the asteroids switched on grows every panel
+ * together, and the aspect grid's rows line up with the Positions table above
+ * it. Aspects are passed through rather than re-derived, which is what keeps
+ * the grid from ever disagreeing with the Aspects table on the same screen.
+ */
+export function chartSheetInput(data: ChartData, metaLines: readonly string[] = [], label = 'Natal'): ChartSheetInput {
+  const bodies = data.positions.map((position) => {
+    const body = bodyById(position.body);
+    return {
+      body: position.body,
+      key: body?.key ?? String(position.body),
+      label: body?.name ?? String(position.body),
+      longitude: position.longitude,
+    };
+  });
+  return {
+    metaLines,
+    rings: [chartWheelRing(data, label)],
+    matrix: {
+      bodies: bodies.map(({ key, label: bodyLabel }) => ({ key, label: bodyLabel })),
+      aspects: data.aspects.map((aspect) => ({
+        aKey: bodyById(aspect.bodyA)?.key ?? String(aspect.bodyA),
+        bKey: bodyById(aspect.bodyB)?.key ?? String(aspect.bodyB),
+        aspectKey: aspect.aspect.key,
+        orb: aspect.orb,
+        applying: aspect.applying,
+      })),
+    },
+    emphasis: { bodies: bodies.map(({ body, key, longitude }) => ({ body, key, longitude })) },
+    strip: { bodies: bodies.map(({ key, longitude }) => ({ key, longitude })) },
   };
 }

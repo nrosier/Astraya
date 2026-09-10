@@ -1,8 +1,12 @@
 /**
- * Bi-wheel and tri-wheel renderer (#52): several charts drawn as concentric
- * rings around one shared center, so a progression, return or transit chart
- * can be read directly against whatever it's being compared to instead of
- * two separate wheels side by side.
+ * The chart wheel: one to three charts drawn as concentric rings around a
+ * shared center, on the layout `sheet-geometry.ts` resolves.
+ *
+ * One renderer covers both cases deliberately. A single ring is not a special
+ * layout, it is `resolveRingBands(geometry, 1)` — the one band it returns *is*
+ * the reference layout's planetary placement ring — so a natal wheel and a
+ * bi-/tri-wheel cannot drift apart in tick tiers, glyph conventions or ring
+ * radii the way two separate renderers would.
  *
  * Every ring shares one wheel-space anchor — the innermost ring's Ascendant,
  * by convention the natal/base chart's — so a given ecliptic degree lands at
@@ -13,15 +17,17 @@
  * would make the rings spin independently of each other and defeat the point
  * of overlaying them.
  *
- * A ring's glyphs go through `renderGlyphRingSvg` exactly as a single wheel's
- * do, so collision spreading (#40/#41) is reused per ring, unmodified, for
- * free — each ring spreads only its own bodies, at its own band's radii.
+ * A ring's glyphs go through `renderGlyphRingSvg` exactly as before, so
+ * collision spreading (#40/#41) is reused per ring, unmodified — each ring
+ * spreads only its own bodies, at its own band's radii. Spreading stays
+ * angular rather than nudging a crowded glyph radially: the leader line back
+ * to the true degree already says where the body really is, and a second
+ * radius for planets would leave the degree annotations ragged.
  *
- * Cross-ring aspect lines use `renderCrossRingAspectWebSvg` (`aspect-web.ts`,
- * this same issue's extension of #42) anchored to each ring's `trueRadius`
- * rather than wherever collision spreading placed a crowded glyph, for the
- * same reason a single wheel's own aspect web anchors to its inner circle
- * instead of the glyph ring.
+ * Aspect chords are confined to the inner disk (r <= the aspect circle) so
+ * they never cross the bands carrying glyphs. Conjunctions are excluded from
+ * the web on purpose — a conjunction is two glyphs at nearly the same degree,
+ * which the wheel already shows directly, and its chord would be a dot.
  *
  * Ring labels are a fixed legend in the corner, not radial text: text drawn
  * at a wheel-space angle (as every other label here is) turns upside-down on
@@ -29,10 +35,20 @@
  * that without needing to reserve one "safe" angle that's never crowded.
  */
 import type { Aspect } from '../astrology/aspects.js';
+import { SIGNS, degreesInSign } from '../astrology/signs.js';
 import type { BodyId, Degrees, HousePositions } from '../ephemeris/types.js';
 import { renderAspectWebSvg, renderCrossRingAspectWebSvg } from './aspect-web.js';
 import type { GlyphLayoutInput } from './glyph-layout.js';
-import { renderGlyphRingSvg } from './glyph-layout.js';
+import { renderGlyphRingSvg, spreadGlyphs } from './glyph-layout.js';
+import { renderGlyph, signGlyph } from './glyphs.js';
+import { baselineOffset, circle, escapeXml, fmt, line, text } from './svg-primitives.js';
+import type { RingBand, SheetGeometry } from './sheet-geometry.js';
+import {
+  TICK_MAJOR_INTERVAL_DEG,
+  TICK_MEDIUM_INTERVAL_DEG,
+  resolveRingBands,
+  resolveSheetGeometry,
+} from './sheet-geometry.js';
 import type { HouseWedgeStyle, WheelOrientationOptions } from './wheel.js';
 import { pointOnCircle, wheelAngle } from './wheel.js';
 
@@ -47,11 +63,9 @@ export interface WheelRingInput {
   readonly bodies: readonly { readonly body: BodyId; readonly key: string; readonly longitude: Degrees }[];
   /**
    * This ring's own aspects (e.g. a natal chart's aspect set), drawn as a
-   * chord web at the ring's `trueRadius` — the same convention a single
-   * wheel's aspect web uses relative to its inner circle. Distinct from
-   * `CrossRingAspects`, which connects two different rings; omit for rings
-   * that shouldn't show their own aspect web (typically anything but the
-   * base ring).
+   * chord web inside the aspect circle. Distinct from `CrossRingAspects`,
+   * which connects two different rings; omit for rings that shouldn't show
+   * their own aspect web (typically anything but the base ring).
    */
   readonly aspects?: readonly Aspect[];
 }
@@ -71,174 +85,267 @@ export interface CrossRingAspects {
 }
 
 export interface MultiWheelOptions extends WheelOrientationOptions {
-  /** SVG viewport is `size` x `size` pixels; the corner legend extends into `labelMargin`. */
+  /** The wheel is drawn in a `size` x `size` box; every radius scales with it. */
   readonly size?: number;
-  /** Extra space reserved outside the wheel for the ring legend, in pixels. */
-  readonly labelMargin?: number;
-  /** Spacing of minor degree ticks on the shared outer zodiac ring, in degrees. */
-  readonly tickIntervalDeg?: number;
-  /** Spacing of major degree ticks on the shared outer zodiac ring, in degrees. */
-  readonly majorTickIntervalDeg?: number;
   /** How each ring's house-cusp spokes are drawn. Defaults to `equal-degree`. */
   readonly houseWedgeStyle?: HouseWedgeStyle;
   /** Minimum longitude gap kept between adjacent glyphs within a ring. Defaults to 6°. */
   readonly minSeparationDeg?: number;
-  /** Glyph box size, in pixels. Defaults to 20 (smaller than a single wheel's, since bands are narrower). */
-  readonly glyphSize?: number;
+  /** Omits the outer border, zodiac ring and corner legend, for embedding in a larger sheet. */
+  readonly bare?: boolean;
 }
 
-interface ResolvedOptions {
-  readonly size: number;
-  readonly labelMargin: number;
-  readonly tickIntervalDeg: number;
-  readonly majorTickIntervalDeg: number;
-  readonly houseWedgeStyle: HouseWedgeStyle;
-  readonly minSeparationDeg: number;
-  readonly glyphSize: number;
-  readonly orientationOptions: WheelOrientationOptions;
-}
-
-const DEFAULT_SIZE = 600;
+const DEFAULT_SIZE = 800;
 const DEFAULT_HOUSE_WEDGE_STYLE: HouseWedgeStyle = 'equal-degree';
 const DEFAULT_MIN_SEPARATION_DEG = 6;
 
-function resolveOptions(options: MultiWheelOptions | undefined): ResolvedOptions {
-  const size = options?.size ?? DEFAULT_SIZE;
-  return {
-    size,
-    labelMargin: options?.labelMargin ?? size * 0.16,
-    tickIntervalDeg: options?.tickIntervalDeg ?? 1,
-    majorTickIntervalDeg: options?.majorTickIntervalDeg ?? 10,
-    houseWedgeStyle: options?.houseWedgeStyle ?? DEFAULT_HOUSE_WEDGE_STYLE,
-    minSeparationDeg: options?.minSeparationDeg ?? DEFAULT_MIN_SEPARATION_DEG,
-    glyphSize: options?.glyphSize ?? 20,
-    orientationOptions: {
-      ...(options?.orientation !== undefined ? { orientation: options.orientation } : {}),
-      ...(options?.sweep !== undefined ? { sweep: options.sweep } : {}),
-    },
-  };
+function norm360(degrees: Degrees): Degrees {
+  const value = degrees % 360;
+  return value < 0 ? value + 360 : value;
 }
 
-interface RingBand {
-  readonly outerRadius: number;
-  readonly innerRadius: number;
-  readonly glyphRadius: number;
-  readonly trueRadius: number;
-}
-
-/** Divides the space between a small center hole and the shared zodiac ring into one equal band per ring, innermost first. */
-function resolveBands(zodiacInnerRadius: number, ringCount: number): readonly RingBand[] {
-  const centerHoleRadius = zodiacInnerRadius * 0.2;
-  const bandWidth = (zodiacInnerRadius - centerHoleRadius) / ringCount;
-  return Array.from({ length: ringCount }, (_, i) => {
-    const innerRadius = centerHoleRadius + bandWidth * i;
-    const outerRadius = innerRadius + bandWidth;
-    return {
-      innerRadius,
-      outerRadius,
-      trueRadius: innerRadius + bandWidth * 0.15,
-      glyphRadius: innerRadius + bandWidth * 0.55,
-    };
-  });
-}
-
-function fmt(value: number): string {
-  return value.toFixed(2);
-}
-
-function line(x1: number, y1: number, x2: number, y2: number, className: string): string {
-  return `<line x1="${fmt(x1)}" y1="${fmt(y1)}" x2="${fmt(x2)}" y2="${fmt(y2)}" class="${className}" />`;
-}
-
-function circle(cx: number, cy: number, r: number, className: string): string {
-  return `<circle cx="${fmt(cx)}" cy="${fmt(cy)}" r="${fmt(r)}" class="${className}" />`;
-}
-
-function text(x: number, y: number, anchor: string, className: string, content: string): string {
-  return `<text x="${fmt(x)}" y="${fmt(y)}" text-anchor="${anchor}" class="${className}">${content}</text>`;
-}
-
-function escapeXml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-/** Where a cusp is actually drawn, under the given house-wedge style — same rule as `wheel.ts`. */
+/** Where a cusp is actually drawn, under the given house-wedge style. */
 function cuspDisplayLongitude(cuspLongitude: Degrees, style: HouseWedgeStyle): Degrees {
-  const normalized = ((cuspLongitude % 360) + 360) % 360;
   if (style === 'equal-degree') return cuspLongitude;
-  return Math.floor(normalized / 30) * 30;
+  return Math.floor(norm360(cuspLongitude) / 30) * 30;
 }
 
-function renderRingCuspsSvg(
-  houses: HousePositions,
-  ascendant: Degrees,
-  cx: number,
-  cy: number,
-  band: RingBand,
-  ringIndex: number,
-  houseWedgeStyle: HouseWedgeStyle,
-  orientationOptions: WheelOrientationOptions,
-): string {
-  const parts: string[] = [];
-  const ringClass = `chart-multiwheel-ring chart-multiwheel-ring-${String(ringIndex)}`;
-  parts.push(circle(cx, cy, band.outerRadius, ringClass));
-
-  for (let house = 1; house <= 12; house += 1) {
-    const cuspLongitude = houses.cusps[house];
-    if (cuspLongitude === undefined) continue;
-    const displayLongitude = cuspDisplayLongitude(cuspLongitude, houseWedgeStyle);
-    const angle = wheelAngle(displayLongitude, ascendant, orientationOptions);
-    const isAngular = ANGULAR_HOUSES.includes(house);
-    const stubOuter = band.innerRadius + (band.outerRadius - band.innerRadius) * 0.6;
-    const outerEnd = pointOnCircle(cx, cy, isAngular ? band.outerRadius : stubOuter, angle);
-    const innerEnd = pointOnCircle(cx, cy, band.innerRadius, angle);
-    const cuspClass =
-      `chart-multiwheel-cusp chart-multiwheel-ring-${String(ringIndex)} ${isAngular ? 'chart-multiwheel-cusp-angle' : ''}`.trim();
-    parts.push(line(outerEnd.x, outerEnd.y, innerEnd.x, innerEnd.y, cuspClass));
-  }
-
-  return parts.join('');
+/** `05°12'` — a body's degree and minute within its sign, zero-padded to a fixed width so a column of them aligns. */
+function formatDegreeMinute(longitude: Degrees): string {
+  const withinSign = degreesInSign(longitude);
+  const totalMinutes = Math.round(withinSign * 60);
+  const degree = Math.floor(totalMinutes / 60) % 30;
+  const minute = totalMinutes % 60;
+  return `${String(degree).padStart(2, '0')}°${String(minute).padStart(2, '0')}'`;
 }
 
-function renderSharedZodiacRingSvg(
+/**
+ * How wide `05°12'` draws, including the gap that keeps two of them apart.
+ * Stated in ems because a pure renderer has no text metrics to measure with, and
+ * an em figure scales with the sheet exactly as the drawn text does.
+ */
+const DEGREE_LABEL_EMS = 3.6;
+
+function labelWidth(fontSize: number): number {
+  return fontSize * DEGREE_LABEL_EMS;
+}
+
+/** The zodiac ring: its two edges, three tiers of degree ticks, sign divisions and the twelve sign glyphs. */
+function renderZodiacRingSvg(
+  geometry: SheetGeometry,
   ascendant: Degrees,
-  cx: number,
-  cy: number,
-  outerRadius: number,
-  zodiacInnerRadius: number,
-  tickIntervalDeg: number,
-  majorTickIntervalDeg: number,
   orientationOptions: WheelOrientationOptions,
 ): string {
-  const parts: string[] = [];
-  const zodiacRingWidth = outerRadius - zodiacInnerRadius;
-  parts.push(circle(cx, cy, outerRadius, 'wheel-ring-outer'));
-  parts.push(circle(cx, cy, zodiacInnerRadius, 'wheel-ring-inner'));
+  const { cx, cy, zodiacOuter, zodiacInner } = geometry;
+  const parts: string[] = [circle(cx, cy, geometry.outerBorder, 'wheel-ring-outer')];
+  parts.push(circle(cx, cy, zodiacOuter, 'wheel-ring-zodiac'));
+  parts.push(circle(cx, cy, zodiacInner, 'wheel-ring-inner'));
 
-  for (let degree = 0; degree < 360; degree += tickIntervalDeg) {
+  for (let degree = 0; degree < 360; degree += 1) {
     const angle = wheelAngle(degree, ascendant, orientationOptions);
-    const isSignBoundary = degree % 30 === 0;
-    const isMajorTick = degree % majorTickIntervalDeg === 0;
-    if (isSignBoundary) {
-      const outer = pointOnCircle(cx, cy, outerRadius, angle);
-      const inner = pointOnCircle(cx, cy, zodiacInnerRadius, angle);
+    if (degree % 30 === 0) {
+      // A sign division spans the whole ring, so it replaces the tick here.
+      const outer = pointOnCircle(cx, cy, zodiacOuter, angle);
+      const inner = pointOnCircle(cx, cy, zodiacInner, angle);
       parts.push(line(outer.x, outer.y, inner.x, inner.y, 'wheel-sign-boundary'));
       continue;
     }
-    const tickLength = isMajorTick ? zodiacRingWidth * 0.35 : zodiacRingWidth * 0.15;
-    const outer = pointOnCircle(cx, cy, zodiacInnerRadius + tickLength, angle);
-    const inner = pointOnCircle(cx, cy, zodiacInnerRadius, angle);
-    parts.push(line(outer.x, outer.y, inner.x, inner.y, isMajorTick ? 'wheel-tick-major' : 'wheel-tick-minor'));
+    const isMajor = degree % TICK_MAJOR_INTERVAL_DEG === 0;
+    const isMedium = degree % TICK_MEDIUM_INTERVAL_DEG === 0;
+    const length = isMajor ? geometry.tickMajorLength : isMedium ? geometry.tickMediumLength : geometry.tickMinorLength;
+    const tickClass = isMajor ? 'wheel-tick-major' : isMedium ? 'wheel-tick-medium' : 'wheel-tick-minor';
+    const outer = pointOnCircle(cx, cy, zodiacInner + length, angle);
+    const inner = pointOnCircle(cx, cy, zodiacInner, angle);
+    parts.push(line(outer.x, outer.y, inner.x, inner.y, tickClass));
+  }
+
+  for (const sign of SIGNS) {
+    const definition = signGlyph(sign.name);
+    if (!definition) continue;
+    // Centred in the sign's own 30° arc.
+    const angle = wheelAngle(sign.index * 30 + 15, ascendant, orientationOptions);
+    const point = pointOnCircle(cx, cy, geometry.signGlyphRadius, angle);
+    parts.push(
+      renderGlyph(
+        definition,
+        point.x,
+        point.y,
+        geometry.signGlyphSize,
+        `chart-sign-glyph chart-sign-glyph-${sign.name.toLowerCase()}`,
+      ),
+    );
   }
 
   return parts.join('');
 }
 
 /**
- * Renders 2 or more chart rings (a bi-wheel or tri-wheel) as one SVG document
- * around a shared center. `rings` is ordered innermost first — by convention
- * the base/natal chart at index 0 — since that ring's Ascendant is what every
- * ring, including the shared outer zodiac ring, is oriented by.
+ * The base chart's house structure: a spoke per cusp reaching the zodiac ring,
+ * the ASC-DSC and MC-IC axes drawn heavy across the whole chart, and the
+ * numeric house labels 1-12.
+ *
+ * The axes are drawn from the `HousePositions` angles themselves rather than
+ * from cusps 1 and 10, so they stay the true horizon and meridian even under
+ * `whole-sign`, where the drawn cusp is rounded back to its sign boundary and
+ * genuinely is not the angle.
+ */
+function renderBaseHousesSvg(
+  houses: HousePositions,
+  geometry: SheetGeometry,
+  ascendant: Degrees,
+  innerRadius: number,
+  houseWedgeStyle: HouseWedgeStyle,
+  orientationOptions: WheelOrientationOptions,
+): string {
+  const { cx, cy, zodiacInner } = geometry;
+  const parts: string[] = [];
+
+  for (let house = 1; house <= 12; house += 1) {
+    const cuspLongitude = houses.cusps[house];
+    if (cuspLongitude === undefined) continue;
+    const angle = wheelAngle(cuspDisplayLongitude(cuspLongitude, houseWedgeStyle), ascendant, orientationOptions);
+    const outer = pointOnCircle(cx, cy, zodiacInner, angle);
+    const inner = pointOnCircle(cx, cy, innerRadius, angle);
+    const isAngular = ANGULAR_HOUSES.includes(house);
+    parts.push(
+      line(
+        outer.x,
+        outer.y,
+        inner.x,
+        inner.y,
+        `chart-multiwheel-cusp${isAngular ? ' chart-multiwheel-cusp-angle' : ''}`,
+      ),
+    );
+  }
+
+  for (const axis of [houses.ascendant, houses.midheaven]) {
+    const angle = wheelAngle(axis, ascendant, orientationOptions);
+    const from = pointOnCircle(cx, cy, zodiacInner, angle);
+    const to = pointOnCircle(cx, cy, zodiacInner, angle + 180);
+    parts.push(line(from.x, from.y, to.x, to.y, 'chart-multiwheel-axis'));
+  }
+
+  for (let house = 1; house <= 12; house += 1) {
+    const start = houses.cusps[house];
+    const end = houses.cusps[house === 12 ? 1 : house + 1];
+    if (start === undefined || end === undefined) continue;
+    const startDisplay = cuspDisplayLongitude(start, houseWedgeStyle);
+    const endDisplay = cuspDisplayLongitude(end, houseWedgeStyle);
+    const midLongitude = startDisplay + norm360(endDisplay - startDisplay) / 2;
+    const angle = wheelAngle(midLongitude, ascendant, orientationOptions);
+    const point = pointOnCircle(cx, cy, geometry.houseNumberRadius, angle);
+    parts.push(
+      text(
+        point.x,
+        point.y + baselineOffset(geometry.houseNumberFontSize),
+        'middle',
+        'chart-house-number',
+        String(house),
+        geometry.houseNumberFontSize,
+      ),
+    );
+  }
+
+  return parts.join('');
+}
+
+/** A non-base ring's own cusps, confined to its band so they don't collide with the base chart's spokes. */
+function renderRingCuspsSvg(
+  houses: HousePositions,
+  ascendant: Degrees,
+  geometry: SheetGeometry,
+  band: RingBand,
+  ringIndex: number,
+  houseWedgeStyle: HouseWedgeStyle,
+  orientationOptions: WheelOrientationOptions,
+): string {
+  const { cx, cy } = geometry;
+  const ringClass = `chart-multiwheel-ring chart-multiwheel-ring-${String(ringIndex)}`;
+  const parts: string[] = [circle(cx, cy, band.outerRadius, ringClass)];
+
+  for (let house = 1; house <= 12; house += 1) {
+    const cuspLongitude = houses.cusps[house];
+    if (cuspLongitude === undefined) continue;
+    const angle = wheelAngle(cuspDisplayLongitude(cuspLongitude, houseWedgeStyle), ascendant, orientationOptions);
+    const isAngular = ANGULAR_HOUSES.includes(house);
+    const stubOuter = band.innerRadius + (band.outerRadius - band.innerRadius) * 0.6;
+    const outerEnd = pointOnCircle(cx, cy, isAngular ? band.outerRadius : stubOuter, angle);
+    const innerEnd = pointOnCircle(cx, cy, band.innerRadius, angle);
+    parts.push(
+      line(
+        outerEnd.x,
+        outerEnd.y,
+        innerEnd.x,
+        innerEnd.y,
+        `chart-multiwheel-cusp chart-multiwheel-ring-${String(ringIndex)}${isAngular ? ' chart-multiwheel-cusp-angle' : ''}`,
+      ),
+    );
+  }
+
+  return parts.join('');
+}
+
+/**
+ * The `05°12'` annotation beside each body, at the *spread* angle its glyph
+ * was actually drawn at rather than its true degree, so the label tracks a
+ * glyph the collision pass nudged.
+ *
+ * The sign is deliberately not repeated here as a glyph: the body sits on a
+ * radial line straight out to its own sign's glyph in the zodiac ring, and a
+ * third element per body in a band this narrow is what makes a crowded chart
+ * illegible. `spreadGlyphs` is recomputed rather than threaded out of
+ * `renderGlyphRingSvg` — it is pure and deterministic, so both calls agree,
+ * and the alternative is teaching the glyph ring about degree formatting.
+ */
+function renderDegreeLabelsSvg(
+  positions: readonly GlyphLayoutInput[],
+  geometry: SheetGeometry,
+  ascendant: Degrees,
+  band: RingBand,
+  minSeparationDeg: number,
+  orientationOptions: WheelOrientationOptions,
+): string {
+  const placements = [...spreadGlyphs(positions, minSeparationDeg)].sort(
+    (a, b) => a.displayLongitude - b.displayLongitude,
+  );
+  // A label is far wider than the glyph it annotates, so the separation that
+  // keeps glyphs apart is nowhere near enough to keep labels apart. Widening the
+  // spread until they all fit would space 20 bodies almost evenly around the
+  // ring and destroy the clustering the wheel exists to show, so the labels a
+  // cluster has no room for are dropped instead: the glyph and its leader line
+  // still carry the position, and the exact degree is in the Positions table.
+  // The threshold is an angle, not a pixel count, so it holds at every `size`.
+  const labelWidthDeg = (labelWidth(geometry.degreeFontSize) / (2 * Math.PI * band.degreeLabelRadius)) * 360;
+  const parts: string[] = [];
+  let lastShown: number | undefined;
+  let firstShown: number | undefined;
+  for (const placement of placements) {
+    if (lastShown !== undefined && placement.displayLongitude - lastShown < labelWidthDeg) continue;
+    if (firstShown !== undefined && norm360(firstShown - placement.displayLongitude) < labelWidthDeg) continue;
+    lastShown = placement.displayLongitude;
+    firstShown ??= placement.displayLongitude;
+    const angle = wheelAngle(placement.displayLongitude, ascendant, orientationOptions);
+    const point = pointOnCircle(geometry.cx, geometry.cy, band.degreeLabelRadius, angle);
+    parts.push(
+      text(
+        point.x,
+        point.y + baselineOffset(geometry.degreeFontSize),
+        'middle',
+        'chart-degree-label',
+        formatDegreeMinute(placement.longitude),
+        geometry.degreeFontSize,
+      ),
+    );
+  }
+  return parts.join('');
+}
+
+/**
+ * Renders one to three chart rings as one SVG document around a shared center.
+ * `rings` is ordered innermost first — by convention the base/natal chart at
+ * index 0 — since that ring's Ascendant is what every ring, including the
+ * shared zodiac ring, is oriented by, and its houses are the ones the numeric
+ * house labels and full-length cusp spokes describe.
  */
 export function renderMultiWheelSvg(
   rings: readonly WheelRingInput[],
@@ -248,49 +355,57 @@ export function renderMultiWheelSvg(
   const [baseRing] = rings;
   if (baseRing === undefined) throw new Error('renderMultiWheelSvg requires at least one ring');
 
-  const {
-    size,
-    labelMargin,
-    tickIntervalDeg,
-    majorTickIntervalDeg,
-    houseWedgeStyle,
-    minSeparationDeg,
-    glyphSize,
-    orientationOptions,
-  } = resolveOptions(options);
-  const cx = size / 2;
-  const cy = size / 2;
-  const outerRadius = size / 2 - 2;
-  const zodiacInnerRadius = outerRadius - size * 0.05;
-  const ascendant = baseRing.houses.ascendant;
-  const bands = resolveBands(zodiacInnerRadius, rings.length);
+  const size = options?.size ?? DEFAULT_SIZE;
+  const houseWedgeStyle = options?.houseWedgeStyle ?? DEFAULT_HOUSE_WEDGE_STYLE;
+  const minSeparationDeg = options?.minSeparationDeg ?? DEFAULT_MIN_SEPARATION_DEG;
+  const bare = options?.bare ?? false;
+  const orientationOptions: WheelOrientationOptions = {
+    ...(options?.orientation !== undefined ? { orientation: options.orientation } : {}),
+    ...(options?.sweep !== undefined ? { sweep: options.sweep } : {}),
+  };
 
-  const parts: string[] = [];
+  const geometry = resolveSheetGeometry(size);
+  const { cx, cy } = geometry;
+  const ascendant = baseRing.houses.ascendant;
+  const bands = resolveRingBands(geometry, rings.length);
+
+  const parts: string[] = [renderZodiacRingSvg(geometry, ascendant, orientationOptions)];
+  parts.push(circle(cx, cy, geometry.aspectCircle, 'wheel-ring-aspect'));
+
+  const baseBand = bands[0];
+  if (baseBand === undefined) throw new Error('unreachable: resolveRingBands returns one band per ring');
   parts.push(
-    renderSharedZodiacRingSvg(
+    renderBaseHousesSvg(
+      baseRing.houses,
+      geometry,
       ascendant,
-      cx,
-      cy,
-      outerRadius,
-      zodiacInnerRadius,
-      tickIntervalDeg,
-      majorTickIntervalDeg,
+      baseBand.innerRadius,
+      houseWedgeStyle,
       orientationOptions,
     ),
   );
 
   rings.forEach((ring, index) => {
     const band = bands[index];
-    if (band === undefined) throw new Error('unreachable: resolveBands returns one band per ring');
-    parts.push(renderRingCuspsSvg(ring.houses, ascendant, cx, cy, band, index, houseWedgeStyle, orientationOptions));
+    if (band === undefined) throw new Error('unreachable: resolveRingBands returns one band per ring');
+    if (index > 0) {
+      parts.push(
+        renderRingCuspsSvg(ring.houses, ascendant, geometry, band, index, houseWedgeStyle, orientationOptions),
+      );
+    }
     const glyphInputs: readonly GlyphLayoutInput[] = ring.bodies.map((b) => ({ key: b.key, longitude: b.longitude }));
     parts.push(
       renderGlyphRingSvg(glyphInputs, ascendant, cx, cy, band.glyphRadius, band.trueRadius, {
         ...orientationOptions,
         minSeparationDeg,
-        glyphSize,
+        glyphSize: geometry.bodyGlyphSize,
       }),
     );
+    // Only a single ring's band is wide enough for a legible degree column;
+    // with two or three charts stacked, the labels would overlap their glyphs.
+    if (rings.length === 1) {
+      parts.push(renderDegreeLabelsSvg(glyphInputs, geometry, ascendant, band, minSeparationDeg, orientationOptions));
+    }
     if (ring.aspects !== undefined && ring.aspects.length > 0) {
       const longitudeByBody = new Map(ring.bodies.map((b) => [b.body, b.longitude]));
       const longitudeOf = (body: BodyId): Degrees => {
@@ -300,7 +415,8 @@ export function renderMultiWheelSvg(
         }
         return longitude;
       };
-      parts.push(renderAspectWebSvg(ring.aspects, longitudeOf, ascendant, cx, cy, band.trueRadius, orientationOptions));
+      const chords = ring.aspects.filter((aspect) => aspect.aspect.key !== 'conjunction');
+      parts.push(renderAspectWebSvg(chords, longitudeOf, ascendant, cx, cy, geometry.aspectCircle, orientationOptions));
     }
   });
 
@@ -335,21 +451,41 @@ export function renderMultiWheelSvg(
     parts.push(renderCrossRingAspectWebSvg(cross.aspects, resolveA, resolveB, ascendant, cx, cy, orientationOptions));
   }
 
-  // Fixed corner legend, not radial text: a ring label drawn at a wheel-space
-  // angle turns upside-down on the far side of the circle as the chart
-  // rotates, so it can't double as a legible "which ring is which" key.
-  rings.forEach((ring, index) => {
-    const x = -labelMargin + 8;
-    const y = -labelMargin + 16 + index * 16;
-    parts.push(circle(x + 4, y - 4, 4, `chart-multiwheel-legend-swatch chart-multiwheel-ring-${String(index)}`));
-    parts.push(text(x + 14, y, 'start', 'chart-multiwheel-legend-label', escapeXml(ring.label)));
-  });
+  // Fixed corner legend, not radial text (see this module's doc comment).
+  // Pointless for a single ring, which has nothing to tell apart.
+  if (rings.length > 1) {
+    rings.forEach((ring, index) => {
+      const x = -geometry.labelMargin + geometry.panelFontSize * 0.5;
+      const y = -geometry.labelMargin + geometry.panelFontSize * (1 + index * 1.3);
+      parts.push(
+        circle(
+          x + geometry.panelFontSize * 0.3,
+          y - geometry.panelFontSize * 0.3,
+          geometry.panelFontSize * 0.3,
+          `chart-multiwheel-legend-swatch chart-multiwheel-ring-${String(index)}`,
+        ),
+      );
+      parts.push(
+        text(
+          x + geometry.panelFontSize,
+          y,
+          'start',
+          'chart-multiwheel-legend-label',
+          escapeXml(ring.label),
+          geometry.panelFontSize,
+        ),
+      );
+    });
+  }
 
-  const viewBoxOrigin = -labelMargin;
-  const viewBoxSize = size + labelMargin * 2;
+  const body = parts.join('');
+  if (bare) return body;
+
+  const viewBoxOrigin = -geometry.labelMargin;
+  const viewBoxSize = size + geometry.labelMargin * 2;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${fmt(viewBoxOrigin)} ${fmt(viewBoxOrigin)} ${fmt(viewBoxSize)} ${fmt(viewBoxSize)}" ` +
     `width="${String(size)}" height="${String(size)}" class="chart-multiwheel">` +
-    `${parts.join('')}</svg>`
+    `${body}</svg>`
   );
 }

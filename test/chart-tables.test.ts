@@ -6,6 +6,8 @@ import type { ChartData } from '../src/domain/chart-compute.js';
 import {
   angleRows,
   aspectRows,
+  chartSheetInput,
+  chartSheetMetaLines,
   chartWheelRing,
   degreeParts,
   derivedPointRows,
@@ -14,6 +16,7 @@ import {
   positionRows,
 } from '../src/domain/chart-tables.js';
 import type { BodyId, BodyPosition, HousePositions } from '../src/ephemeris/types.js';
+import type { BirthMomentInput } from '../src/time/types.js';
 
 function idOf(key: string): BodyId {
   const body = bodyByKey(key);
@@ -271,5 +274,91 @@ describe('chartWheelRing (#52)', () => {
       partOfSpirit: 0,
     };
     expect(chartWheelRing(data, 'Transiting').label).toBe('Transiting');
+  });
+});
+
+describe('chartSheetInput', () => {
+  const aspect: Aspect = {
+    bodyA: SUN,
+    bodyB: MARS,
+    aspect: { key: 'square', name: 'Square', angle: 90, family: 'major' },
+    separation: 91,
+    orb: 1,
+    applying: true,
+  };
+  const data: ChartData = {
+    positions: [position(SUN, 10), position(MOON, 100), position(MARS, 101)],
+    houses: HOUSES,
+    aspects: [aspect],
+    dignities: new Map(),
+    sect: 'day',
+    partOfFortune: 0,
+    partOfSpirit: 0,
+  };
+
+  it('gives every panel the same bodies, in ChartData order', () => {
+    const input = chartSheetInput(data);
+    expect(input.matrix.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
+    expect(input.emphasis.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
+    expect(input.strip.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
+  });
+
+  it('labels matrix rows by body name, for the bodies whose glyph is missing', () => {
+    expect(chartSheetInput(data).matrix.bodies).toEqual([
+      { key: 'sun', label: 'Sun' },
+      { key: 'moon', label: 'Moon' },
+      { key: 'mars', label: 'Mars' },
+    ]);
+  });
+
+  it('passes the engine aspects through by key, never re-deriving them', () => {
+    expect(chartSheetInput(data).matrix.aspects).toEqual([
+      { aKey: 'sun', bKey: 'mars', aspectKey: 'square', orb: 1, applying: true },
+    ]);
+  });
+
+  it('wraps the chart as a single wheel ring, with the label it is given', () => {
+    const input = chartSheetInput(data, [], 'Solar return');
+    expect(input.rings).toHaveLength(1);
+    expect(input.rings[0]?.label).toBe('Solar return');
+    expect(input.rings[0]?.aspects).toEqual([aspect]);
+  });
+
+  it('carries the header lines through untouched, defaulting to none', () => {
+    expect(chartSheetInput(data).metaLines).toEqual([]);
+    expect(chartSheetInput(data, ['A', 'B']).metaLines).toEqual(['A', 'B']);
+  });
+});
+
+describe('chartSheetMetaLines', () => {
+  const moment: BirthMomentInput = {
+    civil: { year: 1815, month: 12, day: 10, hour: 6, minute: 5, second: 0 },
+    coordinates: { latitude: 51.5, longitude: -0.12 },
+  };
+
+  it('states the name, the civil date and time as entered, and the place', () => {
+    expect(chartSheetMetaLines('Ada Lovelace', moment)).toEqual(['Ada Lovelace', '1815-12-10 06:05', '51.50°N 0.12°W']);
+  });
+
+  it('names the zone when the record overrides it', () => {
+    expect(chartSheetMetaLines('Ada', { ...moment, zoneOverride: 'Europe/London' })[1]).toBe(
+      '1815-12-10 06:05 (Europe/London)',
+    );
+  });
+
+  it('says so when the offset was stated rather than looked up', () => {
+    expect(chartSheetMetaLines('Ada', { ...moment, offsetOverrideMinutes: -75 })[1]).toBe(
+      '1815-12-10 06:05 (stated offset)',
+    );
+  });
+
+  it('marks a southern latitude and an eastern longitude by hemisphere', () => {
+    expect(chartSheetMetaLines('Anon', { ...moment, coordinates: { latitude: -33.87, longitude: 151.21 } })[2]).toBe(
+      '33.87°S 151.21°E',
+    );
+  });
+
+  it('falls back to a generic title rather than an empty first line', () => {
+    expect(chartSheetMetaLines('', moment)[0]).toBe('Chart');
   });
 });
