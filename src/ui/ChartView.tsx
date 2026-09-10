@@ -47,6 +47,7 @@ import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderChartSheetSvg } from '../chart/chart-sheet.js';
 import { standaloneSvg } from '../chart/standalone-svg.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
+import { AstroChartWheel } from './AstroChartWheel.js';
 import { svgToPngBlob } from './chart-raster.js';
 import { downloadBlob, downloadText } from './download.js';
 import { ReportView } from './ReportView.js';
@@ -285,6 +286,11 @@ export function ChartDataView({
   readonly metaLines?: readonly string[];
 }): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<TabKey>('positions');
+  // Which wheel rendering is on screen. Session-only, not persisted with the chart's
+  // other display settings (`resolveWheelDisplayOptions`) — keeping this additive and
+  // small rather than growing that settings bag for a first cut. AstroChart is the
+  // default per the user's own preference; Astraya's own wheel is the opt-in alternate.
+  const [wheelKind, setWheelKind] = useState<'astrochart' | 'astraya'>('astrochart');
   const [pngSize, setPngSize] = useState(PNG_SIZES[1]?.size ?? 1200);
   const [pngError, setPngError] = useState<string | undefined>(undefined);
   const [pngBusy, setPngBusy] = useState(false);
@@ -401,19 +407,58 @@ export function ChartDataView({
 
           {sheet !== undefined && (
             <>
-              <div
-                className="chart-wheel"
-                // Hidden from assistive tech rather than given an aria-label (#69): a chart
-                // wheel packs dozens of positions/aspects into overlapping glyphs, and no short
-                // label does that justice. The data tables right below are the actual accessible
-                // equivalent — they carry every value the wheel draws, as text a screen reader
-                // can read directly.
-                aria-hidden="true"
-                // The wheel is generated entirely by this app from data it just computed — never
-                // user-supplied markup — so injecting it is the same trust boundary as any other
-                // value this component renders, just carried as a string instead of JSX.
-                dangerouslySetInnerHTML={{ __html: sheet.markup }}
-              />
+              <div className="wheel-toggle" role="group" aria-label="Wheel rendering">
+                <button
+                  type="button"
+                  aria-pressed={wheelKind === 'astrochart'}
+                  className="quiet"
+                  onClick={() => {
+                    setWheelKind('astrochart');
+                  }}
+                >
+                  AstroChart
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={wheelKind === 'astraya'}
+                  className="quiet"
+                  onClick={() => {
+                    setWheelKind('astraya');
+                  }}
+                >
+                  Astraya
+                </button>
+              </div>
+
+              {/* "Export PDF" prints whatever is in `.chart-wheel` on the page (#67), so the
+                  Astraya rendering is forced here even when AstroChart is the active view —
+                  otherwise a PDF export would silently disagree with the on-screen SVG/PNG
+                  exports below, which always render from `sheet` regardless of the toggle. */}
+              {wheelKind === 'astrochart' && !printAll ? (
+                <div className="chart-wheel" aria-hidden="true">
+                  <AstroChartWheel data={load.data} />
+                </div>
+              ) : (
+                <div
+                  className="chart-wheel"
+                  // Hidden from assistive tech rather than given an aria-label (#69): a chart
+                  // wheel packs dozens of positions/aspects into overlapping glyphs, and no short
+                  // label does that justice. The data tables right below are the actual accessible
+                  // equivalent — they carry every value the wheel draws, as text a screen reader
+                  // can read directly.
+                  aria-hidden="true"
+                  // The wheel is generated entirely by this app from data it just computed — never
+                  // user-supplied markup — so injecting it is the same trust boundary as any other
+                  // value this component renders, just carried as a string instead of JSX.
+                  dangerouslySetInnerHTML={{ __html: sheet.markup }}
+                />
+              )}
+
+              {wheelKind === 'astrochart' && (
+                <p className="hint">
+                  Exports below always use Astraya&rsquo;s own rendering, regardless of which wheel is shown here.
+                </p>
+              )}
 
               <div className="chart-export-actions">
                 <button type="button" className="quiet" onClick={downloadSvg}>

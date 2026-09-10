@@ -54,7 +54,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
-    include: ['test/**/*.test.ts', 'src/**/*.test.ts'],
+    include: ['test/**/*.test.ts', 'test/**/*.test.tsx', 'src/**/*.test.ts'],
     // The WASM module takes a moment to instantiate on first use.
     testTimeout: 30_000,
   },
