@@ -14,7 +14,13 @@
  * or stored — recomputing is cheap, and storing results would only create a
  * second version of the truth the `Chart` doc comment already warns against.
  */
-import { findAspects, type Aspect, type AspectSubject } from '../astrology/aspects.js';
+import {
+  DEFAULT_ORB_CONFIG,
+  findAspects,
+  type Aspect,
+  type AspectSubject,
+  type OrbConfig,
+} from '../astrology/aspects.js';
 import { bodyByKey, BODIES } from '../astrology/bodies.js';
 import { essentialDignities, type EssentialDignities } from '../astrology/dignities.js';
 import { partOfFortune, partOfSpirit } from '../astrology/arabic-parts.js';
@@ -39,6 +45,22 @@ const DEFAULT_HOUSE_SYSTEM: HouseSystem = 'P';
 export interface ChartCalculationOptions {
   readonly houseSystem?: HouseSystem;
   readonly zodiac?: Zodiac;
+  readonly orbConfig?: OrbConfig;
+  /** Which Lilith model `data.positions` carries; the other two are dropped. Default 'mean'. */
+  readonly lilithVariant?: 'mean' | 'true';
+  /** Which lunar-node model `data.positions` carries; the other is dropped. Default 'mean'. */
+  readonly nodeVariant?: 'mean' | 'true';
+  /**
+   * Whether these point families participate in aspect-finding at all. All
+   * default to false — Chiron, Lilith and the Nodes are still computed and
+   * appear in `data.positions`, just excluded from the pairs `findAspects`
+   * checks, matching most astrology tools' own "aspects to" defaults.
+   */
+  readonly aspectsTo?: {
+    readonly chiron?: boolean;
+    readonly lilith?: boolean;
+    readonly lunarNodes?: boolean;
+  };
 }
 
 export interface ChartData {
@@ -71,21 +93,37 @@ export async function computeChartData(
   const place: GeoPosition = { ...moment.coordinates, altitude: 0 };
   const positionOptions = options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
 
+  // BODIES always carries every Lilith and Node model at once; collapse each
+  // down to the one the caller asked for (default 'mean' for both) rather
+  // than showing all three Liliths and both Nodes simultaneously.
+  const lilithKey = options.lilithVariant === 'true' ? 'osculatingLilith' : 'meanLilith';
+  const nodeKey = options.nodeVariant === 'true' ? 'trueNode' : 'meanNode';
+  const bodies = BODIES.filter((body) => {
+    if (body.category === 'lilith') return body.key === lilithKey;
+    if (body.category === 'node') return body.key === nodeKey;
+    return true;
+  });
+
   const [positions, houses] = await Promise.all([
     provider.positions(
       jd,
-      BODIES.map((body) => body.id),
+      bodies.map((body) => body.id),
       positionOptions,
     ),
     provider.houses(jd, place, options.houseSystem ?? DEFAULT_HOUSE_SYSTEM, options.zodiac),
   ]);
 
   const positionByBody = new Map(positions.map((position) => [position.body, position]));
-  const subjects: AspectSubject[] = BODIES.flatMap((body) => {
+  const aspectsTo = options.aspectsTo ?? {};
+  const subjects: AspectSubject[] = bodies.flatMap((body) => {
     const position = positionByBody.get(body.id);
-    return position === undefined ? [] : [{ body: body.id, position, category: body.category }];
+    if (position === undefined) return [];
+    if (body.category === 'centaur' && aspectsTo.chiron !== true) return [];
+    if (body.category === 'lilith' && aspectsTo.lilith !== true) return [];
+    if (body.category === 'node' && aspectsTo.lunarNodes !== true) return [];
+    return [{ body: body.id, position, category: body.category }];
   });
-  const aspects = findAspects(subjects);
+  const aspects = findAspects(subjects, options.orbConfig ?? DEFAULT_ORB_CONFIG);
 
   const dignities = new Map<BodyId, EssentialDignities>(
     positions.map((position) => [position.body, essentialDignities(position.body, position.longitude)]),

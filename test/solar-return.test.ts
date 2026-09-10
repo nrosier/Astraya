@@ -102,7 +102,19 @@ describe('computeSolarReturn (#49)', () => {
   it('narrows to fewer contacts with a tighter orb config (#51)', async () => {
     const engine = await getEngine();
     const wide = await computeSolarReturn(NATAL, 2015, engine);
-    const tight = await computeSolarReturn(NATAL, 2015, engine, {}, { baseOrbs: {}, luminaryBonus: 0 });
+    const tight = await computeSolarReturn(
+      NATAL,
+      2015,
+      engine,
+      {},
+      {
+        majorOrb: { base: -1, luminaryBonus: 0 },
+        sextileOrb: { base: -1, luminaryBonus: 0 },
+        minorOrb: -1,
+        scalePercent: 0,
+        enabledMinorAspects: [],
+      },
+    );
     expect(tight.contacts).toHaveLength(0);
     expect(wide.contacts.length).toBeGreaterThan(0);
   });

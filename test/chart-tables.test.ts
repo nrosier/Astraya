@@ -27,6 +27,7 @@ function idOf(key: string): BodyId {
 const SUN = idOf('sun');
 const MOON = idOf('moon');
 const MARS = idOf('mars');
+const CHIRON = idOf('chiron');
 
 function position(body: BodyId, longitude: number, longitudeSpeed = 1): BodyPosition {
   return {
@@ -113,6 +114,12 @@ describe('positionRows (#44)', () => {
       },
     ]);
   });
+
+  it('keeps Chiron by default but drops it when chironVisible is false', () => {
+    const withChiron: ChartData = { ...data, positions: [...data.positions, position(CHIRON, 50)] };
+    expect(positionRows(withChiron).map((row) => row.bodyKey)).toEqual(['sun', 'moon', 'chiron']);
+    expect(positionRows(withChiron, { chironVisible: false }).map((row) => row.bodyKey)).toEqual(['sun', 'moon']);
+  });
 });
 
 describe('houseCuspRows (#44)', () => {
@@ -134,7 +141,7 @@ describe('houseCuspRows (#44)', () => {
 });
 
 describe('angleRows (#44)', () => {
-  it('lists all eight angles HousePositions carries', () => {
+  it('lists seven angles by default, omitting the Vertex', () => {
     const data: ChartData = {
       positions: [],
       houses: HOUSES,
@@ -149,13 +156,35 @@ describe('angleRows (#44)', () => {
       'Ascendant',
       'Midheaven',
       'ARMC',
-      'Vertex',
       'Equatorial Ascendant',
       'Co-Ascendant (Koch)',
       'Co-Ascendant (Munkasey)',
       'Polar Ascendant',
     ]);
     expect(rows[0]).toMatchObject({ longitude: 10, sign: 'Aries', degree: 10 });
+  });
+
+  it('includes the Vertex once vertexVisible is true', () => {
+    const data: ChartData = {
+      positions: [],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    const rows = angleRows(data, { vertexVisible: true });
+    expect(rows.map((row) => row.label)).toEqual([
+      'Ascendant',
+      'Midheaven',
+      'ARMC',
+      'Vertex',
+      'Equatorial Ascendant',
+      'Co-Ascendant (Koch)',
+      'Co-Ascendant (Munkasey)',
+      'Polar Ascendant',
+    ]);
   });
 });
 
@@ -213,22 +242,51 @@ describe('dignityRows (#44)', () => {
       { bodyKey: 'moon', bodyName: 'Moon', ruler: false, exalted: false, detriment: false, fall: false },
     ]);
   });
+
+  it('keeps Chiron by default but drops it when chironVisible is false', () => {
+    const dignities = new Map<BodyId, EssentialDignities>();
+    const data: ChartData = {
+      positions: [position(SUN, 10), position(CHIRON, 50)],
+      houses: HOUSES,
+      aspects: [],
+      dignities,
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(dignityRows(data).map((row) => row.bodyKey)).toEqual(['sun', 'chiron']);
+    expect(dignityRows(data, { chironVisible: false }).map((row) => row.bodyKey)).toEqual(['sun']);
+  });
 });
 
 describe('derivedPointRows (#44)', () => {
-  it('lists Part of Fortune and Part of Spirit with their degree parts', () => {
-    const data: ChartData = {
-      positions: [],
-      houses: HOUSES,
-      aspects: [],
-      dignities: new Map(),
-      sect: 'night',
-      partOfFortune: 45,
-      partOfSpirit: 200,
-    };
-    expect(derivedPointRows(data)).toEqual([
+  const data: ChartData = {
+    positions: [position(SUN, 10), position(MOON, 100)],
+    houses: HOUSES,
+    aspects: [],
+    dignities: new Map(),
+    sect: 'night',
+    partOfFortune: 45,
+    partOfSpirit: 200,
+  };
+
+  it('lists only Part of Spirit by default, omitting Part of Fortune and the midpoints', () => {
+    expect(derivedPointRows(data)).toEqual([{ label: 'Part of Spirit', longitude: 200, ...degreeParts(200) }]);
+  });
+
+  it('includes Part of Fortune once fortuneVisible is true', () => {
+    expect(derivedPointRows(data, { fortuneVisible: true })).toEqual([
       { label: 'Part of Fortune', longitude: 45, ...degreeParts(45) },
       { label: 'Part of Spirit', longitude: 200, ...degreeParts(200) },
+    ]);
+  });
+
+  it('adds the ASC/MC and Sun/Moon midpoints once midpointsVisible is true', () => {
+    // ASC 10, MC 280: shorter arc midpoint is 325 (Aquarius 25). Sun 10, Moon 100: midpoint is 55 (Taurus 25).
+    expect(derivedPointRows(data, { midpointsVisible: true })).toEqual([
+      { label: 'Part of Spirit', longitude: 200, ...degreeParts(200) },
+      { label: 'ASC/MC Midpoint', longitude: 325, ...degreeParts(325) },
+      { label: 'Sun/Moon Midpoint', longitude: 55, ...degreeParts(55) },
     ]);
   });
 });
@@ -274,6 +332,64 @@ describe('chartWheelRing (#52)', () => {
       partOfSpirit: 0,
     };
     expect(chartWheelRing(data, 'Transiting').label).toBe('Transiting');
+  });
+
+  it('drops minor aspects from the wheel, keeping only the five major ones', () => {
+    const major: Aspect = {
+      bodyA: SUN,
+      bodyB: MARS,
+      aspect: { key: 'square', name: 'Square', angle: 90, family: 'major' },
+      separation: 91,
+      orb: 1,
+      applying: true,
+    };
+    const minor: Aspect = {
+      bodyA: SUN,
+      bodyB: MOON,
+      aspect: { key: 'quincunx', name: 'Quincunx', angle: 150, family: 'minor' },
+      separation: 149,
+      orb: 1,
+      applying: true,
+    };
+    const data: ChartData = {
+      positions: [position(SUN, 10), position(MOON, 100), position(MARS, 101)],
+      houses: HOUSES,
+      aspects: [major, minor],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(chartWheelRing(data).aspects).toEqual([major]);
+  });
+
+  it('keeps Chiron in the wheel bodies by default, dropping it when chironVisible is false, aspects untouched', () => {
+    const aspect: Aspect = {
+      bodyA: SUN,
+      bodyB: CHIRON,
+      aspect: { key: 'square', name: 'Square', angle: 90, family: 'major' },
+      separation: 91,
+      orb: 1,
+      applying: true,
+    };
+    const data: ChartData = {
+      positions: [position(SUN, 10), position(CHIRON, 100)],
+      houses: HOUSES,
+      aspects: [aspect],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(chartWheelRing(data).bodies).toEqual([
+      { body: SUN, key: 'sun', longitude: 10 },
+      { body: CHIRON, key: 'chiron', longitude: 100 },
+    ]);
+    expect(chartWheelRing(data).aspects).toEqual([aspect]);
+    expect(chartWheelRing(data, 'Natal', { chironVisible: false }).bodies).toEqual([
+      { body: SUN, key: 'sun', longitude: 10 },
+    ]);
+    expect(chartWheelRing(data, 'Natal', { chironVisible: false }).aspects).toEqual([aspect]);
   });
 });
 
@@ -327,6 +443,21 @@ describe('chartSheetInput', () => {
   it('carries the header lines through untouched, defaulting to none', () => {
     expect(chartSheetInput(data).metaLines).toEqual([]);
     expect(chartSheetInput(data, ['A', 'B']).metaLines).toEqual(['A', 'B']);
+  });
+
+  it('keeps Chiron in every panel by default, dropping it once chironVisible is false', () => {
+    const withChiron: ChartData = { ...data, positions: [...data.positions, position(CHIRON, 200)] };
+    const shown = chartSheetInput(withChiron);
+    expect(shown.matrix.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'chiron']);
+    expect(shown.emphasis.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'chiron']);
+    expect(shown.strip.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'chiron']);
+    expect(shown.rings[0]?.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'chiron']);
+
+    const hidden = chartSheetInput(withChiron, [], 'Natal', { chironVisible: false });
+    expect(hidden.matrix.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
+    expect(hidden.emphasis.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
+    expect(hidden.strip.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
+    expect(hidden.rings[0]?.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
   });
 });
 

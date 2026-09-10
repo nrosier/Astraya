@@ -38,6 +38,7 @@ import {
   type DerivedPointRow,
   type DignityRow,
   type HouseCuspRow,
+  type PointVisibilityOptions,
   type PositionRow,
 } from '../domain/chart-tables.js';
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
@@ -45,15 +46,24 @@ import { deriveExportFilename } from '../domain/export-filename.js';
 import { encodeChartShareLink } from '../domain/chart-share.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderChartSheetSvg } from '../chart/chart-sheet.js';
+import {
+  DEFAULT_EXTENDED_SETTINGS,
+  toChartCalculationOptions,
+  toPointVisibilityOptions,
+  toSignWedgeStyle,
+  type ExtendedSettings,
+} from '../chart/extended-settings.js';
 import { standaloneSvg } from '../chart/standalone-svg.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
 import { AstroChartWheel } from './AstroChartWheel.js';
 import { svgToPngBlob } from './chart-raster.js';
 import { downloadBlob, downloadText } from './download.js';
+import { ExtendedSettingsPanel } from './ExtendedSettingsPanel.js';
 import { ReportView } from './ReportView.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
+import type { EphemerisProvider } from '../ephemeris/types.js';
 import type { BirthMomentInput } from '../time/types.js';
 
 type Load =
@@ -127,14 +137,19 @@ type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived' | 're
  * duplicated. `undefined` for `'report'`, which isn't a data table and is rendered by its
  * caller instead.
  */
-function renderTableTab(tab: TabKey, data: ChartData, displayName: string): React.ReactNode {
+function renderTableTab(
+  tab: TabKey,
+  data: ChartData,
+  displayName: string,
+  pointVisibility: PointVisibilityOptions,
+): React.ReactNode {
   switch (tab) {
     case 'positions':
       return (
         <SortableTable
           caption="Positions"
           columns={POSITION_COLUMNS}
-          rows={positionRows(data)}
+          rows={positionRows(data, pointVisibility)}
           getRowKey={(row) => row.bodyKey}
           downloadFilename={deriveExportFilename(displayName, 'positions', 'csv')}
         />
@@ -152,7 +167,7 @@ function renderTableTab(tab: TabKey, data: ChartData, displayName: string): Reac
           <SortableTable
             caption="Angles"
             columns={ANGLE_COLUMNS}
-            rows={angleRows(data)}
+            rows={angleRows(data, pointVisibility)}
             getRowKey={(row) => row.label}
             downloadFilename={deriveExportFilename(displayName, 'angles', 'csv')}
           />
@@ -173,7 +188,7 @@ function renderTableTab(tab: TabKey, data: ChartData, displayName: string): Reac
         <SortableTable
           caption="Dignities"
           columns={DIGNITY_COLUMNS}
-          rows={dignityRows(data)}
+          rows={dignityRows(data, pointVisibility)}
           getRowKey={(row) => row.bodyKey}
           downloadFilename={deriveExportFilename(displayName, 'dignities', 'csv')}
         />
@@ -185,7 +200,7 @@ function renderTableTab(tab: TabKey, data: ChartData, displayName: string): Reac
           <SortableTable
             caption="Derived points"
             columns={DERIVED_POINT_COLUMNS}
-            rows={derivedPointRows(data)}
+            rows={derivedPointRows(data, pointVisibility)}
             getRowKey={(row) => row.label}
             downloadFilename={deriveExportFilename(displayName, 'derived-points', 'csv')}
           />
@@ -274,6 +289,9 @@ export function ChartDataView({
   displayName,
   showHouses,
   metaLines,
+  extendedSettings = DEFAULT_EXTENDED_SETTINGS,
+  onExtendedSettingsChange,
+  settingsProvider,
 }: {
   readonly load: Load;
   readonly displayName: string;
@@ -284,6 +302,22 @@ export function ChartDataView({
    * the sheet is headed by the display name alone.
    */
   readonly metaLines?: readonly string[];
+  /**
+   * The confirmed (post-Redraw) extended settings (#52): house system, zodiac,
+   * orb rules, minor aspects, point visibility, and the wheel's sign-wedge
+   * style. Defaults to `DEFAULT_EXTENDED_SETTINGS` so `SharedChartView` — which
+   * has no panel and doesn't pass any of these three props — renders exactly as
+   * it did before this feature existed.
+   */
+  readonly extendedSettings?: ExtendedSettings;
+  /**
+   * Set together with `settingsProvider`: when both are given, the "Extended
+   * settings" panel is rendered and this is wired as its `onRedraw`. Omitted by
+   * `SharedChartView`, which has no panel.
+   */
+  readonly onExtendedSettingsChange?: (next: ExtendedSettings) => void;
+  /** A long-lived provider for the panel's own house-system/ayanamsa name lookups. */
+  readonly settingsProvider?: EphemerisProvider | undefined;
 }): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<TabKey>('positions');
   // Which wheel rendering is on screen. Session-only, not persisted with the chart's
@@ -299,15 +333,23 @@ export function ChartDataView({
   // active tab, so the PDF the browser's own "Save as PDF" produces has all of them (#67).
   const [printAll, setPrintAll] = useState(false);
 
+  const pointVisibility = toPointVisibilityOptions(extendedSettings);
+
   const sheet = useMemo(() => {
     if (load.kind !== 'ready' || !showHouses) return undefined;
     return renderChartSheetSvg(
-      chartSheetInput(load.data, metaLines ?? [displayName || 'Chart'], displayName || 'Natal'),
+      chartSheetInput(
+        load.data,
+        metaLines ?? [displayName || 'Chart'],
+        displayName || 'Natal',
+        toPointVisibilityOptions(extendedSettings),
+      ),
       {
         ...resolveWheelDisplayOptions({}),
+        signWedgeStyle: toSignWedgeStyle(extendedSettings),
       },
     );
-  }, [load, showHouses, displayName, metaLines]);
+  }, [load, showHouses, displayName, metaLines, extendedSettings]);
 
   useEffect(() => {
     if (!printAll) return undefined;
@@ -405,6 +447,14 @@ export function ChartDataView({
             </p>
           )}
 
+          {onExtendedSettingsChange !== undefined && settingsProvider !== undefined && (
+            <ExtendedSettingsPanel
+              value={extendedSettings}
+              onRedraw={onExtendedSettingsChange}
+              provider={settingsProvider}
+            />
+          )}
+
           {sheet !== undefined && (
             <>
               <div className="wheel-toggle" role="group" aria-label="Wheel rendering">
@@ -436,7 +486,7 @@ export function ChartDataView({
                   exports below, which always render from `sheet` regardless of the toggle. */}
               {wheelKind === 'astrochart' && !printAll ? (
                 <div className="chart-wheel" aria-hidden="true">
-                  <AstroChartWheel data={load.data} />
+                  <AstroChartWheel data={load.data} signWedgeStyle={toSignWedgeStyle(extendedSettings)} />
                 </div>
               ) : (
                 <div
@@ -503,7 +553,7 @@ export function ChartDataView({
               {tabs
                 .filter((tab) => tab !== 'report')
                 .map((tab) => (
-                  <div key={tab}>{renderTableTab(tab, load.data, displayName)}</div>
+                  <div key={tab}>{renderTableTab(tab, load.data, displayName, pointVisibility)}</div>
                 ))}
             </div>
           ) : (
@@ -536,7 +586,7 @@ export function ChartDataView({
               >
                 {activeTab === 'report'
                   ? showHouses && <ReportView chart={load.data} />
-                  : renderTableTab(activeTab, load.data, displayName)}
+                  : renderTableTab(activeTab, load.data, displayName, pointVisibility)}
               </div>
             </>
           )}
@@ -550,6 +600,24 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
   const state = useStoreState();
   const person = state.people.get(personId);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
+  const [settings, setSettings] = useState<ExtendedSettings>(DEFAULT_EXTENDED_SETTINGS);
+  // A separate provider dedicated to the "Extended settings" panel's own house-system/
+  // ayanamsa name lookups (#52): created once for the component's lifetime, unlike the
+  // provider below, which is torn down and recreated on every recompute — reusing that one
+  // here would dispose it out from under the panel on every redraw.
+  const [settingsProvider, setSettingsProvider] = useState<EphemerisProvider | undefined>(undefined);
+
+  useEffect(() => {
+    const provider = new WorkerEphemerisProvider();
+    const effect = { cancelled: false };
+    void provider.initialize().then(() => {
+      if (!effect.cancelled) setSettingsProvider(provider);
+    });
+    return () => {
+      effect.cancelled = true;
+      void provider.dispose();
+    };
+  }, []);
 
   useEffect(() => {
     if (person?.moment === undefined) return undefined;
@@ -562,7 +630,7 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
     void (async () => {
       try {
         await provider.initialize();
-        const data = await computeChartData(moment, provider);
+        const data = await computeChartData(moment, provider, toChartCalculationOptions(settings));
         if (!effect.cancelled) setLoad({ kind: 'ready', data });
       } catch (error) {
         if (!effect.cancelled)
@@ -574,7 +642,7 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
       effect.cancelled = true;
       void provider.dispose();
     };
-  }, [personId, person]);
+  }, [personId, person, settings]);
 
   if (person === undefined) {
     return (
@@ -620,6 +688,9 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
         displayName={person.displayName}
         showHouses={showHouses}
         metaLines={chartSheetMetaLines(person.displayName, person.moment)}
+        extendedSettings={settings}
+        onExtendedSettingsChange={setSettings}
+        settingsProvider={settingsProvider}
       />
     </main>
   );

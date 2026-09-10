@@ -61,22 +61,49 @@ describe('the canonical aspect registry (#24)', () => {
 });
 
 describe('orbFor (#24)', () => {
-  it('widens every aspect by the luminary bonus when either body is a luminary', () => {
-    for (const aspect of ASPECTS) {
-      const base = orbFor(aspect.key, 'planet', 'planet');
-      expect(orbFor(aspect.key, 'luminary', 'planet')).toBe(base + DEFAULT_ORB_CONFIG.luminaryBonus);
-      expect(orbFor(aspect.key, 'planet', 'luminary')).toBe(base + DEFAULT_ORB_CONFIG.luminaryBonus);
-      expect(orbFor(aspect.key, 'luminary', 'luminary')).toBe(base + DEFAULT_ORB_CONFIG.luminaryBonus);
+  it('gives the four non-sextile majors the major-tier orb and bonus', () => {
+    for (const key of ['conjunction', 'square', 'trine', 'opposition']) {
+      expect(orbFor(key, 'planet', 'planet')).toBe(DEFAULT_ORB_CONFIG.majorOrb.base);
+      expect(orbFor(key, 'luminary', 'planet')).toBe(
+        DEFAULT_ORB_CONFIG.majorOrb.base + DEFAULT_ORB_CONFIG.majorOrb.luminaryBonus,
+      );
     }
   });
 
+  it('gives sextile its own, smaller tier and bonus', () => {
+    expect(orbFor('sextile', 'planet', 'planet')).toBe(DEFAULT_ORB_CONFIG.sextileOrb.base);
+    expect(orbFor('sextile', 'luminary', 'planet')).toBe(
+      DEFAULT_ORB_CONFIG.sextileOrb.base + DEFAULT_ORB_CONFIG.sextileOrb.luminaryBonus,
+    );
+  });
+
+  it('gives every minor aspect the same flat orb, unaffected by a luminary', () => {
+    for (const key of ['semisextile', 'semisquare', 'quintile', 'sesquiquadrate', 'biquintile', 'quincunx']) {
+      expect(orbFor(key, 'planet', 'planet')).toBe(DEFAULT_ORB_CONFIG.minorOrb);
+      expect(orbFor(key, 'luminary', 'luminary')).toBe(DEFAULT_ORB_CONFIG.minorOrb);
+    }
+  });
+
+  it('scales every tier by the configured percentage', () => {
+    const config = { ...DEFAULT_ORB_CONFIG, scalePercent: 50 };
+    expect(orbFor('square', 'planet', 'planet', config)).toBeCloseTo(DEFAULT_ORB_CONFIG.majorOrb.base * 1.5, 9);
+    expect(orbFor('sextile', 'planet', 'planet', config)).toBeCloseTo(DEFAULT_ORB_CONFIG.sextileOrb.base * 1.5, 9);
+    expect(orbFor('quincunx', 'planet', 'planet', config)).toBeCloseTo(DEFAULT_ORB_CONFIG.minorOrb * 1.5, 9);
+  });
+
   it('is fully overridable via a custom config', () => {
-    const config = { baseOrbs: { conjunction: 1 }, luminaryBonus: 10 };
+    const config = {
+      majorOrb: { base: 1, luminaryBonus: 10 },
+      sextileOrb: { base: 0, luminaryBonus: 0 },
+      minorOrb: 0,
+      scalePercent: 0,
+      enabledMinorAspects: [],
+    };
     expect(orbFor('conjunction', 'planet', 'planet', config)).toBe(1);
     expect(orbFor('conjunction', 'luminary', 'asteroid', config)).toBe(11);
   });
 
-  it('rejects an aspect key missing from the config', () => {
+  it('rejects an aspect key that is not in the registry at all', () => {
     expect(() => orbFor('nonsense', 'planet', 'planet')).toThrow(RangeError);
   });
 });
@@ -122,9 +149,15 @@ describe('matchAspect (#24)', () => {
 
   it('picks the smaller orb when a separation falls within two aspects at once', () => {
     // A deliberately overlapping config: 10 degrees is within conjunction's
-    // orb (10) and semisextile's (25), but conjunction's orb of 10 is smaller
+    // orb (15) and semisextile's (20), but conjunction's orb of 10 is smaller
     // than semisextile's orb of 20, so conjunction must win.
-    const config = { baseOrbs: { conjunction: 15, semisextile: 25 }, luminaryBonus: 0 };
+    const config = {
+      majorOrb: { base: 15, luminaryBonus: 0 },
+      sextileOrb: { base: 0, luminaryBonus: 0 },
+      minorOrb: 20,
+      scalePercent: 0,
+      enabledMinorAspects: ['semisextile'],
+    };
     const match = matchAspect(position(0), 'planet', position(10), 'planet', config);
     expect(match?.aspect.key).toBe('conjunction');
     expect(match?.orb).toBeCloseTo(10, 9);
@@ -141,10 +174,10 @@ describe('matchAspect (#24)', () => {
     expect(withLuminary?.orb).toBeCloseTo(8, 9);
   });
 
-  it('only considers aspects present in a partial config, even at an exact hit', () => {
-    const config = { baseOrbs: { sextile: 5 }, luminaryBonus: 0 };
-    expect(matchAspect(position(0), 'planet', position(0), 'planet', config)).toBeUndefined();
-    expect(matchAspect(position(0), 'planet', position(60), 'planet', config)?.aspect.key).toBe('sextile');
+  it('only considers minor aspects present in enabledMinorAspects, even at an exact hit', () => {
+    expect(matchAspect(position(0), 'planet', position(150), 'planet')).toBeUndefined(); // quincunx, disabled by default
+    const config = { ...DEFAULT_ORB_CONFIG, enabledMinorAspects: ['quincunx'] };
+    expect(matchAspect(position(0), 'planet', position(150), 'planet', config)?.aspect.key).toBe('quincunx');
   });
 
   it('marks a fast body approaching an exact square as applying', () => {
@@ -166,6 +199,13 @@ describe('matchAspect (#24)', () => {
 
   it('agrees with a finite-difference check of the orb shrinking or growing', () => {
     const dt = 1 / 24 / 60; // one minute, small relative to any real body's speed
+    const wideConfig = {
+      majorOrb: { base: 20, luminaryBonus: 0 },
+      sextileOrb: { base: 20, luminaryBonus: 0 },
+      minorOrb: 20,
+      scalePercent: 0,
+      enabledMinorAspects: ASPECTS.filter((asp) => asp.family === 'minor').map((asp) => asp.key),
+    };
     const cases: [number, number, number, number][] = [
       [0, 1, 87, 13],
       [0, 1, 87, 0.5],
@@ -176,10 +216,7 @@ describe('matchAspect (#24)', () => {
     for (const [lonA, speedA, lonB, speedB] of cases) {
       const a = position(lonA, speedA);
       const b = position(lonB, speedB);
-      const match = matchAspect(a, 'planet', b, 'planet', {
-        baseOrbs: Object.fromEntries(ASPECTS.map((asp) => [asp.key, 20])),
-        luminaryBonus: 0,
-      });
+      const match = matchAspect(a, 'planet', b, 'planet', wideConfig);
       if (!match) continue;
 
       const later = matchAspect(
@@ -187,7 +224,7 @@ describe('matchAspect (#24)', () => {
         'planet',
         position(lonB + speedB * dt, speedB),
         'planet',
-        { baseOrbs: Object.fromEntries(ASPECTS.map((asp) => [asp.key, 20])), luminaryBonus: 0 },
+        wideConfig,
       );
       const laterOrb = later?.aspect.key === match.aspect.key ? later.orb : 180;
 
@@ -233,11 +270,11 @@ describe('findCrossAspects (#47)', () => {
 
   it('checks every pairing between two lists, not only i<j within one', () => {
     const listA = [subject(1, 0), subject(2, 90)];
-    const listB = [subject(10, 60), subject(11, 180)];
+    const listB = [subject(10, 180), subject(11, 270)];
     const aspects = findCrossAspects(listA, listB);
     const pairs = aspects.map((a) => `${a.bodyA}-${a.bodyB}`);
     expect(new Set(pairs).size).toBe(pairs.length);
-    // 1-10 sextile, 1-11 opposition, 2-10 square, 2-11 square: all four pairings are in orb.
+    // 1-10 opposition, 1-11 square, 2-10 square, 2-11 opposition: all four pairings are in orb.
     expect(aspects).toHaveLength(4);
   });
 

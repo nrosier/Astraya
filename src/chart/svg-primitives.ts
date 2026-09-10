@@ -29,6 +29,12 @@ export function rect(x: number, y: number, width: number, height: number, classN
   return `<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(width)}" height="${fmt(height)}" class="${className}" />`;
 }
 
+/** A closed straight-edged shape through the given points, e.g. an annular wedge approximated by a fine-enough point list. */
+export function polygon(points: readonly { readonly x: number; readonly y: number }[], className: string): string {
+  const pts = points.map((point) => `${fmt(point.x)},${fmt(point.y)}`).join(' ');
+  return `<polygon points="${pts}" class="${className}" />`;
+}
+
 export type TextAnchor = 'start' | 'middle' | 'end';
 
 export function text(

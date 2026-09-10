@@ -7,15 +7,17 @@
  * integration test for computing a chart and the (fast, pure) test for
  * shaping one into rows can run independently.
  */
-import { bodyById } from '../astrology/bodies.js';
+import { bodyById, bodyByKey } from '../astrology/bodies.js';
 import { houseOf } from '../astrology/emphasis.js';
+import { midpointOf } from '../astrology/midpoints.js';
 import { degreesInSign, signOf } from '../astrology/signs.js';
 import type { ChartData } from './chart-compute.js';
 import type { Aspect } from '../astrology/aspects.js';
-import type { Degrees } from '../ephemeris/types.js';
+import type { BodyPosition, Degrees } from '../ephemeris/types.js';
 import type { BirthMomentInput } from '../time/types.js';
 import type { WheelRingInput } from '../chart/multi-wheel.js';
 import type { ChartSheetInput } from '../chart/chart-sheet.js';
+import { filterAspectsForDisplay } from '../chart/aspect-web.js';
 
 export interface DegreeParts {
   readonly sign: string;
@@ -46,6 +48,29 @@ export function degreeParts(longitude: Degrees): DegreeParts {
   return { sign, degree, minute, second };
 }
 
+/**
+ * Which computed points a chart's tables and wheel actually show. Purely a
+ * display filter, never touching `ChartData.positions`/`.aspects` themselves
+ * — an aspect to a point hidden here still shows in the Aspects tab by name
+ * if it was computed at all (that's `ChartCalculationOptions.aspectsTo`, a
+ * compute-layer decision made before this filter ever runs).
+ */
+export interface PointVisibilityOptions {
+  readonly chironVisible?: boolean; // default true
+  readonly fortuneVisible?: boolean; // default false
+  readonly vertexVisible?: boolean; // default false
+  readonly midpointsVisible?: boolean; // default false
+}
+
+/** Drops Chiron from a position list when `chironVisible` is false. */
+export function visiblePositions(
+  positions: readonly BodyPosition[],
+  options: PointVisibilityOptions = {},
+): readonly BodyPosition[] {
+  if (options.chironVisible ?? true) return positions;
+  return positions.filter((position) => bodyById(position.body)?.category !== 'centaur');
+}
+
 export interface PositionRow extends DegreeParts {
   readonly bodyKey: string;
   readonly bodyName: string;
@@ -55,9 +80,9 @@ export interface PositionRow extends DegreeParts {
   readonly house: number;
 }
 
-/** One row per body the ephemeris returned a position for, in `ChartData.positions`' own order. */
-export function positionRows(data: ChartData): readonly PositionRow[] {
-  return data.positions.map((position) => {
+/** One row per visible body, in `ChartData.positions`' own order. */
+export function positionRows(data: ChartData, options: PointVisibilityOptions = {}): readonly PositionRow[] {
+  return visiblePositions(data.positions, options).map((position) => {
     const body = bodyById(position.body);
     return {
       bodyKey: body?.key ?? String(position.body),
@@ -93,13 +118,13 @@ export interface AngleRow extends DegreeParts {
   readonly longitude: Degrees;
 }
 
-/** The angles `HousePositions` carries alongside the cusps themselves. */
-export function angleRows(data: ChartData): readonly AngleRow[] {
+/** The angles `HousePositions` carries alongside the cusps themselves; the Vertex is dropped unless `vertexVisible` is true. */
+export function angleRows(data: ChartData, options: PointVisibilityOptions = {}): readonly AngleRow[] {
   const angles: readonly (readonly [string, Degrees])[] = [
     ['Ascendant', data.houses.ascendant],
     ['Midheaven', data.houses.midheaven],
     ['ARMC', data.houses.armc],
-    ['Vertex', data.houses.vertex],
+    ...(options.vertexVisible === true ? [['Vertex', data.houses.vertex] as const] : []),
     ['Equatorial Ascendant', data.houses.equatorialAscendant],
     ['Co-Ascendant (Koch)', data.houses.coAscendantKoch],
     ['Co-Ascendant (Munkasey)', data.houses.coAscendantMunkasey],
@@ -150,9 +175,9 @@ export interface DignityRow {
   readonly fall: boolean;
 }
 
-/** One row per body, in `ChartData.positions`' own order — every body, not only ones holding a dignity. */
-export function dignityRows(data: ChartData): readonly DignityRow[] {
-  return data.positions.map((position) => {
+/** One row per visible body, in `ChartData.positions`' own order — every body, not only ones holding a dignity. */
+export function dignityRows(data: ChartData, options: PointVisibilityOptions = {}): readonly DignityRow[] {
+  return visiblePositions(data.positions, options).map((position) => {
     const body = bodyById(position.body);
     const dignities = data.dignities.get(position.body);
     return {
@@ -171,25 +196,56 @@ export interface DerivedPointRow extends DegreeParts {
   readonly longitude: Degrees;
 }
 
-/** Part of Fortune and Part of Spirit, sect-corrected in `computeChartData` already. */
-export function derivedPointRows(data: ChartData): readonly DerivedPointRow[] {
+/**
+ * Part of Fortune (dropped unless `fortuneVisible` is true), Part of Spirit
+ * (sect-corrected in `computeChartData` already), and — when `midpointsVisible`
+ * is true — the ASC/MC and Sun/Moon midpoints Astro-Seek shows by default.
+ */
+export function derivedPointRows(data: ChartData, options: PointVisibilityOptions = {}): readonly DerivedPointRow[] {
+  const midpointRows: DerivedPointRow[] = [];
+  if (options.midpointsVisible === true) {
+    const ascMc = midpointOf(data.houses.ascendant, data.houses.midheaven);
+    midpointRows.push({ label: 'ASC/MC Midpoint', longitude: ascMc, ...degreeParts(ascMc) });
+
+    const sunBody = bodyByKey('sun');
+    const moonBody = bodyByKey('moon');
+    const sunPosition = sunBody && data.positions.find((position) => position.body === sunBody.id);
+    const moonPosition = moonBody && data.positions.find((position) => position.body === moonBody.id);
+    if (sunPosition && moonPosition) {
+      const sunMoon = midpointOf(sunPosition.longitude, moonPosition.longitude);
+      midpointRows.push({ label: 'Sun/Moon Midpoint', longitude: sunMoon, ...degreeParts(sunMoon) });
+    }
+  }
+
   return [
-    { label: 'Part of Fortune', longitude: data.partOfFortune, ...degreeParts(data.partOfFortune) },
+    ...(options.fortuneVisible === true
+      ? [{ label: 'Part of Fortune', longitude: data.partOfFortune, ...degreeParts(data.partOfFortune) }]
+      : []),
     { label: 'Part of Spirit', longitude: data.partOfSpirit, ...degreeParts(data.partOfSpirit) },
+    ...midpointRows,
   ];
 }
 
-/** Shapes a computed chart as the single ring `renderMultiWheelSvg` (#52) needs to draw it. */
-export function chartWheelRing(data: ChartData, label = 'Natal'): WheelRingInput {
+/**
+ * Shapes a computed chart as the single ring `renderMultiWheelSvg` (#52) needs to draw it.
+ *
+ * The wheel's aspect web is limited to the five major (Ptolemaic) aspects — conjunction,
+ * sextile, square, trine, opposition — the same default nearly every astrology tool ships
+ * with. Astraya computes six minor aspects too (semisextile, semisquare, quintile,
+ * sesquiquadrate, biquintile, quincunx), but drawing all eleven as chords turns the wheel
+ * into a knot; the Aspects tab and the sheet's aspect matrix still show every aspect Astraya
+ * finds, minor ones included, so nothing is actually hidden — only the wheel's chords are.
+ */
+export function chartWheelRing(data: ChartData, label = 'Natal', options: PointVisibilityOptions = {}): WheelRingInput {
   return {
     label,
     houses: data.houses,
-    bodies: data.positions.map((position) => ({
+    bodies: visiblePositions(data.positions, options).map((position) => ({
       body: position.body,
       key: bodyById(position.body)?.key ?? String(position.body),
       longitude: position.longitude,
     })),
-    aspects: data.aspects,
+    aspects: filterAspectsForDisplay(data.aspects, { visibleFamilies: ['major'] }),
   };
 }
 
@@ -230,8 +286,13 @@ export function chartSheetMetaLines(displayName: string, moment: BirthMomentInpu
  * it. Aspects are passed through rather than re-derived, which is what keeps
  * the grid from ever disagreeing with the Aspects table on the same screen.
  */
-export function chartSheetInput(data: ChartData, metaLines: readonly string[] = [], label = 'Natal'): ChartSheetInput {
-  const bodies = data.positions.map((position) => {
+export function chartSheetInput(
+  data: ChartData,
+  metaLines: readonly string[] = [],
+  label = 'Natal',
+  options: PointVisibilityOptions = {},
+): ChartSheetInput {
+  const bodies = visiblePositions(data.positions, options).map((position) => {
     const body = bodyById(position.body);
     return {
       body: position.body,
@@ -242,7 +303,7 @@ export function chartSheetInput(data: ChartData, metaLines: readonly string[] = 
   });
   return {
     metaLines,
-    rings: [chartWheelRing(data, label)],
+    rings: [chartWheelRing(data, label, options)],
     matrix: {
       bodies: bodies.map(({ key, label: bodyLabel }) => ({ key, label: bodyLabel })),
       aspects: data.aspects.map((aspect) => ({

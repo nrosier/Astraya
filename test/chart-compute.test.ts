@@ -6,7 +6,7 @@
  * correctly, and a mocked provider would only prove the wiring around a fake.
  */
 import { describe, expect, it } from 'vitest';
-import { bodyByKey } from '../src/astrology/bodies.js';
+import { bodyById, bodyByKey } from '../src/astrology/bodies.js';
 import { computeChartData } from '../src/domain/chart-compute.js';
 import type { BirthMomentInput } from '../src/time/types.js';
 import { getEngine } from './engine-harness.js';
@@ -61,5 +61,75 @@ describe('computeChartData (#44)', () => {
     const engine = await getEngine();
     const data = await computeChartData(MOMENT, engine, { houseSystem: 'K' });
     expect(data.houses.system).toBe('K');
+  });
+
+  it('carries exactly one Lilith and one Node model, defaulting to the mean ones (#52)', async () => {
+    const engine = await getEngine();
+    const data = await computeChartData(MOMENT, engine);
+    const keys = data.positions.map((position) => bodyById(position.body)?.key);
+
+    expect(keys).toContain('meanLilith');
+    expect(keys).not.toContain('osculatingLilith');
+    expect(keys).not.toContain('interpolatedLilith');
+    expect(keys).toContain('meanNode');
+    expect(keys).not.toContain('trueNode');
+  });
+
+  it('switches to the osculating Lilith and the true Node when asked (#52)', async () => {
+    const engine = await getEngine();
+    const data = await computeChartData(MOMENT, engine, { lilithVariant: 'true', nodeVariant: 'true' });
+    const keys = data.positions.map((position) => bodyById(position.body)?.key);
+
+    expect(keys).toContain('osculatingLilith');
+    expect(keys).not.toContain('meanLilith');
+    expect(keys).not.toContain('interpolatedLilith');
+    expect(keys).toContain('trueNode');
+    expect(keys).not.toContain('meanNode');
+  });
+
+  it('excludes Chiron, Lilith and the Nodes from aspects by default, though they are still positioned (#52)', async () => {
+    const engine = await getEngine();
+    const data = await computeChartData(MOMENT, engine);
+    const chiron = bodyByKey('chiron');
+    const lilith = bodyByKey('meanLilith');
+    const node = bodyByKey('meanNode');
+    expect(chiron).toBeDefined();
+    expect(lilith).toBeDefined();
+    expect(node).toBeDefined();
+
+    expect(data.positions.some((position) => position.body === chiron?.id)).toBe(true);
+    expect(data.positions.some((position) => position.body === lilith?.id)).toBe(true);
+    expect(data.positions.some((position) => position.body === node?.id)).toBe(true);
+
+    const excludedIds = new Set([chiron?.id, lilith?.id, node?.id]);
+    expect(data.aspects.some((aspect) => excludedIds.has(aspect.bodyA) || excludedIds.has(aspect.bodyB))).toBe(false);
+  });
+
+  it('includes Chiron, Lilith and the Nodes in aspects once asked for (#52)', async () => {
+    const engine = await getEngine();
+    const data = await computeChartData(MOMENT, engine, {
+      aspectsTo: { chiron: true, lilith: true, lunarNodes: true },
+    });
+    const chiron = bodyByKey('chiron');
+    const lilith = bodyByKey('meanLilith');
+    const node = bodyByKey('meanNode');
+    const includedIds = new Set([chiron?.id, lilith?.id, node?.id]);
+    expect(data.aspects.some((aspect) => includedIds.has(aspect.bodyA) || includedIds.has(aspect.bodyB))).toBe(true);
+  });
+
+  it('passes orbConfig through to aspect-finding (#52)', async () => {
+    const engine = await getEngine();
+    const wide = await computeChartData(MOMENT, engine);
+    const tight = await computeChartData(MOMENT, engine, {
+      orbConfig: {
+        majorOrb: { base: -1, luminaryBonus: 0 },
+        sextileOrb: { base: -1, luminaryBonus: 0 },
+        minorOrb: -1,
+        scalePercent: 0,
+        enabledMinorAspects: [],
+      },
+    });
+    expect(tight.aspects).toHaveLength(0);
+    expect(wide.aspects.length).toBeGreaterThan(0);
   });
 });
