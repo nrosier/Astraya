@@ -4,6 +4,45 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.8.2] — 2026-09-10
+
+**The wheel redrawn in the Astrodienst style.**
+
+Another patch carrying feature work rather than only fixes, for the same
+reason as 0.8.1: `0.9.0` is still reserved for milestone M8, and nothing
+here changes how a chart is computed — this is a look-and-feel port, not a
+structural one.
+
+### Added
+
+- **Every glyph redrawn**, ported from Kerykeion's (AGPL-3.0) hand-drawn
+  artwork rather than Astraya's own placeholder shapes: all ten planets,
+  Chiron, both lunar node pairs (including a real south-node symbol, not a
+  mirrored north node), the four major asteroids, all twelve signs, and all
+  eleven aspect glyphs.
+- **The ring band bodies sit in is wider**, closer to the Astrodienst
+  proportion, so placements read less cramped near the chart's centre.
+- **Aspects now sort into three colour families, not two.** Conjunction,
+  semisextile, sextile and trine read as the harmonious family (blue);
+  semisquare, square, sesquiquadrate and opposition as the hard family
+  (red, unchanged); quintile, biquintile and quincunx get their own third
+  colour rather than falling through to a flat neutral grey. The aspect
+  grid repeats the same three-way colouring.
+- **The structural rings have depth.** The zodiac band and the aspect disk
+  are now lightly shaded rather than flat outlines, the single biggest
+  lever on the wheel's "just outlines" look.
+- **House cusps are drawn as reference lines, not features** — dashed and
+  faint, so the angle lines (ASC/MC axis) stand out against them instead of
+  blending in.
+
+### Notes on correctness
+
+- The golden-chart gate continues to pass at its 0.2″ historical tolerance.
+  This release is drawing only; no calculation path was touched.
+- **Not verified in a browser for this release.** The redesign was checked
+  against the full structural chart test suite and by a manual diff review
+  against the ported source artwork, not by opening a rendered chart.
+
 ## [0.8.1] — 2026-09-10
 
 **Chart rendering, theming and export.**
