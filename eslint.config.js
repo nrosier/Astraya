@@ -62,11 +62,11 @@ export default tseslint.config(
     // Scripts are plain .mjs so they run under bare `node` with no build step,
     // which puts them outside the typed project. Order matters: disableTypeChecked
     // replaces languageOptions wholesale, so the Node globals come after it.
-    files: ['scripts/**/*.mjs', 'eslint.config.js'],
+    files: ['scripts/**/*.mjs', 'tools/**/*.mjs', 'eslint.config.js'],
     ...tseslint.configs.disableTypeChecked,
   },
   {
-    files: ['scripts/**/*.mjs', 'eslint.config.js', 'vite.config.ts'],
+    files: ['scripts/**/*.mjs', 'tools/**/*.mjs', 'eslint.config.js', 'vite.config.ts'],
     languageOptions: { globals: globals.node },
   },
   {

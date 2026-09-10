@@ -9,6 +9,12 @@ coverage/
 # source: 2.6 MB that would otherwise be committed a second time.
 public/ephe/
 
+# Per-(locale, persona) corpus chunks, split out of src/interpretation/corpus/
+# by `npm run corpus:split` (scripts/split-corpus.mjs) so the browser fetches
+# only the voice a reader actually needs instead of the whole multi-persona,
+# multi-locale corpus. Build output, not source — same reasoning as public/ephe/.
+public/corpus/
+
 # Secrets. The sync server's encryption key lives here and must never be
 # committed, never baked into the Docker image, and be backed up separately from
 # the database — a backup holding both is a backup with no encryption.
@@ -18,3 +24,9 @@ public/ephe/
 
 .DS_Store
 *.local
+
+# Source material for hand-written corpus exemplars (#55): reference books
+# (and any text extracted from them for reading) used while drafting, not
+# something the app ships or the repo distributes.
+src/interpretation/corpus/*.pdf
+src/interpretation/corpus/*.txt

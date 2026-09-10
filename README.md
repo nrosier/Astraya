@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/nrosier/Astraya/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/nrosier/Astraya/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/nrosier/Astraya/releases"><img alt="Release" src="https://img.shields.io/badge/release-v0.7.0-blue"></a>
+  <a href="https://github.com/nrosier/Astraya/releases"><img alt="Release" src="https://img.shields.io/badge/release-v0.8.0-blue"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue"></a>
 </p>
 
@@ -48,15 +48,21 @@ Requires Node 24 or newer.
 
 ```sh
 npm install
-npm run ephe:sync   # copy + verify the Swiss Ephemeris data files
+npm run ephe:sync    # copy + verify the Swiss Ephemeris data files
+npm run corpus:split # split the interpretation corpus into runtime chunks
 npm run dev
-npm run check       # format, lint, typecheck, test
+npm run check        # format, lint, typecheck, test
 ```
 
 `npm run ephe:sync` copies four files (2.48 MB) out of the 110 MB `sweph-wasm`
 package into `public/ephe/` and verifies each against a pinned SHA-256. It fails
 loudly if upstream repacks them, because a silently different ephemeris file is a
 silently different chart.
+
+`npm run corpus:split` splits `src/interpretation/corpus/{en,nl}.json` into
+small per-(locale, persona) files under `public/corpus/`, so the app fetches
+only the interpretation text a reader can actually see instead of the entire
+corpus. Re-run it whenever those source files change.
 
 ## Running it
 

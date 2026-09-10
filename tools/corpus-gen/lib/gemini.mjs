@@ -11,7 +11,7 @@
  */
 
 const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com';
-const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
 /** Gemini's Schema type wants upper-case type names; schema.ts's is lower-case JSON Schema. */
 function toGeminiSchema(schema) {
@@ -41,6 +41,7 @@ export async function generateStructured({
   userContent,
   responseSchema,
   maxRetries = 3,
+  onUsage,
 }) {
   if (!apiKey) throw new Error('GEMINI_API_KEY is not set — check .env.local');
   if (!model) throw new Error('GEMINI_MODEL is not set — check .env.local');
@@ -78,6 +79,7 @@ export async function generateStructured({
       if (typeof text !== 'string') {
         throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 500)}`);
       }
+      onUsage?.(payload.usageMetadata);
       return JSON.parse(text);
     }
 

@@ -46,7 +46,7 @@ describe('lintEntry (#57)', () => {
   });
 
   it('flags a medical, legal or financial claim', () => {
-    const issues = lintEntry(entry(`${CLEAN_TEXT} A good therapist could diagnose why.`));
+    const issues = lintEntry(entry(`${CLEAN_TEXT} A course of medication could fix this.`));
     expect(issues.some((issue) => issue.rule === 'medical-legal-financial-claim')).toBe(true);
   });
 
@@ -62,7 +62,7 @@ describe('lintEntry (#57)', () => {
   });
 
   it('reports every rule an entry breaks, not just the first', () => {
-    const issues = lintEntry(entry('you will never diagnose he'));
+    const issues = lintEntry(entry('you will never take medication he'));
     const rules = issues.map((issue) => issue.rule).sort();
     expect(rules).toEqual(['fatalistic-phrasing', 'gendered-assumption', 'length', 'medical-legal-financial-claim']);
   });

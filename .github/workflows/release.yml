@@ -21,6 +21,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ephe:sync
+      - run: npm run corpus:split
 
       # Deliberate duplication of CI. A release must not be able to escape the
       # correctness gate because someone tagged in a hurry.

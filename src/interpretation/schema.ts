@@ -339,7 +339,7 @@ function isPersonaId(value: unknown): value is PersonaId {
  */
 function isAcceptableAnchorProvenance(provenance: CorpusProvenance): boolean {
   if (provenance.source === 'hand-written') return true;
-  return provenance.source === 'generated' && provenance.reviewedBy !== undefined && provenance.reviewedAt !== undefined;
+  return provenance.reviewedBy !== undefined && provenance.reviewedAt !== undefined;
 }
 
 /** Validates one raw entry's shape and placement-key correctness, without checking cross-locale parity. */
@@ -367,7 +367,11 @@ export function validateCorpusEntries(raw: readonly unknown[]): CorpusValidation
     }
     const dedupeKey = `${key}::${typeof persona === 'string' ? persona : ''}`;
     if (seenKeys.has(dedupeKey)) {
-      report(persona === undefined ? `duplicate key "${key}"` : `duplicate key "${key}" for persona "${String(persona)}"`);
+      report(
+        persona === undefined
+          ? `duplicate key "${key}"`
+          : `duplicate key "${key}" for persona ${JSON.stringify(persona)}`,
+      );
     }
     seenKeys.add(dedupeKey);
 

@@ -338,7 +338,9 @@ export function buildSymbolismContext(locale: Locale = 'en'): string {
     );
   }
   if (signTable.length !== SIGNS.length) {
-    throw new Error(`SIGN_SYMBOLISM (${locale}) has ${String(signTable.length)} entries, expected ${String(SIGNS.length)}`);
+    throw new Error(
+      `SIGN_SYMBOLISM (${locale}) has ${String(signTable.length)} entries, expected ${String(SIGNS.length)}`,
+    );
   }
 
   const planetLines = planetTable.map((entry) => {

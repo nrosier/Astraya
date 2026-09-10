@@ -16,10 +16,17 @@
  * than half-building a language picker that has nothing else to plug into. A
  * locale switcher is a separate concern from provenance traceability and can
  * be added later without changing this component's shape.
+ *
+ * Fetches its corpus chunk at runtime via `loadRuntimeCorpus` rather than
+ * importing `CORPUS` from `../interpretation/index.js` — that export is the
+ * full, synchronous, every-locale-every-persona corpus the test suite needs,
+ * and importing it here would inline all of it into this app's JS bundle.
+ * See corpus-client.ts for why.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { assembleReport, type Report, type ReportParagraph } from '../interpretation/report.js';
-import { CORPUS } from '../interpretation/index.js';
+import { loadRuntimeCorpus } from '../interpretation/corpus-client.js';
+import type { CorpusEntry } from '../interpretation/schema.js';
 import { describeParagraphProvenance } from './report-provenance.js';
 import type { ChartData } from '../domain/chart-compute.js';
 
@@ -47,7 +54,39 @@ function Paragraph({
 
 export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.Element {
   const [showProvenance, setShowProvenance] = useState(false);
-  const report: Report = assembleReport(chart, 'en', CORPUS);
+  const [corpus, setCorpus] = useState<readonly CorpusEntry[] | undefined>(undefined);
+  const [loadError, setLoadError] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadRuntimeCorpus('en')
+      .then((loaded) => {
+        if (!cancelled) setCorpus(loaded);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : String(error));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loadError !== undefined) {
+    return (
+      <div className="report">
+        <p role="alert">Could not load the interpretation text: {loadError}</p>
+      </div>
+    );
+  }
+  if (corpus === undefined) {
+    return (
+      <div className="report">
+        <p>Loading report…</p>
+      </div>
+    );
+  }
+
+  const report: Report = assembleReport(chart, 'en', corpus);
 
   return (
     <div className="report">

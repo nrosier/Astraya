@@ -4,6 +4,64 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.8.0] — 2026-09-10
+
+**Milestone M7 — interpretation.**
+
+A chart has always been numbers and a picture. Now it also gets a written
+report: plain-language text for what each placement means, chosen for the
+chart in front of it rather than templated.
+
+### Added
+
+- **A written report tab**, assembling the placements a chart actually has
+  into a readable page rather than a flat list of everything the corpus
+  knows.
+- **A salience-ranked rule engine.** Every placement in a chart competes for
+  the report's attention on dignity, sect and angularity, not just category
+  order, so the report leads with what the chart itself makes important.
+- **A large interpretation corpus** — hand-written exemplars plus
+  AI Studio-generated text, covering planets in sign and house, aspects,
+  dignities, nakshatras and chart-shape patterns, in English and Dutch, with
+  a typed schema and loader enforcing that every entry names a real body,
+  sign or aspect rather than a typo that would silently never match a chart.
+- **Five reading personas** (traditionalist, big sister, cynic, mystic,
+  pragmatist), each with its own voice for the same placement, generated
+  across the whole corpus and falling back to a neutral entry where a
+  persona-specific one doesn't exist.
+- **A "why this text?" provenance view**, showing whether a passage was
+  hand-written or generated, and by what, next to the passage itself.
+- **A coverage guarantee**: no placement a chart can produce is allowed to
+  fall through to empty text — a fallback composition step covers any
+  corpus gap so the report never shows a hole.
+- Chart wheel wired into the chart screen itself, with rings, aspects and
+  data tables now sharing one tabbed view instead of tables alone.
+- Sharing a chart via a self-contained link, and permanently deleting a
+  person's data on the device that holds it, next to the existing
+  reversible delete.
+
+### Notes on correctness
+
+- **The corpus was linted and deduplicated as data, not just written and
+  trusted.** An automated lint pass checks every entry's placement fields
+  against the real astrology reference tables, and a similarity pass flags
+  any two entries in the same locale that read too much alike; one flagged
+  pair was rewritten and reverified before this release.
+- **A CI check keeps the model out of the running app.** The corpus is
+  generated at build time and committed as data — a lint rule fails the
+  build if any code path in `src/` could reach a language-model client at
+  runtime.
+- **The corpus is fetched in chunks, not shipped whole.** A browser loads
+  only its locale's neutral text plus, at most, one persona's chunk on top,
+  rather than downloading every language and persona regardless of what a
+  reader actually sees.
+- The golden-chart gate continues to pass at its 0.2″ historical tolerance;
+  none of this milestone's work touches how a chart's positions are
+  computed.
+- Human review of the corpus's highest-salience entries (~250 of them) is
+  tracked separately and deliberately not a release gate for this version —
+  see [#63](https://github.com/nrosier/Astraya/issues/63).
+
 ## [0.7.0] — 2026-09-09
 
 **Milestone M6 — progressions & returns.**
@@ -307,6 +365,7 @@ Astraya is **AGPL-3.0-or-later**. This is required, not chosen: Swiss Ephemeris 
 offered under either the AGPL or a commercial licence, and the AGPL cannot be
 combined with MIT in this direction.
 
+[0.8.0]: https://github.com/nrosier/Astraya/releases/tag/v0.8.0
 [0.4.0]: https://github.com/nrosier/Astraya/releases/tag/v0.4.0
 [0.3.0]: https://github.com/nrosier/Astraya/releases/tag/v0.3.0
 [0.2.0]: https://github.com/nrosier/Astraya/releases/tag/v0.2.0

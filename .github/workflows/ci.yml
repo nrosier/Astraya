@@ -53,6 +53,11 @@ jobs:
       - name: Sync and verify ephemeris assets
         run: npm run ephe:sync
 
+      # The build inlines whatever public/ contains; without this the built
+      # app would 404 fetching its interpretation text.
+      - name: Split corpus into runtime chunks
+        run: npm run corpus:split
+
       # Swiss Ephemeris constants are generated from a live instance, never
       # transcribed. Drift here means the committed constants no longer match the
       # library actually being called.

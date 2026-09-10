@@ -201,9 +201,9 @@ describe('validateCorpusEntries persona (#211)', () => {
     const result = validateCorpusEntries([validEntry({ persona: 'mystic' }), validEntry({ persona: 'mystic' })]);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.issues.some((issue) => issue.message.includes('duplicate key') && issue.message.includes('mystic'))).toBe(
-        true,
-      );
+      expect(
+        result.issues.some((issue) => issue.message.includes('duplicate key') && issue.message.includes('mystic')),
+      ).toBe(true);
     }
   });
 });
@@ -238,7 +238,8 @@ describe('validateCorpusEntries anchor (#211)', () => {
       validEntry({ anchor: true, persona: 'mystic', provenance: { source: 'hand-written' } }),
     ]);
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.issues.some((issue) => issue.message.includes('must not declare a persona'))).toBe(true);
+    if (!result.ok)
+      expect(result.issues.some((issue) => issue.message.includes('must not declare a persona'))).toBe(true);
   });
 
   it('rejects a non-boolean anchor value', () => {
@@ -259,7 +260,10 @@ describe('PERSONA_IDS stays in sync with tools/corpus-gen/personas.json (#211)',
   it('matches exactly, in any order', async () => {
     const raw = await readFile(new URL('../tools/corpus-gen/personas.json', import.meta.url), 'utf8');
     const personas = (JSON.parse(raw) as { personas: readonly { id: string }[] }).personas;
-    const fileIds = personas.map((persona) => persona.id).slice().sort();
+    const fileIds = personas
+      .map((persona) => persona.id)
+      .slice()
+      .sort();
     expect(fileIds).toEqual([...PERSONA_IDS].sort());
   });
 });

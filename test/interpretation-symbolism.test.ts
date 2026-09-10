@@ -75,7 +75,9 @@ describe('Dutch symbolism sheets (#211)', () => {
   });
 
   it('covers exactly the 12 signs', () => {
-    expect(SIGN_SYMBOLISM_NL.map((entry) => entry.index).sort((a, b) => a - b)).toEqual(SIGNS.map((sign) => sign.index));
+    expect(SIGN_SYMBOLISM_NL.map((entry) => entry.index).sort((a, b) => a - b)).toEqual(
+      SIGNS.map((sign) => sign.index),
+    );
   });
 
   it('gives every entry a non-empty core description and at least one keyword', () => {

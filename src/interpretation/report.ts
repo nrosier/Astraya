@@ -150,7 +150,12 @@ function planetInSignParagraph(
   persona: PersonaId | undefined,
 ): ReportParagraph {
   const { longitude } = bodyPosition(chart, key);
-  return resolveParagraph({ category: 'planet-in-sign', body: key, sign: signIndex(longitude) }, locale, corpus, persona);
+  return resolveParagraph(
+    { category: 'planet-in-sign', body: key, sign: signIndex(longitude) },
+    locale,
+    corpus,
+    persona,
+  );
 }
 
 function planetInHouseParagraph(
@@ -319,11 +324,15 @@ function housesSection(
   for (let house = 1; house <= houseCount; house++) {
     const cusp = chart.houses.cusps[house];
     if (cusp === undefined) continue;
-    paragraphs.push(resolveParagraph({ category: 'sign-on-cusp', sign: signIndex(cusp), house }, locale, corpus, persona));
+    paragraphs.push(
+      resolveParagraph({ category: 'sign-on-cusp', sign: signIndex(cusp), house }, locale, corpus, persona),
+    );
     for (const bodyId of bodiesByHouse.get(house) ?? []) {
       const body = bodyById(bodyId);
       if (body === undefined) continue;
-      paragraphs.push(resolveParagraph({ category: 'planet-in-house', body: body.key, house }, locale, corpus, persona));
+      paragraphs.push(
+        resolveParagraph({ category: 'planet-in-house', body: body.key, house }, locale, corpus, persona),
+      );
     }
   }
   return section('houses', locale, paragraphs);

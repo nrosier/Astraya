@@ -39,6 +39,11 @@ ENV GITHUB_SHA=${GITHUB_SHA}
 # upstream fails the build instead of silently changing the numbers we publish.
 RUN npm run ephe:sync
 
+# The interpretation corpus is committed whole but served in small per-(locale,
+# persona) chunks; the build inlines whatever public/ contains, so without this
+# the running app would 404 fetching its report text.
+RUN npm run corpus:split
+
 RUN npm run build
 
 # ---- runtime dependencies ---------------------------------------------------

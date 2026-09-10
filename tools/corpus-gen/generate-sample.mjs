@@ -6,9 +6,10 @@
  * is the output usable" check, not the batch runner (#56's other
  * checkboxes — batching, resumability — are not built yet).
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs <personaId> [category] [body] [signOrHouse] [--locale=en|nl]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs <personaId|neutral> [category] [body] [signOrHouse] [--locale=en|nl]
  *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs traditionalist planet-in-sign jupiter 8
  *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs mystic planet-in-sign moon 5 --locale=nl
+ *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs neutral planet-in-sign moon 5 --locale=nl
  *
  * Plain `node` cannot run this file: schema.ts/symbolism.ts import bodies.ts/
  * signs.ts as real runtime values through `.js` specifiers that only a
@@ -38,19 +39,26 @@ const [personaId, category = 'planet-in-sign', body = 'jupiter', signOrHouseRaw 
 const signOrHouse = Number(signOrHouseRaw);
 
 const personas = JSON.parse(await readFile(join(root, 'tools', 'corpus-gen', 'personas.json'), 'utf8')).personas;
-if (!personaId) throw new Error(`personaId is required — known: ${personas.map((p) => p.id).join(', ')}`);
-const persona = personas.find((candidate) => candidate.id === personaId);
-if (!persona) throw new Error(`unknown persona "${personaId}" — known: ${personas.map((p) => p.id).join(', ')}`);
+const knownIds = ['neutral', ...personas.map((p) => p.id)];
+if (!personaId) throw new Error(`personaId is required — known: ${knownIds.join(', ')}`);
+const persona = personaId === 'neutral' ? undefined : personas.find((candidate) => candidate.id === personaId);
+if (personaId !== 'neutral' && !persona)
+  throw new Error(`unknown persona "${personaId}" — known: ${knownIds.join(', ')}`);
 
 if (category !== 'planet-in-sign' && category !== 'planet-in-house') {
   throw new Error(`this smoke test only supports planet-in-sign / planet-in-house, got "${category}"`);
 }
-const placement = category === 'planet-in-sign' ? { category, body, sign: signOrHouse } : { category, body, house: signOrHouse };
+const placement =
+  category === 'planet-in-sign' ? { category, body, sign: signOrHouse } : { category, body, house: signOrHouse };
 const key = placementKey(placement);
 
-const corpusEntries = JSON.parse(await readFile(join(root, 'src', 'interpretation', 'corpus', `${locale}.json`), 'utf8'));
+const corpusEntries = JSON.parse(
+  await readFile(join(root, 'src', 'interpretation', 'corpus', `${locale}.json`), 'utf8'),
+);
 if (corpusEntries.some((entry) => entry.key === key)) {
-  console.warn(`note: "${key}" already has a shipped entry — this run will not overwrite it, just show a second draft.`);
+  console.warn(
+    `note: "${key}" already has a shipped entry — this run will not overwrite it, just show a second draft.`,
+  );
 }
 
 const bodyName = BODIES.find((b) => b.key === body)?.name ?? body;
@@ -63,7 +71,7 @@ const systemInstruction = buildSystemInstruction({ persona, symbolismContext: bu
 const userContent = buildUserContent({ placementDescription, corpusEntries, locale });
 
 console.log('='.repeat(80));
-console.log(`PERSONA: ${persona.title.en} (${persona.id})`);
+console.log(`PERSONA: ${persona ? `${persona.title.en} (${persona.id})` : 'neutral (no persona)'}`);
 console.log(`PLACEMENT: ${key} — ${placementDescription}`);
 console.log(`MODEL: ${process.env.GEMINI_MODEL}  TEMPERATURE: ${process.env.GEMINI_TEMPERATURE}`);
 console.log('='.repeat(80));
@@ -94,7 +102,12 @@ const draftEntry = {
   text: result.text,
   tier: result.tier,
   tags: placement.category === 'dignity-state' ? [placement.state] : [],
-  provenance: { source: 'generated', model: process.env.GEMINI_MODEL, generatedAt: new Date().toISOString().slice(0, 10) },
+  ...(persona ? { persona: persona.id } : {}),
+  provenance: {
+    source: 'generated',
+    model: process.env.GEMINI_MODEL,
+    generatedAt: new Date().toISOString().slice(0, 10),
+  },
 };
 
 console.log('\nLINT CHECK');

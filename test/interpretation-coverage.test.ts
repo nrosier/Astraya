@@ -134,10 +134,15 @@ describe('resolvePlacementText (#59)', () => {
     expect(resolvePlacementText(placement, 'nl', [entry])).toBe(composeFallbackText(placement, 'nl'));
   });
 
-  it('the shipped corpus resolves every category through the fallback path except where it now has real entries', () => {
+  it('falls back to the mechanical composer when no corpus entry covers the placement', () => {
+    const placement: CorpusPlacement = { category: 'planet-in-house', body: 'moon', house: 1 };
+    expect(resolvePlacementText(placement, 'en', [])).toBe(composeFallbackText(placement, 'en'));
+  });
+
+  it('the shipped corpus now has a real entry for every placement, in every persona', () => {
     expect(CORPUS.length).toBeGreaterThan(0);
     const placement: CorpusPlacement = { category: 'planet-in-house', body: 'moon', house: 1 };
-    expect(resolvePlacementText(placement, 'en', CORPUS)).toBe(composeFallbackText(placement, 'en'));
+    expect(resolvePlacementText(placement, 'en', CORPUS)).not.toBe(composeFallbackText(placement, 'en'));
   });
 
   it('falls back to the neutral corpus entry, not the mechanical fallback, when a persona has no dedicated entry', () => {

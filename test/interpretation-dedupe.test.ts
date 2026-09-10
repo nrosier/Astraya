@@ -75,11 +75,18 @@ describe('findNearDuplicates (#58)', () => {
     expect(report.pairs).toEqual([]);
   });
 
-  it('the shipped corpus has no near-duplicates', () => {
-    // Empty until #55/#56 land, so this passes trivially today — it starts
-    // failing the moment two entries in the same locale read too much alike.
-    expect(findNearDuplicates(CORPUS).pairs).toEqual([]);
-  });
+  it(
+    'the shipped corpus has no near-duplicates',
+    () => {
+      // Empty until #55/#56 land, so this passes trivially today — it starts
+      // failing the moment two entries in the same locale read too much alike.
+      // The corpus is now ~33k entries across both locales, and this check is
+      // quadratic in entries-per-locale, so it needs far more than vitest's
+      // default 30s test timeout to actually finish.
+      expect(findNearDuplicates(CORPUS).pairs).toEqual([]);
+    },
+    30 * 60 * 1000,
+  );
 });
 
 describe('formatSimilarityReport (#58)', () => {
