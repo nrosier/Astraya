@@ -275,6 +275,35 @@ describe('chartWheelRing (#52)', () => {
     };
     expect(chartWheelRing(data, 'Transiting').label).toBe('Transiting');
   });
+
+  it('drops minor aspects from the wheel, keeping only the five major ones', () => {
+    const major: Aspect = {
+      bodyA: SUN,
+      bodyB: MARS,
+      aspect: { key: 'square', name: 'Square', angle: 90, family: 'major' },
+      separation: 91,
+      orb: 1,
+      applying: true,
+    };
+    const minor: Aspect = {
+      bodyA: SUN,
+      bodyB: MOON,
+      aspect: { key: 'quincunx', name: 'Quincunx', angle: 150, family: 'minor' },
+      separation: 149,
+      orb: 1,
+      applying: true,
+    };
+    const data: ChartData = {
+      positions: [position(SUN, 10), position(MOON, 100), position(MARS, 101)],
+      houses: HOUSES,
+      aspects: [major, minor],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(chartWheelRing(data).aspects).toEqual([major]);
+  });
 });
 
 describe('chartSheetInput', () => {

@@ -16,6 +16,7 @@ import type { Degrees } from '../ephemeris/types.js';
 import type { BirthMomentInput } from '../time/types.js';
 import type { WheelRingInput } from '../chart/multi-wheel.js';
 import type { ChartSheetInput } from '../chart/chart-sheet.js';
+import { filterAspectsForDisplay } from '../chart/aspect-web.js';
 
 export interface DegreeParts {
   readonly sign: string;
@@ -179,7 +180,16 @@ export function derivedPointRows(data: ChartData): readonly DerivedPointRow[] {
   ];
 }
 
-/** Shapes a computed chart as the single ring `renderMultiWheelSvg` (#52) needs to draw it. */
+/**
+ * Shapes a computed chart as the single ring `renderMultiWheelSvg` (#52) needs to draw it.
+ *
+ * The wheel's aspect web is limited to the five major (Ptolemaic) aspects — conjunction,
+ * sextile, square, trine, opposition — the same default nearly every astrology tool ships
+ * with. Astraya computes six minor aspects too (semisextile, semisquare, quintile,
+ * sesquiquadrate, biquintile, quincunx), but drawing all eleven as chords turns the wheel
+ * into a knot; the Aspects tab and the sheet's aspect matrix still show every aspect Astraya
+ * finds, minor ones included, so nothing is actually hidden — only the wheel's chords are.
+ */
 export function chartWheelRing(data: ChartData, label = 'Natal'): WheelRingInput {
   return {
     label,
@@ -189,7 +199,7 @@ export function chartWheelRing(data: ChartData, label = 'Natal'): WheelRingInput
       key: bodyById(position.body)?.key ?? String(position.body),
       longitude: position.longitude,
     })),
-    aspects: data.aspects,
+    aspects: filterAspectsForDisplay(data.aspects, { visibleFamilies: ['major'] }),
   };
 }
 
