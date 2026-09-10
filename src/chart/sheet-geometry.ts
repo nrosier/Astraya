@@ -2,13 +2,24 @@
  * One scale knob for every radius, tick, glyph and font in a chart sheet.
  *
  * The reference layout this reproduces is specified in absolute pixels on an
- * 800x800 canvas (outer border 380, zodiac ring 340-300, house ring 220,
- * aspect circle 150, sign glyphs at 320, planets at 185, ticks 2/5/8). Every
+ * 800x800 canvas (outer border 380, zodiac ring 376-320, house ring 280,
+ * aspect circle 190, sign glyphs at 348, planets at 235, ticks 2/5/8). Every
  * value here is stored as that pixel figure divided by 800 and multiplied back
  * by the caller's `size`, so `resolveSheetGeometry(800)` reproduces the
  * reference layout exactly while any other size scales proportionally — the
  * sheet has to stay legible when rendered much larger than screen size (a
  * 2400px PNG export, print), and a fixed-pixel layout could not do that.
+ *
+ * The ratios (zodiac band ~15% of the outer radius, aspect circle at ~half
+ * of it, a wider planet ring band than before) follow the proportions of
+ * Kerykeion's chart drawer (`kerykeion/charts/chart_drawer.py`'s
+ * `CircleRadiiConfig`, AGPL-3.0), itself derived from OpenAstro.org — used
+ * here as a licensed, inspectable stand-in for the Astrodienst look, since
+ * astro.com's own pages aren't fetchable for direct reference. The zodiac
+ * ring's outer edge sits close to the outer border rather than 40px inside
+ * it, and the planet ring band (`aspectCircle` to `houseRing`, where bodies
+ * are actually placed) is proportionally wider, matching that reference's
+ * more spacious, less cramped centre.
  *
  * Radii are kept as named fields rather than an array because each one is a
  * different *kind* of boundary (a ring edge, a glyph track, a chord limit),
@@ -27,11 +38,14 @@ const REFERENCE_SIZE = 800;
  */
 const REFERENCE = {
   outerBorder: 380,
-  zodiacOuter: 340,
-  zodiacInner: 300,
-  houseRing: 220,
-  aspectCircle: 150,
-  signGlyph: 320,
+  zodiacOuter: 376,
+  zodiacInner: 320,
+  houseRing: 280,
+  aspectCircle: 190,
+  // Centred in the narrower zodiac band (376-320) now that it sits close to the outer
+  // edge rather than 40px inside it — kept at the band's midpoint rather than the old
+  // absolute figure, which would now coincide with `zodiacInner` itself.
+  signGlyph: 348,
   tickMinor: 2,
   tickMedium: 5,
   tickMajor: 8,
