@@ -199,3 +199,254 @@ describe('failure', () => {
     }
   });
 });
+
+// The tests below (#106) fully replace `globalThis.fetch` with a stub rather than talking to
+// the `beforeEach`-started server, so they can control exactly which response — or which kind
+// of failure to throw — the engine sees, independent of anything the relay would really do.
+
+describe('error classification (#106)', () => {
+  it('classifies fetch itself throwing as offline', async () => {
+    globalThis.fetch = async () => {
+      throw new TypeError('fetch failed');
+    };
+    const store = await openStore({ name: freshDbName() });
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(() => {
+        expect(engine.status.kind).toBe('failing');
+      }, WAIT);
+      expect(engine.status.kind === 'failing' && engine.status.message).toBe('No network connection.');
+    } finally {
+      engine.close();
+      store.close();
+    }
+  });
+
+  it('classifies a 401 as unauthorized, with a message pointing at signing in again', async () => {
+    globalThis.fetch = async () => new Response(null, { status: 401 });
+    const store = await openStore({ name: freshDbName() });
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(() => {
+        expect(engine.status.kind).toBe('failing');
+      }, WAIT);
+      expect(engine.status.kind === 'failing' && engine.status.message).toBe(
+        'Your session has expired. Sign in again to keep syncing.',
+      );
+    } finally {
+      engine.close();
+      store.close();
+    }
+  });
+
+  it('classifies a 5xx as a server problem', async () => {
+    globalThis.fetch = async () => new Response(null, { status: 503 });
+    const store = await openStore({ name: freshDbName() });
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(() => {
+        expect(engine.status.kind).toBe('failing');
+      }, WAIT);
+      expect(engine.status.kind === 'failing' && engine.status.message).toBe(
+        'The server is having trouble (status 503).',
+      );
+    } finally {
+      engine.close();
+      store.close();
+    }
+  });
+
+  it('classifies an unreadable response body as malformed', async () => {
+    globalThis.fetch = async () => new Response('not json', { status: 200 });
+    const store = await openStore({ name: freshDbName() });
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(() => {
+        expect(engine.status.kind).toBe('failing');
+      }, WAIT);
+      expect(engine.status.kind === 'failing' && engine.status.message).toBe('The server response could not be read.');
+    } finally {
+      engine.close();
+      store.close();
+    }
+  });
+
+  it('classifies a response missing its operations array as malformed', async () => {
+    globalThis.fetch = async () => new Response(JSON.stringify({}), { status: 200 });
+    const store = await openStore({ name: freshDbName() });
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(() => {
+        expect(engine.status.kind).toBe('failing');
+      }, WAIT);
+      expect(engine.status.kind === 'failing' && engine.status.message).toBe(
+        'The server response was missing its operations.',
+      );
+    } finally {
+      engine.close();
+      store.close();
+    }
+  });
+
+  it('surfaces the server’s own message for a clock-skew rejection on push', async () => {
+    globalThis.fetch = async (_input, init) => {
+      if (init?.method === 'POST') {
+        return new Response(
+          JSON.stringify({ error: 'clock-skew', message: "This device's clock is more than a day ahead." }),
+          { status: 400 },
+        );
+      }
+      return new Response(JSON.stringify({ ops: [] }), { status: 200 });
+    };
+    const store = await openStore({ name: freshDbName() });
+    await store.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(() => {
+        expect(engine.status.kind).toBe('failing');
+      }, WAIT);
+      expect(engine.status.kind === 'failing' && engine.status.message).toBe(
+        "This device's clock is more than a day ahead.",
+      );
+    } finally {
+      engine.close();
+      store.close();
+    }
+  });
+
+  it('classifies any other rejection on push using the server’s error field', async () => {
+    globalThis.fetch = async (_input, init) => {
+      if (init?.method === 'POST') {
+        return new Response(JSON.stringify({ error: 'batch too large' }), { status: 400 });
+      }
+      return new Response(JSON.stringify({ ops: [] }), { status: 200 });
+    };
+    const store = await openStore({ name: freshDbName() });
+    await store.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(() => {
+        expect(engine.status.kind).toBe('failing');
+      }, WAIT);
+      expect(engine.status.kind === 'failing' && engine.status.message).toBe('batch too large');
+    } finally {
+      engine.close();
+      store.close();
+    }
+  });
+});
+
+describe('exponential backoff with jitter (#106)', () => {
+  it('grows the retry delay after each consecutive failure', async () => {
+    const attemptTimes: number[] = [];
+    globalThis.fetch = async () => {
+      attemptTimes.push(Date.now());
+      return new Response(null, { status: 500 });
+    };
+
+    const store = await openStore({ name: freshDbName() });
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(
+        () => {
+          expect(attemptTimes.length).toBeGreaterThanOrEqual(3);
+        },
+        { timeout: 10_000 },
+      );
+    } finally {
+      engine.close();
+      store.close();
+    }
+
+    const [t0, t1, t2] = attemptTimes;
+    if (t0 === undefined || t1 === undefined || t2 === undefined) throw new Error('expected at least 3 attempts');
+    const gap1 = t1 - t0;
+    const gap2 = t2 - t1;
+    // First backoff is BASE_RETRY_MS (1s) jittered to 50-100%; the second consecutive
+    // failure's is double that, jittered the same way. Loose bounds to absorb test-runner
+    // scheduling noise, but tight enough that "no backoff" or "no growth" would fail them.
+    expect(gap1).toBeGreaterThan(300);
+    expect(gap1).toBeLessThan(1300);
+    expect(gap2).toBeGreaterThan(gap1);
+    expect(gap2).toBeLessThan(2600);
+  }, 10_000);
+});
+
+describe('onUnauthorized (#106)', () => {
+  it('is called exactly once per failure episode, not on every backoff retry', async () => {
+    globalThis.fetch = async () => new Response(null, { status: 401 });
+    const store = await openStore({ name: freshDbName() });
+    const onUnauthorized = vi.fn();
+    const engine = await createSyncEngine({ store, onUnauthorized });
+    try {
+      await vi.waitFor(() => {
+        expect(onUnauthorized).toHaveBeenCalledTimes(1);
+      }, WAIT);
+      // Give at least one more backoff retry a chance to fire — still 401 every time — and
+      // confirm the callback is not invoked again for it.
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
+      expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    } finally {
+      engine.close();
+      store.close();
+    }
+  }, 10_000);
+});
+
+describe('partial push recovery (#106)', () => {
+  it('retries a push whose response never reached the client without duplicating the op server-side', async () => {
+    const loggedIn = await loginAs('alice', 'correct-horse-battery');
+    let postAttempts = 0;
+    globalThis.fetch = async (input, init) => {
+      if (init?.method === 'POST') {
+        postAttempts += 1;
+        // The real server processes this and commits the op — only the response back to the
+        // client is what's simulated as lost, on the first attempt only.
+        const response = await loggedIn(input, init);
+        if (postAttempts === 1) throw new TypeError('network dropped mid-response');
+        return response;
+      }
+      return loggedIn(input, init);
+    };
+
+    const store = await openStore({ name: freshDbName() });
+    await store.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(
+        () => {
+          expect(engine.status.kind).toBe('synced');
+        },
+        { timeout: 10_000 },
+      );
+      expect(postAttempts).toBeGreaterThanOrEqual(2);
+
+      // The server's (user, hlc) uniqueness made the retried, identical chunk a no-op —
+      // exactly one row, not two, despite the op having actually reached the server twice.
+      const pull = await loggedIn(new URL('/api/ops', baseUrl));
+      const { ops } = (await pull.json()) as { ops: unknown[] };
+      expect(ops).toHaveLength(1);
+    } finally {
+      engine.close();
+      store.close();
+    }
+  }, 10_000);
+});
+
+describe('local writes are never blocked by a failing sync (#106)', () => {
+  it('accepts a mutate() while the engine is failing', async () => {
+    globalThis.fetch = async () => new Response(null, { status: 500 });
+    const store = await openStore({ name: freshDbName() });
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(() => {
+        expect(engine.status.kind).toBe('failing');
+      }, WAIT);
+      await store.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
+      expect(store.state.people.get('p1')?.displayName).toBe('Ada');
+    } finally {
+      engine.close();
+      store.close();
+    }
+  });
+});

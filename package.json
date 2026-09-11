@@ -15,6 +15,7 @@
     "serve": "node server/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "npm run build && playwright test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@types/luxon": "^3.7.5",
     "@types/node": "26.5.0",
     "@types/react": "19.2.18",
