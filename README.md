@@ -82,10 +82,12 @@ accounts and sessions. Without it, that data is lost the moment the container
 is removed — everything else about the app, run with no volume at all, still
 works exactly the same.
 
-`PORT` (default `8080`), `HOST`, `LOG_LEVEL` and `ASTRAYA_DB_PATH` are the only
-settings. Local sign-in is optional; the container logs a one-time setup link
-on first boot if you want an account. The sync relay itself lands in a later
-M8 phase — for now, signing in doesn't yet sync anything across devices.
+`PORT` (default `8080`), `HOST`, `LOG_LEVEL`, `ASTRAYA_DB_PATH` and
+`ASTRAYA_ENCRYPTION_KEY` are the only settings. Local sign-in is optional; the
+container logs a one-time setup link on first boot if you want an account.
+The server's sync relay exists once `ASTRAYA_ENCRYPTION_KEY` is set (see
+[`.env.example`](.env.example)), but no client UI drives it yet — for now,
+signing in doesn't yet sync anything across devices.
 
 ## Licence
 
