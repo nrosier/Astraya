@@ -4,6 +4,35 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.9.1] — 2026-09-11
+
+**Fixes the published Docker image, which crashed on startup.**
+
+### Fixed
+
+- **The 0.9.0 image never actually served a request.** `server/ops/routes.ts`
+  imports HLC timestamp parsing (`decodeHlc`, `isHlc`) directly from the
+  client's `src/store/hlc.ts` — deliberately, so the server can never drift
+  from the client's own idea of what a timestamp is — but the Dockerfile's
+  runtime stage only ever copied `dist/` and `server/`, never `src/`. The
+  container crashed immediately with `ERR_MODULE_NOT_FOUND` on every boot.
+  `npm run check` never caught this because it runs against a full checkout
+  where `src/` is present; only the image's own smoke test could have, and it
+  ran _after_ the image was already pushed. The Dockerfile now copies the one
+  self-contained file the server needs, by name, rather than the whole client
+  tree.
+- This also means `0.9.0`'s published `latest`, `0.9`, `1` and `0.9.0` Docker
+  tags were broken from the moment they were pushed until this release
+  superseded them. If you pulled `niqck/astraya` at any of those tags before
+  now, pull again.
+
+### Notes on correctness
+
+- No application code changed — this is a build/deploy fix only. `npm run check`
+  is green across the full suite, including the golden-chart gate.
+- Verified locally: `docker build` then `docker run`, confirming `/healthz`
+  now returns `200` instead of the container exiting on `ERR_MODULE_NOT_FOUND`.
+
 ## [0.9.0] — 2026-09-11
 
 **Accounts, sync across devices, and optional Authentik sign-in.**
