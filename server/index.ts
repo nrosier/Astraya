@@ -2,9 +2,9 @@
  * Astraya's HTTP server.
  *
  * It serves the built single-page app, and — as of M8 — local-account sign-in
- * (`server/auth/`) against a SQLite database it owns (`server/db.ts`). Both are
- * additive: a user who never signs in reaches this server only to download the
- * app itself, exactly as before.
+ * (`server/auth/`) and an operation relay (`server/ops/`) against a SQLite
+ * database it owns (`server/db.ts`). All additive: a user who never signs in
+ * reaches this server only to download the app itself, exactly as before.
  *
  * It never participates in calculation. Charts are computed in the browser, and
  * the server stores accounts and an opaque operation log, never a person or a
@@ -19,6 +19,7 @@ import fastifyRateLimit from '@fastify/rate-limit';
 import { CSP_HEADER } from './csp.ts';
 import { openDatabase } from './db.ts';
 import { registerAuthRoutes } from './auth/routes.ts';
+import { registerOpsRoutes } from './ops/routes.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const distRoot = resolve(here, '..', 'dist');
@@ -72,11 +73,7 @@ export async function build(options: BuildOptions = {}) {
   app.get('/healthz', () => ({ status: 'ok' }));
 
   registerAuthRoutes(app, db);
-
-  // --- The operation-relay endpoints (append/pull) mount here in a later M8
-  // phase. `ops` already exists in the schema (server/db.ts) but is unused
-  // until then.
-  // ---------------------------------------------------------------------------
+  registerOpsRoutes(app, db);
 
   await app.register(fastifyStatic, { root: distRoot, index: ['index.html'] });
 
