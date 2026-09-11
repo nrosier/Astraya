@@ -65,8 +65,13 @@ COPY --from=build /app/dist ./dist
 COPY package.json ./
 COPY server ./server
 
-# node:alpine already provides an unprivileged `node` user. Nothing in the
-# container is written to at runtime, so the whole tree stays read-only to it.
+# node:alpine already provides an unprivileged `node` user. `data/` is the one
+# writable path in the tree — it holds the SQLite file plus its WAL/SHM
+# siblings (server/db.ts) — created and owned by that user up front, since
+# `USER node` below means the process itself can't chown it later.
+RUN mkdir -p data && chown node:node data
+VOLUME /app/data
+
 USER node
 
 EXPOSE 8080

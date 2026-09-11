@@ -7,6 +7,10 @@
      * libs — the one place in the project where that overlap is legitimate.
      */
     "types": ["node", "vite/client"],
+    // A handful of tests import `server/` directly (e.g. server-auth.test.ts),
+    // which itself imports with `.ts` extensions per NodeNext — bundler
+    // resolution otherwise rejects that extension on the way in.
+    "allowImportingTsExtensions": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo"
   },
   /**
