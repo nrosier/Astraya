@@ -1,25 +1,31 @@
 /**
  * Astraya's HTTP server.
  *
- * Today it only serves the built single-page app. It is Fastify rather than a
- * static file server because of what comes later: in M8 this same process gains
- * the sync relay, and choosing the serving layer now means the image does not have
- * to be rearchitected then. The relay's seam is marked below.
+ * It serves the built single-page app, and — as of M8 — local-account sign-in
+ * (`server/auth/`) against a SQLite database it owns (`server/db.ts`). Both are
+ * additive: a user who never signs in reaches this server only to download the
+ * app itself, exactly as before.
  *
- * It never participates in calculation. Charts are computed in the browser, and a
- * user who never signs in reaches this server only to download the app itself.
+ * It never participates in calculation. Charts are computed in the browser, and
+ * the server stores accounts and an opaque operation log, never a person or a
+ * chart — see ADR 0002.
  */
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
+import fastifyCookie from '@fastify/cookie';
+import fastifyRateLimit from '@fastify/rate-limit';
 import { CSP_HEADER } from './csp.ts';
+import { openDatabase } from './db.ts';
+import { registerAuthRoutes } from './auth/routes.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const distRoot = resolve(here, '..', 'dist');
 
 const PORT = Number(process.env.PORT ?? 8080);
 const HOST = process.env.HOST ?? '0.0.0.0';
+const DB_PATH = process.env.ASTRAYA_DB_PATH ?? resolve(here, '..', 'data', 'astraya.db');
 
 /**
  * Hashed build assets and the ephemeris data files are immutable for the life of a
@@ -29,12 +35,25 @@ const HOST = process.env.HOST ?? '0.0.0.0';
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const NO_CACHE = 'no-cache';
 
-export async function build() {
+export interface BuildOptions {
+  /** Overrides `ASTRAYA_DB_PATH`. Tests pass `:memory:` so nothing touches disk. */
+  readonly dbPath?: string;
+}
+
+export async function build(options: BuildOptions = {}) {
   const app = Fastify({
     logger: { level: process.env.LOG_LEVEL ?? 'info' },
     // Behind a reverse proxy on the user's own box, so trust its forwarding headers.
     trustProxy: true,
   });
+
+  const db = openDatabase(options.dbPath ?? DB_PATH);
+  app.addHook('onClose', () => {
+    db.close();
+  });
+
+  await app.register(fastifyCookie);
+  await app.register(fastifyRateLimit, { global: false });
 
   app.addHook('onSend', async (request, reply) => {
     reply.header('Content-Security-Policy', CSP_HEADER);
@@ -52,10 +71,11 @@ export async function build() {
 
   app.get('/healthz', () => ({ status: 'ok' }));
 
-  // --- The sync relay mounts here in M8. -------------------------------------
-  // A single `ops` table and an append-only log; the server never interprets a
-  // payload, which is why a new domain field will ship as a client release with
-  // no migration and no server deploy.
+  registerAuthRoutes(app, db);
+
+  // --- The operation-relay endpoints (append/pull) mount here in a later M8
+  // phase. `ops` already exists in the schema (server/db.ts) but is unused
+  // until then.
   // ---------------------------------------------------------------------------
 
   await app.register(fastifyStatic, { root: distRoot, index: ['index.html'] });

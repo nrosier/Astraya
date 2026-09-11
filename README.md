@@ -69,7 +69,7 @@ corpus. Re-run it whenever those source files change.
 A single image serves the built application; there is nothing else to deploy.
 
 ```sh
-docker run -p 8080:8080 niqck/astraya:latest
+docker run -p 8080:8080 -v astraya-data:/app/data niqck/astraya:latest
 ```
 
 Then open <http://localhost:8080>. It works offline once loaded, and needs no
@@ -77,8 +77,15 @@ configuration — calculation happens in your browser, and no account is require
 Images are published for `linux/amd64` and `linux/arm64`; see
 [docs/RELEASING.md](docs/RELEASING.md) for the tagging scheme.
 
-`PORT` (default `8080`), `HOST` and `LOG_LEVEL` are the only settings. Sync and
-sign-in arrive in M8 and are opt-in; until then the server only serves files.
+The `-v` mount is only needed if you sign in: it's where the container keeps
+accounts and sessions. Without it, that data is lost the moment the container
+is removed — everything else about the app, run with no volume at all, still
+works exactly the same.
+
+`PORT` (default `8080`), `HOST`, `LOG_LEVEL` and `ASTRAYA_DB_PATH` are the only
+settings. Local sign-in is optional; the container logs a one-time setup link
+on first boot if you want an account. The sync relay itself lands in a later
+M8 phase — for now, signing in doesn't yet sync anything across devices.
 
 ## Licence
 
