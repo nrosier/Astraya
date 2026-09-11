@@ -5,8 +5,9 @@
  */
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { openStore } from '../store/store.js';
-import { login, logout, me } from '../sync/auth-client.js';
+import { exchangeOidcCode, login, logout, me } from '../sync/auth-client.js';
 import { createSyncEngine, pushRecords } from '../sync/engine.js';
+import { consumeOidcCallback } from './oidc-pkce.js';
 import type { AuthUser } from '../sync/auth-client.js';
 import type { SyncEngine } from '../sync/engine.js';
 import type { OpRecord } from '../store/ops.js';
@@ -94,6 +95,31 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     }
 
     void (async () => {
+      // Checked first, before anything else reads the URL: a completed Authentik
+      // redirect (#75) is exchanged and driven through the exact same adoption
+      // dance as an interactive password sign-in (`completeSignIn`), never a
+      // separate path. A failed/stale exchange (e.g. a reloaded callback URL,
+      // whose one-time code `consumeOidcCallback` already discarded) falls
+      // through to the ordinary `me()` check below rather than failing boot.
+      const oidcParams = consumeOidcCallback();
+      if (oidcParams !== undefined) {
+        try {
+          const oidcUser = await exchangeOidcCode(oidcParams);
+          if (isCancelled()) return;
+          const anonymous = await openStore();
+          if (isCancelled()) {
+            anonymous.close();
+            return;
+          }
+          storeRef.current = anonymous;
+          setStatus({ kind: 'ready', store: anonymous });
+          await completeSignIn(oidcUser);
+          return;
+        } catch {
+          /* fall through to the normal signed-in/signed-out check below */
+        }
+      }
+
       let authUser: AuthUser | undefined;
       let offline = false;
       try {
@@ -199,8 +225,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     setEngine(opened.engine);
   }
 
-  async function signIn(username: string, password: string): Promise<void> {
-    const authUser = await login(username, password);
+  /**
+   * Everything a sign-in does once an `AuthUser` is in hand, regardless of how it was
+   * obtained — a password (`signIn`) or a completed OIDC exchange (the mount effect's
+   * callback handling, below). Requires `storeRef.current` to already be the anonymous
+   * store, so the adoption check below has something to check.
+   */
+  async function completeSignIn(authUser: AuthUser): Promise<void> {
     localStorage.setItem(LAST_USER_KEY, authUser.id);
 
     // A prior sync rejection (#106) can leave this exact account's store open, unattended,
@@ -248,6 +279,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     setAdoption({ recordCount: outgoing.length });
   }
 
+  async function signIn(username: string, password: string): Promise<void> {
+    const authUser = await login(username, password);
+    await completeSignIn(authUser);
+  }
+
   async function resolveAdoption(accept: boolean): Promise<void> {
     const pending = pendingAdoptionRef.current;
     if (pending === undefined) return;
@@ -266,7 +302,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   }
 
   async function signOut(): Promise<void> {
-    await logout();
+    const { endSessionUrl } = await logout();
     localStorage.removeItem(LAST_USER_KEY);
     const anonymous = await openStore();
     engineRef.current?.close();
@@ -276,6 +312,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     setStatus({ kind: 'ready', store: anonymous });
     setUser(undefined);
     setEngine(undefined);
+    // Only an OIDC-derived session gets one back (#77) — a real top-level
+    // navigation, not a fetch, since ending Authentik's own browser session
+    // requires the browser to actually visit its end_session endpoint.
+    if (endSessionUrl !== undefined) window.location.href = endSessionUrl;
   }
 
   const value: SessionContextValue = { status, user, engine, adoption, signIn, signOut, resolveAdoption };

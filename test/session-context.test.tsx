@@ -24,6 +24,8 @@ import { build } from '../server/index.ts';
 import { hashPassword } from '../server/auth/passwords.ts';
 import { openStore } from '../src/store/store.ts';
 import { SessionProvider, useSession, useStoreStatus, useSyncEngine } from '../src/ui/session-context.js';
+import { OIDC_CALLBACK_PATH } from '../src/ui/oidc-pkce.js';
+import { startFakeAuthentik, type FakeAuthentik } from './fake-authentik.ts';
 import type { AdoptionPrompt, StoreStatus } from '../src/ui/session-context.js';
 import type { AuthUser } from '../src/sync/auth-client.js';
 import type { SyncEngine } from '../src/sync/engine.js';
@@ -402,6 +404,116 @@ describe('offline at boot', () => {
       }, WAIT);
       expect(latest?.user).toBeUndefined();
       expect(latest?.engine).toBeUndefined();
+    } finally {
+      unmount(root, container);
+    }
+  });
+});
+
+describe('the OIDC callback path (#75)', () => {
+  const CLIENT_ID = 'astraya-test-client';
+  let fakeAuthentik: FakeAuthentik;
+
+  // Rebuilds `app` with OIDC configured, on the same on-disk db the outer
+  // `beforeEach` already ran `/api/setup` against — so 'alice' is a real local
+  // account throughout, letting these tests also prove a JIT-provisioned OIDC
+  // identity is a distinct account from it.
+  beforeEach(async () => {
+    await app.close();
+    fakeAuthentik = await startFakeAuthentik(CLIENT_ID);
+    process.env.ASTRAYA_OIDC_ISSUER = fakeAuthentik.baseUrl;
+    process.env.ASTRAYA_OIDC_CLIENT_ID = CLIENT_ID;
+    process.env.ASTRAYA_PUBLIC_URL = 'http://localhost:8080';
+    app = await build({ dbPath });
+    await app.listen({ port: 0, host: '127.0.0.1' });
+    const address = app.server.address();
+    if (address === null || typeof address === 'string') throw new Error('server did not bind to a port');
+    baseUrl = `http://127.0.0.1:${String(address.port)}`;
+    installFetch();
+  });
+
+  afterEach(async () => {
+    await fakeAuthentik.close();
+    delete process.env.ASTRAYA_OIDC_ISSUER;
+    delete process.env.ASTRAYA_OIDC_CLIENT_ID;
+    delete process.env.ASTRAYA_PUBLIC_URL;
+  });
+
+  /** Stashes the pending PKCE state `oidc-pkce.ts` expects, and navigates (without a real
+   * page load — jsdom has no navigation) to the callback path with a matching `code`/`state`. */
+  function arriveAtCallback(code: string, state: string, pendingState: string, nonce: string): void {
+    sessionStorage.setItem(
+      'astraya:oidcPending',
+      JSON.stringify({ state: pendingState, codeVerifier: 'verifier-1', nonce }),
+    );
+    window.history.pushState(null, '', `${OIDC_CALLBACK_PATH}?code=${code}&state=${state}`);
+  }
+
+  it('drives switchTo the same way password sign-in does, including the adoption prompt', async () => {
+    const anonymous = await openStore();
+    await anonymous.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
+    anonymous.close();
+
+    const idToken = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-1',
+      nonce: 'nonce-1',
+      preferred_username: 'carol',
+    });
+    fakeAuthentik.registerCode('code-1', { idToken });
+    arriveAtCallback('code-1', 'state-1', 'state-1', 'nonce-1');
+
+    const { container, root } = mount();
+    try {
+      await vi.waitFor(() => {
+        expect(latest?.adoption?.recordCount).toBe(1);
+      }, WAIT);
+      // Not switched yet — same as a password sign-in, the prompt is shown over the
+      // still-anonymous data.
+      expect(latest?.user).toBeUndefined();
+      // The one-time code is out of the URL/history regardless of outcome, so a reload
+      // can never resubmit it.
+      expect(window.location.pathname).toBe('/');
+
+      await act(async () => {
+        await latest?.resolveAdoption(true);
+      });
+
+      await vi.waitFor(() => {
+        expect(latest?.user?.username).toBe('carol');
+      }, WAIT);
+      expect(latest?.status.kind === 'ready' && latest.status.store.state.people.get('p1')?.displayName).toBe('Ada');
+    } finally {
+      unmount(root, container);
+    }
+  });
+
+  it('rejects a PKCE state mismatch client-side, with no network call and a normal signed-out boot', async () => {
+    const idToken = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-2',
+      nonce: 'nonce-2',
+      preferred_username: 'dave',
+    });
+    fakeAuthentik.registerCode('code-2', { idToken });
+    // The `state` on the URL does not match what was stashed before the redirect —
+    // e.g. a forged or stale callback URL.
+    arriveAtCallback('code-2', 'attacker-state', 'real-state', 'nonce-2');
+
+    const calls: string[] = [];
+    const wrapped = globalThis.fetch;
+    globalThis.fetch = (input, init) => {
+      calls.push(input instanceof Request ? input.url : String(input));
+      return wrapped(input, init);
+    };
+
+    const { container, root } = mount();
+    try {
+      await vi.waitFor(() => {
+        expect(latest?.status.kind).toBe('ready');
+      }, WAIT);
+      expect(latest?.user).toBeUndefined();
+      expect(latest?.adoption).toBeUndefined();
+      expect(calls.some((url) => url.includes('/api/auth/oidc/callback'))).toBe(false);
+      expect(window.location.pathname).toBe('/');
     } finally {
       unmount(root, container);
     }

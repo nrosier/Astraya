@@ -36,8 +36,64 @@ export const CSP_DIRECTIVES: readonly string[] = [
  */
 export const CSP_HEADER_ONLY_DIRECTIVES: readonly string[] = ["frame-ancestors 'none'"];
 
+export interface CspConfig {
+  /** Scheme + host of the Authentik issuer, no path — the exact grant #136 calls for. */
+  readonly issuerOrigin?: string;
+}
+
+export interface BuiltCsp {
+  readonly directives: readonly string[];
+  readonly header: string;
+  readonly meta: string;
+}
+
+/**
+ * Builds the policy, optionally scoped to an OIDC issuer. Called with no config
+ * (or `issuerOrigin` unset) this is byte-identical to the static policy above —
+ * #136 requires the default, no-OIDC deployment to see zero change.
+ *
+ * Only `connect-src` and `form-action` ever gain the issuer origin: the redirect
+ * flow fetches the issuer's discovery document (`connect-src`) and top-level-
+ * navigates a real `<form>` to its authorization endpoint (`form-action`) — it
+ * never loads or executes code from it, so `script-src` is untouched.
+ * `form-action 'none'` becomes just the issuer origin rather than appending to
+ * `'none'`, since `'none'` alongside another source is a contradiction, not a
+ * grant — and nothing else in this app ever submits a form.
+ */
+export function buildCsp(config: CspConfig = {}): BuiltCsp {
+  const { issuerOrigin } = config;
+  const directives =
+    issuerOrigin === undefined
+      ? CSP_DIRECTIVES
+      : CSP_DIRECTIVES.map((directive) => {
+          if (directive === "connect-src 'self'") return `connect-src 'self' ${issuerOrigin}`;
+          if (directive === "form-action 'none'") return `form-action ${issuerOrigin}`;
+          return directive;
+        });
+  return {
+    directives,
+    header: [...directives, ...CSP_HEADER_ONLY_DIRECTIVES].join('; '),
+    meta: directives.join('; '),
+  };
+}
+
 /** Policy for the `Content-Security-Policy` response header. */
-export const CSP_HEADER: string = [...CSP_DIRECTIVES, ...CSP_HEADER_ONLY_DIRECTIVES].join('; ');
+export const CSP_HEADER: string = buildCsp().header;
 
 /** Policy for the `<meta http-equiv>` tag in index.html. */
-export const CSP_META: string = CSP_DIRECTIVES.join('; ');
+export const CSP_META: string = buildCsp().meta;
+
+/**
+ * Removes the `<meta http-equiv="Content-Security-Policy">` tag from a served
+ * `index.html`. Needed only once an issuer is configured, since then the header
+ * (which the static meta tag can't express an issuer-scoped `connect-src`/
+ * `form-action` into) is the only correct copy of the policy — serving both would
+ * leave the *stricter* meta tag blocking the very redirect the header permits, per
+ * the CSP spec's "most restrictive policy wins" rule for multiple policies.
+ *
+ * The same function backs both `server/index.ts`'s stripping and
+ * `test/csp.test.ts`'s round-trip assertion, so the two can never drift apart.
+ */
+export function stripCspMeta(html: string): string {
+  return html.replace(/\s*<meta\s+http-equiv="Content-Security-Policy"[\s\S]*?\/>\n?/, '');
+}

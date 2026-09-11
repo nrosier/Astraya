@@ -46,9 +46,16 @@ export async function login(username: string, password: string): Promise<AuthUse
   return user;
 }
 
-/** `POST /api/auth/logout`. Always succeeds — there is no session left to reject the request. */
-export async function logout(): Promise<void> {
-  await fetch('/api/auth/logout', { method: 'POST' });
+/**
+ * `POST /api/auth/logout`. Always succeeds — there is no session left to reject the
+ * request. Returns `endSessionUrl` when the ended session was OIDC-derived and
+ * Authentik advertises RP-initiated logout (#77) — the caller must navigate there
+ * (a `fetch` can't end Authentik's own browser session), never treat it as optional.
+ */
+export async function logout(): Promise<{ endSessionUrl?: string }> {
+  const response = await fetch('/api/auth/logout', { method: 'POST' });
+  const body = (await response.json().catch(() => ({}))) as { endSessionUrl?: string };
+  return body.endSessionUrl === undefined ? {} : { endSessionUrl: body.endSessionUrl };
 }
 
 /**
@@ -59,6 +66,36 @@ export async function logout(): Promise<void> {
 export async function me(): Promise<AuthUser | undefined> {
   const response = await fetch('/api/auth/me');
   if (response.status === 401) return undefined;
+  if (!response.ok) throw new AuthError(await errorMessage(response), response.status);
+  const { user } = (await response.json()) as { user: AuthUser };
+  return user;
+}
+
+/** `GET /api/auth/oidc/config` — whether to render the "Sign in with Authentik" affordance at all. */
+export type OidcConfig =
+  { readonly enabled: false } | { readonly enabled: true; readonly issuer: string; readonly clientId: string };
+
+export async function getOidcConfig(): Promise<OidcConfig> {
+  const response = await fetch('/api/auth/oidc/config');
+  if (!response.ok) throw new AuthError(await errorMessage(response), response.status);
+  return (await response.json()) as OidcConfig;
+}
+
+/**
+ * `POST /api/auth/oidc/callback`. The code is one-time-use — the caller (`main.tsx`)
+ * must never retry this on failure with the same `code`, only restart the sign-in
+ * flow from scratch.
+ */
+export async function exchangeOidcCode(params: {
+  readonly code: string;
+  readonly codeVerifier: string;
+  readonly nonce: string;
+}): Promise<AuthUser> {
+  const response = await fetch('/api/auth/oidc/callback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
   if (!response.ok) throw new AuthError(await errorMessage(response), response.status);
   const { user } = (await response.json()) as { user: AuthUser };
   return user;

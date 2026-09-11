@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CSP_DIRECTIVES, CSP_HEADER, CSP_META } from '../server/csp.js';
+import { CSP_DIRECTIVES, CSP_HEADER, CSP_META, buildCsp, stripCspMeta } from '../server/csp.js';
 
 const indexHtml = readFileSync(resolve(import.meta.dirname, '..', 'index.html'), 'utf8');
 
@@ -47,5 +47,39 @@ describe('content security policy', () => {
     // protection and provides none.
     expect(CSP_META).not.toContain('frame-ancestors');
     expect(CSP_HEADER).toContain("frame-ancestors 'none'");
+  });
+
+  describe('buildCsp', () => {
+    it('with no issuer, is byte-identical to the static policy (#136: zero change without OIDC)', () => {
+      const built = buildCsp();
+      expect(built.directives).toEqual(CSP_DIRECTIVES);
+      expect(built.header).toBe(CSP_HEADER);
+      expect(built.meta).toBe(CSP_META);
+    });
+
+    it('with an issuer, adds it only to connect-src and form-action', () => {
+      const built = buildCsp({ issuerOrigin: 'https://auth.example.com' });
+      const changed = built.directives.filter((directive, index) => directive !== CSP_DIRECTIVES[index]);
+      expect(changed).toEqual(["connect-src 'self' https://auth.example.com", 'form-action https://auth.example.com']);
+      // Every other directive, including the header-only one, is untouched.
+      expect(built.header).toContain("script-src 'self' 'wasm-unsafe-eval'");
+      expect(built.header).toContain("frame-ancestors 'none'");
+    });
+  });
+
+  describe('stripCspMeta', () => {
+    it('removes the meta tag from a real index.html, leaving everything else intact', () => {
+      const stripped = stripCspMeta(indexHtml);
+      expect(stripped).not.toContain('http-equiv="Content-Security-Policy"');
+      // The header carries the policy instead once this path is taken (#136) — the
+      // rest of the document must be untouched, not merely "still parses".
+      expect(stripped).toContain('<title>Astraya — astrological charts</title>');
+      expect(stripped).toContain('<div id="root"></div>');
+    });
+
+    it('is a no-op on html with no CSP meta tag', () => {
+      const html = '<html><head></head><body></body></html>';
+      expect(stripCspMeta(html)).toBe(html);
+    });
   });
 });

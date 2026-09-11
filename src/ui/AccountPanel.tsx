@@ -7,9 +7,11 @@
  * two, at most once ever per device: the adoption prompt (#109), which `signIn` puts
  * this panel into instead of completing the switch on its own.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from './session-context.js';
-import type { AuthUser } from '../sync/auth-client.js';
+import { getOidcConfig } from '../sync/auth-client.js';
+import { startOidcHandshake } from './oidc-pkce.js';
+import type { AuthUser, OidcConfig } from '../sync/auth-client.js';
 
 function changes(count: number): string {
   return count === 1 ? '1 change' : `${String(count)} changes`;
@@ -68,7 +70,76 @@ function AdoptionPanel({
   );
 }
 
-function SignInForm({ signIn }: { signIn: (username: string, password: string) => Promise<void> }): React.JSX.Element {
+/**
+ * A real top-level navigation to Authentik's `authorization_endpoint`, submitted as a
+ * plain GET form rather than `window.location.href = ...` — hidden inputs keep the PKCE
+ * challenge and other params out of a manually-constructed URL string. `main.tsx` never
+ * needs to know this happened: the callback is consumed and exchanged entirely inside
+ * `session-context.tsx`'s boot effect on the next load.
+ */
+function OidcSignIn({ config }: { config: { issuer: string; clientId: string } }): React.JSX.Element {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+
+  const start = (): void => {
+    setBusy(true);
+    setError(undefined);
+    void (async () => {
+      const discoveryResponse = await fetch(`${config.issuer}/.well-known/openid-configuration`);
+      if (!discoveryResponse.ok) throw new Error('Could not reach the identity provider.');
+      const discovery = (await discoveryResponse.json()) as { authorization_endpoint: string };
+      const { state, nonce, codeChallenge, redirectUri } = await startOidcHandshake();
+
+      const form = document.createElement('form');
+      form.method = 'GET';
+      form.action = discovery.authorization_endpoint;
+      const fields: Record<string, string> = {
+        client_id: config.clientId,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: 'openid',
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+        state,
+        nonce,
+      };
+      for (const [name, value] of Object.entries(fields)) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.append(input);
+      }
+      document.body.append(form);
+      form.submit();
+    })().catch((cause: unknown) => {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      setBusy(false);
+    });
+  };
+
+  return (
+    <p className="actions">
+      <button type="button" disabled={busy} onClick={start}>
+        Sign in with Authentik
+      </button>
+      {error !== undefined && (
+        <span className="warning" role="alert">
+          {' '}
+          {error}
+        </span>
+      )}
+    </p>
+  );
+}
+
+function SignInForm({
+  signIn,
+  oidcConfig,
+}: {
+  signIn: (username: string, password: string) => Promise<void>;
+  oidcConfig: OidcConfig | undefined;
+}): React.JSX.Element {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -133,6 +204,7 @@ function SignInForm({ signIn }: { signIn: (username: string, password: string) =
           </button>
         </p>
       </form>
+      {oidcConfig?.enabled === true && <OidcSignIn config={oidcConfig} />}
     </details>
   );
 }
@@ -169,10 +241,23 @@ function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<vo
 
 export function AccountPanel(): React.JSX.Element {
   const { user, adoption, signIn, signOut, resolveAdoption } = useSession();
+  const [oidcConfig, setOidcConfig] = useState<OidcConfig>();
+
+  useEffect(() => {
+    // Best-effort: the password form above works regardless, so a failed fetch here
+    // just means no "Sign in with Authentik" button rather than a broken panel.
+    void getOidcConfig()
+      .then(setOidcConfig)
+      .catch(() => undefined);
+  }, []);
 
   if (adoption !== undefined) {
     return <AdoptionPanel recordCount={adoption.recordCount} resolveAdoption={resolveAdoption} />;
   }
 
-  return user === undefined ? <SignInForm signIn={signIn} /> : <SignedIn user={user} signOut={signOut} />;
+  return user === undefined ? (
+    <SignInForm signIn={signIn} oidcConfig={oidcConfig} />
+  ) : (
+    <SignedIn user={user} signOut={signOut} />
+  );
 }
