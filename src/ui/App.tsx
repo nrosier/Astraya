@@ -3,15 +3,17 @@ import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { registerServiceWorker } from '../pwa/register.js';
 import { startWarming } from '../pwa/warm-status.js';
 import { About } from './About.js';
+import { AccountPanel } from './AccountPanel.js';
 import { Changelog } from './Changelog.js';
 import { ChartView } from './ChartView.js';
 import { People } from './People.js';
 import { PersonForm } from './PersonForm.js';
 import { PwaStatus } from './PwaStatus.js';
 import { parseRoute } from './route.js';
+import { SessionProvider, useStoreStatus } from './session-context.js';
 import { SharedChartView } from './SharedChartView.js';
 import { StatusBar } from './StatusBar.js';
-import { StoreProvider, useStoreStatus } from './store-context.js';
+import { StoreProvider } from './store-context.js';
 import { ThemeToggle } from './ThemeToggle.js';
 import { TimePlace } from './TimePlace.js';
 import { APP_VERSION } from '../version.js';
@@ -60,6 +62,7 @@ function Stored({ children }: { children: React.ReactNode }): React.JSX.Element 
       {/* Inside the provider and after the screen: every route that shows the user's data
           gets the same answer to "does this exist anywhere but here?", in the same place. */}
       <StatusBar />
+      <AccountPanel />
     </StoreProvider>
   );
 }
@@ -126,11 +129,14 @@ export function App(): React.JSX.Element {
   const screen = renderScreen(parsed, engineStatus, seVersion);
 
   return (
-    <>
+    // Wraps the whole shell, not just `Stored`: which store is open follows who is signed
+    // in, and that has to survive navigating between routes that each mount their own
+    // `Stored` — otherwise every navigation would reopen the database and restart sync.
+    <SessionProvider>
       {screen}
       <ThemeToggle />
       <PwaStatus />
-    </>
+    </SessionProvider>
   );
 }
 

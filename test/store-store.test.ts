@@ -377,6 +377,102 @@ describe('sync surface', () => {
   });
 });
 
+describe('receiving from a peer', () => {
+  it('merges a record into state and the database, durably before notifying', async () => {
+    await withStore(async (store, name) => {
+      const peer = await openStore({ name: freshName(), now: ticking() });
+      await peer.mutate([named(PERSON, 'Ada')]);
+      const [record] = peer.outgoing();
+      peer.close();
+      if (record === undefined) throw new Error('peer store produced no record');
+
+      let calls = 0;
+      store.subscribe(() => {
+        calls += 1;
+      });
+
+      const result = await store.receive([record]);
+      expect(result.added).toHaveLength(1);
+      expect(result.duplicates).toBe(0);
+      expect(result.rejected).toHaveLength(0);
+      expect(calls).toBe(1);
+      expect(store.state.people.get(PERSON)?.displayName).toBe('Ada');
+
+      const observer = await openDatabase(name);
+      expect((await allRecords(observer)).length).toBe(1);
+      observer.close();
+    });
+  });
+
+  it('treats a re-received record as a harmless duplicate, without notifying', async () => {
+    await withStore(async (store) => {
+      const peer = await openStore({ name: freshName(), now: ticking() });
+      await peer.mutate([named(PERSON, 'Ada')]);
+      const [record] = peer.outgoing();
+      peer.close();
+      if (record === undefined) throw new Error('peer store produced no record');
+
+      await store.receive([record]);
+
+      let calls = 0;
+      store.subscribe(() => {
+        calls += 1;
+      });
+      const result = await store.receive([record]);
+      expect(result.added).toHaveLength(0);
+      expect(result.duplicates).toBe(1);
+      expect(calls).toBe(0);
+    });
+  });
+
+  it('reports a corrupt record as rejected rather than throwing', async () => {
+    await withStore(async (store) => {
+      const result = await store.receive([{ not: 'a record' }]);
+      expect(result.added).toHaveLength(0);
+      expect(result.rejected).toHaveLength(1);
+    });
+  });
+
+  it('converges on whichever write has the newer HLC, not whichever arrives last', async () => {
+    await withStore(async (store) => {
+      // A clock started far ahead of the local store's, so the peer's write is
+      // unambiguously the newer one regardless of call order.
+      const peer = await openStore({ name: freshName(), now: ticking(2_000_000_000_000) });
+      await peer.mutate([named(PERSON, 'from peer')]);
+      const [peerRecord] = peer.outgoing();
+      peer.close();
+      if (peerRecord === undefined) throw new Error('peer store produced no record');
+
+      await store.mutate([named(PERSON, 'from this device')]);
+      await store.receive([peerRecord]);
+
+      expect(store.state.people.get(PERSON)?.displayName).toBe('from peer');
+    });
+  });
+});
+
+describe('sync cursor', () => {
+  it('is empty until a sync engine ever sets it', async () => {
+    await withStore(async (store) => {
+      expect(await store.getSyncCursor()).toEqual({});
+    });
+  });
+
+  it('round-trips through a reopened store', async () => {
+    const name = freshName();
+    const first = await openStore({ name, now: ticking() });
+    await first.mutate([named(PERSON, 'Ada')]);
+    const pushed = first.head();
+    if (pushed === undefined) throw new Error('the record just written has no timestamp');
+    await first.setSyncCursor({ pushed, pulled: 7 });
+    first.close();
+
+    const second = await openStore({ name, now: ticking() });
+    expect(await second.getSyncCursor()).toEqual({ pushed, pulled: 7 });
+    second.close();
+  });
+});
+
 describe('resuming', () => {
   it('says it did not resume on a first run', async () => {
     await withStore(async (store) => {

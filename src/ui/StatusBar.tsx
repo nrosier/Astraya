@@ -7,9 +7,23 @@
  * All the wording and the escalation live in `status.ts`, tested there. This is the wiring:
  * where `online` comes from, what counts as pending, and how much of it is shown at once.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useSyncEngine } from './session-context.js';
 import { describeStatus, type SyncState } from './status.js';
 import { useStore, useStoreState } from './store-context.js';
+
+// Module-level, not inline in `getSnapshot` below: `useSyncExternalStore` compares snapshots
+// by reference, so a fresh `{ kind: 'off' }` literal on every call looks like a perpetual
+// change and spins the component into React's "Maximum update depth exceeded" error.
+const OFF_STATUS: SyncState = { kind: 'off' };
+
+/** Live sync status, re-rendering on every change the engine reports. `off` with no engine. */
+function useSyncState(): SyncState {
+  const engine = useSyncEngine();
+  const subscribe = (onChange: () => void): (() => void) =>
+    engine === undefined ? () => undefined : engine.subscribe(onChange);
+  return useSyncExternalStore(subscribe, () => engine?.status ?? OFF_STATUS);
+}
 
 /**
  * `navigator.onLine`, kept current.
@@ -40,25 +54,40 @@ function useOnline(): boolean {
   return online;
 }
 
+/** Kept fresh so "synced 3 minutes ago" and the failing-since-breakfast escalation age correctly while the tab sits open. */
+function useNow(intervalMs: number): number {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, intervalMs);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [intervalMs]);
+
+  return now;
+}
+
 export function StatusBar(): React.JSX.Element {
   const store = useStore();
   // Subscribed for the side effect of re-rendering: the pending count comes from the log,
   // which changes on every mutation, and the store notifies rather than being watched.
   useStoreState();
   const online = useOnline();
+  const engine = useSyncEngine();
+  const sync = useSyncState();
+  const now = useNow(30_000);
 
-  // Sync arrives in M8. `off` is not a placeholder — it is the true state of an app with no
-  // account, and it is the state most users will be in.
-  const sync: SyncState = { kind: 'off' };
   const status = describeStatus({
     online,
     persistence: store.persistence,
-    pending: store.outgoing().length,
+    // No engine means signed out: everything in the log is unsent to anywhere, which is
+    // exactly what `outgoing()` with no cursor already means.
+    pending: engine?.pending() ?? store.outgoing().length,
     sync,
-    // Read at render rather than ticked on a timer: nothing in the `off` state ages, and a
-    // once-a-minute re-render of the whole tree to refresh a relative timestamp is a poor
-    // trade. When sync lands and "synced 3 minutes ago" can go stale, that changes.
-    now: Date.now(),
+    now,
   });
 
   return (

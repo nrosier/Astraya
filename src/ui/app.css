@@ -737,6 +737,37 @@ label.stacked textarea:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--solar) 22%, transparent);
 }
 
+/* Sign-in/out (#78, #109). Same collapsed-until-opened shape as `.statusbar`, sitting
+   right beneath it — a plain `<div>` rather than `<details>` while the adoption prompt
+   is showing, since that one has something to say whether or not it is opened. */
+.accountpanel {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.accountpanel summary {
+  cursor: pointer;
+  list-style: none;
+  font-weight: 550;
+  color: var(--fg);
+}
+
+.accountpanel summary::-webkit-details-marker {
+  display: none;
+}
+
+.accountpanel p {
+  margin: 0.5rem 0 0;
+  max-width: 44rem;
+}
+
+.accountpanel form {
+  margin-top: 0.75rem;
+}
+
 /* Fixed to the bottom rather than inline: PwaStatus sits outside every screen's own
    `.shell`, since an update or a warm failure applies regardless of which route is
    showing. Renders nothing when there is nothing to say, so this never costs layout

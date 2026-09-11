@@ -1,0 +1,251 @@
+/**
+ * Which store is open, driven by who is signed in — the one thing `store-context.tsx`
+ * itself doesn't decide. Also owns the sync engine's lifecycle (it exists only while
+ * signed in) and the one-time "adopt this device's anonymous data" prompt (#109).
+ */
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { openStore } from '../store/store.js';
+import { login, logout, me } from '../sync/auth-client.js';
+import { createSyncEngine, pushRecords } from '../sync/engine.js';
+import type { AuthUser } from '../sync/auth-client.js';
+import type { SyncEngine } from '../sync/engine.js';
+import type { OpRecord } from '../store/ops.js';
+import type { Store } from '../store/store.js';
+
+/** Cached so an offline reload can open the right per-account database instead of the anonymous one. */
+const LAST_USER_KEY = 'astraya:lastUserId';
+
+export type StoreStatus =
+  | { readonly kind: 'opening' }
+  | { readonly kind: 'ready'; readonly store: Store }
+  | { readonly kind: 'failed'; readonly message: string };
+
+/** Shown once, ever, per device — see `resolveAdoption`. */
+export interface AdoptionPrompt {
+  readonly recordCount: number;
+}
+
+interface SessionContextValue {
+  readonly status: StoreStatus;
+  readonly user: AuthUser | undefined;
+  readonly engine: SyncEngine | undefined;
+  readonly adoption: AdoptionPrompt | undefined;
+  readonly signIn: (username: string, password: string) => Promise<void>;
+  readonly signOut: () => Promise<void>;
+  readonly resolveAdoption: (accept: boolean) => Promise<void>;
+}
+
+const SessionContext = createContext<SessionContextValue | undefined>(undefined);
+
+function accountDbName(userId: string): string {
+  return `astraya-user-${userId}`;
+}
+
+async function openAccountStore(
+  user: AuthUser,
+  createEngine: boolean,
+): Promise<{ store: Store; engine: SyncEngine | undefined }> {
+  const store = await openStore({ name: accountDbName(user.id) });
+  const engine = createEngine ? await createSyncEngine({ store }) : undefined;
+  return { store, engine };
+}
+
+export function SessionProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const [status, setStatus] = useState<StoreStatus>({ kind: 'opening' });
+  const [user, setUser] = useState<AuthUser>();
+  const [engine, setEngine] = useState<SyncEngine>();
+  const [adoption, setAdoption] = useState<AdoptionPrompt>();
+
+  // Refs, not state: `signIn`/`signOut`/the `online` retry below all need the *current*
+  // store/engine synchronously, including inside async flows a re-render doesn't wait for.
+  const storeRef = useRef<Store | undefined>(undefined);
+  const engineRef = useRef<SyncEngine | undefined>(undefined);
+  const pendingAdoptionRef = useRef<{ anonymousStore: Store; user: AuthUser } | undefined>(undefined);
+
+  useEffect(() => {
+    // A plain `let` narrows to its initial literal across the `await`s below, hiding that the
+    // cleanup function can flip it concurrently — same shape as `consumeRerunRequest` in
+    // `sync/engine.ts`. Reading it back through a function with its own declared return type
+    // sidesteps that narrowing.
+    let cancelled = false;
+    function isCancelled(): boolean {
+      return cancelled;
+    }
+
+    void (async () => {
+      let authUser: AuthUser | undefined;
+      let offline = false;
+      try {
+        authUser = await me();
+      } catch {
+        offline = true;
+      }
+      if (isCancelled()) return;
+
+      try {
+        if (!offline && authUser === undefined) {
+          localStorage.removeItem(LAST_USER_KEY);
+          const anonymous = await openStore();
+          if (isCancelled()) {
+            anonymous.close();
+            return;
+          }
+          storeRef.current = anonymous;
+          setStatus({ kind: 'ready', store: anonymous });
+        } else if (!offline && authUser !== undefined) {
+          localStorage.setItem(LAST_USER_KEY, authUser.id);
+          const opened = await openAccountStore(authUser, true);
+          if (isCancelled()) {
+            opened.engine?.close();
+            opened.store.close();
+            return;
+          }
+          storeRef.current = opened.store;
+          engineRef.current = opened.engine;
+          setStatus({ kind: 'ready', store: opened.store });
+          setUser(authUser);
+          setEngine(opened.engine);
+        } else {
+          // Offline at boot: can't tell signed-in from signed-out, so fall back to
+          // whichever database was open last time rather than guessing wrong in either
+          // direction. No sync engine until `online` fires and `me()` can be retried.
+          const cachedId = localStorage.getItem(LAST_USER_KEY);
+          const store = await openStore(cachedId === null ? {} : { name: accountDbName(cachedId) });
+          if (isCancelled()) {
+            store.close();
+            return;
+          }
+          storeRef.current = store;
+          setStatus({ kind: 'ready', store });
+        }
+      } catch (error) {
+        if (!isCancelled()) {
+          setStatus({ kind: 'failed', message: error instanceof Error ? error.message : String(error) });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      engineRef.current?.close();
+      storeRef.current?.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    // Upgrades the offline-boot fallback above into a confirmed session once connectivity
+    // returns, without reopening the store it already guessed correctly.
+    function retryIdentity(): void {
+      if (user !== undefined || engineRef.current !== undefined) return;
+      const cachedId = localStorage.getItem(LAST_USER_KEY);
+      const openStoreNow = storeRef.current;
+      if (cachedId === null || openStoreNow === undefined) return;
+      void me()
+        .then(async (authUser) => {
+          if (authUser?.id !== cachedId) return;
+          const syncEngine = await createSyncEngine({ store: openStoreNow });
+          engineRef.current = syncEngine;
+          setEngine(syncEngine);
+          setUser(authUser);
+        })
+        .catch(() => undefined);
+    }
+
+    window.addEventListener('online', retryIdentity);
+    return () => {
+      window.removeEventListener('online', retryIdentity);
+    };
+  }, [user]);
+
+  async function switchTo(authUser: AuthUser, createEngine: boolean, adopted: readonly OpRecord[]): Promise<void> {
+    const opened = await openAccountStore(authUser, createEngine);
+    if (adopted.length > 0) await opened.store.receive(adopted);
+    engineRef.current?.close();
+    storeRef.current?.close();
+    storeRef.current = opened.store;
+    engineRef.current = opened.engine;
+    setStatus({ kind: 'ready', store: opened.store });
+    setUser(authUser);
+    setEngine(opened.engine);
+  }
+
+  async function signIn(username: string, password: string): Promise<void> {
+    const authUser = await login(username, password);
+    localStorage.setItem(LAST_USER_KEY, authUser.id);
+
+    // Only reachable while signed out, which is only ever rendered once a store — the
+    // anonymous one, since no account is signed in yet — is already open.
+    const anonymousStore = storeRef.current;
+    if (anonymousStore === undefined) throw new Error('signIn was called before any store was open');
+
+    const alreadyDecided = await anonymousStore.getAdoptionDecision();
+    const outgoing = alreadyDecided === undefined ? anonymousStore.outgoing() : [];
+
+    if (outgoing.length === 0) {
+      if (alreadyDecided === undefined) await anonymousStore.setAdoptionDecision('declined');
+      await switchTo(authUser, true, []);
+      return;
+    }
+
+    pendingAdoptionRef.current = { anonymousStore, user: authUser };
+    setAdoption({ recordCount: outgoing.length });
+  }
+
+  async function resolveAdoption(accept: boolean): Promise<void> {
+    const pending = pendingAdoptionRef.current;
+    if (pending === undefined) return;
+    pendingAdoptionRef.current = undefined;
+    setAdoption(undefined);
+
+    const outgoing = pending.anonymousStore.outgoing();
+    if (accept) {
+      await pushRecords(outgoing);
+      await pending.anonymousStore.setAdoptionDecision(`user:${pending.user.id}`);
+      await switchTo(pending.user, true, outgoing);
+    } else {
+      await pending.anonymousStore.setAdoptionDecision('declined');
+      await switchTo(pending.user, true, []);
+    }
+  }
+
+  async function signOut(): Promise<void> {
+    await logout();
+    localStorage.removeItem(LAST_USER_KEY);
+    const anonymous = await openStore();
+    engineRef.current?.close();
+    storeRef.current?.close();
+    storeRef.current = anonymous;
+    engineRef.current = undefined;
+    setStatus({ kind: 'ready', store: anonymous });
+    setUser(undefined);
+    setEngine(undefined);
+  }
+
+  const value: SessionContextValue = { status, user, engine, adoption, signIn, signOut, resolveAdoption };
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
+}
+
+function useSessionContext(): SessionContextValue {
+  const value = useContext(SessionContext);
+  if (value === undefined) throw new Error('useSession was called outside a SessionProvider');
+  return value;
+}
+
+export function useStoreStatus(): StoreStatus {
+  return useSessionContext().status;
+}
+
+export function useSyncEngine(): SyncEngine | undefined {
+  return useSessionContext().engine;
+}
+
+export function useSession(): {
+  user: AuthUser | undefined;
+  adoption: AdoptionPrompt | undefined;
+  signIn: (username: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  resolveAdoption: (accept: boolean) => Promise<void>;
+} {
+  const { user, adoption, signIn, signOut, resolveAdoption } = useSessionContext();
+  return { user, adoption, signIn, signOut, resolveAdoption };
+}
