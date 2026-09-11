@@ -4,6 +4,26 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.9.2] — 2026-09-11
+
+**Choose the report's language and advisor voice.**
+
+### Added
+
+- **Language and advisor pickers on the Report tab.** The interpretation
+  report (M7) could already be generated in English or Dutch, and in any of
+  five advisor personas or a neutral voice — but the UI only ever rendered
+  the neutral English version. Two new selects on the Report tab expose both
+  choices directly, remembered per device via `localStorage` so a returning
+  visitor doesn't have to reselect them.
+
+### Fixed
+
+- **The Report tab always assembled its text in English**, even when the
+  fetched corpus was for another locale — a latent bug from before this
+  picker existed, now unreachable since the selected locale is always the
+  one used.
+
 ## [0.9.1] — 2026-09-11
 
 **Fixes the published Docker image, which crashed on startup.**
