@@ -85,12 +85,13 @@ describe('positionRows (#44)', () => {
     partOfSpirit: 0,
   };
 
-  it('resolves each position to its body name, degree parts, house and retrograde flag', () => {
+  it('resolves each position to its body name, glyph, degree parts, house and retrograde flag', () => {
     const rows = positionRows(data);
     expect(rows).toEqual([
       {
         bodyKey: 'sun',
         bodyName: 'Sun',
+        glyph: '☉',
         longitude: 10,
         speed: 1,
         retrograde: false,
@@ -103,6 +104,7 @@ describe('positionRows (#44)', () => {
       {
         bodyKey: 'moon',
         bodyName: 'Moon',
+        glyph: '☽',
         longitude: 100,
         speed: -0.5,
         retrograde: true,
@@ -119,6 +121,36 @@ describe('positionRows (#44)', () => {
     const withChiron: ChartData = { ...data, positions: [...data.positions, position(CHIRON, 50)] };
     expect(positionRows(withChiron).map((row) => row.bodyKey)).toEqual(['sun', 'moon', 'chiron']);
     expect(positionRows(withChiron, { chironVisible: false }).map((row) => row.bodyKey)).toEqual(['sun', 'moon']);
+  });
+
+  it('appends the Ascendant and Midheaven when includeAngles is true, with no house/speed/retrograde', () => {
+    const rows = positionRows(data, {}, true);
+    expect(rows.map((row) => row.bodyKey)).toEqual(['sun', 'moon', 'asc', 'mc']);
+    expect(rows[2]).toEqual({
+      bodyKey: 'asc',
+      bodyName: 'Ascendant',
+      glyph: 'AC',
+      longitude: 10,
+      sign: 'Aries',
+      degree: 10,
+      minute: 0,
+      second: 0,
+    });
+    expect(rows[3]).toEqual({
+      bodyKey: 'mc',
+      bodyName: 'Midheaven',
+      glyph: 'MC',
+      longitude: 280,
+      sign: 'Capricorn',
+      degree: 10,
+      minute: 0,
+      second: 0,
+    });
+  });
+
+  it('omits the Ascendant and Midheaven when includeAngles is false (the default)', () => {
+    expect(positionRows(data).map((row) => row.bodyKey)).toEqual(['sun', 'moon']);
+    expect(positionRows(data, {}, false).map((row) => row.bodyKey)).toEqual(['sun', 'moon']);
   });
 });
 
@@ -141,7 +173,7 @@ describe('houseCuspRows (#44)', () => {
 });
 
 describe('angleRows (#44)', () => {
-  it('lists seven angles by default, omitting the Vertex', () => {
+  it('lists five angles by default, omitting the Vertex', () => {
     const data: ChartData = {
       positions: [],
       houses: HOUSES,
@@ -153,15 +185,13 @@ describe('angleRows (#44)', () => {
     };
     const rows = angleRows(data);
     expect(rows.map((row) => row.label)).toEqual([
-      'Ascendant',
-      'Midheaven',
       'ARMC',
       'Equatorial Ascendant',
       'Co-Ascendant (Koch)',
       'Co-Ascendant (Munkasey)',
       'Polar Ascendant',
     ]);
-    expect(rows[0]).toMatchObject({ longitude: 10, sign: 'Aries', degree: 10 });
+    expect(rows[0]).toMatchObject({ longitude: 278 });
   });
 
   it('includes the Vertex once vertexVisible is true', () => {
@@ -176,8 +206,6 @@ describe('angleRows (#44)', () => {
     };
     const rows = angleRows(data, { vertexVisible: true });
     expect(rows.map((row) => row.label)).toEqual([
-      'Ascendant',
-      'Midheaven',
       'ARMC',
       'Vertex',
       'Equatorial Ascendant',

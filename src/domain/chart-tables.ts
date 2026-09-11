@@ -19,6 +19,41 @@ import type { WheelRingInput } from '../chart/multi-wheel.js';
 import type { ChartSheetInput } from '../chart/chart-sheet.js';
 import { filterAspectsForDisplay } from '../chart/aspect-web.js';
 
+/**
+ * Text glyphs for the Positions table's leftmost column, keyed by `BodyDefinition.key`
+ * (see `bodies.ts`). Plain Unicode rather than the SVG paths `chart/glyphs.ts` draws on the
+ * wheel: a table cell is plain text, round-tripped through Copy/CSV export (`table-sort.ts`),
+ * so an inline `<svg>` per row isn't an option here. The three Lilith variants and both node
+ * variants share their un-suffixed symbol — there's no widely used Unicode glyph that
+ * distinguishes mean from true/osculating for either pair, only the body name does.
+ */
+const BODY_SYMBOLS: Readonly<Record<string, string>> = {
+  sun: '☉',
+  moon: '☽',
+  mercury: '☿',
+  venus: '♀',
+  mars: '♂',
+  jupiter: '♃',
+  saturn: '♄',
+  uranus: '♅',
+  neptune: '♆',
+  pluto: '♇',
+  meanNode: '☊',
+  trueNode: '☊',
+  meanLilith: '⚸',
+  osculatingLilith: '⚸',
+  interpolatedLilith: '⚸',
+  chiron: '⚷',
+  ceres: '⚳',
+  pallas: '⚴',
+  juno: '⚵',
+  vesta: '⚶',
+};
+
+function bodySymbol(key: string): string {
+  return BODY_SYMBOLS[key] ?? '';
+}
+
 export interface DegreeParts {
   readonly sign: string;
   readonly degree: number;
@@ -74,19 +109,36 @@ export function visiblePositions(
 export interface PositionRow extends DegreeParts {
   readonly bodyKey: string;
   readonly bodyName: string;
+  readonly glyph: string;
   readonly longitude: Degrees;
-  readonly speed: number;
-  readonly retrograde: boolean;
-  readonly house: number;
+  /** Undefined for the Ascendant/Midheaven rows `includeAngles` adds — they have no daily motion tracked. */
+  readonly speed?: number;
+  readonly retrograde?: boolean;
+  /** Undefined for the Ascendant/Midheaven rows `includeAngles` adds — they define houses rather than sit in one. */
+  readonly house?: number;
 }
 
-/** One row per visible body, in `ChartData.positions`' own order. */
-export function positionRows(data: ChartData, options: PointVisibilityOptions = {}): readonly PositionRow[] {
-  return visiblePositions(data.positions, options).map((position) => {
+/**
+ * One row per visible body, in `ChartData.positions`' own order, plus — when `includeAngles`
+ * is true — the Ascendant and Midheaven, matching Astro-Seek's combined layout rather than
+ * Astraya's own previous split (a separate Angles table in the Houses tab, where the rest of
+ * `angleRows`' angles still live). The caller passes `includeAngles` rather than this function
+ * reading it off `ChartData` itself, since `data.houses` is always populated regardless of
+ * whether the birth time is known — it's `ChartView`'s `showHouses` that decides whether the
+ * Ascendant/Midheaven are actually meaningful to show.
+ */
+export function positionRows(
+  data: ChartData,
+  options: PointVisibilityOptions = {},
+  includeAngles = false,
+): readonly PositionRow[] {
+  const bodyRows = visiblePositions(data.positions, options).map((position) => {
     const body = bodyById(position.body);
+    const key = body?.key ?? String(position.body);
     return {
-      bodyKey: body?.key ?? String(position.body),
+      bodyKey: key,
       bodyName: body?.name ?? String(position.body),
+      glyph: bodySymbol(key),
       longitude: position.longitude,
       speed: position.longitudeSpeed,
       retrograde: position.retrograde,
@@ -94,6 +146,21 @@ export function positionRows(data: ChartData, options: PointVisibilityOptions = 
       ...degreeParts(position.longitude),
     };
   });
+  if (!includeAngles) return bodyRows;
+  const angles: readonly (readonly [string, string, string, Degrees])[] = [
+    ['asc', 'Ascendant', 'AC', data.houses.ascendant],
+    ['mc', 'Midheaven', 'MC', data.houses.midheaven],
+  ];
+  return [
+    ...bodyRows,
+    ...angles.map(([bodyKey, bodyName, glyph, longitude]) => ({
+      bodyKey,
+      bodyName,
+      glyph,
+      longitude,
+      ...degreeParts(longitude),
+    })),
+  ];
 }
 
 export interface HouseCuspRow extends DegreeParts {
@@ -118,11 +185,14 @@ export interface AngleRow extends DegreeParts {
   readonly longitude: Degrees;
 }
 
-/** The angles `HousePositions` carries alongside the cusps themselves; the Vertex is dropped unless `vertexVisible` is true. */
+/**
+ * The angles `HousePositions` carries alongside the cusps themselves, other than the
+ * Ascendant and Midheaven — those two now live in the Positions table instead (see
+ * `positionRows`' `includeAngles`), matching Astro-Seek's combined layout. The Vertex is
+ * dropped unless `vertexVisible` is true.
+ */
 export function angleRows(data: ChartData, options: PointVisibilityOptions = {}): readonly AngleRow[] {
   const angles: readonly (readonly [string, Degrees])[] = [
-    ['Ascendant', data.houses.ascendant],
-    ['Midheaven', data.houses.midheaven],
     ['ARMC', data.houses.armc],
     ...(options.vertexVisible === true ? [['Vertex', data.houses.vertex] as const] : []),
     ['Equatorial Ascendant', data.houses.equatorialAscendant],

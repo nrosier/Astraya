@@ -30,3 +30,8 @@ public/corpus/
 # something the app ships or the repo distributes.
 src/interpretation/corpus/*.pdf
 src/interpretation/corpus/*.txt
+
+# Scratch output from the Playwright MCP browser tool (page snapshots,
+# console logs, screenshots) used for manual UI verification during a
+# session — not source, not build output, never meant to be committed.
+.playwright-mcp/

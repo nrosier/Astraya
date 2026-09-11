@@ -14,7 +14,10 @@
  * — not merely approximated — matching the warning `PersonForm.tsx` already
  * gives about the same person: an unknown birth time makes them meaningless
  * rather than imprecise. Positions, aspects and dignities don't depend on the
- * Ascendant and stay available.
+ * Ascendant and stay available; the Positions table's own Ascendant/Midheaven
+ * rows (folded in from what used to be a separate Angles table, matching
+ * Astro-Seek's combined layout) are the one exception, gated by the same
+ * `showHouses` flag rather than by the tab itself.
  *
  * The tables are grouped into tabs — one page per concern — rather than
  * stacked, since a chart's full data easily runs to six tables' worth of rows
@@ -81,11 +84,27 @@ const degreeColumns = <
 ];
 
 const POSITION_COLUMNS: readonly TableColumn<PositionRow>[] = [
+  { key: 'glyph', label: 'Symbol', valueOf: (row) => row.glyph },
   { key: 'bodyName', label: 'Body', valueOf: (row) => row.bodyName },
   ...degreeColumns<PositionRow>(),
-  { key: 'house', label: 'House', valueOf: (row) => row.house },
-  { key: 'speed', label: 'Speed', valueOf: (row) => row.speed, render: (row) => row.speed.toFixed(4) },
-  { key: 'retrograde', label: 'Rx', valueOf: (row) => row.retrograde, render: (row) => (row.retrograde ? '℞' : '') },
+  {
+    key: 'house',
+    label: 'House',
+    valueOf: (row) => row.house ?? '',
+    render: (row) => (row.house === undefined ? '—' : String(row.house)),
+  },
+  {
+    key: 'speed',
+    label: 'Speed',
+    valueOf: (row) => row.speed ?? '',
+    render: (row) => (row.speed === undefined ? '—' : row.speed.toFixed(4)),
+  },
+  {
+    key: 'retrograde',
+    label: 'Rx',
+    valueOf: (row) => row.retrograde ?? false,
+    render: (row) => (row.retrograde ? '℞' : ''),
+  },
 ];
 
 const HOUSE_CUSP_COLUMNS: readonly TableColumn<HouseCuspRow>[] = [
@@ -142,6 +161,7 @@ function renderTableTab(
   data: ChartData,
   displayName: string,
   pointVisibility: PointVisibilityOptions,
+  showHouses: boolean,
 ): React.ReactNode {
   switch (tab) {
     case 'positions':
@@ -149,7 +169,7 @@ function renderTableTab(
         <SortableTable
           caption="Positions"
           columns={POSITION_COLUMNS}
-          rows={positionRows(data, pointVisibility)}
+          rows={positionRows(data, pointVisibility, showHouses)}
           getRowKey={(row) => row.bodyKey}
           downloadFilename={deriveExportFilename(displayName, 'positions', 'csv')}
         />
@@ -553,7 +573,7 @@ export function ChartDataView({
               {tabs
                 .filter((tab) => tab !== 'report')
                 .map((tab) => (
-                  <div key={tab}>{renderTableTab(tab, load.data, displayName, pointVisibility)}</div>
+                  <div key={tab}>{renderTableTab(tab, load.data, displayName, pointVisibility, showHouses)}</div>
                 ))}
             </div>
           ) : (
@@ -586,7 +606,7 @@ export function ChartDataView({
               >
                 {activeTab === 'report'
                   ? showHouses && <ReportView chart={load.data} />
-                  : renderTableTab(activeTab, load.data, displayName, pointVisibility)}
+                  : renderTableTab(activeTab, load.data, displayName, pointVisibility, showHouses)}
               </div>
             </>
           )}
