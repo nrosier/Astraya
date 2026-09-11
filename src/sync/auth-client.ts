@@ -71,9 +71,20 @@ export async function me(): Promise<AuthUser | undefined> {
   return user;
 }
 
-/** `GET /api/auth/oidc/config` — whether to render the "Sign in with Authentik" affordance at all. */
+/**
+ * `GET /api/auth/oidc/config` — whether to render the "Sign in with Authentik" affordance
+ * at all. `authorizationEndpoint` is resolved server-side (`server/auth/oidc.ts`'s cached
+ * discovery) rather than left for the browser to fetch itself: a direct browser fetch to
+ * the issuer's discovery document depends on CORS headers the issuer may not send.
+ */
 export type OidcConfig =
-  { readonly enabled: false } | { readonly enabled: true; readonly issuer: string; readonly clientId: string };
+  | { readonly enabled: false }
+  | {
+      readonly enabled: true;
+      readonly issuer: string;
+      readonly clientId: string;
+      readonly authorizationEndpoint: string;
+    };
 
 export async function getOidcConfig(): Promise<OidcConfig> {
   const response = await fetch('/api/auth/oidc/config');

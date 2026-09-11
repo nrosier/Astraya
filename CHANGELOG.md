@@ -4,6 +4,21 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.9.3] — 2026-09-12
+
+**Fixes "Sign in with Authentik" failing with a cross-origin error.**
+
+### Fixed
+
+- **Signing in with Authentik could fail with a cross-origin error.** The
+  sign-in button fetched the identity provider's discovery document directly
+  from the browser, which depends on the provider sending CORS headers on
+  that endpoint — Authentik does not, by default. The server already
+  resolves and caches that document for the token exchange, so the client
+  now gets the authorization endpoint from the server instead of fetching
+  the issuer itself. The Content-Security-Policy no longer needs to grant
+  the issuer origin for fetches at all, only for the redirect itself.
+
 ## [0.9.2] — 2026-09-11
 
 **Choose the report's language and advisor voice.**

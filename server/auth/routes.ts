@@ -18,7 +18,7 @@ import {
   resolveUser,
 } from './identity.ts';
 import { clearLoginThrottle, isLoginThrottled, recordFailedLogin } from './login-throttle.ts';
-import { exchangeCode, getEndSessionEndpoint, loadOidcConfig, verifyIdToken } from './oidc.ts';
+import { exchangeCode, getDiscovery, getEndSessionEndpoint, loadOidcConfig, verifyIdToken } from './oidc.ts';
 import { DUMMY_PASSWORD_HASH, hashPassword, passwordIsTooWeak, verifyPassword } from './passwords.ts';
 import { SESSION_COOKIE, createSession, getSession, revokeSession } from './sessions.ts';
 
@@ -121,7 +121,23 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
   app.get('/api/auth/oidc/config', async (_request, reply) => {
     const oidcConfig = loadOidcConfig();
     if (!oidcConfig) return reply.send({ enabled: false });
-    return reply.send({ enabled: true, issuer: oidcConfig.issuer, clientId: oidcConfig.clientId });
+    // The authorization endpoint is resolved here, server-side, rather than left for
+    // the browser to discover on its own: a direct browser fetch to the issuer's
+    // `/.well-known/openid-configuration` depends on the issuer sending CORS headers
+    // on that endpoint, which Authentik does not do by default. The server has no
+    // such constraint, and `getDiscovery` is already cached per-issuer.
+    let authorizationEndpoint: string;
+    try {
+      authorizationEndpoint = (await getDiscovery(oidcConfig.issuer)).authorization_endpoint;
+    } catch {
+      return reply.send({ enabled: false });
+    }
+    return reply.send({
+      enabled: true,
+      issuer: oidcConfig.issuer,
+      clientId: oidcConfig.clientId,
+      authorizationEndpoint,
+    });
   });
 
   app.post<{ Body: OidcCallbackBody }>(

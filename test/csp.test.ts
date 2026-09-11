@@ -57,11 +57,14 @@ describe('content security policy', () => {
       expect(built.meta).toBe(CSP_META);
     });
 
-    it('with an issuer, adds it only to connect-src and form-action', () => {
+    it('with an issuer, adds it only to form-action', () => {
       const built = buildCsp({ issuerOrigin: 'https://auth.example.com' });
       const changed = built.directives.filter((directive, index) => directive !== CSP_DIRECTIVES[index]);
-      expect(changed).toEqual(["connect-src 'self' https://auth.example.com", 'form-action https://auth.example.com']);
-      // Every other directive, including the header-only one, is untouched.
+      expect(changed).toEqual(['form-action https://auth.example.com']);
+      // Every other directive, including the header-only one, is untouched. In
+      // particular connect-src stays bare 'self': the browser never fetches the
+      // issuer directly, so it needs no grant there.
+      expect(built.header).toContain("connect-src 'self'");
       expect(built.header).toContain("script-src 'self' 'wasm-unsafe-eval'");
       expect(built.header).toContain("frame-ancestors 'none'");
     });

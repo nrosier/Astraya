@@ -76,8 +76,13 @@ function AdoptionPanel({
  * challenge and other params out of a manually-constructed URL string. `main.tsx` never
  * needs to know this happened: the callback is consumed and exchanged entirely inside
  * `session-context.tsx`'s boot effect on the next load.
+ *
+ * `authorizationEndpoint` comes from the server's `/api/auth/oidc/config`, not from a
+ * browser-side fetch of the issuer's own discovery document: that fetch would depend on
+ * the issuer sending CORS headers on `/.well-known/openid-configuration`, which Authentik
+ * does not do by default, and fails with an opaque cross-origin error when it doesn't.
  */
-function OidcSignIn({ config }: { config: { issuer: string; clientId: string } }): React.JSX.Element {
+function OidcSignIn({ config }: { config: { clientId: string; authorizationEndpoint: string } }): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -85,14 +90,11 @@ function OidcSignIn({ config }: { config: { issuer: string; clientId: string } }
     setBusy(true);
     setError(undefined);
     void (async () => {
-      const discoveryResponse = await fetch(`${config.issuer}/.well-known/openid-configuration`);
-      if (!discoveryResponse.ok) throw new Error('Could not reach the identity provider.');
-      const discovery = (await discoveryResponse.json()) as { authorization_endpoint: string };
       const { state, nonce, codeChallenge, redirectUri } = await startOidcHandshake();
 
       const form = document.createElement('form');
       form.method = 'GET';
-      form.action = discovery.authorization_endpoint;
+      form.action = config.authorizationEndpoint;
       const fields: Record<string, string> = {
         client_id: config.clientId,
         redirect_uri: redirectUri,

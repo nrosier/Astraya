@@ -10,8 +10,11 @@
  * `connect-src 'self'` is the load-bearing directive. Astraya's interpretation
  * corpus is drafted by an LLM at build time and committed as data; the shipped app
  * must never reach a model provider. This makes that structural rather than a
- * promise. When Authentik OIDC lands in M8, its issuer origin is added here and
- * nowhere else.
+ * promise. The browser never fetches the OIDC issuer directly either — discovery
+ * is resolved server-side (`server/auth/oidc.ts`) and handed to the client, partly
+ * because that keeps this guarantee intact and partly because the issuer's
+ * discovery endpoint cannot be relied on to send CORS headers a browser fetch would
+ * need. `connect-src` therefore stays `'self'` even with OIDC configured.
  *
  * `'wasm-unsafe-eval'` is required to compile the Swiss Ephemeris WebAssembly
  * module. It permits WASM compilation only, not `eval` of JavaScript.
@@ -52,13 +55,13 @@ export interface BuiltCsp {
  * (or `issuerOrigin` unset) this is byte-identical to the static policy above —
  * #136 requires the default, no-OIDC deployment to see zero change.
  *
- * Only `connect-src` and `form-action` ever gain the issuer origin: the redirect
- * flow fetches the issuer's discovery document (`connect-src`) and top-level-
- * navigates a real `<form>` to its authorization endpoint (`form-action`) — it
- * never loads or executes code from it, so `script-src` is untouched.
- * `form-action 'none'` becomes just the issuer origin rather than appending to
- * `'none'`, since `'none'` alongside another source is a contradiction, not a
- * grant — and nothing else in this app ever submits a form.
+ * Only `form-action` ever gains the issuer origin: the redirect flow top-level-
+ * navigates a real `<form>` to the issuer's authorization endpoint. It never
+ * fetches from the issuer or loads/executes code from it — the discovery document
+ * is fetched server-side (`server/auth/oidc.ts`) — so `connect-src`/`script-src`
+ * stay untouched. `form-action 'none'` becomes just the issuer origin rather than
+ * appending to `'none'`, since `'none'` alongside another source is a contradiction,
+ * not a grant — and nothing else in this app ever submits a form.
  */
 export function buildCsp(config: CspConfig = {}): BuiltCsp {
   const { issuerOrigin } = config;
@@ -66,7 +69,6 @@ export function buildCsp(config: CspConfig = {}): BuiltCsp {
     issuerOrigin === undefined
       ? CSP_DIRECTIVES
       : CSP_DIRECTIVES.map((directive) => {
-          if (directive === "connect-src 'self'") return `connect-src 'self' ${issuerOrigin}`;
           if (directive === "form-action 'none'") return `form-action ${issuerOrigin}`;
           return directive;
         });

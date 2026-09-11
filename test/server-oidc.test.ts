@@ -54,9 +54,27 @@ function callback(body: { code?: string; codeVerifier?: string; nonce?: string }
 }
 
 describe('GET /api/auth/oidc/config', () => {
-  it('reports enabled with the issuer and client id when configured', async () => {
+  it('reports enabled with the issuer, client id, and resolved authorization endpoint when configured', async () => {
     const response = await app.inject({ method: 'GET', url: '/api/auth/oidc/config' });
-    expect(response.json()).toEqual({ enabled: true, issuer: fakeAuthentik.baseUrl, clientId: CLIENT_ID });
+    expect(response.json()).toEqual({
+      enabled: true,
+      issuer: fakeAuthentik.baseUrl,
+      clientId: CLIENT_ID,
+      authorizationEndpoint: `${fakeAuthentik.baseUrl}/authorize`,
+    });
+  });
+
+  it('reports disabled when the issuer is unreachable, rather than exposing a broken sign-in button', async () => {
+    process.env.ASTRAYA_OIDC_ISSUER = 'http://localhost:1'; // nothing listens here
+    const dir2 = mkdtempSync(join(tmpdir(), 'astraya-oidc-test-'));
+    const unreachable = await build({ dbPath: join(dir2, 'astraya.db') });
+    try {
+      const response = await unreachable.inject({ method: 'GET', url: '/api/auth/oidc/config' });
+      expect(response.json()).toEqual({ enabled: false });
+    } finally {
+      await unreachable.close();
+      rmSync(dir2, { recursive: true, force: true });
+    }
   });
 
   it('reports disabled when no issuer is configured', async () => {
