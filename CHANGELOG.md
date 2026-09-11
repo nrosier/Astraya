@@ -4,6 +4,38 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.8.5] — 2026-09-11
+
+**A Symbol column, and the Ascendant/Midheaven folded into Positions.**
+
+A small patch matching Astro-Seek's own table layout more closely.
+
+### Added
+
+- **A Symbol column on the Positions table**, showing each body's traditional
+  glyph (☉ ☽ ☿ ♀ ♂ etc.) as the leftmost column — plain Unicode rather than
+  the wheel's SVG glyphs, since a table cell round-trips through Copy/CSV
+  export as plain text.
+- **The Ascendant and Midheaven now appear as two extra rows in the Positions table**,
+  instead of the Houses tab's separate Angles table, matching Astro-Seek's
+  combined layout. They show no House/Speed/Rx columns, since neither angle
+  sits in a house or moves the way a body does. The Houses tab's Angles
+  table still lists ARMC, the Equatorial Ascendant, both Co-Ascendants and
+  the Polar Ascendant. The move is gated by the same flag that already
+  hides the whole houses/angles picture for an unknown-birth-time chart, so
+  that case still shows Positions with no Ascendant/Midheaven rows.
+
+### Notes on correctness
+
+- No calculation path was touched — this is a display-layer reshuffle of
+  data Astraya already computed.
+- `npm run ephe:sync` reports no digest change.
+- Verified manually in a running browser: the Symbol column renders for
+  every body, the Ascendant/Midheaven rows show dashes where House/Speed/Rx
+  would be, the Houses tab's Angles table now starts at ARMC, an unknown-
+  birth-time chart still omits the Ascendant/Midheaven rows, and CSV/TSV
+  export includes the new column and rows.
+
 ## [0.8.4] — 2026-09-11
 
 **Extended chart settings, Astro-Seek style.**
