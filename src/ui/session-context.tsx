@@ -44,9 +44,10 @@ function accountDbName(userId: string): string {
 async function openAccountStore(
   user: AuthUser,
   createEngine: boolean,
+  onUnauthorized: () => void,
 ): Promise<{ store: Store; engine: SyncEngine | undefined }> {
   const store = await openStore({ name: accountDbName(user.id) });
-  const engine = createEngine ? await createSyncEngine({ store }) : undefined;
+  const engine = createEngine ? await createSyncEngine({ store, onUnauthorized }) : undefined;
   return { store, engine };
 }
 
@@ -61,6 +62,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   const storeRef = useRef<Store | undefined>(undefined);
   const engineRef = useRef<SyncEngine | undefined>(undefined);
   const pendingAdoptionRef = useRef<{ anonymousStore: Store; user: AuthUser } | undefined>(undefined);
+  // Which account's store is left open, unattended, after `handleUnauthorized` below — read by
+  // `signIn` so re-authenticating as that same account resumes it instead of misreading an
+  // authenticated account's own store as the anonymous one adoption expects.
+  const orphanedUserIdRef = useRef<string | undefined>(undefined);
+
+  /**
+   * The server no longer honours this device's session (#106) — forget the account locally,
+   * without touching its store: the data stays exactly where it is, so signing back in as the
+   * same user reopens this same database and resumes syncing it, rather than the account
+   * looking like it never existed on this device. `userId` is bound at the call site rather
+   * than read from the `user` state closure, since the callback is handed to a sync engine at
+   * creation time and outlives whatever render created it.
+   */
+  function handleUnauthorized(userId: string): void {
+    orphanedUserIdRef.current = userId;
+    engineRef.current?.close();
+    engineRef.current = undefined;
+    setEngine(undefined);
+    setUser(undefined);
+  }
 
   useEffect(() => {
     // A plain `let` narrows to its initial literal across the `await`s below, hiding that the
@@ -94,7 +115,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
           setStatus({ kind: 'ready', store: anonymous });
         } else if (!offline && authUser !== undefined) {
           localStorage.setItem(LAST_USER_KEY, authUser.id);
-          const opened = await openAccountStore(authUser, true);
+          const opened = await openAccountStore(authUser, true, () => {
+            handleUnauthorized(authUser.id);
+          });
           if (isCancelled()) {
             opened.engine?.close();
             opened.store.close();
@@ -143,7 +166,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
       void me()
         .then(async (authUser) => {
           if (authUser?.id !== cachedId) return;
-          const syncEngine = await createSyncEngine({ store: openStoreNow });
+          const syncEngine = await createSyncEngine({
+            store: openStoreNow,
+            onUnauthorized: () => {
+              handleUnauthorized(authUser.id);
+            },
+          });
           engineRef.current = syncEngine;
           setEngine(syncEngine);
           setUser(authUser);
@@ -158,7 +186,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   }, [user]);
 
   async function switchTo(authUser: AuthUser, createEngine: boolean, adopted: readonly OpRecord[]): Promise<void> {
-    const opened = await openAccountStore(authUser, createEngine);
+    const opened = await openAccountStore(authUser, createEngine, () => {
+      handleUnauthorized(authUser.id);
+    });
     if (adopted.length > 0) await opened.store.receive(adopted);
     engineRef.current?.close();
     storeRef.current?.close();
@@ -172,6 +202,33 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   async function signIn(username: string, password: string): Promise<void> {
     const authUser = await login(username, password);
     localStorage.setItem(LAST_USER_KEY, authUser.id);
+
+    // A prior sync rejection (#106) can leave this exact account's store open, unattended,
+    // with `user` cleared — resume it directly rather than running the anonymous-data
+    // adoption flow below against an authenticated account's own store.
+    if (orphanedUserIdRef.current !== undefined) {
+      const orphanedId = orphanedUserIdRef.current;
+      orphanedUserIdRef.current = undefined;
+      if (orphanedId === authUser.id && storeRef.current !== undefined) {
+        const store = storeRef.current;
+        const syncEngine = await createSyncEngine({
+          store,
+          onUnauthorized: () => {
+            handleUnauthorized(authUser.id);
+          },
+        });
+        engineRef.current = syncEngine;
+        setEngine(syncEngine);
+        setUser(authUser);
+        return;
+      }
+      // A different account signing in: the orphaned store is neither anonymous data nor
+      // this account's — close it and fall through to a normal switch, with nothing to adopt.
+      storeRef.current?.close();
+      storeRef.current = undefined;
+      await switchTo(authUser, true, []);
+      return;
+    }
 
     // Only reachable while signed out, which is only ever rendered once a store — the
     // anonymous one, since no account is signed in yet — is already open.

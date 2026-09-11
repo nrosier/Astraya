@@ -8,7 +8,7 @@
  * All the rules live in `domain/person-form.ts`, so this component is only wiring: hold the
  * draft, show the errors, save the fields that changed. Nothing here decides what is valid.
  */
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { draftFrom, draftToMutations, validateDraft, type Draft } from '../domain/person-form.js';
 import { formatOffset, resolveMoment } from '../time/resolve.js';
 import { NEEDS_A_DECISION, PROVENANCE } from './moment-labels.js';
@@ -28,11 +28,11 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
   const state = useStoreState();
   const person = state.people.get(personId);
 
-  // The draft the form opened with, kept so saving can write only what changed. Keyed on the
-  // person's id: navigating between two people must reset it, and `useMemo` on the id is what
-  // makes the initial value follow the route.
-  const opened = useMemo(() => (person === undefined ? undefined : draftFrom(person)), [personId]);
-  const [draft, setDraft] = useState<Draft | undefined>(opened);
+  // The stored person, as a draft, recomputed every render rather than memoized: until the user
+  // edits a field, the form must keep tracking the store, so a sync pull that merges in a remote
+  // edit while this form is open is not silently hidden behind a mount-time snapshot.
+  const opened = person === undefined ? undefined : draftFrom(person);
+  const [draft, setDraft] = useState<Draft | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string>();
   const [saved, setSaved] = useState(false);

@@ -324,6 +324,54 @@ describe('the cross-account-bleed guard', () => {
   });
 });
 
+describe('a rejected session during sync (#106)', () => {
+  it('forgets the account locally without touching its store, so signing back in resumes it', async () => {
+    const { container, root } = mount();
+    try {
+      await vi.waitFor(() => {
+        expect(latest?.status.kind).toBe('ready');
+      }, WAIT);
+      await act(async () => {
+        await latest?.signIn('alice', 'correct-horse-battery');
+      });
+      await vi.waitFor(() => {
+        expect(latest?.user?.username).toBe('alice');
+      }, WAIT);
+      const accountStore = latest?.status.kind === 'ready' ? latest.status.store : undefined;
+      expect(accountStore).toBeDefined();
+
+      // A write lands in the still-open per-account store before the session dies.
+      await act(async () => {
+        await accountStore?.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
+      });
+
+      // The server no longer honours this device's session — every subsequent request the
+      // engine makes comes back 401, as if the session had expired mid-sync.
+      globalThis.fetch = () => Promise.resolve(new Response(null, { status: 401 }));
+
+      await vi.waitFor(() => {
+        expect(latest?.user).toBeUndefined();
+      }, WAIT);
+      expect(latest?.engine).toBeUndefined();
+      // Still the same store, with the write intact — not reset to a fresh anonymous one.
+      expect(latest?.status.kind === 'ready' && latest.status.store.state.people.get('p1')?.displayName).toBe('Ada');
+
+      // Signing back in as the same account reopens that same database rather than an empty one.
+      installFetch();
+      await act(async () => {
+        await latest?.signIn('alice', 'correct-horse-battery');
+      });
+      await vi.waitFor(() => {
+        expect(latest?.user?.username).toBe('alice');
+      }, WAIT);
+      expect(latest?.adoption).toBeUndefined();
+      expect(latest?.status.kind === 'ready' && latest.status.store.state.people.get('p1')?.displayName).toBe('Ada');
+    } finally {
+      unmount(root, container);
+    }
+  });
+});
+
 describe('offline at boot', () => {
   it('falls back to the cached last-known account instead of the anonymous store', async () => {
     const account = await openStore({ name: 'astraya-user-user-xyz' });
