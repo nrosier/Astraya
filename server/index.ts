@@ -20,6 +20,7 @@ import fastifyRateLimit from '@fastify/rate-limit';
 import { buildCsp, stripCspMeta } from './csp.ts';
 import { openDatabase } from './db.ts';
 import { registerAuthRoutes } from './auth/routes.ts';
+import { registerAdminRoutes } from './auth/admin-routes.ts';
 import { loadOidcConfig } from './auth/oidc.ts';
 import { registerOpsRoutes } from './ops/routes.ts';
 
@@ -80,6 +81,7 @@ export async function build(options: BuildOptions = {}) {
   app.get('/healthz', () => ({ status: 'ok' }));
 
   registerAuthRoutes(app, db);
+  registerAdminRoutes(app, db);
   registerOpsRoutes(app, db);
 
   await app.register(fastifyStatic, { root: distRoot, index: ['index.html'] });

@@ -201,3 +201,16 @@ describe('POST /api/auth/logout', () => {
     expect(response.statusCode).toBe(200);
   });
 });
+
+describe('the anonymous path with the admin and OIDC routes mounted (#85)', () => {
+  // Not asserted here: the SPA fallback's actual body. `npm run check` runs
+  // `npm test` before `npm run build` (same reasoning as server/index.ts's own
+  // `getStrippedIndexHtml` comment), so `dist/index.html` doesn't exist while
+  // this file runs in CI — a body assertion here would be environment-dependent,
+  // not a regression guard.
+  it('still serves /healthz with zero OIDC/encryption env vars set', async () => {
+    const response = await app.inject({ method: 'GET', url: '/healthz' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ status: 'ok' });
+  });
+});

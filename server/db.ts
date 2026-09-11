@@ -102,6 +102,17 @@ const MIGRATIONS: readonly ((db: DatabaseSync) => void)[] = [
       ALTER TABLE sessions ADD COLUMN oidc_id_token TEXT;
     `);
   },
+  // 4: a durable, admin-issued, single-use link for both "create a local
+  // account" and "reset a password" (#135) — a plain ALTER TABLE ADD COLUMN,
+  // no rebuild. A NULL token never collides with another NULL in the unique
+  // index, same reasoning as users_oidc_identity above.
+  (db) => {
+    db.exec(`
+      ALTER TABLE users ADD COLUMN password_set_token TEXT;
+      ALTER TABLE users ADD COLUMN password_set_token_expires_at TEXT;
+      CREATE UNIQUE INDEX users_password_set_token ON users(password_set_token);
+    `);
+  },
 ];
 
 /** Migration steps whose table rebuild would otherwise break `REFERENCES` clauses pointing at the table being rebuilt. */

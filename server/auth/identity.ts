@@ -29,6 +29,10 @@ interface UserRow {
   readonly oidc_subject: string | null;
 }
 
+interface PasswordSetTokenRow extends UserRow {
+  readonly password_set_token_expires_at: string | null;
+}
+
 function toUser(row: UserRow): User {
   return {
     id: row.id,
@@ -88,6 +92,28 @@ export function createOidcUser(
 }
 
 /**
+ * Looks up a user by an admin-issued one-time link (#135) — used by both
+ * "create a local account" and "reset a password", since a fresh row with
+ * `password_hash = NULL` and an existing row awaiting a reset are the same
+ * mechanism from this function's point of view.
+ */
+export function getUserByPasswordSetToken(
+  db: Database,
+  token: string,
+): { readonly user: User; readonly expiresAt: string | null } | null {
+  const row = db.prepare('SELECT * FROM users WHERE password_set_token = ?').get(token) as
+    PasswordSetTokenRow | undefined;
+  return row ? { user: toUser(row), expiresAt: row.password_set_token_expires_at } : null;
+}
+
+/** Sets the password and clears the token — single-use by construction, not by a separate flag. */
+export function consumePasswordSetToken(db: Database, userId: string, passwordHash: string): void {
+  db.prepare(
+    'UPDATE users SET password_hash = ?, password_set_token = NULL, password_set_token_expires_at = NULL WHERE id = ?',
+  ).run(passwordHash, userId);
+}
+
+/**
  * Resolves the request's session cookie to a user, or `null` for no session, an
  * expired one, or one whose user has since been disabled. A disabled user's
  * sessions are revoked outright (see `revokeAllSessionsForUser`), but checking
@@ -125,6 +151,22 @@ export function requireUser(db: Database) {
     const user = resolveUser(db, request);
     if (!user) {
       await reply.code(401).send({ error: 'Not authenticated' });
+      return;
+    }
+    request.user = user;
+  };
+}
+
+/** Same as `requireUser`, plus a role check — used only by `admin-routes.ts`. */
+export function requireAdmin(db: Database) {
+  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    const user = resolveUser(db, request);
+    if (!user) {
+      await reply.code(401).send({ error: 'Not authenticated' });
+      return;
+    }
+    if (!user.isAdmin) {
+      await reply.code(403).send({ error: 'Admin access required' });
       return;
     }
     request.user = user;
