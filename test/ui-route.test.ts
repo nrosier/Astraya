@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { newId } from '../src/domain/id.js';
-import { parseRoute } from '../src/ui/route.js';
+import { parseRoute, setPasswordToken } from '../src/ui/route.js';
 
 const ID = newId('p');
 
@@ -75,5 +75,25 @@ describe('parseRoute', () => {
   it('sends an unknown route home', () => {
     expect(parseRoute('#/nonsense')).toEqual({ kind: 'home' });
     expect(parseRoute('#/aboutus')).toEqual({ kind: 'home' });
+  });
+
+  it('routes the admin and set-password screens (#135)', () => {
+    expect(parseRoute('#/admin')).toEqual({ kind: 'admin' });
+    expect(parseRoute('#/set-password')).toEqual({ kind: 'set-password' });
+    expect(parseRoute('#/set-password?token=abc123')).toEqual({ kind: 'set-password' });
+  });
+});
+
+describe('setPasswordToken', () => {
+  it('reads the token out of the hash query (#135)', () => {
+    expect(setPasswordToken('#/set-password?token=abc123')).toBe('abc123');
+  });
+
+  it('returns null when there is no query at all', () => {
+    expect(setPasswordToken('#/set-password')).toBeNull();
+  });
+
+  it('returns null when the query has no token', () => {
+    expect(setPasswordToken('#/set-password?foo=bar')).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import { registerServiceWorker } from '../pwa/register.js';
 import { startWarming } from '../pwa/warm-status.js';
 import { About } from './About.js';
 import { AccountPanel } from './AccountPanel.js';
+import { AdminPanel } from './AdminPanel.js';
 import { Changelog } from './Changelog.js';
 import { ChartView } from './ChartView.js';
 import { People } from './People.js';
@@ -11,6 +12,7 @@ import { PersonForm } from './PersonForm.js';
 import { PwaStatus } from './PwaStatus.js';
 import { parseRoute } from './route.js';
 import { SessionProvider, useStoreStatus } from './session-context.js';
+import { SetPasswordForm } from './SetPasswordForm.js';
 import { SharedChartView } from './SharedChartView.js';
 import { StatusBar } from './StatusBar.js';
 import { StoreProvider } from './store-context.js';
@@ -149,6 +151,14 @@ function renderScreen(
   if (parsed.kind === 'changelog') return <Changelog />;
   if (parsed.kind === 'time') return <TimePlace />;
   if (parsed.kind === 'shared') return <SharedChartView />;
+  if (parsed.kind === 'set-password') return <SetPasswordForm />;
+  if (parsed.kind === 'admin') {
+    return (
+      <Stored>
+        <AdminPanel />
+      </Stored>
+    );
+  }
   if (parsed.kind === 'people') {
     return (
       <Stored>

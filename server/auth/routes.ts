@@ -11,7 +11,9 @@ import { adminExists, announceBootstrap, checkBootstrapToken } from './bootstrap
 import {
   getUserByUsername,
   getUserByOidcIdentity,
+  getUserByPasswordSetToken,
   getUserCredentialsByUsername,
+  consumePasswordSetToken,
   createOidcUser,
   resolveUser,
 } from './identity.ts';
@@ -40,6 +42,11 @@ interface OidcCallbackBody {
   readonly code?: unknown;
   readonly codeVerifier?: unknown;
   readonly nonce?: unknown;
+}
+
+interface SetPasswordBody {
+  readonly token?: unknown;
+  readonly password?: unknown;
 }
 
 export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
@@ -208,5 +215,27 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
       expires: new Date(session.expiresAt),
     });
     return reply.code(201).send({ user: { id, username, isAdmin: true, createdAt: now, disabledAt: null } });
+  });
+
+  // Public and unauthenticated (#135): the caller has no session yet — they're
+  // either a brand-new account created by an admin, or resetting a forgotten
+  // password. No session is created here; the person signs in normally afterward.
+  app.post<{ Body: SetPasswordBody }>('/api/auth/set-password', async (request, reply) => {
+    const { token, password } = request.body;
+    if (typeof token !== 'string' || typeof password !== 'string' || token === '' || password === '') {
+      return reply.code(400).send({ error: 'token and password are required' });
+    }
+
+    const found = getUserByPasswordSetToken(db, token);
+    if (!found || (found.expiresAt !== null && new Date(found.expiresAt).getTime() < Date.now())) {
+      return reply.code(401).send({ error: 'This link is invalid or has expired' });
+    }
+    if (passwordIsTooWeak(password, found.user.username)) {
+      return reply.code(400).send({ error: 'Password is too weak' });
+    }
+
+    const passwordHash = await hashPassword(password);
+    consumePasswordSetToken(db, found.user.id, passwordHash);
+    return reply.send({ ok: true });
   });
 }

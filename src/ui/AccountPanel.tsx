@@ -234,6 +234,7 @@ function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<vo
         <button className="quiet" disabled={busy} onClick={doSignOut}>
           Sign out
         </button>
+        {user.isAdmin && <a href="#/admin">Manage users</a>}
       </p>
     </details>
   );

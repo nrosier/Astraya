@@ -86,6 +86,20 @@ export async function getOidcConfig(): Promise<OidcConfig> {
  * must never retry this on failure with the same `code`, only restart the sign-in
  * flow from scratch.
  */
+/**
+ * `POST /api/auth/set-password` (#135) — the unauthenticated end of an admin-issued
+ * one-time link, whether the account is brand new or this is a password reset. Creates
+ * no session: the caller still signs in normally afterward, same as any other login.
+ */
+export async function setPassword(token: string, password: string): Promise<void> {
+  const response = await fetch('/api/auth/set-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+  if (!response.ok) throw new AuthError(await errorMessage(response), response.status);
+}
+
 export async function exchangeOidcCode(params: {
   readonly code: string;
   readonly codeVerifier: string;

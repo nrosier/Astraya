@@ -36,7 +36,7 @@ describe('server/db.ts', () => {
   it('sets PRAGMA user_version to the number of migrations applied', () => {
     const db = openDatabase(':memory:');
     const row = db.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-    expect(row.user_version).toBe(3);
+    expect(row.user_version).toBe(4);
     db.close();
   });
 
@@ -54,7 +54,7 @@ describe('server/db.ts', () => {
       const second = openDatabase(path);
       expect(schemaOf(second)).toEqual(before);
       const row = second.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-      expect(row.user_version).toBe(3);
+      expect(row.user_version).toBe(4);
       second.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -141,7 +141,7 @@ describe('server/db.ts', () => {
 
       const db = openDatabase(path);
       const row = db.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-      expect(row.user_version).toBe(3);
+      expect(row.user_version).toBe(4);
 
       // The pre-existing row survived the users rebuild intact.
       const legacyUser = db.prepare('SELECT * FROM users WHERE id = ?').get('legacy-user') as
@@ -270,6 +270,21 @@ describe('server/db.ts', () => {
         .run(id, username, 'hash', new Date().toISOString());
     expect(() => insertLocalUser('u3', 'carol')).not.toThrow();
     expect(() => insertLocalUser('u4', 'dave')).not.toThrow();
+    db.close();
+  });
+
+  it('allows only one user with a given password_set_token but many with none set', () => {
+    const db = openDatabase(':memory:');
+    const insertUser = (id: string, username: string, token: string | null) =>
+      db
+        .prepare(
+          'INSERT INTO users (id, username, password_hash, created_at, password_set_token) VALUES (?, ?, ?, ?, ?)',
+        )
+        .run(id, username, 'hash', new Date().toISOString(), token);
+    insertUser('u1', 'alice', 'token-1');
+    expect(() => insertUser('u2', 'bob', 'token-1')).toThrow();
+    expect(() => insertUser('u3', 'carol', null)).not.toThrow();
+    expect(() => insertUser('u4', 'dave', null)).not.toThrow();
     db.close();
   });
 });
