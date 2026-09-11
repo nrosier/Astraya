@@ -4,6 +4,65 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.9.0] — 2026-09-11
+
+**Accounts, sync across devices, and optional Authentik sign-in.**
+
+Astraya still works with zero configuration and no account, exactly as
+before — everything below is additive and opt-in.
+
+### Added
+
+- **Local accounts and a bootstrap admin flow.** A new server-side SQLite
+  store (`users`, `sessions`, `ops`) backs an optional account system:
+  Argon2id password hashing, HttpOnly session cookies, and a one-time
+  bootstrap token logged on startup (or set via `ASTRAYA_BOOTSTRAP_TOKEN`)
+  to create the first admin.
+- **Sync across devices.** Signing in opens a per-account database and
+  starts a push/pull sync engine against a new operation-log relay
+  (`POST`/`GET /api/ops`). The relay is intentionally opaque — it stores an
+  encrypted blob per operation and never interprets it, so new client
+  fields never require a server migration. Conflicts resolve deterministically
+  via the existing per-field, HLC-ordered last-write-wins merge (built in
+  M3), now proven under sync with a 200-iteration property test and a
+  two-browser-context end-to-end test covering offline edits, concurrent
+  same-field edits, and delete-vs-edit races.
+- **Encryption at rest.** When `ASTRAYA_ENCRYPTION_KEY` is set, every stored
+  operation payload is encrypted with AES-256-GCM before it touches disk.
+  Left unset, the relay stays disabled with a clear log line — no silent
+  half-configured state.
+- **Adopt anonymous data on first sign-in.** Signing in on a device that
+  already has anonymous local data offers to bring it into the new account,
+  asked once per device; declining (or a second, different account signing
+  in later) never touches or re-offers it.
+- **Optional Authentik (OIDC) sign-in.** When `ASTRAYA_OIDC_ISSUER` is
+  configured, a "Sign in with Authentik" option appears alongside local
+  accounts, using Authorization Code + PKCE with server-side token exchange
+  — the browser never holds an access or ID token. Signing out ends
+  Authentik's own session too (RP-initiated logout). The CSP header widens
+  to allow the issuer only when one is actually configured.
+- **Admin panel.** Admins can list users, create accounts (via a one-time
+  set-password link), reset passwords, promote/demote, disable/enable, and
+  delete users — with a last-remaining-admin guard on every destructive
+  action and a preview of how much data a deletion would remove before it's
+  confirmed.
+- **CSV export and a print stylesheet** for every chart data table, with
+  page breaks kept from splitting a table or the chart wheel mid-row.
+
+### Notes on correctness
+
+- No calculation path was touched.
+- `npm run check` is green across all 111 test files / 1362 tests,
+  including the golden-chart gate at its usual 0.2″ tolerance.
+- `npm run ephe:sync` reports no digest change.
+- Verified manually: bootstrap → sign-in → sync between two profiles →
+  offline edit → reconnect convergence; admin create/disable/promote/
+  delete flows, including the last-admin guard and the deletion-impact
+  preview.
+- Manual end-to-end verification against a live Authentik instance is still
+  outstanding (tracked for a follow-up pass); automated OIDC coverage runs
+  against an in-process fake Authentik instead.
+
 ## [0.8.5] — 2026-09-11
 
 **A Symbol column, and the Ascendant/Midheaven folded into Positions.**
