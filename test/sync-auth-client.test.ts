@@ -113,8 +113,14 @@ describe('logout', () => {
     expect(await me()).toBeUndefined();
   });
 
-  it('resolves even when nobody was signed in', async () => {
-    await expect(logout()).resolves.toBeUndefined();
+  it('resolves with no endSessionUrl for a local-account session (no OIDC involved)', async () => {
+    await setupAdmin('alice', 'correct-horse-battery');
+    await login('alice', 'correct-horse-battery');
+    await expect(logout()).resolves.toEqual({});
+  });
+
+  it('resolves with no endSessionUrl when nobody was signed in', async () => {
+    await expect(logout()).resolves.toEqual({});
   });
 });
 

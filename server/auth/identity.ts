@@ -21,10 +21,12 @@ export interface User {
 interface UserRow {
   readonly id: string;
   readonly username: string;
-  readonly password_hash: string;
+  readonly password_hash: string | null;
   readonly is_admin: number;
   readonly created_at: string;
   readonly disabled_at: string | null;
+  readonly oidc_issuer: string | null;
+  readonly oidc_subject: string | null;
 }
 
 function toUser(row: UserRow): User {
@@ -47,13 +49,42 @@ export function getUserByUsername(db: Database, username: string): User | null {
   return row ? toUser(row) : null;
 }
 
-/** Only `login.ts` needs the hash itself; everywhere else gets the shape above. */
+/**
+ * Only the login route needs the hash itself; everywhere else gets the shape above.
+ * `passwordHash` is `null` for an OIDC-only account — the login route's dummy-hash
+ * fallback already treats that exactly like "no such user".
+ */
 export function getUserCredentialsByUsername(
   db: Database,
   username: string,
-): { user: User; passwordHash: string } | null {
+): { user: User; passwordHash: string | null } | null {
   const row = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as UserRow | undefined;
   return row ? { user: toUser(row), passwordHash: row.password_hash } : null;
+}
+
+/** Looks up a user by their OIDC identity, provisioned on a prior sign-in via that same issuer. */
+export function getUserByOidcIdentity(db: Database, issuer: string, subject: string): User | null {
+  const row = db.prepare('SELECT * FROM users WHERE oidc_issuer = ? AND oidc_subject = ?').get(issuer, subject) as
+    UserRow | undefined;
+  return row ? toUser(row) : null;
+}
+
+/**
+ * Creates a new user JIT-provisioned from an OIDC identity (#75) — `is_admin` is always
+ * `0`; OIDC never auto-admins (that's phase 6's admin promotion, #135). Throws on a
+ * `UNIQUE` violation, which happens when `username` collides with an existing row —
+ * whether local or under a different OIDC identity — since silently linking accounts
+ * on a username coincidence would let one Authentik user claim another account.
+ */
+export function createOidcUser(
+  db: Database,
+  params: { readonly id: string; readonly username: string; readonly issuer: string; readonly subject: string },
+): User {
+  const now = new Date().toISOString();
+  db.prepare(
+    'INSERT INTO users (id, username, password_hash, created_at, oidc_issuer, oidc_subject) VALUES (?, ?, NULL, ?, ?, ?)',
+  ).run(params.id, params.username, now, params.issuer, params.subject);
+  return { id: params.id, username: params.username, isAdmin: false, createdAt: now, disabledAt: null };
 }
 
 /**

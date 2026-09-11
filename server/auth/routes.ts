@@ -8,10 +8,17 @@ import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { Database } from '../db.ts';
 import { adminExists, announceBootstrap, checkBootstrapToken } from './bootstrap.ts';
-import { getUserByUsername, getUserCredentialsByUsername, resolveUser } from './identity.ts';
+import {
+  getUserByUsername,
+  getUserByOidcIdentity,
+  getUserCredentialsByUsername,
+  createOidcUser,
+  resolveUser,
+} from './identity.ts';
 import { clearLoginThrottle, isLoginThrottled, recordFailedLogin } from './login-throttle.ts';
+import { exchangeCode, getEndSessionEndpoint, loadOidcConfig, verifyIdToken } from './oidc.ts';
 import { DUMMY_PASSWORD_HASH, hashPassword, passwordIsTooWeak, verifyPassword } from './passwords.ts';
-import { SESSION_COOKIE, createSession, revokeSession } from './sessions.ts';
+import { SESSION_COOKIE, createSession, getSession, revokeSession } from './sessions.ts';
 
 /** `Secure` only makes sense once the app is actually served over HTTPS. */
 function isSecureRequest(request: { protocol: string }): boolean {
@@ -27,6 +34,12 @@ interface SetupBody {
   readonly token?: unknown;
   readonly username?: unknown;
   readonly password?: unknown;
+}
+
+interface OidcCallbackBody {
+  readonly code?: unknown;
+  readonly codeVerifier?: unknown;
+  readonly nonce?: unknown;
 }
 
 export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
@@ -71,9 +84,25 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
 
   app.post('/api/auth/logout', async (request, reply) => {
     const sessionId = request.cookies[SESSION_COOKIE];
-    if (sessionId) revokeSession(db, sessionId);
+    let endSessionUrl: string | undefined;
+    if (sessionId) {
+      const session = getSession(db, sessionId);
+      // Built before revoking: the session row (specifically its stored
+      // `oidc_id_token`, #77) is what says whether Authentik needs to be told too.
+      if (session?.oidcIdToken) {
+        const oidcConfig = loadOidcConfig();
+        const endSessionEndpoint = oidcConfig ? await getEndSessionEndpoint(oidcConfig.issuer) : undefined;
+        if (oidcConfig && endSessionEndpoint) {
+          const url = new URL(endSessionEndpoint);
+          url.searchParams.set('id_token_hint', session.oidcIdToken);
+          url.searchParams.set('post_logout_redirect_uri', oidcConfig.publicUrl);
+          endSessionUrl = url.toString();
+        }
+      }
+      revokeSession(db, sessionId);
+    }
     reply.clearCookie(SESSION_COOKIE, { path: '/' });
-    return reply.send({ ok: true });
+    return reply.send({ ok: true, ...(endSessionUrl !== undefined ? { endSessionUrl } : {}) });
   });
 
   app.get('/api/auth/me', async (request, reply) => {
@@ -81,6 +110,63 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
     if (!user) return reply.code(401).send({ error: 'Not authenticated' });
     return reply.send({ user });
   });
+
+  app.get('/api/auth/oidc/config', async (_request, reply) => {
+    const oidcConfig = loadOidcConfig();
+    if (!oidcConfig) return reply.send({ enabled: false });
+    return reply.send({ enabled: true, issuer: oidcConfig.issuer, clientId: oidcConfig.clientId });
+  });
+
+  app.post<{ Body: OidcCallbackBody }>(
+    '/api/auth/oidc/callback',
+    { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const oidcConfig = loadOidcConfig();
+      if (!oidcConfig) return reply.code(404).send({ error: 'Not found' });
+
+      const { code, codeVerifier, nonce } = request.body;
+      if (typeof code !== 'string' || typeof codeVerifier !== 'string' || typeof nonce !== 'string') {
+        return reply.code(400).send({ error: 'code, codeVerifier and nonce are required' });
+      }
+
+      let claims: Awaited<ReturnType<typeof verifyIdToken>>;
+      try {
+        const { idToken } = await exchangeCode({ config: oidcConfig, code, codeVerifier });
+        claims = await verifyIdToken(oidcConfig, idToken);
+        if (claims.nonce !== nonce) {
+          return await reply.code(401).send({ error: 'OIDC sign-in failed' });
+        }
+
+        let user = getUserByOidcIdentity(db, oidcConfig.issuer, claims.subject);
+        if (!user) {
+          const username = claims.preferredUsername ?? claims.subject;
+          // A username collision against an existing row — local or a *different*
+          // OIDC identity — is rejected rather than silently linked: that would let
+          // one Authentik user claim another account by username coincidence.
+          if (getUserByUsername(db, username)) {
+            return await reply.code(409).send({ error: 'An account with this username already exists' });
+          }
+          user = createOidcUser(db, { id: randomUUID(), username, issuer: oidcConfig.issuer, subject: claims.subject });
+        }
+        if (user.disabledAt !== null) {
+          return await reply.code(401).send({ error: 'OIDC sign-in failed' });
+        }
+
+        const session = createSession(db, user.id, { oidcIdToken: idToken });
+        reply.setCookie(SESSION_COOKIE, session.id, {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: isSecureRequest(request),
+          path: '/',
+          expires: new Date(session.expiresAt),
+        });
+        return await reply.send({ user });
+      } catch (error) {
+        app.log.warn({ error }, 'OIDC callback failed');
+        return reply.code(401).send({ error: 'OIDC sign-in failed' });
+      }
+    },
+  );
 
   app.post<{ Body: SetupBody }>('/api/setup', async (request, reply) => {
     // 404, not 403: a 403 would confirm the route exists as an ongoing attack

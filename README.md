@@ -83,11 +83,32 @@ is removed — everything else about the app, run with no volume at all, still
 works exactly the same.
 
 `PORT` (default `8080`), `HOST`, `LOG_LEVEL`, `ASTRAYA_DB_PATH` and
-`ASTRAYA_ENCRYPTION_KEY` are the only settings. Local sign-in is optional; the
-container logs a one-time setup link on first boot if you want an account.
-The server's sync relay exists once `ASTRAYA_ENCRYPTION_KEY` is set (see
-[`.env.example`](.env.example)), but no client UI drives it yet — for now,
-signing in doesn't yet sync anything across devices.
+`ASTRAYA_ENCRYPTION_KEY` are the only required settings. Local sign-in is
+optional; the container logs a one-time setup link on first boot if you want
+an account.
+
+### Optional: sign-in with Authentik
+
+Astraya's own username/password accounts work with no further setup. To let
+people sign in with an existing Authentik identity instead (or as well), set
+`ASTRAYA_OIDC_ISSUER`, `ASTRAYA_OIDC_CLIENT_ID` and `ASTRAYA_PUBLIC_URL` (see
+[`.env.example`](.env.example) for the exact meaning of each). In the
+Authentik provider:
+
+- Create a public OAuth2/OIDC provider — no client secret; Astraya uses the
+  Authorization Code flow with PKCE and never holds a secret.
+- Set its redirect URI to exactly `${ASTRAYA_PUBLIC_URL}/auth/oidc/callback`.
+- Set its RP-initiated logout redirect (sign-out redirect) to exactly
+  `${ASTRAYA_PUBLIC_URL}`, so signing out of Astraya also ends the Authentik
+  session rather than leaving it active.
+
+Signing in with Authentik provisions a new local Astraya account on first use
+(never an admin — grant that separately) and, from then on, works exactly like
+a local account: same session cookie, same sync relay, same sign-out flow.
+Astraya has no way to notice an account disabled or a session revoked on the
+Authentik side after the initial sign-in exchange, so Authentik-derived
+sessions use a shorter TTL (24h, vs. 30 days for local accounts) to bound how
+long that gap can last.
 
 ## Licence
 

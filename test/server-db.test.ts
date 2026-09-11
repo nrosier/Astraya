@@ -5,7 +5,7 @@
  * is, so nothing here should special-case "fresh" vs. "upgraded".
  */
 import { describe, expect, it } from 'vitest';
-import type { DatabaseSync } from 'node:sqlite';
+import { DatabaseSync } from 'node:sqlite';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -36,7 +36,7 @@ describe('server/db.ts', () => {
   it('sets PRAGMA user_version to the number of migrations applied', () => {
     const db = openDatabase(':memory:');
     const row = db.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-    expect(row.user_version).toBe(1);
+    expect(row.user_version).toBe(3);
     db.close();
   });
 
@@ -54,7 +54,7 @@ describe('server/db.ts', () => {
       const second = openDatabase(path);
       expect(schemaOf(second)).toEqual(before);
       const row = second.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-      expect(row.user_version).toBe(1);
+      expect(row.user_version).toBe(3);
       second.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -72,6 +72,105 @@ describe('server/db.ts', () => {
       const stepped = openDatabase(path);
       expect(schemaOf(stepped)).toEqual(freshSchema);
       stepped.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  /** Exactly migration 1's DDL (`server/db.ts`), frozen here so this test always starts from the
+   * schema real deployments upgraded from — not from whatever `server/db.ts` currently defines. */
+  function createV1Database(path: string): void {
+    const db = new DatabaseSync(path);
+    db.exec(`
+      PRAGMA foreign_keys = ON;
+      CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        password_hash TEXT NOT NULL,
+        is_admin INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        disabled_at TEXT
+      );
+      CREATE TABLE sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        last_seen_at TEXT NOT NULL
+      );
+      CREATE INDEX sessions_user_id ON sessions(user_id);
+      CREATE TABLE ops (
+        seq INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        hlc TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        op_version INTEGER NOT NULL,
+        payload BLOB NOT NULL,
+        key_version INTEGER,
+        iv BLOB,
+        received_at TEXT NOT NULL
+      );
+      CREATE UNIQUE INDEX ops_user_hlc ON ops(user_id, hlc);
+      CREATE INDEX ops_user_seq ON ops(user_id, seq);
+      PRAGMA user_version = 1;
+    `);
+    db.prepare('INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)').run(
+      'legacy-user',
+      'legacy',
+      'legacy-hash',
+      new Date().toISOString(),
+    );
+    db.prepare('INSERT INTO sessions (id, user_id, created_at, expires_at, last_seen_at) VALUES (?, ?, ?, ?, ?)').run(
+      'legacy-session',
+      'legacy-user',
+      new Date().toISOString(),
+      new Date().toISOString(),
+      new Date().toISOString(),
+    );
+    db.prepare(
+      'INSERT INTO ops (user_id, hlc, device_id, op_version, payload, received_at) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run('legacy-user', 'hlc-legacy', 'device-1', 1, Buffer.from('payload'), new Date().toISOString());
+    db.close();
+  }
+
+  it('upgrades a real v1 database with existing data, without breaking foreign keys or new inserts', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'astraya-db-test-'));
+    const path = join(dir, 'astraya.db');
+    try {
+      createV1Database(path);
+
+      const db = openDatabase(path);
+      const row = db.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
+      expect(row.user_version).toBe(3);
+
+      // The pre-existing row survived the users rebuild intact.
+      const legacyUser = db.prepare('SELECT * FROM users WHERE id = ?').get('legacy-user') as
+        { password_hash: string; oidc_issuer: string | null } | undefined;
+      expect(legacyUser?.password_hash).toBe('legacy-hash');
+      expect(legacyUser?.oidc_issuer).toBeNull();
+
+      // A plain login-flow insert into sessions (referencing the rebuilt users table by name)
+      // still succeeds — this is the exact failure mode the naive rebuild pattern produces.
+      expect(() =>
+        db
+          .prepare('INSERT INTO sessions (id, user_id, created_at, expires_at, last_seen_at) VALUES (?, ?, ?, ?, ?)')
+          .run(
+            'new-session',
+            'legacy-user',
+            new Date().toISOString(),
+            new Date().toISOString(),
+            new Date().toISOString(),
+          ),
+      ).not.toThrow();
+
+      // Cascading delete still works post-rebuild.
+      db.prepare('DELETE FROM users WHERE id = ?').run('legacy-user');
+      const sessions = db.prepare('SELECT COUNT(*) AS count FROM sessions').get() as { count: number };
+      const ops = db.prepare('SELECT COUNT(*) AS count FROM ops').get() as { count: number };
+      expect(sessions.count).toBe(0);
+      expect(ops.count).toBe(0);
+
+      db.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -132,6 +231,45 @@ describe('server/db.ts', () => {
         .run(id, username, 'hash', new Date().toISOString());
     insertUser('u1', 'alice');
     expect(() => insertUser('u2', 'ALICE')).toThrow();
+    db.close();
+  });
+
+  it('allows a password-only user and an OIDC-only user (NULL password_hash) side by side', () => {
+    const db = openDatabase(':memory:');
+    db.prepare('INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)').run(
+      'u1',
+      'alice',
+      'hash',
+      new Date().toISOString(),
+    );
+    expect(() =>
+      db
+        .prepare(
+          'INSERT INTO users (id, username, password_hash, created_at, oidc_issuer, oidc_subject) VALUES (?, ?, NULL, ?, ?, ?)',
+        )
+        .run('u2', 'bob', new Date().toISOString(), 'https://issuer.example', 'sub-1'),
+    ).not.toThrow();
+    db.close();
+  });
+
+  it('rejects a second user with the same (oidc_issuer, oidc_subject) but allows many with neither set', () => {
+    const db = openDatabase(':memory:');
+    const insertOidcUser = (id: string, username: string) =>
+      db
+        .prepare(
+          'INSERT INTO users (id, username, password_hash, created_at, oidc_issuer, oidc_subject) VALUES (?, ?, NULL, ?, ?, ?)',
+        )
+        .run(id, username, new Date().toISOString(), 'https://issuer.example', 'sub-1');
+    insertOidcUser('u1', 'alice');
+    expect(() => insertOidcUser('u2', 'bob')).toThrow();
+
+    // Two local-only accounts (oidc_issuer/oidc_subject both NULL) never collide.
+    const insertLocalUser = (id: string, username: string) =>
+      db
+        .prepare('INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)')
+        .run(id, username, 'hash', new Date().toISOString());
+    expect(() => insertLocalUser('u3', 'carol')).not.toThrow();
+    expect(() => insertLocalUser('u4', 'dave')).not.toThrow();
     db.close();
   });
 });

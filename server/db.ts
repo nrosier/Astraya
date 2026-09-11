@@ -62,10 +62,57 @@ const MIGRATIONS: readonly ((db: DatabaseSync) => void)[] = [
       CREATE INDEX ops_user_seq ON ops(user_id, seq);
     `);
   },
+  // 2: OIDC identity columns (#75). Plain `ALTER TABLE ADD COLUMN` — no rebuild,
+  // no foreign-key hazard. A NULL/NULL pair never collides in a UNIQUE index, so
+  // every existing local-only row is unaffected.
+  (db) => {
+    db.exec(`
+      ALTER TABLE users ADD COLUMN oidc_issuer TEXT;
+      ALTER TABLE users ADD COLUMN oidc_subject TEXT;
+      CREATE UNIQUE INDEX users_oidc_identity ON users(oidc_issuer, oidc_subject);
+    `);
+  },
+  // 3: `password_hash` becomes nullable (an OIDC-only account has no password),
+  // and sessions gain the OIDC id token they were minted from (#77). SQLite has
+  // no ALTER COLUMN, so this rebuilds `users` — but under a *temporary* name,
+  // dropping the *original* and renaming the temp table back, rather than
+  // renaming the original away — otherwise `sessions`/`ops`'s
+  // `REFERENCES users(id)` clauses would keep pointing at a name that no longer
+  // exists. See `migrate()`'s foreign-key handling around this step.
+  (db) => {
+    db.exec(`
+      CREATE TABLE users_new (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        password_hash TEXT,
+        is_admin INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        disabled_at TEXT,
+        oidc_issuer TEXT,
+        oidc_subject TEXT
+      );
+      INSERT INTO users_new (id, username, password_hash, is_admin, created_at, disabled_at, oidc_issuer, oidc_subject)
+        SELECT id, username, password_hash, is_admin, created_at, disabled_at, oidc_issuer, oidc_subject FROM users;
+      -- Dropping users drops its users_oidc_identity index along with it, so
+      -- the name is free to reuse on users_new below, before the rename.
+      DROP TABLE users;
+      ALTER TABLE users_new RENAME TO users;
+      CREATE UNIQUE INDEX users_oidc_identity ON users(oidc_issuer, oidc_subject);
+
+      ALTER TABLE sessions ADD COLUMN oidc_id_token TEXT;
+    `);
+  },
 ];
+
+/** Migration steps whose table rebuild would otherwise break `REFERENCES` clauses pointing at the table being rebuilt. */
+const REQUIRES_FOREIGN_KEYS_OFF = new Set<number>([3]);
 
 interface UserVersionRow {
   readonly user_version: number;
+}
+
+interface ForeignKeyViolation {
+  readonly table: string;
 }
 
 function migrate(db: DatabaseSync): void {
@@ -73,9 +120,25 @@ function migrate(db: DatabaseSync): void {
   for (let version = row.user_version + 1; version <= MIGRATIONS.length; version++) {
     const step = MIGRATIONS[version - 1];
     if (!step) throw new Error(`No migration registered for schema version ${version}`);
+    // SQLite no-ops this pragma inside an active transaction, so a step that
+    // rebuilds a referenced table must have it turned off *before* BEGIN and
+    // back on *after* COMMIT (or ROLLBACK) — never inside the transaction itself.
+    const toggleForeignKeys = REQUIRES_FOREIGN_KEYS_OFF.has(version);
+    if (toggleForeignKeys) db.exec('PRAGMA foreign_keys = OFF');
     db.exec('BEGIN');
     try {
       step(db);
+      if (toggleForeignKeys) {
+        // Fails loudly rather than committing a rebuild that quietly orphaned a
+        // row — same "never silently wrong" precedent as the GCM auth-tag check
+        // in `server/ops/crypto.ts`.
+        const violations = db.prepare('PRAGMA foreign_key_check').all() as unknown as ForeignKeyViolation[];
+        if (violations.length > 0) {
+          throw new Error(
+            `Migration to schema version ${version} left foreign-key violations in: ${violations.map((v) => v.table).join(', ')}`,
+          );
+        }
+      }
       // Not a bound parameter: PRAGMA doesn't accept one, and `version` is this
       // module's own loop counter, never external input.
       db.exec(`PRAGMA user_version = ${version}`);
@@ -83,6 +146,8 @@ function migrate(db: DatabaseSync): void {
     } catch (error) {
       db.exec('ROLLBACK');
       throw error;
+    } finally {
+      if (toggleForeignKeys) db.exec('PRAGMA foreign_keys = ON');
     }
   }
 }

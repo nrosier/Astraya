@@ -12,13 +12,15 @@
  */
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
-import { CSP_HEADER } from './csp.ts';
+import { buildCsp, stripCspMeta } from './csp.ts';
 import { openDatabase } from './db.ts';
 import { registerAuthRoutes } from './auth/routes.ts';
+import { loadOidcConfig } from './auth/oidc.ts';
 import { registerOpsRoutes } from './ops/routes.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -53,11 +55,16 @@ export async function build(options: BuildOptions = {}) {
     db.close();
   });
 
+  // `loadOidcConfig` throws on a present-but-malformed issuer — deliberately, so
+  // a deployment mistake fails the boot rather than silently serving OIDC-less.
+  const oidcConfig = loadOidcConfig();
+  const csp = buildCsp(oidcConfig ? { issuerOrigin: new URL(oidcConfig.issuer).origin } : {});
+
   await app.register(fastifyCookie);
   await app.register(fastifyRateLimit, { global: false });
 
   app.addHook('onSend', async (request, reply) => {
-    reply.header('Content-Security-Policy', CSP_HEADER);
+    reply.header('Content-Security-Policy', csp.header);
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('Referrer-Policy', 'no-referrer');
     // Birth data never leaves the browser, but the app has no use for these APIs
@@ -77,10 +84,44 @@ export async function build(options: BuildOptions = {}) {
 
   await app.register(fastifyStatic, { root: distRoot, index: ['index.html'] });
 
+  // Only computed when an issuer is configured, and only read from disk on first
+  // request, not here: CI runs the test suite before `npm run build`, so `dist/`
+  // doesn't exist yet while `build()` is called from tests — an eager read here
+  // would make every server test depend on a prior build having already run.
+  let strippedIndexHtml: Buffer | undefined;
+  async function getStrippedIndexHtml(): Promise<Buffer> {
+    if (!strippedIndexHtml) {
+      const raw = await readFile(resolve(distRoot, 'index.html'), 'utf8');
+      strippedIndexHtml = Buffer.from(stripCspMeta(raw), 'utf8');
+    }
+    return strippedIndexHtml;
+  }
+
+  // `@fastify/static`'s `wildcard: true` (the default) registers exactly one
+  // route, `GET/HEAD /*` — not a literal `/` — so find-my-way's exact-beats-
+  // wildcard resolution means this route wins regardless of registration order.
+  // Only registered when an issuer is configured: the meta tag can't express an
+  // issuer-scoped `connect-src`/`form-action`, so once one exists the header
+  // becomes the only correct copy of the policy (see `stripCspMeta`'s doc comment).
+  if (oidcConfig) {
+    app.get('/', async (_request, reply) => {
+      return reply
+        .type('text/html; charset=utf-8')
+        .header('Cache-Control', NO_CACHE)
+        .send(await getStrippedIndexHtml());
+    });
+  }
+
   // SPA fallback. Routes are client-side, so an unknown path is the app's problem
   // to resolve, not a 404 — except for API paths, where a 404 is the honest answer.
   app.setNotFoundHandler(async (request, reply) => {
     if (request.url.startsWith('/api/')) return reply.code(404).send({ error: 'Not found' });
+    if (oidcConfig) {
+      return reply
+        .type('text/html; charset=utf-8')
+        .header('Cache-Control', NO_CACHE)
+        .send(await getStrippedIndexHtml());
+    }
     return reply.type('text/html').header('Cache-Control', NO_CACHE).sendFile('index.html');
   });
 
