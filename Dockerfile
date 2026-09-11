@@ -65,6 +65,13 @@ COPY --from=build /app/dist ./dist
 COPY package.json ./
 COPY server ./server
 
+# The ops relay (server/ops/routes.ts) parses HLC timestamps using the client's
+# own encoding, on purpose, so the two can never drift apart into different
+# ideas of what a timestamp is (see src/store/hlc.ts's own docstring). That is
+# the one file server code imports from src/ at runtime; copy it alone rather
+# than the whole client tree.
+COPY --from=build /app/src/store/hlc.ts ./src/store/hlc.ts
+
 # node:alpine already provides an unprivileged `node` user. `data/` is the one
 # writable path in the tree — it holds the SQLite file plus its WAL/SHM
 # siblings (server/db.ts) — created and owned by that user up front, since
