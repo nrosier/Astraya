@@ -74,6 +74,10 @@ jobs:
 
       - run: npm run build
 
+      # Catches the main chunk silently growing, and (more importantly) catches the
+      # ephemeris WASM engine losing its own chunk and landing in the main bundle (#73).
+      - run: npm run check:bundle-size
+
   # Drives a real browser against a real, locally-booted server (#72/#107) — proving
   # what the unit suite above can't: that a person's birth data actually produces a
   # rendered wheel and a real file download, and that two devices actually converge.

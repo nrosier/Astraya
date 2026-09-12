@@ -23,6 +23,7 @@
     "typecheck": "tsc -b --noEmit",
     "ephe:sync": "node scripts/sync-ephemeris.mjs",
     "corpus:split": "node scripts/split-corpus.mjs",
+    "check:bundle-size": "node scripts/check-bundle-size.mjs",
     "changelog:draft": "node scripts/changelog-draft.mjs",
     "corpus:similarity": "node scripts/corpus-similarity-report.mjs",
     "corpus:review-report": "node scripts/corpus-review-report.mjs",
