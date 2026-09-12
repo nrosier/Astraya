@@ -131,20 +131,46 @@ export async function nextBodyCrossing(
 }
 
 /**
+ * Built-in (stepDays, maxSteps) budgets for the generic crossing search, for
+ * the three bodies whose orbital period (~84, ~165 and ~248 years) exceeds
+ * what `nextBodyCrossing`'s own default (1-day steps, 12000 steps — ~32.8
+ * years) can reach — the gap this module's own doc comment already flagged.
+ * Each budget exceeds its body's period with 10%+ margin; the coarser step
+ * keeps the number of ephemeris calls bounded, which is safe here because
+ * these bodies' yearly retrograde wobble spans months, far wider than the
+ * step, so a genuine crossing is never stepped over undetected.
+ */
+const OUTER_PLANET_CROSSING_BUDGET: ReadonlyMap<BodyId, { readonly stepDays: number; readonly maxSteps: number }> =
+  new Map([
+    [SE.SE_URANUS, { stepDays: 5, maxSteps: 6800 }], // 34,000 days ≈ 93 years
+    [SE.SE_NEPTUNE, { stepDays: 7, maxSteps: 9500 }], // 66,500 days ≈ 182 years
+    [SE.SE_PLUTO, { stepDays: 10, maxSteps: 10000 }], // 100,000 days ≈ 274 years
+  ]);
+
+/**
  * The next return of `body` to `natalLongitude`, searching forward from
  * `fromJd`. Dispatches to the exact Swiss Ephemeris root-finders for the Sun
- * and Moon, and to the generic iterative search for every other body.
+ * and Moon, and to the generic iterative search for every other body — using
+ * `OUTER_PLANET_CROSSING_BUDGET`'s wider default for Uranus, Neptune and
+ * Pluto unless `options` already overrides `stepDays`/`maxSteps`.
  */
 export async function nextReturnOfBody(
   provider: EphemerisProvider,
   body: BodyId,
   natalLongitude: Degrees,
   fromJd: JulianDayUT,
-  zodiac?: Zodiac,
+  options: BodyCrossingOptions = {},
 ): Promise<JulianDayUT> {
-  if (body === SE.SE_SUN) return provider.nextSunCrossing(fromJd, natalLongitude, zodiac);
-  if (body === SE.SE_MOON) return provider.nextMoonCrossing(fromJd, natalLongitude, zodiac);
-  return nextBodyCrossing(provider, body, natalLongitude, fromJd, zodiac === undefined ? {} : { zodiac });
+  if (body === SE.SE_SUN) return provider.nextSunCrossing(fromJd, natalLongitude, options.zodiac);
+  if (body === SE.SE_MOON) return provider.nextMoonCrossing(fromJd, natalLongitude, options.zodiac);
+  const budget = OUTER_PLANET_CROSSING_BUDGET.get(body);
+  const stepDays = options.stepDays ?? budget?.stepDays;
+  const maxSteps = options.maxSteps ?? budget?.maxSteps;
+  return nextBodyCrossing(provider, body, natalLongitude, fromJd, {
+    ...(options.zodiac !== undefined ? { zodiac: options.zodiac } : {}),
+    ...(stepDays !== undefined ? { stepDays } : {}),
+    ...(maxSteps !== undefined ? { maxSteps } : {}),
+  });
 }
 
 /**

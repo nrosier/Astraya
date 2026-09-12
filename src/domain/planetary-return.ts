@@ -34,6 +34,15 @@ export interface PlanetaryReturnOptions {
   readonly place?: GeoPosition;
   readonly houseSystem?: HouseSystem;
   readonly zodiac?: Zodiac;
+  /**
+   * Overrides the generic crossing search's step size (days) and iteration
+   * budget for bodies without a dedicated exact root-finder — i.e. every
+   * body except the Sun and Moon (#71). Built-in defaults already reach a
+   * genuine Uranus, Neptune or Pluto return; supply these only to search
+   * further still, or to narrow the search when the target is known nearby.
+   */
+  readonly stepDays?: number;
+  readonly maxSteps?: number;
 }
 
 export interface PlanetaryReturnData {
@@ -69,7 +78,11 @@ export async function computePlanetaryReturn(
     throw new Error(`unreachable: the ephemeris returned no position for body ${body}`);
   }
 
-  const returnJd = await nextReturnOfBody(provider, body, natalPosition.longitude, searchFromJd, options.zodiac);
+  const returnJd = await nextReturnOfBody(provider, body, natalPosition.longitude, searchFromJd, {
+    ...(options.zodiac !== undefined ? { zodiac: options.zodiac } : {}),
+    ...(options.stepDays !== undefined ? { stepDays: options.stepDays } : {}),
+    ...(options.maxSteps !== undefined ? { maxSteps: options.maxSteps } : {}),
+  });
   const place: GeoPosition = options.place ?? { ...natalMoment.coordinates, altitude: 0 };
   const houseSystem = options.houseSystem ?? DEFAULT_HOUSE_SYSTEM;
 

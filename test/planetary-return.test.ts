@@ -98,4 +98,33 @@ describe('computePlanetaryReturn (#50)', () => {
     expect(tight.contacts).toHaveLength(0);
     expect(wide.contacts.length).toBeGreaterThan(0);
   });
+
+  describe('outer planets (#71)', () => {
+    // Uranus, Neptune and Pluto's own yearly retrograde wobble can loop back
+    // across the natal degree within months of the natal moment, so a search
+    // starting right at birth would find that early "false" crossing rather
+    // than a genuine return. Starting 5 years out skips past that noise and
+    // actually exercises the wider search budget these bodies need.
+    const SEARCH_FROM_YEARS_OUT = 5 * 365.25;
+
+    it.each([
+      { body: SE.SE_URANUS, name: 'Uranus', minYears: 75, maxYears: 95 },
+      { body: SE.SE_NEPTUNE, name: 'Neptune', minYears: 150, maxYears: 175 },
+      { body: SE.SE_PLUTO, name: 'Pluto', minYears: 200, maxYears: 260 },
+    ])('finds a genuine multi-decade $name return', async ({ body, minYears, maxYears }) => {
+      const engine = await getEngine();
+      const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+      const [natalPosition] = await engine.positions(natalJd, [body]);
+      if (natalPosition === undefined) throw new Error(`unreachable: no position returned for body ${body}`);
+
+      const result = await computePlanetaryReturn(NATAL, body, natalJd + SEARCH_FROM_YEARS_OUT, engine);
+      const returnPosition = result.positions.find((p) => p.body === body);
+
+      expect(returnPosition).toBeDefined();
+      expect(arcsecondsBetween(returnPosition?.longitude ?? 0, natalPosition.longitude)).toBeLessThan(1);
+      const yearsElapsed = (result.returnJd - natalJd) / 365.25;
+      expect(yearsElapsed).toBeGreaterThan(minYears);
+      expect(yearsElapsed).toBeLessThan(maxYears);
+    });
+  });
 });
