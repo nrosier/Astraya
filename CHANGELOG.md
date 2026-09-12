@@ -4,6 +4,29 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.9.5-debug.2] — 2026-09-12
+
+**Diagnostic build — candidate fixes for the Authentik sign-in bug, for verification.**
+
+The debug logging shipped in `0.9.5-debug.1` traced the reported bug (Authentik
+sign-in appears to succeed but the app stays signed out, local-only) to a real
+cause: Authentik's ID token carries an `iss` claim with a trailing slash, which
+did not exactly match the configured issuer, so token verification rejected
+every sign-in while the failure was silently swallowed. It also surfaced a
+second, unrelated bug found while investigating: the printed admin-bootstrap
+link (`/setup?token=...`) never matched the app's hash-routed URLs, so it always
+opened the home screen instead of a form. This prerelease carries fixes for
+both, for verification against a real Authentik deployment before they ship in
+a normal release. It does not move the `latest` Docker tag.
+
+### Fixed
+
+- Authentik sign-in: ID-token verification now accepts the issuer with or
+  without a trailing slash, matching what Authentik actually sends.
+- The admin-bootstrap link now points at `/#/setup?token=...`, and a form for
+  it now exists — previously there was no client-side route or component for
+  it at all, so the link silently did nothing.
+
 ## [0.9.5-debug.1] — 2026-09-12
 
 **Diagnostic build — Authentik sign-in debug logging, not a fix.**

@@ -14,6 +14,7 @@ import { PwaStatus } from './PwaStatus.js';
 import { parseRoute } from './route.js';
 import { SessionProvider, useStoreStatus } from './session-context.js';
 import { SetPasswordForm } from './SetPasswordForm.js';
+import { SetupForm } from './SetupForm.js';
 import { SharedChartView } from './SharedChartView.js';
 import { StatusBar } from './StatusBar.js';
 import { StoreProvider } from './store-context.js';
@@ -167,6 +168,7 @@ function renderScreen(
   if (parsed.kind === 'time') return <TimePlace />;
   if (parsed.kind === 'shared') return <SharedChartView />;
   if (parsed.kind === 'set-password') return <SetPasswordForm />;
+  if (parsed.kind === 'setup') return <SetupForm />;
   if (parsed.kind === 'admin') {
     return (
       <Stored>

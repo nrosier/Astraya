@@ -136,8 +136,12 @@ export interface VerifiedIdToken {
 export async function verifyIdToken(config: OidcConfig, idToken: string): Promise<VerifiedIdToken> {
   const discovery = await getDiscovery(config.issuer);
   const jwks = getJwks(config.issuer, discovery.jwks_uri);
+  // Authentik's `iss` claim carries a trailing slash even though its discovery and JWKS
+  // URLs (and `config.issuer`, normalized in `loadOidcConfig`) don't — `jwtVerify`'s issuer
+  // check is an exact string match, so both forms have to be accepted or every sign-in
+  // fails this check while looking, from the client, like it succeeded.
   const { payload } = await jwtVerify(idToken, jwks, {
-    issuer: config.issuer,
+    issuer: [config.issuer, `${config.issuer}/`],
     audience: config.clientId,
     clockTolerance: 60,
   });

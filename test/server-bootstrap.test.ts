@@ -54,7 +54,9 @@ describe('server/auth/bootstrap.ts', () => {
     const log = fakeLogger();
     announceBootstrap(db, log as unknown as FastifyBaseLogger);
     expect(log.messages).toHaveLength(1);
-    expect(log.messages[0]).toContain('/setup?token=');
+    // Hash-routed (`/#/setup?...`), not a plain path (`/setup?...`) — the app is a hash-router
+    // SPA (src/ui/route.ts) and a plain path never reaches any route.
+    expect(log.messages[0]).toContain('/#/setup?token=');
 
     const token = extractToken(log.messages);
     expect(checkBootstrapToken(token)).toBeNull();

@@ -5,7 +5,7 @@
  */
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { openStore } from '../store/store.js';
-import { exchangeOidcCode, login, logout, me } from '../sync/auth-client.js';
+import { exchangeOidcCode, login, logout, me, setup as apiSetup } from '../sync/auth-client.js';
 import { createSyncEngine, pushRecords } from '../sync/engine.js';
 import { consumeOidcCallback } from './oidc-pkce.js';
 import type { AuthUser } from '../sync/auth-client.js';
@@ -32,6 +32,7 @@ interface SessionContextValue {
   readonly engine: SyncEngine | undefined;
   readonly adoption: AdoptionPrompt | undefined;
   readonly signIn: (username: string, password: string) => Promise<void>;
+  readonly setup: (token: string, username: string, password: string) => Promise<void>;
   readonly signOut: () => Promise<void>;
   readonly resolveAdoption: (accept: boolean) => Promise<void>;
 }
@@ -293,6 +294,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     await completeSignIn(authUser);
   }
 
+  async function setup(token: string, username: string, password: string): Promise<void> {
+    const authUser = await apiSetup(token, username, password);
+    await completeSignIn(authUser);
+  }
+
   async function resolveAdoption(accept: boolean): Promise<void> {
     const pending = pendingAdoptionRef.current;
     if (pending === undefined) return;
@@ -327,7 +333,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     if (endSessionUrl !== undefined) window.location.href = endSessionUrl;
   }
 
-  const value: SessionContextValue = { status, user, engine, adoption, signIn, signOut, resolveAdoption };
+  const value: SessionContextValue = { status, user, engine, adoption, signIn, setup, signOut, resolveAdoption };
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
@@ -349,9 +355,10 @@ export function useSession(): {
   user: AuthUser | undefined;
   adoption: AdoptionPrompt | undefined;
   signIn: (username: string, password: string) => Promise<void>;
+  setup: (token: string, username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resolveAdoption: (accept: boolean) => Promise<void>;
 } {
-  const { user, adoption, signIn, signOut, resolveAdoption } = useSessionContext();
-  return { user, adoption, signIn, signOut, resolveAdoption };
+  const { user, adoption, signIn, setup, signOut, resolveAdoption } = useSessionContext();
+  return { user, adoption, signIn, setup, signOut, resolveAdoption };
 }

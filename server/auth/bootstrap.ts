@@ -48,7 +48,11 @@ export function announceBootstrap(db: Database, log: FastifyBaseLogger): void {
     return;
   }
   current = { token: randomBytes(48).toString('base64url'), expiresAt: Date.now() + TOKEN_TTL_MS, fromEnv: false };
-  log.warn(`No admin account exists. Create one within 15 minutes at: /setup?token=${current.token}`);
+  // The app is hash-routed (src/ui/route.ts) — every other URL in it, including this
+  // token's own consumer, is `#/...`. A path without the `#` (as this used to read) loads
+  // the app shell fine but never reaches any router, so the link silently opens the home
+  // screen with the token sitting unused in `location.search`.
+  log.warn(`No admin account exists. Create one within 15 minutes at: /#/setup?token=${current.token}`);
 }
 
 export type BootstrapTokenError = 'no-token-issued' | 'invalid' | 'expired';

@@ -115,6 +115,23 @@ export async function setPassword(token: string, password: string): Promise<void
   if (!response.ok) throw new AuthError(await errorMessage(response), response.status);
 }
 
+/**
+ * `POST /api/setup` — the one-time admin-bootstrap flow (`server/auth/bootstrap.ts`,
+ * `#/setup?token=...`). Unlike `setPassword`, this creates a session: the server sets the
+ * same cookie a login would, so the caller signs in immediately rather than being sent back
+ * to a separate sign-in step.
+ */
+export async function setup(token: string, username: string, password: string): Promise<AuthUser> {
+  const response = await fetch('/api/setup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, username, password }),
+  });
+  if (!response.ok) throw new AuthError(await errorMessage(response), response.status);
+  const { user } = (await response.json()) as { user: AuthUser };
+  return user;
+}
+
 export async function exchangeOidcCode(params: {
   readonly code: string;
   readonly codeVerifier: string;

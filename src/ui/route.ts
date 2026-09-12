@@ -21,7 +21,8 @@ export type Route =
   | { readonly kind: 'chart'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'admin' }
-  | { readonly kind: 'set-password' };
+  | { readonly kind: 'set-password' }
+  | { readonly kind: 'setup' };
 
 const PERSON_PATH = /^#\/person\/(.+)$/;
 const CHART_PATH = /^#\/chart\/(.+)$/;
@@ -50,6 +51,11 @@ export function parseRoute(hash: string): Route {
     // by the screen itself, the same way #/time reads its own query, rather than here.
     case '#/set-password':
       return { kind: 'set-password' };
+    // The one-time admin-bootstrap token (`server/auth/bootstrap.ts`) lives in the query,
+    // same convention as #/set-password — read directly off `location.hash` by the screen
+    // itself, not here.
+    case '#/setup':
+      return { kind: 'setup' };
     default:
       break;
   }
@@ -69,6 +75,13 @@ export function parseRoute(hash: string): Route {
 
 /** The one-time token embedded in a `#/set-password?token=...` link (#135). `null` if missing. */
 export function setPasswordToken(hash: string): string | null {
+  const queryIndex = hash.indexOf('?');
+  if (queryIndex === -1) return null;
+  return new URLSearchParams(hash.slice(queryIndex + 1)).get('token');
+}
+
+/** The one-time token embedded in a `#/setup?token=...` link (`server/auth/bootstrap.ts`). `null` if missing. */
+export function setupToken(hash: string): string | null {
   const queryIndex = hash.indexOf('?');
   if (queryIndex === -1) return null;
   return new URLSearchParams(hash.slice(queryIndex + 1)).get('token');
