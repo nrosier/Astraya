@@ -19,6 +19,7 @@ export type Route =
   | { readonly kind: 'people' }
   | { readonly kind: 'person'; readonly personId: string }
   | { readonly kind: 'chart'; readonly personId: string }
+  | { readonly kind: 'profections'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'set-password' }
@@ -26,6 +27,7 @@ export type Route =
 
 const PERSON_PATH = /^#\/person\/(.+)$/;
 const CHART_PATH = /^#\/chart\/(.+)$/;
+const PROFECTIONS_PATH = /^#\/profections\/(.+)$/;
 
 export function parseRoute(hash: string): Route {
   // The query carries a birth record on #/time, so every match is on the path part alone.
@@ -69,6 +71,9 @@ export function parseRoute(hash: string): Route {
 
   const chart = CHART_PATH.exec(path);
   if (chart !== null && isPersonId(chart[1])) return { kind: 'chart', personId: chart[1] };
+
+  const profections = PROFECTIONS_PATH.exec(path);
+  if (profections !== null && isPersonId(profections[1])) return { kind: 'profections', personId: profections[1] };
 
   return { kind: 'home' };
 }

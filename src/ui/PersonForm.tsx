@@ -121,7 +121,7 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
 
       {person.moment !== undefined && (
         <p>
-          <a href={`#/chart/${personId}`}>View chart</a>
+          <a href={`#/chart/${personId}`}>View chart</a> &middot; <a href={`#/profections/${personId}`}>Profections</a>
         </p>
       )}
 

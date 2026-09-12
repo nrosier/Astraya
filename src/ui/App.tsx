@@ -10,6 +10,7 @@ import { ChartView } from './ChartView.js';
 import { LanguageToggle } from './LanguageToggle.js';
 import { People } from './People.js';
 import { PersonForm } from './PersonForm.js';
+import { ProfectionsView } from './ProfectionsView.js';
 import { PwaStatus } from './PwaStatus.js';
 import { parseRoute } from './route.js';
 import { SessionProvider, useStoreStatus } from './session-context.js';
@@ -219,6 +220,13 @@ function renderScreen(
     return (
       <Stored>
         <ChartView key={parsed.personId} personId={parsed.personId} />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'profections') {
+    return (
+      <Stored>
+        <ProfectionsView key={parsed.personId} personId={parsed.personId} />
       </Stored>
     );
   }
