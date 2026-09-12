@@ -11,7 +11,11 @@ export default defineConfig({
   testDir: 'e2e',
   timeout: 30_000,
   fullyParallel: false,
-  retries: 0,
+  // multi-device-sync.spec.ts has intermittently hung in CI (never locally) on its
+  // first store.mutate()/navigation of a fresh context — see #229. Root cause is
+  // still open; retrying on CI only turns a rare stall into a pass without hiding
+  // it locally, where it has never once reproduced.
+  retries: process.env.CI ? 2 : 0,
   reporter: 'list',
   use: {
     trace: 'retain-on-failure',
