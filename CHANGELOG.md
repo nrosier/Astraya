@@ -4,7 +4,7 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
-## [0.9.4] — 2026-09-12
+## [0.9.5] — 2026-09-12
 
 **Sign-in and sync status are now visible everywhere, and the report language is an app-wide setting.**
 
@@ -21,14 +21,14 @@ see [docs/RELEASING.md](docs/RELEASING.md).
 
 ### Fixed
 
-- **A rare random-testing counterexample could fail CI without indicating a
-  real bug.** The property test verifying sidereal longitude against the
-  ayanamsa allowed 60 arcseconds of divergence for minor bodies under
-  fixed-epoch/galactic ayanamsa modes — a genuine property of the
-  underlying ephemeris engine, not a defect — but a rare seed found a
-  combination (Pallas, under the galactic-alignment ayanamsa) that
-  exceeded it by a quarter of an arcsecond. The tolerance is now 90
-  arcseconds, still tight enough to catch a real regression.
+- **A rare random-testing counterexample could fail CI without indicating a real bug.**
+  The property test verifying sidereal longitude against the ayanamsa allowed
+  60 arcseconds of divergence for minor bodies under fixed-epoch/galactic
+  ayanamsa modes — a genuine property of the underlying ephemeris engine, not
+  a defect — but a rare seed found a combination (Pallas, under the
+  galactic-alignment ayanamsa) that exceeded it by a quarter of an arcsecond.
+  The tolerance is now 90 arcseconds, still tight enough to catch a real
+  regression.
 
 ## [0.9.3] — 2026-09-12
 
