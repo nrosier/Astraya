@@ -4,8 +4,10 @@ name: Docker
 #
 # Tagging strategy (docs/RELEASING.md):
 #   v1.2.3 tag  ->  1.2.3, 1.2, 1, latest   (a user can pin as loosely as they like)
-#   pull request->  built, never pushed     (a fork PR has no access to the secrets
-#                                            anyway, and must not gain any)
+#   pull request->  built and smoke-tested, never pushed (a fork PR has no access to
+#                                            the secrets anyway, and must not gain
+#                                            any) — amd64-only so the image can be
+#                                            `load`ed locally to run it
 #
 # Prereleases (v1.2.3-rc.1) get their literal tag only: `latest` and the rolling
 # major/minor tags must never move to something not meant for general use.
@@ -55,6 +57,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+            type=ref,event=pr
           # `flavor`, not `flags`: the latter is not an input this action has, so it
           # was accepted in silence and metadata-action kept its default
           # `latest=auto`. That meant two things generated `latest` — its default and
@@ -81,12 +84,17 @@ jobs:
             echo "tags=" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build and push
+      # A multi-platform build cannot be `load`ed into the local daemon — only a
+      # single-platform one can — so a pull request (which has nowhere to push, but
+      # still needs to actually run the image below) builds amd64 only and loads it
+      # instead of pushing it. A tag push builds both platforms and pushes as before.
+      - name: Build ${{ github.event_name == 'pull_request' && '(amd64, local)' || 'and push' }}
         uses: docker/build-push-action@v7
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
             ${{ steps.latest.outputs.tags }}
@@ -98,10 +106,11 @@ jobs:
           provenance: false
 
       # A pushed image that cannot serve a request is worse than a failed build,
-      # because it looks like a success. This starts the amd64 image we just
-      # published and waits for the app's own health endpoint.
-      - name: Smoke-test the published image
-        if: github.event_name != 'pull_request'
+      # because it looks like a success — and the same is true one step earlier, of
+      # an image that merges fine but never actually gets run. This starts the
+      # amd64 image just built (pushed on a tag, `load`ed locally on a PR) and waits
+      # for the app's own health endpoint.
+      - name: Smoke-test the image
         run: |
           # The first metadata tag: the release version. It used to be `latest`,
           # before `flavor` stopped that being generated here; either is a valid
