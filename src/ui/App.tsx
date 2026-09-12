@@ -7,6 +7,7 @@ import { AccountPanel } from './AccountPanel.js';
 import { AdminPanel } from './AdminPanel.js';
 import { Changelog } from './Changelog.js';
 import { ChartView } from './ChartView.js';
+import { CompositeView } from './CompositeView.js';
 import { LanguageToggle } from './LanguageToggle.js';
 import { People } from './People.js';
 import { PersonForm } from './PersonForm.js';
@@ -243,6 +244,13 @@ function renderScreen(
     return (
       <Stored>
         <SynastryView key={parsed.personId} personId={parsed.personId} />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'composite') {
+    return (
+      <Stored>
+        <CompositeView key={parsed.personId} personId={parsed.personId} />
       </Stored>
     );
   }

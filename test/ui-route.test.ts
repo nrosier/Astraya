@@ -96,6 +96,18 @@ describe('parseRoute', () => {
     expect(parseRoute('#/synastry/../about')).toEqual({ kind: 'home' });
   });
 
+  it('routes a composite id through (#169)', () => {
+    expect(parseRoute(`#/composite/${ID}`)).toEqual({ kind: 'composite', personId: ID });
+    expect(parseRoute(`#/composite/${ID}/`)).toEqual({ kind: 'composite', personId: ID });
+    expect(parseRoute(`#/composite/${ID}?x=1`)).toEqual({ kind: 'composite', personId: ID });
+  });
+
+  it('sends a malformed composite id home rather than to a blank screen', () => {
+    expect(parseRoute('#/composite/')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/composite/nope')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/composite/../about')).toEqual({ kind: 'home' });
+  });
+
   it('sends an id that is not one of ours home rather than to an empty form', () => {
     // The form would render "there is no person with that id — they may have been deleted",
     // which is a confident, wrong explanation for a truncated link.

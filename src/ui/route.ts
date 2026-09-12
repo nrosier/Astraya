@@ -25,6 +25,8 @@ export type Route =
   // multi-word route here names exactly one person, and a synastry pairing changes far more
   // often within one visit (trying several comparisons) than it's worth sharing as a link.
   | { readonly kind: 'synastry'; readonly personId: string }
+  // Same reasoning as synastry (#169): the second person is picked in-screen, not the URL.
+  | { readonly kind: 'composite'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'set-password' }
@@ -35,6 +37,7 @@ const CHART_PATH = /^#\/chart\/(.+)$/;
 const PROFECTIONS_PATH = /^#\/profections\/(.+)$/;
 const TRANSIT_PATH = /^#\/transit\/(.+)$/;
 const SYNASTRY_PATH = /^#\/synastry\/(.+)$/;
+const COMPOSITE_PATH = /^#\/composite\/(.+)$/;
 
 export function parseRoute(hash: string): Route {
   // The query carries a birth record on #/time, so every match is on the path part alone.
@@ -87,6 +90,9 @@ export function parseRoute(hash: string): Route {
 
   const synastry = SYNASTRY_PATH.exec(path);
   if (synastry !== null && isPersonId(synastry[1])) return { kind: 'synastry', personId: synastry[1] };
+
+  const composite = COMPOSITE_PATH.exec(path);
+  if (composite !== null && isPersonId(composite[1])) return { kind: 'composite', personId: composite[1] };
 
   return { kind: 'home' };
 }
