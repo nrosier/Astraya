@@ -118,6 +118,31 @@ describe('POST /api/auth/oidc/callback', () => {
     expect(me.json<{ user: { username: string } }>().user.username).toBe('alice');
   });
 
+  it('falls back to the name claim when preferred_username is absent', async () => {
+    const idToken = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-name-fallback',
+      nonce: 'nonce-name',
+      name: 'Alice Example',
+    });
+    fakeAuthentik.registerCode('code-name', { idToken });
+
+    const response = await callback({ code: 'code-name', codeVerifier: 'verifier-name', nonce: 'nonce-name' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json<{ user: { username: string } }>().user.username).toBe('Alice Example');
+  });
+
+  it('falls back to the raw subject when neither preferred_username nor name is present', async () => {
+    const idToken = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-no-claims',
+      nonce: 'nonce-bare',
+    });
+    fakeAuthentik.registerCode('code-bare', { idToken });
+
+    const response = await callback({ code: 'code-bare', codeVerifier: 'verifier-bare', nonce: 'nonce-bare' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json<{ user: { username: string } }>().user.username).toBe('authentik-subject-no-claims');
+  });
+
   it('signs back in to the same user on a second sign-in with the same identity', async () => {
     const first = await fakeAuthentik.mintIdToken({
       sub: 'authentik-subject-2',

@@ -148,9 +148,18 @@ export async function verifyIdToken(config: OidcConfig, idToken: string): Promis
   if (typeof payload.sub !== 'string' || payload.sub === '') {
     throw new Error('OIDC ID token has no subject claim.');
   }
+  // `preferred_username` is the OIDC-standard claim for this, but some providers'
+  // scope-to-claim mappings only populate `name` under the `profile` scope — falling
+  // back to it means a real display name still wins over the raw `sub` even then.
+  const preferredUsername =
+    typeof payload.preferred_username === 'string'
+      ? payload.preferred_username
+      : typeof payload.name === 'string'
+        ? payload.name
+        : undefined;
   return {
     subject: payload.sub,
-    preferredUsername: typeof payload.preferred_username === 'string' ? payload.preferred_username : undefined,
+    preferredUsername,
     nonce: typeof payload.nonce === 'string' ? payload.nonce : undefined,
   };
 }

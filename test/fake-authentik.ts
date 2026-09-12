@@ -21,6 +21,7 @@ export interface FakeAuthentik {
       readonly sub: string;
       readonly nonce?: string;
       readonly preferred_username?: string;
+      readonly name?: string;
       readonly iss?: string;
       readonly aud?: string;
       readonly exp?: number;
@@ -86,6 +87,7 @@ export async function startFakeAuthentik(clientId: string): Promise<FakeAuthenti
         sub: claims.sub,
         nonce: claims.nonce,
         preferred_username: claims.preferred_username,
+        name: claims.name,
         iat: now,
         exp: claims.exp ?? now + 300,
       })

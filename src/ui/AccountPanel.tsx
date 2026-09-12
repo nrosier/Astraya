@@ -102,7 +102,11 @@ function OidcSignIn({ config }: { config: { clientId: string; authorizationEndpo
         client_id: config.clientId,
         redirect_uri: redirectUri,
         response_type: 'code',
-        scope: 'openid',
+        // `openid` alone gets only `sub` — Authentik only includes `preferred_username`
+        // (and `name`/`email`) in the id_token when the `profile` scope is actually
+        // requested, so without it every account is provisioned under its raw subject
+        // hash instead of a real username.
+        scope: 'openid profile',
         code_challenge: codeChallenge,
         code_challenge_method: 'S256',
         state,
