@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { registerServiceWorker } from '../pwa/register.js';
 import { startWarming } from '../pwa/warm-status.js';
@@ -84,6 +84,7 @@ export function App(): React.JSX.Element {
   const [route, setRoute] = useState(() => window.location.hash);
   const [engineStatus, setEngineStatus] = useState<string>('Loading ephemeris…');
   const [seVersion, setSeVersion] = useState<string>();
+  const isFirstRoute = useRef(true);
 
   useEffect(() => {
     const onHashChange = (): void => {
@@ -94,6 +95,25 @@ export function App(): React.JSX.Element {
       window.removeEventListener('hashchange', onHashChange);
     };
   }, []);
+
+  useEffect(() => {
+    // A hash change swaps `<main>`'s entire contents for another screen's, but doesn't
+    // reload the document — so unlike a real page load, nothing tells a screen-reader
+    // user that navigation happened or where they landed; focus is simply abandoned on
+    // whatever DOM node the previous screen's now-removed element used to be, which
+    // browsers resolve to `<body>` (#69). Move focus to the new screen's `<h1>` on every
+    // navigation after the first, giving keyboard/AT users the same "you're on a new
+    // page" signal a full page load gives for free. Skipped on the initial mount: focus
+    // there should stay wherever the browser already put it.
+    if (isFirstRoute.current) {
+      isFirstRoute.current = false;
+      return;
+    }
+    const heading = document.querySelector<HTMLElement>('main.shell h1');
+    if (heading === null) return;
+    if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+    heading.focus();
+  }, [route]);
 
   useEffect(() => {
     const engine = new WorkerEphemerisProvider();

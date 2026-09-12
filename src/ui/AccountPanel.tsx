@@ -150,6 +150,7 @@ function OidcSignIn({ config }: { config: { clientId: string; authorizationEndpo
  * the form again without losing anything typed elsewhere on the page.
  */
 const SIGNIN_POPOVER_ID = 'accountpanel-signin-popover';
+const SIGNIN_POPOVER_HEADING_ID = 'accountpanel-signin-popover-heading';
 
 function SignInForm({
   signIn,
@@ -176,6 +177,21 @@ function SignInForm({
 
   useEffect(() => {
     if (open) usernameRef.current?.focus();
+  }, [open]);
+
+  useEffect(() => {
+    // Otherwise this floats open over whatever screen the user navigates to next —
+    // both a stray dialog left open for no reason, and (since it's positioned
+    // absolutely) something that can sit on top of and intercept clicks on the new
+    // page's content.
+    if (!open) return;
+    const onHashChange = (): void => {
+      close();
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => {
+      window.removeEventListener('hashchange', onHashChange);
+    };
   }, [open]);
 
   const submit = (event: React.SubmitEvent<HTMLFormElement>): void => {
@@ -216,12 +232,14 @@ function SignInForm({
     <div
       id={SIGNIN_POPOVER_ID}
       className="accountpanel-popover"
+      role="dialog"
+      aria-labelledby={SIGNIN_POPOVER_HEADING_ID}
       onKeyDown={(event) => {
         if (event.key === 'Escape') close();
       }}
     >
       <p className="accountpanel-popover-head">
-        Sign in to sync this device
+        <span id={SIGNIN_POPOVER_HEADING_ID}>Sign in to sync this device</span>
         <button type="button" className="quiet" aria-label="Close" onClick={close}>
           ×
         </button>
