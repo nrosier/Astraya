@@ -7,6 +7,7 @@ import { AccountPanel } from './AccountPanel.js';
 import { AdminPanel } from './AdminPanel.js';
 import { Changelog } from './Changelog.js';
 import { ChartView } from './ChartView.js';
+import { LanguageToggle } from './LanguageToggle.js';
 import { People } from './People.js';
 import { PersonForm } from './PersonForm.js';
 import { PwaStatus } from './PwaStatus.js';
@@ -16,6 +17,7 @@ import { SetPasswordForm } from './SetPasswordForm.js';
 import { SharedChartView } from './SharedChartView.js';
 import { StatusBar } from './StatusBar.js';
 import { StoreProvider } from './store-context.js';
+import { SyncBadge } from './SyncBadge.js';
 import { ThemeToggle } from './ThemeToggle.js';
 import { TimePlace } from './TimePlace.js';
 import { APP_VERSION } from '../version.js';
@@ -62,9 +64,10 @@ function Stored({ children }: { children: React.ReactNode }): React.JSX.Element 
     <StoreProvider store={status.store}>
       {children}
       {/* Inside the provider and after the screen: every route that shows the user's data
-          gets the same answer to "does this exist anywhere but here?", in the same place. */}
+          gets the same answer to "does this exist anywhere but here?", in the same place.
+          Sign-in status and the global sync badge live outside `Stored` now (rendered by
+          `App` itself) since they don't need the store, only the session. */}
       <StatusBar />
-      <AccountPanel />
     </StoreProvider>
   );
 }
@@ -134,9 +137,21 @@ export function App(): React.JSX.Element {
     // Wraps the whole shell, not just `Stored`: which store is open follows who is signed
     // in, and that has to survive navigating between routes that each mount their own
     // `Stored` — otherwise every navigation would reopen the database and restart sync.
+    //
+    // Account and sync status are global, not tied to any one screen (#137): sign-in state
+    // belongs top-left on every route including the landing page, where nothing showed it
+    // before; sync status, the language choice and the theme toggle sit together top-right
+    // as the app's persistent "how this looks and where my data is" controls.
     <SessionProvider>
       {screen}
-      <ThemeToggle />
+      <div className="topbar-left">
+        <AccountPanel />
+      </div>
+      <div className="topbar-right">
+        <SyncBadge />
+        <LanguageToggle />
+        <ThemeToggle />
+      </div>
       <PwaStatus />
     </SessionProvider>
   );

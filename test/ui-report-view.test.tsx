@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 /**
- * A jsdom smoke test for `ReportView` (#62's language/advisor picker), in
+ * A jsdom smoke test for `ReportView` (#62's advisor picker, plus its
+ * consumption of the shared, app-wide language setting from `locale.ts`), in
  * the style of `ui-extended-settings-panel.test.tsx`: mount with
  * `createRoot`, interact with real DOM nodes, no React Testing Library.
  * `loadRuntimeCorpus`'s network call is stubbed via a fake `global.fetch`
@@ -15,6 +16,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReportView, PERSONA_LABELS } from '../src/ui/ReportView.js';
+import { getLocale, setLocale } from '../src/ui/locale.js';
 import { bodyByKey } from '../src/astrology/bodies.js';
 import type { EssentialDignities } from '../src/astrology/dignities.js';
 import type { ChartData } from '../src/domain/chart-compute.js';
@@ -130,11 +132,15 @@ describe('PERSONA_LABELS stays in sync with tools/corpus-gen/personas.json', () 
   });
 });
 
-describe('ReportView language/advisor picker', () => {
+describe('ReportView advisor picker (locale comes from the shared locale.ts store)', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     localStorage.clear();
+    // `locale.ts`'s `current` is a module-level singleton, not re-read from
+    // localStorage per test — reset it explicitly rather than relying on
+    // `localStorage.clear()`, which only affects a future page load.
+    setLocale('en');
     fetchMock = vi.fn(
       () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }) as unknown as ReturnType<typeof fetch>,
     );
@@ -148,8 +154,7 @@ describe('ReportView language/advisor picker', () => {
   it('defaults to English/Neutral and fetches only the neutral chunk', async () => {
     const { container, root } = await mount();
 
-    const languageSelect = labeledSelect(container, 'Language');
-    expect(languageSelect.value).toBe('en');
+    expect(getLocale()).toBe('en');
     const advisorSelect = labeledSelect(container, 'Advisor');
     expect(advisorSelect.value).toBe('');
     expect(Array.from(advisorSelect.options).map((o) => o.textContent)).toEqual([
@@ -169,13 +174,11 @@ describe('ReportView language/advisor picker', () => {
     container.remove();
   });
 
-  it('persists the chosen language to localStorage and re-fetches that locale', async () => {
+  it('re-fetches when the shared locale changes (e.g. via LanguageToggle elsewhere in the app)', async () => {
     const { container, root } = await mount();
-    const languageSelect = labeledSelect(container, 'Language');
 
     await act(async () => {
-      languageSelect.value = 'nl';
-      languageSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      setLocale('nl');
       await Promise.resolve();
     });
 
@@ -211,12 +214,12 @@ describe('ReportView language/advisor picker', () => {
     container.remove();
   });
 
-  it('restores a previously chosen language and advisor from localStorage', async () => {
-    localStorage.setItem('astraya:reportLocale', 'nl');
+  it('reflects an already-chosen locale and restores the advisor from localStorage', async () => {
+    setLocale('nl');
     localStorage.setItem('astraya:reportPersona', 'mystic');
     const { container, root } = await mount();
 
-    expect(labeledSelect(container, 'Language').value).toBe('nl');
+    expect(getLocale()).toBe('nl');
     expect(labeledSelect(container, 'Advisor').value).toBe('mystic');
     expect(fetchMock).toHaveBeenCalledWith('/corpus/nl/neutral.json');
     expect(fetchMock).toHaveBeenCalledWith('/corpus/nl/mystic.json');

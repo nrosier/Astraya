@@ -32,6 +32,8 @@ export interface SyncEngine {
   readonly status: SyncState;
   /** Local records the server has not yet acknowledged. */
   pending(): number;
+  /** Manual "sync now" — safe to call while a run is already in flight (queues a rerun instead of overlapping it). */
+  syncNow(): void;
   subscribe(listener: () => void): () => void;
   close(): void;
 }
@@ -349,6 +351,7 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
       return status;
     },
     pending: () => store.outgoing(cursor.pushed).length,
+    syncNow: trigger,
     subscribe(listener) {
       listeners.add(listener);
       return (): void => {

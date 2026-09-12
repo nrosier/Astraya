@@ -1,11 +1,14 @@
 /**
- * Sign-in/out UI (#78, #109). Mounted next to `StatusBar` inside `Stored` — same
- * disclosure style, a one-line summary that opens into detail rather than a modal.
+ * Sign-in/out UI (#78, #109). Mounted globally, top-left of every screen — signed-in
+ * or signed-out state is the answer to "am I signed in", and that has to be visible
+ * without navigating anywhere.
  *
- * Signed out: a non-nagging explanation of what an account adds (sync to other
- * devices) plus a form. Signed in: the username and a sign-out button. Between the
- * two, at most once ever per device: the adoption prompt (#109), which `signIn` puts
- * this panel into instead of completing the switch on its own.
+ * Signed out: a compact "Sign in" button that opens into a non-nagging explanation of
+ * what an account adds (sync to other devices) plus a form — collapsed by default so
+ * it costs no space on the common, signed-out path. Signed in: the username shown
+ * inline, always, plus a sign-out button — no click needed to confirm you're signed
+ * in. Between the two, at most once ever per device: the adoption prompt (#109), which
+ * `signIn` puts this panel into instead of completing the switch on its own.
  */
 import { useEffect, useState } from 'react';
 import { useSession } from './session-context.js';
@@ -37,7 +40,7 @@ function AdoptionPanel({
   };
 
   return (
-    <div className="accountpanel">
+    <div className="accountpanel-popover">
       <p>
         This device saved {changes(recordCount)} before you signed in. Add it to your account so it syncs to your other
         devices, or leave it here.
@@ -135,6 +138,13 @@ function OidcSignIn({ config }: { config: { clientId: string; authorizationEndpo
   );
 }
 
+/**
+ * Collapsed to a compact "Sign in" button by default — this now lives in the fixed
+ * top-left corner of every screen, so an always-open form would sit over the page on
+ * every route rather than just where it's relevant. Opening it reveals the same form as
+ * a small popover beneath the button; closing it (the × or a successful sign-in) hides
+ * the form again without losing anything typed elsewhere on the page.
+ */
 function SignInForm({
   signIn,
   oidcConfig,
@@ -142,6 +152,7 @@ function SignInForm({
   signIn: (username: string, password: string) => Promise<void>;
   oidcConfig: OidcConfig | undefined;
 }): React.JSX.Element {
+  const [open, setOpen] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -154,6 +165,7 @@ function SignInForm({
     void signIn(username, password)
       .then(() => {
         setPassword('');
+        setOpen(false);
       })
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : String(cause));
@@ -163,9 +175,35 @@ function SignInForm({
       });
   };
 
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className="topbar-signin"
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        Sign in
+      </button>
+    );
+  }
+
   return (
-    <details className="accountpanel">
-      <summary>Sign in to sync this device</summary>
+    <div className="accountpanel-popover">
+      <p className="accountpanel-popover-head">
+        Sign in to sync this device
+        <button
+          type="button"
+          className="quiet"
+          aria-label="Close"
+          onClick={() => {
+            setOpen(false);
+          }}
+        >
+          ×
+        </button>
+      </p>
       <p>
         An account syncs your data to your other devices. It is optional — everything here already works with no
         account, on this device alone.
@@ -207,10 +245,11 @@ function SignInForm({
         </p>
       </form>
       {oidcConfig?.enabled === true && <OidcSignIn config={oidcConfig} />}
-    </details>
+    </div>
   );
 }
 
+/** Always visible, no click needed — the answer to "am I signed in" shows up on its own. */
 function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<void> }): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -225,20 +264,20 @@ function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<vo
   };
 
   return (
-    <details className="accountpanel">
-      <summary>Signed in as {user.username}</summary>
+    <div className="accountpanel-signedin">
+      <span>
+        Signed in as <strong>{user.username}</strong>
+      </span>
+      <button className="quiet" disabled={busy} onClick={doSignOut}>
+        Sign out
+      </button>
+      {user.isAdmin && <a href="#/admin">Manage users</a>}
       {error !== undefined && (
         <p className="warning" role="alert">
           That did not go through, so you are still signed in. {error}
         </p>
       )}
-      <p className="actions">
-        <button className="quiet" disabled={busy} onClick={doSignOut}>
-          Sign out
-        </button>
-        {user.isAdmin && <a href="#/admin">Manage users</a>}
-      </p>
-    </details>
+    </div>
   );
 }
 

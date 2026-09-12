@@ -11,14 +11,15 @@
  * same "thin `.tsx`, tested `.ts`" split `SortableTable.tsx`/`table-sort.ts`
  * already use.
  *
- * Language and advisor are user-selectable here: `assembleReport` and
- * `loadRuntimeCorpus` already take a `Locale`/`PersonaId` (the corpus is
- * fully generated for both `en` and `nl`, all five personas), this component
- * just exposes the choice and remembers it per device, the same
+ * Advisor is user-selectable here: `assembleReport` and `loadRuntimeCorpus`
+ * already take a `Locale`/`PersonaId` (the corpus is fully generated for
+ * both `en` and `nl`, all five personas), this component exposes the
+ * persona choice and remembers it per device, the same
  * `localStorage`-persisted-preference pattern `session-context.tsx` uses for
  * the last signed-in user. Persona is optional — "neutral" (no persona
  * selected) falls back to the same voice every report used before this
- * picker existed.
+ * picker existed. Language is a shared, app-wide setting (`locale.ts`), not
+ * this component's own state — this view only consumes it.
  *
  * Fetches its corpus chunk at runtime via `loadRuntimeCorpus` rather than
  * importing `CORPUS` from `../interpretation/index.js` — that export is the
@@ -29,20 +30,12 @@
 import { useEffect, useState } from 'react';
 import { assembleReport, type Report, type ReportParagraph } from '../interpretation/report.js';
 import { loadRuntimeCorpus } from '../interpretation/corpus-client.js';
-import {
-  CORPUS_LOCALES,
-  PERSONA_IDS,
-  type CorpusEntry,
-  type Locale,
-  type PersonaId,
-} from '../interpretation/schema.js';
+import { PERSONA_IDS, type CorpusEntry, type Locale, type PersonaId } from '../interpretation/schema.js';
 import { describeParagraphProvenance } from './report-provenance.js';
+import { useLocale } from './locale.js';
 import type { ChartData } from '../domain/chart-compute.js';
 
-const LOCALE_KEY = 'astraya:reportLocale';
 const PERSONA_KEY = 'astraya:reportPersona';
-
-const LOCALE_LABELS: Readonly<Record<Locale, string>> = { en: 'English', nl: 'Nederlands' };
 
 /**
  * Mirrors `tools/corpus-gen/personas.json`'s `title` field — kept as a plain
@@ -60,17 +53,8 @@ export const PERSONA_LABELS: Readonly<Record<PersonaId, Readonly<Record<Locale, 
   pragmatist: { en: 'The Pragmatic No-Nonsense Coach', nl: 'De Praktische No-Nonsense Coach' },
 };
 
-function isLocale(value: string): value is Locale {
-  return (CORPUS_LOCALES as readonly string[]).includes(value);
-}
-
 function isPersonaId(value: string): value is PersonaId {
   return (PERSONA_IDS as readonly string[]).includes(value);
-}
-
-function initialLocale(): Locale {
-  const stored = localStorage.getItem(LOCALE_KEY);
-  return stored !== null && isLocale(stored) ? stored : 'en';
 }
 
 function initialPersona(): PersonaId | undefined {
@@ -102,7 +86,7 @@ function Paragraph({
 
 export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.Element {
   const [showProvenance, setShowProvenance] = useState(false);
-  const [locale, setLocale] = useState<Locale>(initialLocale);
+  const [locale] = useLocale();
   const [persona, setPersona] = useState<PersonaId | undefined>(initialPersona);
   const [corpus, setCorpus] = useState<readonly CorpusEntry[] | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | undefined>(undefined);
@@ -125,24 +109,6 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
 
   const controls = (
     <div className="report-controls">
-      <label>
-        Language
-        <select
-          value={locale}
-          onChange={(event) => {
-            const next = event.target.value;
-            if (!isLocale(next)) return;
-            localStorage.setItem(LOCALE_KEY, next);
-            setLocale(next);
-          }}
-        >
-          {CORPUS_LOCALES.map((option) => (
-            <option key={option} value={option}>
-              {LOCALE_LABELS[option]}
-            </option>
-          ))}
-        </select>
-      </label>
       <label>
         Advisor
         <select

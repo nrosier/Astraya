@@ -119,11 +119,32 @@
   --glow-b: rgb(242 183 94 / 7%);
 }
 
-.theme-toggle {
+/*
+ * The fixed top corners, holding the global controls (#137): who is signed in on the
+ * left, everything about "how this looks and where my data is" on the right. Fixed
+ * rather than in the flow, unlike `.statusbar`/`.accountpanel-signedin` below — these are
+ * meant to be visible from anywhere, on every screen including the landing page, not just
+ * where a signed-in device's data shows up.
+ */
+.topbar-left,
+.topbar-right {
   position: fixed;
   top: 0.75rem;
-  right: 0.75rem;
   z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.topbar-left {
+  left: 0.75rem;
+}
+
+.topbar-right {
+  right: 0.75rem;
+}
+
+.theme-toggle {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 999px;
@@ -137,6 +158,152 @@
 
 .theme-toggle:hover {
   background: var(--surface-hover);
+}
+
+.language-toggle {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* The compact "Sign in" button that replaces `.accountpanel-popover` when signed out and
+   collapsed — same shape as `.theme-toggle`'s neighbours, but wide enough for its label. */
+.topbar-signin {
+  height: 2.25rem;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.topbar-signin:hover {
+  background: var(--surface-hover);
+}
+
+/* Always-visible confirmation of who is signed in (#137) — no click needed, unlike the
+   collapsed `.topbar-signin` button it replaces once signed in. */
+.accountpanel-signedin {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 2.25rem;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 0.875rem;
+  color: var(--fg);
+}
+
+.accountpanel-signedin .warning {
+  position: absolute;
+  top: 2.5rem;
+  left: 0;
+  width: max-content;
+  max-width: 16rem;
+}
+
+/* The sign-in form and the adoption prompt, both floating beneath their trigger rather
+   than in the page flow — `.topbar-left` is fixed, so anything it contains that has more
+   to say than a one-line badge needs its own box instead of pushing the page around. */
+.accountpanel-popover {
+  position: absolute;
+  top: 2.5rem;
+  left: 0;
+  width: 18rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 0.875rem;
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 20%);
+}
+
+.accountpanel-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  margin-top: 0;
+}
+
+.accountpanel-popover-head button {
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 0.25rem;
+}
+
+.accountpanel-popover p {
+  margin: 0.5rem 0 0;
+}
+
+.accountpanel-popover p:first-of-type {
+  margin-top: 0.75rem;
+}
+
+.accountpanel-popover form {
+  margin-top: 0.75rem;
+}
+
+/* The global sync/server badge (#137) — deliberately plain text plus one icon button,
+   the compact companion to the fuller, in-flow `.statusbar` below. */
+.syncbadge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.3rem 0.5rem 0.3rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.syncbadge[data-tone='warn'] {
+  border-color: var(--aspect-hard);
+  color: var(--aspect-hard);
+}
+
+.syncbadge-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.syncbadge-label {
+  font-weight: 600;
+}
+
+.syncbadge-user {
+  color: var(--muted);
+}
+
+.syncbadge-sync {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.syncbadge-sync:hover {
+  background: var(--surface-hover);
+}
+
+.syncbadge-sync:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 *,
@@ -735,37 +902,6 @@ label.stacked textarea:focus-visible {
 .statusbar[data-tone='warn'] .dot {
   background: var(--solar);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--solar) 22%, transparent);
-}
-
-/* Sign-in/out (#78, #109). Same collapsed-until-opened shape as `.statusbar`, sitting
-   right beneath it — a plain `<div>` rather than `<details>` while the adoption prompt
-   is showing, since that one has something to say whether or not it is opened. */
-.accountpanel {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
-  font-size: 0.875rem;
-  color: var(--muted);
-}
-
-.accountpanel summary {
-  cursor: pointer;
-  list-style: none;
-  font-weight: 550;
-  color: var(--fg);
-}
-
-.accountpanel summary::-webkit-details-marker {
-  display: none;
-}
-
-.accountpanel p {
-  margin: 0.5rem 0 0;
-  max-width: 44rem;
-}
-
-.accountpanel form {
-  margin-top: 0.75rem;
 }
 
 /* Fixed to the bottom rather than inline: PwaStatus sits outside every screen's own
@@ -1424,7 +1560,8 @@ label.stacked textarea:focus-visible {
   .report-controls,
   .statusbar,
   .pwastatus,
-  .theme-toggle,
+  .topbar-left,
+  .topbar-right,
   .hint {
     display: none !important;
   }
