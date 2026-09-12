@@ -62,12 +62,16 @@ async function bisectCrossing(
   body: BodyId,
   lo: JulianDayUT,
   hi: JulianDayUT,
+  // The caller's scan loop already evaluated the longitude at `lo` as its
+  // own bracket check; passing that delta in instead of refetching it here
+  // saves one ephemeris round-trip per crossing search.
+  deltaLo: Degrees,
   targetLongitude: Degrees,
   zodiac: Zodiac | undefined,
 ): Promise<JulianDayUT> {
   let a = lo;
   let b = hi;
-  let deltaA = signedDelta(await longitudeAt(provider, body, a, zodiac), targetLongitude);
+  let deltaA = deltaLo;
 
   for (let i = 0; i < 30; i++) {
     const mid = (a + b) / 2;
@@ -115,7 +119,7 @@ export async function nextBodyCrossing(
     // the target, where the delta jumps from near -180 to near +180 as the
     // body sails past it) produces a large change instead — not a crossing.
     if (Math.sign(deltaLo) !== Math.sign(deltaHi) && Math.abs(deltaHi - deltaLo) < 180) {
-      return bisectCrossing(provider, body, lo, hi, targetLongitude, options.zodiac);
+      return bisectCrossing(provider, body, lo, hi, deltaLo, targetLongitude, options.zodiac);
     }
     lo = hi;
     deltaLo = deltaHi;
