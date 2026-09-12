@@ -114,16 +114,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
           }
           storeRef.current = anonymous;
           setStatus({ kind: 'ready', store: anonymous });
-          console.info('[oidc-debug] calling completeSignIn with exchanged user', oidcUser.id);
           await completeSignIn(oidcUser);
-          console.info('[oidc-debug] completeSignIn finished — user state should now be set');
           return;
-        } catch (error) {
-          // TEMP DEBUG (#login-bug): this used to fail silently — a failed exchange
-          // (bad redirect_uri, nonce mismatch, expired code, ...) would fall through to
-          // the ordinary signed-out check below with no trace anywhere. Logging it here
-          // is the whole point of this instrumentation pass.
-          console.error('[oidc-debug] OIDC sign-in exchange failed, falling back to signed-out check', error);
+        } catch {
           /* fall through to the normal signed-in/signed-out check below */
         }
       }
@@ -132,11 +125,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
       let offline = false;
       try {
         authUser = await me();
-      } catch (error) {
-        console.error('[oidc-debug] me() threw — treating as offline', error);
+      } catch {
         offline = true;
       }
-      console.info('[oidc-debug] boot identity check', { offline, signedIn: authUser !== undefined });
       if (isCancelled()) return;
 
       try {

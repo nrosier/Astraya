@@ -52,17 +52,6 @@ interface SetPasswordBody {
 export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
   announceBootstrap(db, app.log);
 
-  // TEMP DEBUG (#login-bug): confirm at startup what this process actually resolved
-  // from ASTRAYA_OIDC_ISSUER/ASTRAYA_OIDC_CLIENT_ID/ASTRAYA_PUBLIC_URL — a mismatch
-  // between `redirectUri` here and what's registered as the provider's redirect URI
-  // in Authentik fails every exchange with no client-visible detail.
-  try {
-    const oidcConfigAtStartup = loadOidcConfig();
-    app.log.info({ oidcConfigAtStartup }, '[oidc-debug] OIDC config resolved at startup');
-  } catch (error) {
-    app.log.error({ error }, '[oidc-debug] OIDC config failed to load at startup');
-  }
-
   app.post<{ Body: LoginBody }>(
     '/api/auth/login',
     { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } },
@@ -125,13 +114,6 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
 
   app.get('/api/auth/me', async (request, reply) => {
     const user = resolveUser(db, request);
-    // TEMP DEBUG (#login-bug): whether the session cookie even arrived on this request
-    // is the fastest way to tell "cookie never set/persisted" apart from "cookie
-    // arrived but the session lookup rejected it".
-    app.log.info(
-      { hasCookie: request.cookies[SESSION_COOKIE] !== undefined, resolved: user !== null },
-      '[oidc-debug] GET /api/auth/me',
-    );
     if (!user) return reply.code(401).send({ error: 'Not authenticated' });
     return reply.send({ user });
   });
@@ -172,22 +154,9 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
 
       let claims: Awaited<ReturnType<typeof verifyIdToken>>;
       try {
-        app.log.info(
-          { redirectUri: oidcConfig.redirectUri, codeLength: code.length },
-          '[oidc-debug] exchanging authorization code',
-        );
         const { idToken } = await exchangeCode({ config: oidcConfig, code, codeVerifier });
-        app.log.info('[oidc-debug] token exchange succeeded, verifying id_token');
         claims = await verifyIdToken(oidcConfig, idToken);
-        app.log.info(
-          { subject: claims.subject, preferredUsername: claims.preferredUsername },
-          '[oidc-debug] id_token verified',
-        );
         if (claims.nonce !== nonce) {
-          app.log.warn(
-            { gotNonce: claims.nonce, expectedNonce: nonce },
-            '[oidc-debug] nonce mismatch — rejecting sign-in',
-          );
           return await reply.code(401).send({ error: 'OIDC sign-in failed' });
         }
 
@@ -198,32 +167,22 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
           // OIDC identity — is rejected rather than silently linked: that would let
           // one Authentik user claim another account by username coincidence.
           if (getUserByUsername(db, username)) {
-            app.log.warn({ username }, '[oidc-debug] username collision — rejecting sign-in');
             return await reply.code(409).send({ error: 'An account with this username already exists' });
           }
           user = createOidcUser(db, { id: randomUUID(), username, issuer: oidcConfig.issuer, subject: claims.subject });
-          app.log.info({ userId: user.id, username }, '[oidc-debug] provisioned new OIDC-derived account');
-        } else {
-          app.log.info({ userId: user.id, username: user.username }, '[oidc-debug] matched existing OIDC identity');
         }
         if (user.disabledAt !== null) {
-          app.log.warn({ userId: user.id }, '[oidc-debug] account is disabled — rejecting sign-in');
           return await reply.code(401).send({ error: 'OIDC sign-in failed' });
         }
 
         const session = createSession(db, user.id, { oidcIdToken: idToken });
-        const cookieOptions = {
+        reply.setCookie(SESSION_COOKIE, session.id, {
           httpOnly: true,
-          sameSite: 'lax' as const,
+          sameSite: 'lax',
           secure: isSecureRequest(request),
           path: '/',
           expires: new Date(session.expiresAt),
-        };
-        app.log.info(
-          { sessionId: session.id, secure: cookieOptions.secure, protocol: request.protocol },
-          '[oidc-debug] setting session cookie',
-        );
-        reply.setCookie(SESSION_COOKIE, session.id, cookieOptions);
+        });
         return await reply.send({ user });
       } catch (error) {
         app.log.warn({ error }, 'OIDC callback failed');
