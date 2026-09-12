@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HOUSE_SYSTEMS, houseSystemByCode, houseSystemByKey } from '../src/astrology/houses.js';
+import { EphemerisError } from '../src/ephemeris/types.js';
 import { getEngine } from './engine-harness.js';
 
 // A mid-latitude location, safely inside the domain where every system
@@ -125,5 +126,44 @@ describe('polar-latitude house fallback (#20)', () => {
 
     expect(houses.system).toBe('O');
     expect(houses.warning).toBeUndefined();
+  });
+});
+
+describe('Horizon house system degeneracy near the equator (#184)', () => {
+  // Exact counterexample fast-check's property test ("house cusps wrap
+  // monotonically forward and sum to 360 degrees (#37)") shrank to: UTC
+  // 1801-02-06 03:00, house system 'H', latitude a hair below 0, longitude 0.
+  // Verified directly against `swe_houses_ex2` (before any normalisation in
+  // this codebase runs) that the raw cusps really do wind 11x around the
+  // ecliptic there — clustered into two decreasing runs near 0 and 180
+  // degrees rather than spread every ~30 degrees — rather than this being a
+  // units/modulo-wrap bug on Astraya's side. There is no fallback house
+  // system for this case (unlike Placidus/Koch above), so the engine throws
+  // instead of silently returning cusps that don't actually divide the
+  // ecliptic once around. Pinned here as a deterministic regression: the
+  // property test's random seed only hits this case intermittently.
+  it('throws rather than returning multi-winding cusps for the known counterexample', async () => {
+    const engine = await getEngine();
+    const jd = await engine.julianDay(1801, 2, 6, 3);
+    const nearEquator = { latitude: -0.0000010000000000000002, longitude: 0, altitude: 0 };
+
+    await expect(engine.houses(jd, nearEquator, 'H')).rejects.toSatisfy((error: unknown) => {
+      expect(error).toBeInstanceOf(EphemerisError);
+      expect((error as Error).message).toMatch(/'H'/);
+      expect((error as Error).message).toMatch(/degenerate/);
+      return true;
+    });
+  });
+
+  it('still computes normally for the Horizon system away from the degenerate zone', async () => {
+    const engine = await getEngine();
+    const jd = await engine.julianDay(2000, 1, 1, 12);
+    const houses = await engine.houses(jd, AMSTERDAM, 'H');
+
+    expect(houses.system).toBe('H');
+    expect(houses.warning).toBeUndefined();
+    for (const cusp of houses.cusps.slice(1)) {
+      expect(Number.isFinite(cusp)).toBe(true);
+    }
   });
 });

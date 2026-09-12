@@ -134,6 +134,38 @@ function norm360(degrees: number): Degrees {
   return value < 0 ? value + 360 : value;
 }
 
+/** Forward arc from one ecliptic longitude to the next, always in [0, 360). */
+function forwardArc(from: Degrees, to: Degrees): Degrees {
+  const diff = (to - from) % 360;
+  return diff < 0 ? diff + 360 : diff;
+}
+
+/**
+ * How many times a closed loop of cusps winds forward around the ecliptic:
+ * 1 for a normal, single-winding house system. Used to detect the Horizon
+ * system's (#184) degeneracy near the celestial equator, where Swiss
+ * Ephemeris's vertical-circle geometry becomes ill-conditioned and
+ * `swe_houses_ex2` silently returns cusps that wind several times instead of
+ * once — verified directly against the engine for the reported repro (jd
+ * 2378897.625, latitude -1e-6): the raw cusps come back clustered into two
+ * tight, *decreasing* runs near 0 and 180 degrees rather than spread every
+ * ~30 degrees, and summing their forward arcs gives exactly 3960 = 11 x 360.
+ * That is not a units or modulo-wrap bug in this codebase — the raw engine
+ * output is already wrong before any normalisation touches it — so the fix
+ * is to detect it and fail loudly rather than hand back a chart with
+ * silently bogus houses.
+ */
+function windingCount(cusps: readonly Degrees[]): number {
+  let total = 0;
+  for (let i = 0; i < cusps.length; i += 1) {
+    const from = cusps[i];
+    const to = cusps[(i + 1) % cusps.length];
+    if (from === undefined || to === undefined) throw new Error('windingCount: missing cusp');
+    total += forwardArc(from, to);
+  }
+  return total / 360;
+}
+
 export class SwissEphemerisEngine implements EphemerisProvider {
   #swe: SweInstance | undefined;
   #initializing: Promise<void> | undefined;
@@ -339,6 +371,27 @@ export class SwissEphemerisEngine implements EphemerisProvider {
         });
       }
       cusps.push(norm360(value));
+    }
+
+    // The Horizon system ('H') has no library-flagged failure mode like
+    // Placidus/Koch's polar fallback above — Swiss Ephemeris returns
+    // successfully even when its cusps are geometrically degenerate (#184).
+    // There is no known fallback system to switch to (unlike the polar
+    // case), so the only honest option is to refuse rather than silently
+    // hand back a chart whose houses don't actually divide the ecliptic once
+    // around.
+    if (effectiveSystem === 'H') {
+      const winding = windingCount(cusps.slice(1));
+      if (Math.abs(winding - 1) > 1e-6) {
+        throw new EphemerisError(
+          `House system 'H' (Horizon) is degenerate at latitude ${place.latitude}° for this date and time: ` +
+            `its cusps wind ${winding.toFixed(3)}x around the ecliptic instead of once. Swiss Ephemeris's ` +
+            `vertical-circle geometry for this system becomes ill-conditioned very close to the celestial ` +
+            `equator, depending on the sidereal time of the moment; there is no fallback house system for it. ` +
+            `Choose a different house system for this location and time.`,
+          { call: 'swe_houses_ex2', jd },
+        );
+      }
     }
 
     const at = (index: number): Degrees => {

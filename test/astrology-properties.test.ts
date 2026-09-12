@@ -12,6 +12,7 @@ import fc from 'fast-check';
 import { AYANAMSAS } from '../src/astrology/ayanamsas.js';
 import { BODIES, bodyByKey, southNode } from '../src/astrology/bodies.js';
 import { HOUSE_SYSTEMS } from '../src/astrology/houses.js';
+import { EphemerisError } from '../src/ephemeris/types.js';
 import { arcsecondsBetween, getEngine } from './engine-harness.js';
 
 // Random calendar dates within the shipped ephemeris range (1800-2399 CE, see
@@ -46,18 +47,23 @@ const ayanamsaIdArb = fc.constantFrom(...AYANAMSAS.map((a) => a.id));
 // The original Sunshine system ('I') was checked under the same conditions
 // and does not show it.
 //
-// The Horizon system ('H') is excluded for a third reason: its degenerate
-// zone is not a fixed neighborhood around the equator, as originally
-// thought, but tracks the RAMC for the given date and time — sweeping
-// latitude at two dates found it winding 11x from just past latitude 0 out
-// to roughly 10 degrees on one date, and from -0.1 to 0 (inclusive) but
-// nowhere else, including the poles, on another. Since RAMC varies with
-// every random date and hour this property test generates, no fixed
-// latitude bound (unlike Placidus/Koch below) or small excluded
-// neighborhood (unlike the near-zero case this test used to assume) can
-// safely cover it, so 'H' is excluded outright rather than restricting the
-// latitude range for every other system to accommodate it.
-const EXCLUDED_HOUSE_SYSTEMS = new Set(['G', 'i', 'H']);
+// The Horizon system ('H') is *not* excluded, unlike 'G' and 'i' above, even
+// though it has its own degeneracy near the celestial equator (#184): its
+// zone is not a fixed neighborhood around the equator but tracks the RAMC for
+// the given date and time — sweeping latitude at two dates found it winding
+// 11x from just past latitude 0 out to roughly 10 degrees on one date, and
+// only right at 0 on another. Since RAMC varies with every random date and
+// hour this property test generates, no fixed latitude bound or small
+// excluded neighborhood could safely dodge it (an earlier attempt to exclude
+// 'H' outright for exactly this reason is what this comment replaces).
+// Root-caused instead: the raw `swe_houses_ex2` cusps for 'H' really do wind
+// several times around the ecliptic in this configuration, verified directly
+// against the engine before any normalisation runs — not a units/modulo bug
+// in this codebase. `engine.ts`'s `houses()` now detects that winding and
+// throws `EphemerisError` rather than handing back the bogus cusps, so the
+// property below treats a thrown error for 'H' as a valid, expected outcome
+// (see the try/catch) instead of excluding the system from coverage.
+const EXCLUDED_HOUSE_SYSTEMS = new Set(['G', 'i']);
 const houseSystemCodeArb = fc.constantFrom(
   ...HOUSE_SYSTEMS.filter((s) => !EXCLUDED_HOUSE_SYSTEMS.has(s.code)).map((s) => s.code),
 );
@@ -92,7 +98,19 @@ describe('house cusps wrap monotonically forward and sum to 360 degrees (#37)', 
         safeLongitudeArb,
         async ([year, month, day, hour], code, latitude, longitude) => {
           const jd = await engine.julianDay(year, month, day, hour);
-          const houses = await engine.houses(jd, { latitude, longitude, altitude: 0 }, code);
+          let houses;
+          try {
+            houses = await engine.houses(jd, { latitude, longitude, altitude: 0 }, code);
+          } catch (error) {
+            // 'H' (Horizon) is geometrically degenerate very close to the
+            // celestial equator (#184): the engine detects the resulting
+            // multi-winding cusps and throws instead of returning them. That
+            // is the correct, expected outcome for a draw that lands in the
+            // degenerate zone, not a test failure — so long as it's actually
+            // that check, not some other error, firing.
+            if (code === 'H' && error instanceof EphemerisError && error.message.includes('degenerate')) return;
+            throw error;
+          }
           const cusps = houses.cusps.slice(1); // index 0 is unused padding
 
           let total = 0;
