@@ -10,7 +10,7 @@
  * in. Between the two, at most once ever per device: the adoption prompt (#109), which
  * `signIn` puts this panel into instead of completing the switch on its own.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession } from './session-context.js';
 import { getOidcConfig } from '../sync/auth-client.js';
 import { startOidcHandshake } from './oidc-pkce.js';
@@ -149,6 +149,8 @@ function OidcSignIn({ config }: { config: { clientId: string; authorizationEndpo
  * a small popover beneath the button; closing it (the × or a successful sign-in) hides
  * the form again without losing anything typed elsewhere on the page.
  */
+const SIGNIN_POPOVER_ID = 'accountpanel-signin-popover';
+
 function SignInForm({
   signIn,
   oidcConfig,
@@ -161,6 +163,20 @@ function SignInForm({
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  // Survives the disclosure swapping the trigger button out of the DOM when open,
+  // so closing (Escape, the ×, or a successful sign-in) can return focus to it (#69)
+  // instead of dropping it back to the document body.
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
+
+  const close = (): void => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  useEffect(() => {
+    if (open) usernameRef.current?.focus();
+  }, [open]);
 
   const submit = (event: React.SubmitEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -169,7 +185,7 @@ function SignInForm({
     void signIn(username, password)
       .then(() => {
         setPassword('');
-        setOpen(false);
+        close();
       })
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : String(cause));
@@ -182,8 +198,11 @@ function SignInForm({
   if (!open) {
     return (
       <button
+        ref={triggerRef}
         type="button"
         className="topbar-signin"
+        aria-expanded={false}
+        aria-controls={SIGNIN_POPOVER_ID}
         onClick={() => {
           setOpen(true);
         }}
@@ -194,17 +213,16 @@ function SignInForm({
   }
 
   return (
-    <div className="accountpanel-popover">
+    <div
+      id={SIGNIN_POPOVER_ID}
+      className="accountpanel-popover"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') close();
+      }}
+    >
       <p className="accountpanel-popover-head">
         Sign in to sync this device
-        <button
-          type="button"
-          className="quiet"
-          aria-label="Close"
-          onClick={() => {
-            setOpen(false);
-          }}
-        >
+        <button type="button" className="quiet" aria-label="Close" onClick={close}>
           ×
         </button>
       </p>
@@ -222,6 +240,7 @@ function SignInForm({
           <label>
             Username
             <input
+              ref={usernameRef}
               type="text"
               autoComplete="username"
               value={username}

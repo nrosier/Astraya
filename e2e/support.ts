@@ -30,6 +30,18 @@ export interface PersonInput {
   readonly longitude: string;
 }
 
+/**
+ * Navigates and waits out the one-time reload `pwa/register.ts` triggers the instant a fresh
+ * context's service worker first takes control (`controllerchange`) — without this, anything
+ * that runs immediately after `page.goto` (like an axe scan) can have its execution context
+ * torn out from under it by that reload. Safe to call even when no reload happens: the second
+ * `waitForEvent` just times out and is swallowed.
+ */
+export async function gotoAndSettle(page: Page, url: string): Promise<void> {
+  await page.goto(url);
+  await page.waitForEvent('load', { timeout: 5_000 }).catch(() => undefined);
+}
+
 /** Starting from the People list, creates a person and saves. Works offline — no network involved. */
 export async function createPerson(page: Page, input: PersonInput): Promise<void> {
   await page.getByRole('button', { name: 'Add a person', exact: true }).click();

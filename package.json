@@ -43,6 +43,7 @@
     "tz-lookup": "^6.1.25"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@types/luxon": "^3.7.5",

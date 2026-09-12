@@ -8,7 +8,7 @@
  * `PersonForm.tsx`/`person-form.ts` already use, needed here too since the project has
  * no jsdom/`@testing-library/react` to test a component's rendered output directly.
  */
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { downloadText } from './download.js';
 import { rowsToCsv, rowsToTsv, sortRows, toggleSort, type SortState, type TableColumn } from './table-sort.js';
 
@@ -29,6 +29,10 @@ export function SortableTable<T>({
   const [sort, setSort] = useState<SortState>();
   const [copied, setCopied] = useState(false);
   const sorted = sortRows(rows, columns, sort);
+  // The heading is a sibling of <table>, not a <caption> inside it (so the Copy/Download
+  // buttons can sit next to it without ending up inside the table's accessibility tree) —
+  // aria-labelledby recovers the same table/heading association a real <caption> gives (#69).
+  const captionId = useId();
 
   const copy = (): void => {
     void navigator.clipboard.writeText(rowsToTsv(columns, sorted)).then(
@@ -51,7 +55,7 @@ export function SortableTable<T>({
   return (
     <section className="data-table">
       <div className="data-table-head">
-        <h3>{caption}</h3>
+        <h3 id={captionId}>{caption}</h3>
         <div className="data-table-actions">
           <button type="button" className="quiet" onClick={copy}>
             {copied ? 'Copied' : 'Copy'}
@@ -62,12 +66,13 @@ export function SortableTable<T>({
         </div>
       </div>
       <div className="data-table-scroll">
-        <table>
+        <table aria-labelledby={captionId}>
           <thead>
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
+                  scope="col"
                   aria-sort={
                     sort?.column === column.key ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined
                   }

@@ -144,7 +144,9 @@ export function App(): React.JSX.Element {
     // before; sync status, the language choice and the theme toggle sit together top-right
     // as the app's persistent "how this looks and where my data is" controls.
     <SessionProvider>
-      {screen}
+      {/* Ordered before `screen` so tab order matches the fixed top-of-viewport
+          position these render at (#69) — a keyboard user reaches them first,
+          same as sighted users see them first. */}
       <div className="topbar-left">
         <AccountPanel />
       </div>
@@ -153,6 +155,7 @@ export function App(): React.JSX.Element {
         <LanguageToggle />
         <ThemeToggle />
       </div>
+      {screen}
       <PwaStatus />
     </SessionProvider>
   );
