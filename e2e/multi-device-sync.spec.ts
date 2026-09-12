@@ -18,7 +18,7 @@ import { expect, test } from '@playwright/test';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
-import { createPerson } from './support.ts';
+import { createPerson, gotoAndSettle } from './support.ts';
 
 const BOOTSTRAP_TOKEN = 'e2e-bootstrap-token';
 const USERNAME = 'alice';
@@ -110,7 +110,7 @@ test.describe('multi-device offline sync (#107)', () => {
     const a = await newDevice(browser);
     const b = await newDevice(browser);
     try {
-      await a.page.goto(`${baseUrl}/#/people`);
+      await gotoAndSettle(a.page, `${baseUrl}/#/people`);
       await createPerson(a.page, {
         name: 'Ada Lovelace',
         date: '1815-12-10',
@@ -121,7 +121,7 @@ test.describe('multi-device offline sync (#107)', () => {
       await signIn(a.page, USERNAME, PASSWORD);
       await waitSynced(a.page);
 
-      await b.page.goto(`${baseUrl}/#/people`);
+      await gotoAndSettle(b.page, `${baseUrl}/#/people`);
       await signIn(b.page, USERNAME, PASSWORD);
       await waitSynced(b.page);
       await expect(b.page.getByRole('link', { name: /Ada Lovelace/ })).toBeVisible();
@@ -175,7 +175,7 @@ test.describe('multi-device offline sync (#107)', () => {
     const a = await newDevice(browser);
     const b = await newDevice(browser);
     try {
-      await a.page.goto(`${baseUrl}/#/people`);
+      await gotoAndSettle(a.page, `${baseUrl}/#/people`);
       await createPerson(a.page, {
         name: 'Concurrent Edit Subject',
         date: '1990-01-01',
@@ -185,7 +185,7 @@ test.describe('multi-device offline sync (#107)', () => {
       await signIn(a.page, USERNAME, PASSWORD);
       await waitSynced(a.page);
 
-      await b.page.goto(`${baseUrl}/#/people`);
+      await gotoAndSettle(b.page, `${baseUrl}/#/people`);
       await signIn(b.page, USERNAME, PASSWORD);
       await waitSynced(b.page);
       await b.page.getByRole('link', { name: /Concurrent Edit Subject/ }).click();
@@ -220,7 +220,7 @@ test.describe('multi-device offline sync (#107)', () => {
     const a = await newDevice(browser);
     const b = await newDevice(browser);
     try {
-      await a.page.goto(`${baseUrl}/#/people`);
+      await gotoAndSettle(a.page, `${baseUrl}/#/people`);
       await createPerson(a.page, {
         name: 'To Be Deleted',
         date: '1990-01-01',
@@ -230,7 +230,7 @@ test.describe('multi-device offline sync (#107)', () => {
       await signIn(a.page, USERNAME, PASSWORD);
       await waitSynced(a.page);
 
-      await b.page.goto(`${baseUrl}/#/people`);
+      await gotoAndSettle(b.page, `${baseUrl}/#/people`);
       await signIn(b.page, USERNAME, PASSWORD);
       await waitSynced(b.page);
       await b.page.getByRole('link', { name: /To Be Deleted/ }).click();

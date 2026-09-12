@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
-import { createPerson } from './support.ts';
+import { createPerson, gotoAndSettle } from './support.ts';
 
 let dir: string;
 let app: FastifyInstance;
@@ -38,7 +38,7 @@ test.afterAll(async () => {
 test('entering birth data renders the chart wheel and the SVG export downloads', async ({ page }) => {
   test.setTimeout(60_000);
 
-  await page.goto(`${baseUrl}/#/people`);
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
   await createPerson(page, {
     name: 'Ada Lovelace',
     date: '1815-12-10',
