@@ -8,6 +8,7 @@ import { AdminPanel } from './AdminPanel.js';
 import { Changelog } from './Changelog.js';
 import { ChartView } from './ChartView.js';
 import { CompositeView } from './CompositeView.js';
+import { HarmonicView } from './HarmonicView.js';
 import { LanguageToggle } from './LanguageToggle.js';
 import { People } from './People.js';
 import { PersonForm } from './PersonForm.js';
@@ -251,6 +252,13 @@ function renderScreen(
     return (
       <Stored>
         <CompositeView key={parsed.personId} personId={parsed.personId} />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'harmonic') {
+    return (
+      <Stored>
+        <HarmonicView key={parsed.personId} personId={parsed.personId} />
       </Stored>
     );
   }

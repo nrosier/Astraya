@@ -27,6 +27,10 @@ export type Route =
   | { readonly kind: 'synastry'; readonly personId: string }
   // Same reasoning as synastry (#169): the second person is picked in-screen, not the URL.
   | { readonly kind: 'composite'; readonly personId: string }
+  // The harmonic number / Varga preset is picked in-screen, not the URL (#170) — same
+  // reasoning as composite: it changes far more often within one visit than it's worth
+  // sharing as a link, and the screen's default (natal, n=1) is always a valid landing.
+  | { readonly kind: 'harmonic'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'set-password' }
@@ -38,6 +42,7 @@ const PROFECTIONS_PATH = /^#\/profections\/(.+)$/;
 const TRANSIT_PATH = /^#\/transit\/(.+)$/;
 const SYNASTRY_PATH = /^#\/synastry\/(.+)$/;
 const COMPOSITE_PATH = /^#\/composite\/(.+)$/;
+const HARMONIC_PATH = /^#\/harmonic\/(.+)$/;
 
 export function parseRoute(hash: string): Route {
   // The query carries a birth record on #/time, so every match is on the path part alone.
@@ -93,6 +98,9 @@ export function parseRoute(hash: string): Route {
 
   const composite = COMPOSITE_PATH.exec(path);
   if (composite !== null && isPersonId(composite[1])) return { kind: 'composite', personId: composite[1] };
+
+  const harmonic = HARMONIC_PATH.exec(path);
+  if (harmonic !== null && isPersonId(harmonic[1])) return { kind: 'harmonic', personId: harmonic[1] };
 
   return { kind: 'home' };
 }
