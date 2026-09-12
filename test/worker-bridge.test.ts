@@ -9,11 +9,15 @@
  * fails here instead of only in a browser.
  */
 import { describe, expect, it } from 'vitest';
+import { computePlanetaryReturn } from '../src/domain/planetary-return.js';
 import { SE } from '../src/ephemeris/generated-constants.js';
 import { WorkerEphemerisProvider, type EphemerisTransport } from '../src/ephemeris/client.js';
 import { serveEphemeris, type WorkerScope } from '../src/ephemeris/worker.js';
 import type { EphemerisRequest, EphemerisResponse } from '../src/ephemeris/protocol.js';
 import { EphemerisError, type EphemerisProvider } from '../src/ephemeris/types.js';
+import { julianDayFor } from '../src/time/julian.js';
+import { resolveMoment } from '../src/time/resolve.js';
+import type { BirthMomentInput } from '../src/time/types.js';
 import { getEngine, localEpheBaseUrl, localWasmUrl } from './engine-harness.js';
 
 /** An in-process transport that clones both directions, as postMessage does. */
@@ -217,5 +221,30 @@ describe('worker bridge', () => {
     expect(await client.ayanamsaName(SE.SE_SIDM_LAHIRI)).toBe(
       await (await getEngine()).ayanamsaName(SE.SE_SIDM_LAHIRI),
     );
+  });
+
+  it('finds a genuine Uranus return through the bridge within a real-world time budget (#71)', async () => {
+    // A Uranus return's generic crossing search makes thousands of individual
+    // ephemeris calls (#71's OUTER_PLANET_CROSSING_BUDGET). Each one here pays
+    // the real postMessage-equivalent cost — structuredClone plus a
+    // queueMicrotask hop each way — that `getEngine()`'s direct, in-process
+    // timing never pays. This is the actual number a chart's UI thread would
+    // wait on if it ever wired up a return search behind the real worker.
+    const client = await bridged();
+    const natal: BirthMomentInput = {
+      civil: { year: 1990, month: 6, day: 15, hour: 14, minute: 30, second: 0 },
+      coordinates: { latitude: 38.7478, longitude: -85.0672 },
+      offsetOverrideMinutes: -300,
+    };
+    const natalJd = await julianDayFor(client, resolveMoment(natal));
+
+    const start = performance.now();
+    const result = await computePlanetaryReturn(natal, SE.SE_URANUS, natalJd + 5 * 365.25, client);
+    const elapsedMs = performance.now() - start;
+
+    expect(result.returnJd).toBeGreaterThan(natalJd + 75 * 365.25);
+    // Generous: this guards against an accidental quadratic blow-up (e.g. the
+    // bisectCrossing redundant-fetch regressing), not a tight perf budget.
+    expect(elapsedMs).toBeLessThan(15_000);
   });
 });
