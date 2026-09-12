@@ -15,9 +15,10 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import type { Browser, BrowserContext, Locator, Page } from '@playwright/test';
+import type { Browser, BrowserContext, Page } from '@playwright/test';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
+import { createPerson } from './support.ts';
 
 const BOOTSTRAP_TOKEN = 'e2e-bootstrap-token';
 const USERNAME = 'alice';
@@ -71,29 +72,12 @@ async function closeDevices(...devices: readonly Device[]): Promise<void> {
 }
 
 /**
- * `PersonForm` nests each field's inline error `<span>` inside its `<label>`, and validation
- * runs unconditionally — so a freshly-created, still-empty person has an invalid Name/Date/
- * Latitude/Longitude from the very first render, and the label's accessible text becomes
- * `"Name" + errorMessage` with no separating space. The "How the time is known" `<select>` has
- * the same shape for a different reason: its `<label>`'s accessible name includes every nested
- * `<option>`'s text, not just the selected one, so it is never exactly "How the time is known"
- * either. `getByLabel(label, { exact: true })` can't match either case. Scoping by the label's
- * own element (matched with a start-anchored regex, tolerant of the appended text) plus a
- * descendant selector sidesteps the accessible-name computation entirely, and — because the
- * anchor is on the label, not a substring — disambiguates from `AccountPanel`'s same-page
- * Username field (mounted alongside `PersonForm` on every `Stored` route) without an exact match.
- */
-function labeledField(page: Page, label: RegExp, selector: string): Locator {
-  return page.locator('label').filter({ hasText: label }).locator(selector);
-}
-
-/**
  * If this device holds local changes from before sign-in, `AccountPanel` swaps in the
  * adoption prompt (#109) instead of completing the switch — accept it, since these tests
  * want the pre-sign-in data to end up on the account.
  */
 async function signIn(page: Page, username: string, password: string): Promise<void> {
-  await page.getByText('Sign in to sync this device', { exact: true }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByLabel('Username', { exact: true }).fill(username);
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
@@ -114,29 +98,6 @@ async function waitSynced(page: Page): Promise<void> {
 async function reloadAndWaitSynced(page: Page): Promise<void> {
   await page.reload();
   await waitSynced(page);
-}
-
-interface PersonInput {
-  readonly name: string;
-  readonly date: string;
-  readonly time?: string;
-  readonly latitude: string;
-  readonly longitude: string;
-}
-
-/** Starting from the People list, creates a person and saves. Works offline — no network involved. */
-async function createPerson(page: Page, input: PersonInput): Promise<void> {
-  await page.getByRole('button', { name: 'Add a person', exact: true }).click();
-  await labeledField(page, /^Name/, 'input[type="text"]').fill(input.name);
-  await page.locator('input[type="date"]').fill(input.date);
-  if (input.time !== undefined) {
-    await labeledField(page, /^How the time is known/, 'select').selectOption('recorded');
-    await page.locator('input[type="time"]').fill(input.time);
-  }
-  await labeledField(page, /^Latitude/, 'input[type="number"]').fill(input.latitude);
-  await labeledField(page, /^Longitude/, 'input[type="number"]').fill(input.longitude);
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByText('Saved on this device.')).toBeVisible();
 }
 
 async function backToPeople(page: Page): Promise<void> {

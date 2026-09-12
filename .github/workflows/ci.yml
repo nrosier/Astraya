@@ -73,3 +73,21 @@ jobs:
       - run: npm test
 
       - run: npm run build
+
+  # Drives a real browser against a real, locally-booted server (#72/#107) — proving
+  # what the unit suite above can't: that a person's birth data actually produces a
+  # rendered wheel and a real file download, and that two devices actually converge.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run ephe:sync
+      - run: npm run corpus:split
+      - name: Install Playwright's browser
+        run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
