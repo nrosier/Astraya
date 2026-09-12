@@ -4,6 +4,33 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.9.6] — 2026-09-12
+
+**Authentik sign-in actually works now, end to end.**
+
+Three fixes, all discovered while chasing one report ("Authentik sign-in
+appears to succeed but the app stays signed out") and verified against a real
+Authentik deployment via the `0.9.5-debug.1`/`0.9.5-debug.2` diagnostic builds
+below:
+
+### Fixed
+
+- Authentik sign-in: ID-token verification now accepts the issuer with or
+  without a trailing slash, matching what Authentik actually sends — this
+  was the reason every sign-in was silently rejected.
+- The admin-bootstrap link now points at `/#/setup?token=...`, and a form for
+  it now exists — previously there was no client-side route or component for
+  it at all, so the link silently did nothing.
+- Signing in with Authentik now requests the `profile` scope, so the account
+  gets a real username instead of the raw, opaque subject identifier.
+  Accounts already provisioned under that raw identifier are not migrated —
+  this only changes what a _new_ sign-in is named.
+
+### Removed
+
+- The `[oidc-debug]` diagnostic logging added in `0.9.5-debug.1` to trace the
+  sign-in bug — no longer needed now that the root cause is fixed.
+
 ## [0.9.5-debug.2] — 2026-09-12
 
 **Diagnostic build — candidate fixes for the Authentik sign-in bug, for verification.**
