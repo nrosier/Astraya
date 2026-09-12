@@ -72,6 +72,30 @@ describe('parseRoute', () => {
     expect(parseRoute('#/profections/../about')).toEqual({ kind: 'home' });
   });
 
+  it('routes a transit id through (#172)', () => {
+    expect(parseRoute(`#/transit/${ID}`)).toEqual({ kind: 'transit', personId: ID });
+    expect(parseRoute(`#/transit/${ID}/`)).toEqual({ kind: 'transit', personId: ID });
+    expect(parseRoute(`#/transit/${ID}?x=1`)).toEqual({ kind: 'transit', personId: ID });
+  });
+
+  it('sends a malformed transit id home rather than to a blank screen', () => {
+    expect(parseRoute('#/transit/')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/transit/nope')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/transit/../about')).toEqual({ kind: 'home' });
+  });
+
+  it('routes a synastry id through (#172)', () => {
+    expect(parseRoute(`#/synastry/${ID}`)).toEqual({ kind: 'synastry', personId: ID });
+    expect(parseRoute(`#/synastry/${ID}/`)).toEqual({ kind: 'synastry', personId: ID });
+    expect(parseRoute(`#/synastry/${ID}?x=1`)).toEqual({ kind: 'synastry', personId: ID });
+  });
+
+  it('sends a malformed synastry id home rather than to a blank screen', () => {
+    expect(parseRoute('#/synastry/')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/synastry/nope')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/synastry/../about')).toEqual({ kind: 'home' });
+  });
+
   it('sends an id that is not one of ours home rather than to an empty form', () => {
     // The form would render "there is no person with that id — they may have been deleted",
     // which is a confident, wrong explanation for a truncated link.

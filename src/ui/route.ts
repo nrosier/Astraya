@@ -20,6 +20,11 @@ export type Route =
   | { readonly kind: 'person'; readonly personId: string }
   | { readonly kind: 'chart'; readonly personId: string }
   | { readonly kind: 'profections'; readonly personId: string }
+  | { readonly kind: 'transit'; readonly personId: string }
+  // The second person is picked from within the screen, not the URL (#172) — every other
+  // multi-word route here names exactly one person, and a synastry pairing changes far more
+  // often within one visit (trying several comparisons) than it's worth sharing as a link.
+  | { readonly kind: 'synastry'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'set-password' }
@@ -28,6 +33,8 @@ export type Route =
 const PERSON_PATH = /^#\/person\/(.+)$/;
 const CHART_PATH = /^#\/chart\/(.+)$/;
 const PROFECTIONS_PATH = /^#\/profections\/(.+)$/;
+const TRANSIT_PATH = /^#\/transit\/(.+)$/;
+const SYNASTRY_PATH = /^#\/synastry\/(.+)$/;
 
 export function parseRoute(hash: string): Route {
   // The query carries a birth record on #/time, so every match is on the path part alone.
@@ -74,6 +81,12 @@ export function parseRoute(hash: string): Route {
 
   const profections = PROFECTIONS_PATH.exec(path);
   if (profections !== null && isPersonId(profections[1])) return { kind: 'profections', personId: profections[1] };
+
+  const transit = TRANSIT_PATH.exec(path);
+  if (transit !== null && isPersonId(transit[1])) return { kind: 'transit', personId: transit[1] };
+
+  const synastry = SYNASTRY_PATH.exec(path);
+  if (synastry !== null && isPersonId(synastry[1])) return { kind: 'synastry', personId: synastry[1] };
 
   return { kind: 'home' };
 }

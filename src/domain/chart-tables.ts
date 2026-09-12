@@ -236,6 +236,16 @@ export function aspectRows(data: ChartData): readonly AspectRow[] {
   return data.aspects.map(aspectRow);
 }
 
+/**
+ * The same row shape as `aspectRows`, for a cross-chart aspect list (`findCrossAspects`) that
+ * has no single `ChartData` to hang off of — the synastry aspect grid and the transit contacts
+ * table (#172) both need this rather than `aspectRows`, since their aspects come from two
+ * charts, not one.
+ */
+export function crossAspectRows(aspects: readonly Aspect[]): readonly AspectRow[] {
+  return aspects.map(aspectRow);
+}
+
 export interface DignityRow {
   readonly bodyKey: string;
   readonly bodyName: string;

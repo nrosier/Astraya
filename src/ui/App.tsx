@@ -20,8 +20,10 @@ import { SharedChartView } from './SharedChartView.js';
 import { StatusBar } from './StatusBar.js';
 import { StoreProvider } from './store-context.js';
 import { SyncBadge } from './SyncBadge.js';
+import { SynastryView } from './SynastryView.js';
 import { ThemeToggle } from './ThemeToggle.js';
 import { TimePlace } from './TimePlace.js';
+import { TransitView } from './TransitView.js';
 import { APP_VERSION } from '../version.js';
 
 /**
@@ -227,6 +229,20 @@ function renderScreen(
     return (
       <Stored>
         <ProfectionsView key={parsed.personId} personId={parsed.personId} />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'transit') {
+    return (
+      <Stored>
+        <TransitView key={parsed.personId} personId={parsed.personId} />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'synastry') {
+    return (
+      <Stored>
+        <SynastryView key={parsed.personId} personId={parsed.personId} />
       </Stored>
     );
   }

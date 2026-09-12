@@ -35,6 +35,7 @@ import type {
   GeoPosition,
   HousePositions,
   HouseSystem,
+  JulianDayUT,
   Zodiac,
 } from '../ephemeris/types.js';
 import type { BirthMomentInput } from '../time/types.js';
@@ -91,6 +92,22 @@ export async function computeChartData(
   const resolved = resolveMoment(moment);
   const jd = await julianDayFor(provider, resolved);
   const place: GeoPosition = { ...moment.coordinates, altitude: 0 };
+  return computeChartDataAtJd(jd, place, provider, options);
+}
+
+/**
+ * The same computation as `computeChartData`, for a caller that already has a Julian day and
+ * place rather than a `BirthMomentInput` to resolve — a transit or "current sky" moment, say,
+ * which has no civil birth record of its own. `computeChartData` is the resolve-then-call
+ * wrapper of this for the common case; both produce the same `ChartData` shape so any table,
+ * wheel or sheet built for one works unchanged for the other.
+ */
+export async function computeChartDataAtJd(
+  jd: JulianDayUT,
+  place: GeoPosition,
+  provider: EphemerisProvider,
+  options: ChartCalculationOptions = {},
+): Promise<ChartData> {
   const positionOptions = options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
 
   // BODIES always carries every Lilith and Node model at once; collapse each

@@ -100,3 +100,51 @@ test('the profections screen (#168) has no automatically detectable accessibilit
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(results.violations).toEqual([]);
 });
+
+test('the transit screen (#172) has no automatically detectable accessibility violations', async ({ page }) => {
+  test.setTimeout(60_000);
+
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+  await page.getByRole('link', { name: 'Transits', exact: true }).click();
+  await expect(page.locator('div.chart-wheel')).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test('the synastry screen (#172) has no automatically detectable accessibility violations', async ({ page }) => {
+  test.setTimeout(60_000);
+
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+  await page.getByRole('link', { name: '← People' }).click();
+  await createPerson(page, {
+    name: 'Charles Babbage',
+    date: '1820-12-26',
+    time: '10:00:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+
+  await page.getByRole('link', { name: '← People' }).click();
+  await page.getByRole('link').filter({ hasText: 'Ada Lovelace' }).click();
+  await page.getByRole('link', { name: 'Synastry', exact: true }).click();
+  await page.getByLabel('Compare with').selectOption({ label: 'Charles Babbage' });
+  await expect(page.locator('div.chart-wheel')).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(results.violations).toEqual([]);
+});

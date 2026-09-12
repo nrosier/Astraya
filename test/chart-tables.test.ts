@@ -9,6 +9,7 @@ import {
   chartSheetInput,
   chartSheetMetaLines,
   chartWheelRing,
+  crossAspectRows,
   degreeParts,
   derivedPointRows,
   dignityRows,
@@ -246,6 +247,32 @@ describe('aspectRows (#44)', () => {
         separation: 91,
         orb: 1,
         applying: true,
+      },
+    ]);
+  });
+});
+
+describe('crossAspectRows (#172)', () => {
+  it('shapes a plain cross-chart aspect list the same way aspectRows shapes ChartData.aspects', () => {
+    const aspect: Aspect = {
+      bodyA: SUN,
+      bodyB: MOON,
+      aspect: { key: 'trine', name: 'Trine', angle: 120, family: 'major' },
+      separation: 119,
+      orb: 1,
+      applying: false,
+    };
+    expect(crossAspectRows([aspect])).toEqual([
+      {
+        bodyAKey: 'sun',
+        bodyAName: 'Sun',
+        bodyBKey: 'moon',
+        bodyBName: 'Moon',
+        aspect: 'Trine',
+        angle: 120,
+        separation: 119,
+        orb: 1,
+        applying: false,
       },
     ]);
   });

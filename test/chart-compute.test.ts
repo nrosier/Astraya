@@ -7,7 +7,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { bodyById, bodyByKey } from '../src/astrology/bodies.js';
-import { computeChartData } from '../src/domain/chart-compute.js';
+import { computeChartData, computeChartDataAtJd } from '../src/domain/chart-compute.js';
+import { julianDayFor } from '../src/time/julian.js';
+import { resolveMoment } from '../src/time/resolve.js';
 import type { BirthMomentInput } from '../src/time/types.js';
 import { getEngine } from './engine-harness.js';
 
@@ -131,5 +133,19 @@ describe('computeChartData (#44)', () => {
     });
     expect(tight.aspects).toHaveLength(0);
     expect(wide.aspects.length).toBeGreaterThan(0);
+  });
+
+  it('computeChartDataAtJd produces the same chart as computeChartData given the same jd and place (#172)', async () => {
+    const engine = await getEngine();
+    const resolved = resolveMoment(MOMENT);
+    const jd = await julianDayFor(engine, resolved);
+    const place = { ...MOMENT.coordinates, altitude: 0 };
+
+    const viaMoment = await computeChartData(MOMENT, engine);
+    const viaJd = await computeChartDataAtJd(jd, place, engine);
+
+    expect(viaJd.houses.ascendant).toBeCloseTo(viaMoment.houses.ascendant, 9);
+    expect(viaJd.positions).toEqual(viaMoment.positions);
+    expect(viaJd.sect).toBe(viaMoment.sect);
   });
 });
