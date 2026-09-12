@@ -16,8 +16,13 @@ const { version } = JSON.parse(readFileSync(new URL('../package.json', import.me
 
 describe('README badges', () => {
   it('states the version in package.json', () => {
-    const badge = /release-v([^-\s)]+)-blue/.exec(readme);
-    expect(badge?.[1]).toBe(version);
+    // A prerelease version (e.g. `0.9.5-debug.1`) contains a hyphen, which shields.io's
+    // static badge syntax requires doubling (`v0.9.5--debug.1`) so it isn't read as the
+    // label/message/colour delimiter — same convention already used for the licence
+    // badge's `AGPL--3.0--or--later`. Greedy match up to the final `-blue` captures the
+    // escaped form; unescaping `--` back to `-` recovers the real version to compare.
+    const badge = /release-v(.+)-blue/.exec(readme);
+    expect(badge?.[1]?.replaceAll('--', '-')).toBe(version);
   });
 
   it('points its CI and licence badges at this repository', () => {

@@ -56,6 +56,9 @@ export async function startOidcHandshake(): Promise<{
   const pending: PendingOidc = { state, codeVerifier, nonce };
   sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
   const redirectUri = new URL(OIDC_CALLBACK_PATH, window.location.origin).toString();
+  // TEMP DEBUG (#login-bug): confirm the redirect_uri sent to Authentik matches
+  // exactly what's registered on its provider — a mismatch fails the exchange later.
+  console.info('[oidc-debug] starting handshake', { state, redirectUri });
   return { state, nonce, codeChallenge, redirectUri };
 }
 
@@ -69,17 +72,47 @@ export async function startOidcHandshake(): Promise<{
  */
 export function consumeOidcCallback():
   { readonly code: string; readonly codeVerifier: string; readonly nonce: string } | undefined {
-  if (window.location.pathname !== OIDC_CALLBACK_PATH) return undefined;
+  if (window.location.pathname !== OIDC_CALLBACK_PATH) {
+    // TEMP DEBUG (#login-bug): if Authentik redirected somewhere other than exactly
+    // this path (e.g. a trailing slash, or a different host than ASTRAYA_PUBLIC_URL),
+    // the whole exchange never starts and this line is the only trace of it.
+    if (window.location.search.includes('code=')) {
+      console.warn('[oidc-debug] URL has a code= param but pathname is not the callback path', {
+        pathname: window.location.pathname,
+        search: window.location.search,
+      });
+    }
+    return undefined;
+  }
 
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   const state = params.get('state');
+  const errorParam = params.get('error');
   const raw = sessionStorage.getItem(PENDING_KEY);
   sessionStorage.removeItem(PENDING_KEY);
   history.replaceState(null, '', '/');
 
-  if (code === null || state === null || raw === null) return undefined;
+  if (errorParam !== null) {
+    console.warn('[oidc-debug] Authentik redirected back with an error', {
+      error: errorParam,
+      errorDescription: params.get('error_description'),
+    });
+    return undefined;
+  }
+  if (code === null || state === null || raw === null) {
+    console.warn('[oidc-debug] callback missing code/state/pending entry — cannot exchange', {
+      hasCode: code !== null,
+      hasState: state !== null,
+      hasPending: raw !== null,
+    });
+    return undefined;
+  }
   const pending = JSON.parse(raw) as PendingOidc;
-  if (state !== pending.state) return undefined;
+  if (state !== pending.state) {
+    console.warn('[oidc-debug] state mismatch — discarding callback', { got: state, expected: pending.state });
+    return undefined;
+  }
+  console.info('[oidc-debug] callback consumed, ready to exchange code');
   return { code, codeVerifier: pending.codeVerifier, nonce: pending.nonce };
 }

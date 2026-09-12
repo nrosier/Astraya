@@ -4,6 +4,23 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.9.5-debug.1] — 2026-09-12
+
+**Diagnostic build — Authentik sign-in debug logging, not a fix.**
+
+This is a prerelease built to investigate a report that signing in with Authentik
+appears to succeed but the app keeps showing "Sign in" and local-only sync status.
+It does not move the `latest` Docker tag.
+
+### Added
+
+- Console and server-log tracing (`[oidc-debug]`) through every step of the
+  Authentik sign-in exchange: the redirect handshake, the callback's code/state
+  handling, the server's token exchange and ID-token verification, nonce
+  checking, account matching, session-cookie creation, and every `/api/auth/me`
+  check. A failure partway through this flow used to be swallowed silently on
+  the client; it is now logged with the reason.
+
 ## [0.9.5] — 2026-09-12
 
 **Sign-in and sync status are now visible everywhere, and the report language is an app-wide setting.**

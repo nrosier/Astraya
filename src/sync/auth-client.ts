@@ -65,6 +65,10 @@ export async function logout(): Promise<{ endSessionUrl?: string }> {
  */
 export async function me(): Promise<AuthUser | undefined> {
   const response = await fetch('/api/auth/me');
+  // TEMP DEBUG (#login-bug): this is the single source of truth the UI's signed-in
+  // state is built from — if this says 401 right after a claimed successful sign-in,
+  // the session cookie either never arrived or the server didn't accept it.
+  console.info('[oidc-debug] GET /api/auth/me ->', response.status);
   if (response.status === 401) return undefined;
   if (!response.ok) throw new AuthError(await errorMessage(response), response.status);
   const { user } = (await response.json()) as { user: AuthUser };
@@ -121,7 +125,15 @@ export async function exchangeOidcCode(params: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
-  if (!response.ok) throw new AuthError(await errorMessage(response), response.status);
+  // TEMP DEBUG (#login-bug): the server logs its own reason for a failure here
+  // (see routes.ts) — this line ties that server-side reason to what the browser saw.
+  console.info('[oidc-debug] POST /api/auth/oidc/callback ->', response.status);
+  if (!response.ok) {
+    const message = await errorMessage(response);
+    console.warn('[oidc-debug] OIDC exchange rejected by server', { status: response.status, message });
+    throw new AuthError(message, response.status);
+  }
   const { user } = (await response.json()) as { user: AuthUser };
+  console.info('[oidc-debug] OIDC exchange succeeded', { userId: user.id, username: user.username });
   return user;
 }
