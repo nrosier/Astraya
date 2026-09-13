@@ -4,6 +4,25 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.10.1] — 2026-09-13
+
+**UI cleanup: no more duplicate sign-in messaging, dev-only controls hidden in
+production, a direct link to the report, and a bigger chart wheel.**
+
+### Fixed
+
+- Sign-in and sync-status text no longer repeat the same message in two
+  places (#230).
+- Developer/reference-only controls (extended settings, wheel-style toggle,
+  report provenance checkbox) are now hidden in production builds (#231).
+- The natal chart wheel and aspect grid rendered too small; both are now
+  bigger (#233).
+
+### Added
+
+- A "Report" link in the per-person chart nav, and "View chart" renamed to
+  "Natal chart" for clarity (#232).
+
 ## [0.10.0] — 2026-09-13
 
 **Six new chart types ship together: profections, transits, synastry, composite,
