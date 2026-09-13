@@ -166,19 +166,20 @@ export function App(): React.JSX.Element {
     // in, and that has to survive navigating between routes that each mount their own
     // `Stored` — otherwise every navigation would reopen the database and restart sync.
     //
-    // Account and sync status are global, not tied to any one screen (#137): sign-in state
-    // belongs top-left on every route including the landing page, where nothing showed it
-    // before; sync status, the language choice and the theme toggle sit together top-right
-    // as the app's persistent "how this looks and where my data is" controls.
+    // Account and sync status are global, not tied to any one screen (#137): both sit
+    // together top-right, on every route including the landing page, as the app's
+    // persistent "am I signed in, and where is my data" controls (#230) — previously
+    // split across both top corners, which left sign-in state and sync status saying
+    // the same thing twice in two places.
     <SessionProvider>
       {/* Ordered before `screen` so tab order matches the fixed top-of-viewport
           position these render at (#69) — a keyboard user reaches them first,
-          same as sighted users see them first. */}
-      <div className="topbar-left">
-        <AccountPanel />
-      </div>
+          same as sighted users see them first. `AccountPanel` sits right next to
+          `SyncBadge` (#230): sign-in/out is the thing that changes the sync badge's
+          state, so it belongs beside it rather than on the opposite side of the bar. */}
       <div className="topbar-right">
         <SyncBadge />
+        <AccountPanel />
         <LanguageToggle />
         <ThemeToggle />
       </div>

@@ -47,7 +47,7 @@ test('entering birth data renders the chart wheel and the SVG export downloads',
     longitude: '-0.1276',
   });
 
-  await page.getByRole('link', { name: 'View chart', exact: true }).click();
+  await page.getByRole('link', { name: 'Natal chart', exact: true }).click();
   await expect(page.locator('div.chart-wheel')).toBeVisible();
 
   const [download] = await Promise.all([
