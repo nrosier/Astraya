@@ -107,7 +107,7 @@ async function bisectCrossing(
     const sample = await provider.position(mid, body, positionOptions);
     const fMid = signedDelta(sample.longitude, target);
     if (fMid === 0) return mid;
-    if ((fMid > 0) === (fLo > 0)) {
+    if (fMid > 0 === fLo > 0) {
       lo = mid;
       fLo = fMid;
     } else {
@@ -146,7 +146,8 @@ export async function findExactTransitAspects(
   const config = options.orbConfig ?? DEFAULT_ORB_CONFIG;
   const aspects = enabledAspects(config);
   const step = options.sampleStepDays ?? DEFAULT_SAMPLE_STEP_DAYS;
-  const positionOptions: PositionOptions | undefined = options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
+  const positionOptions: PositionOptions | undefined =
+    options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
 
   const jds = sampleJds(fromJd, toJd, step);
   const samplesAtEachJd = await Promise.all(jds.map((jd) => provider.positions(jd, transitingBodies, positionOptions)));
@@ -161,7 +162,9 @@ export async function findExactTransitAspects(
     for (const [natalBody, natalLongitude] of natalLongitudes) {
       for (const aspect of aspects) {
         for (const target of targetLongitudes(aspect.angle, natalLongitude)) {
-          const diffs = longitudes.map((longitude) => (longitude === undefined ? undefined : signedDelta(longitude, target)));
+          const diffs = longitudes.map((longitude) =>
+            longitude === undefined ? undefined : signedDelta(longitude, target),
+          );
 
           for (let i = 0; i < diffs.length - 1; i++) {
             const d0 = diffs[i];
@@ -176,7 +179,7 @@ export async function findExactTransitAspects(
               continue;
             }
 
-            const sameSign = d0 > 0 === (d1 > 0);
+            const sameSign = d0 > 0 === d1 > 0;
             if (sameSign) continue;
             // A sign change near +-180 is the difference wrapping past the branch cut
             // (the body passing target+180, not target) rather than a real crossing.

@@ -40,13 +40,7 @@
  * layer that has a locale and persona to ask for, the same separation
  * `ReportView.tsx` already keeps from `report.ts`.
  */
-import {
-  findCrossAspects,
-  fixedSubjects,
-  subjectsFrom,
-  type Aspect,
-  type OrbConfig,
-} from '../astrology/aspects.js';
+import { findCrossAspects, fixedSubjects, subjectsFrom, type Aspect, type OrbConfig } from '../astrology/aspects.js';
 import { BODIES, bodyById, bodyByKey, type BodyCategory } from '../astrology/bodies.js';
 import { houseOf } from '../astrology/emphasis.js';
 import { findStations, type StationEvent } from '../astrology/stations.js';
@@ -83,7 +77,7 @@ function natalLongitudes(natal: ChartData): ReadonlyMap<BodyId, number> {
 }
 
 function signOf(longitude: number): number {
-  return Math.floor(((longitude % 360) + 360) % 360 / 30);
+  return Math.floor((((longitude % 360) + 360) % 360) / 30);
 }
 
 export interface DailyTransitForecast {
@@ -175,22 +169,29 @@ export async function computePeriodicTransitForecast(
   const natal = await computeChartData(natalMoment, provider, options);
   const natalMap = natalLongitudes(natal);
 
-  const [moonPositions, weeklyResolved, monthlyResolved, monthSunPositions, stationsToday, moonExactToday, solarReturn] =
-    await Promise.all([
-      provider.positions(dayJd, [MOON_ID]),
-      findExactTransitAspects(provider, WEEKLY_MONTHLY_BODY_IDS, natalMap, weekFromJd, weekToJd, zodiacOption),
-      findExactTransitAspects(provider, WEEKLY_MONTHLY_BODY_IDS, natalMap, monthFromJd, monthToJd, zodiacOption),
-      provider.positions(monthFromJd, [requireBodyId('sun')]),
-      findStations(provider, FAST_PLANET_IDS, dayJd, dayJd + 1, zodiacOption),
-      // A finer step than the default: over just one day, the Moon's ~13 deg/day motion needs a
-      // tighter sample than the half-day step that is safe for every slower body this module
-      // otherwise searches with.
-      findExactTransitAspects(provider, [MOON_ID], natalMap, dayJd, dayJd + 1, {
-        ...zodiacOption,
-        sampleStepDays: 0.1,
-      }),
-      computeSolarReturn(natalMoment, year, provider, solarReturnOptions, orbConfig),
-    ]);
+  const [
+    moonPositions,
+    weeklyResolved,
+    monthlyResolved,
+    monthSunPositions,
+    stationsToday,
+    moonExactToday,
+    solarReturn,
+  ] = await Promise.all([
+    provider.positions(dayJd, [MOON_ID]),
+    findExactTransitAspects(provider, WEEKLY_MONTHLY_BODY_IDS, natalMap, weekFromJd, weekToJd, zodiacOption),
+    findExactTransitAspects(provider, WEEKLY_MONTHLY_BODY_IDS, natalMap, monthFromJd, monthToJd, zodiacOption),
+    provider.positions(monthFromJd, [requireBodyId('sun')]),
+    findStations(provider, FAST_PLANET_IDS, dayJd, dayJd + 1, zodiacOption),
+    // A finer step than the default: over just one day, the Moon's ~13 deg/day motion needs a
+    // tighter sample than the half-day step that is safe for every slower body this module
+    // otherwise searches with.
+    findExactTransitAspects(provider, [MOON_ID], natalMap, dayJd, dayJd + 1, {
+      ...zodiacOption,
+      sampleStepDays: 0.1,
+    }),
+    computeSolarReturn(natalMoment, year, provider, solarReturnOptions, orbConfig),
+  ]);
 
   const moonPosition = moonPositions[0];
   if (moonPosition === undefined) throw new Error('unreachable: the ephemeris returned no position for the Moon');

@@ -11,21 +11,26 @@
  * solar-return year — `computePeriodicTransitForecast`'s own doc explains why deriving calendar-
  * month bounds is left to the caller rather than the domain layer.
  *
- * No corpus/persona text: `interpretation/compose.ts`'s `transit-aspect` category exists for
- * this, but this screen shows the same plain, un-personified body/aspect labels
- * `TransitView.tsx`'s own contacts table already uses, rather than pulling in `ReportView.tsx`'s
- * full persona/locale machinery for a forecast that isn't a report.
+ * Forecast text (the issue's own title, and its "text since #55/#56 haven't landed" checklist
+ * item) comes from `interpretation/compose.ts`'s `composeFallbackText`: every row below carries
+ * a plain mechanically-composed sentence via the new `transit-aspect` `CorpusPlacement`
+ * category, the same fallback guarantee #59 already gives every other category so a report is
+ * never blank. No persona/locale corpus content has been written for `transit-aspect` yet — that
+ * is unbounded prose-authoring work for #55/#56, not this issue — so every sentence here is that
+ * fallback, not `ReportView.tsx`'s full persona pipeline. The structured columns stay alongside
+ * the sentence for sorting and CSV export, the same as `TransitView.tsx`'s contacts table.
  */
 import { useEffect, useMemo, useState } from 'react';
+import type { Aspect } from '../astrology/aspects.js';
 import { bodyById } from '../astrology/bodies.js';
 import { SIGNS } from '../astrology/signs.js';
-import { crossAspectRows, type AspectRow } from '../domain/chart-tables.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import {
   computePeriodicTransitForecast,
   type PeriodicTransitForecast,
   type PeriodicTransitPeriods,
 } from '../domain/periodic-transit.js';
+import { composeFallbackText } from '../interpretation/compose.js';
 import type { StationEvent } from '../astrology/stations.js';
 import type { TransitAspectEvent } from '../astrology/transit-events.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
@@ -33,17 +38,64 @@ import { civilFromJulianDay } from '../time/julian.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
-import type { EphemerisProvider, JulianDayUT } from '../ephemeris/types.js';
+import type { BodyId, EphemerisProvider, JulianDayUT } from '../ephemeris/types.js';
+import type { CorpusPlacement } from '../interpretation/schema.js';
 
 type Load =
   | { readonly kind: 'loading' }
   | { readonly kind: 'ready'; readonly data: PeriodicTransitForecast }
   | { readonly kind: 'error'; readonly message: string };
 
-const CONTACT_COLUMNS: readonly TableColumn<AspectRow>[] = [
-  { key: 'bodyAName', label: 'Transiting', valueOf: (row) => row.bodyAName },
-  { key: 'aspect', label: 'Aspect', valueOf: (row) => row.aspect },
-  { key: 'bodyBName', label: 'Natal', valueOf: (row) => row.bodyBName },
+/** UTC civil date and time, to the minute — every timestamp here is a computed UT moment, not a local one. */
+function formatUtc(jd: JulianDayUT): string {
+  const civil = civilFromJulianDay(jd);
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return `${String(civil.year)}-${pad(civil.month)}-${pad(civil.day)} ${pad(civil.hour)}:${pad(civil.minute)} UT`;
+}
+
+function bodyName(body: BodyId): string {
+  return bodyById(body)?.name ?? String(body);
+}
+
+function bodyKey(body: BodyId): string {
+  return bodyById(body)?.key ?? String(body);
+}
+
+/** The `transit-aspect` fallback sentence (see file doc) for one transiting/natal pair. */
+function transitAspectSentence(transiting: BodyId, natal: BodyId, aspectKey: string): string {
+  const placement: CorpusPlacement = {
+    category: 'transit-aspect',
+    aspect: aspectKey,
+    transiting: bodyKey(transiting),
+    natal: bodyKey(natal),
+  };
+  return composeFallbackText(placement, 'en');
+}
+
+interface ContactRow {
+  readonly key: string;
+  readonly sentence: string;
+  readonly transiting: string;
+  readonly aspect: string;
+  readonly natal: string;
+  readonly orb: number;
+  readonly applying: boolean;
+}
+
+function contactRows(aspects: readonly Aspect[]): readonly ContactRow[] {
+  return aspects.map((aspect, index) => ({
+    key: `${String(aspect.bodyA)}-${aspect.aspect.key}-${String(aspect.bodyB)}-${String(index)}`,
+    sentence: transitAspectSentence(aspect.bodyA, aspect.bodyB, aspect.aspect.key),
+    transiting: bodyName(aspect.bodyA),
+    aspect: aspect.aspect.name,
+    natal: bodyName(aspect.bodyB),
+    orb: aspect.orb,
+    applying: aspect.applying,
+  }));
+}
+
+const CONTACT_COLUMNS: readonly TableColumn<ContactRow>[] = [
+  { key: 'sentence', label: 'Forecast', valueOf: (row) => row.sentence },
   { key: 'orb', label: 'Orb', valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
   {
     key: 'applying',
@@ -57,9 +109,7 @@ interface ExactEventRow {
   readonly key: string;
   readonly jd: JulianDayUT;
   readonly date: string;
-  readonly transiting: string;
-  readonly aspect: string;
-  readonly natal: string;
+  readonly sentence: string;
   readonly retrograde: boolean;
 }
 
@@ -71,34 +121,21 @@ interface StationRow {
   readonly direction: string;
 }
 
-/** UTC civil date and time, to the minute — every timestamp here is a computed UT moment, not a local one. */
-function formatUtc(jd: JulianDayUT): string {
-  const civil = civilFromJulianDay(jd);
-  const pad = (n: number): string => String(n).padStart(2, '0');
-  return `${String(civil.year)}-${pad(civil.month)}-${pad(civil.day)} ${pad(civil.hour)}:${pad(civil.minute)} UT`;
-}
-
-function bodyName(body: TransitAspectEvent['transitingBody']): string {
-  return bodyById(body)?.name ?? String(body);
-}
-
 function exactEventRows(events: readonly TransitAspectEvent[]): readonly ExactEventRow[] {
   return events.map((event, index) => ({
     key: `${String(event.jd)}-${String(event.transitingBody)}-${String(event.natalBody)}-${String(index)}`,
     jd: event.jd,
     date: formatUtc(event.jd),
-    transiting: bodyName(event.transitingBody) + (event.retrograde ? ' (Rx)' : ''),
-    aspect: event.aspect.name,
-    natal: bodyName(event.natalBody),
+    sentence:
+      transitAspectSentence(event.transitingBody, event.natalBody, event.aspect.key) +
+      (event.retrograde ? ' (retrograde)' : ''),
     retrograde: event.retrograde,
   }));
 }
 
 const EXACT_EVENT_COLUMNS: readonly TableColumn<ExactEventRow>[] = [
   { key: 'jd', label: 'Exact', valueOf: (row) => row.jd, render: (row) => row.date },
-  { key: 'transiting', label: 'Transiting', valueOf: (row) => row.transiting },
-  { key: 'aspect', label: 'Aspect', valueOf: (row) => row.aspect },
-  { key: 'natal', label: 'Natal', valueOf: (row) => row.natal },
+  { key: 'sentence', label: 'Forecast', valueOf: (row) => row.sentence },
 ];
 
 function stationRows(stations: readonly StationEvent[]): readonly StationRow[] {
@@ -210,8 +247,8 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
         </p>
         <h1>Forecast</h1>
         <p>
-          {person.displayName || 'This person'}&rsquo;s birth record is not complete enough to calculate a forecast
-          yet. Fill in the missing fields on the <a href={`#/person/${personId}`}>person page</a>.
+          {person.displayName || 'This person'}&rsquo;s birth record is not complete enough to calculate a forecast yet.
+          Fill in the missing fields on the <a href={`#/person/${personId}`}>person page</a>.
         </p>
       </main>
     );
@@ -226,8 +263,8 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
         <h1>Forecast</h1>
         <p>
           A transit forecast casts against the natal houses, so it needs a known birth time.{' '}
-          {person.displayName || 'This person'}&rsquo;s birth time is unknown &mdash; the same reason their chart has
-          no houses.
+          {person.displayName || 'This person'}&rsquo;s birth time is unknown &mdash; the same reason their chart has no
+          houses.
         </p>
       </main>
     );
@@ -244,8 +281,8 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
       <h1>{person.displayName ? `${person.displayName}’s forecast` : 'Forecast'}</h1>
       <p className="hint">
         What&rsquo;s happening in the sky against {person.displayName || 'this'}&rsquo;s natal chart: the transiting
-        Moon and anything exact today, aspects going exact this week and this month, and this year&rsquo;s solar
-        return. All times are UT.
+        Moon and anything exact today, aspects going exact this week and this month, and this year&rsquo;s solar return.
+        All times are UT.
       </p>
 
       <p>
@@ -281,8 +318,8 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
               <SortableTable
                 caption="Moon's aspects to the natal chart"
                 columns={CONTACT_COLUMNS}
-                rows={crossAspectRows(data.daily.moonAspects)}
-                getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
+                rows={contactRows(data.daily.moonAspects)}
+                getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-daily-moon', 'csv')}
               />
             )}
@@ -353,8 +390,8 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
               <SortableTable
                 caption="Solar return contacts to the natal chart"
                 columns={CONTACT_COLUMNS}
-                rows={crossAspectRows(data.yearly.solarReturn.contacts)}
-                getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
+                rows={contactRows(data.yearly.solarReturn.contacts)}
+                getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-yearly-return', 'csv')}
               />
             )}
@@ -364,4 +401,3 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
     </main>
   );
 }
-

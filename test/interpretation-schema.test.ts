@@ -61,7 +61,12 @@ describe('placementKey / parsePlacementKey (#53)', () => {
   });
 
   it('allows a transit-aspect placement with the same body on both sides (a return, e.g. Saturn to natal Saturn)', () => {
-    const key = placementKey({ category: 'transit-aspect', aspect: 'conjunction', transiting: 'saturn', natal: 'saturn' });
+    const key = placementKey({
+      category: 'transit-aspect',
+      aspect: 'conjunction',
+      transiting: 'saturn',
+      natal: 'saturn',
+    });
     expect(key).toBe('transit-aspect:conjunction:saturn:saturn');
     expect(parsePlacementKey(key)).toEqual({
       category: 'transit-aspect',

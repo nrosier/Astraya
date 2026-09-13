@@ -46,7 +46,7 @@ async function bisectSpeedZero(
     const sample = await provider.position(mid, body, positionOptions);
     const speedAtMid = sample.longitudeSpeed;
     if (speedAtMid === 0) return mid;
-    if ((speedAtMid > 0) === (speedAtLo > 0)) {
+    if (speedAtMid > 0 === speedAtLo > 0) {
       lo = mid;
       speedAtLo = speedAtMid;
     } else {
@@ -78,7 +78,8 @@ export async function findStations(
 ): Promise<readonly StationEvent[]> {
   if (toJd < fromJd) throw new RangeError('toJd must not be before fromJd');
   const step = options.sampleStepDays ?? DEFAULT_SAMPLE_STEP_DAYS;
-  const positionOptions: PositionOptions | undefined = options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
+  const positionOptions: PositionOptions | undefined =
+    options.zodiac === undefined ? undefined : { zodiac: options.zodiac };
 
   const jds = sampleJds(fromJd, toJd, step);
   const samplesAtEachJd = await Promise.all(jds.map((jd) => provider.positions(jd, bodies, positionOptions)));
@@ -102,7 +103,7 @@ export async function findStations(
         continue;
       }
 
-      const sameSign = s0 > 0 === (s1 > 0);
+      const sameSign = s0 > 0 === s1 > 0;
       if (sameSign) continue;
 
       const t0 = jds[i];

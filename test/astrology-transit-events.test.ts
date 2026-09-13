@@ -114,6 +114,8 @@ describe('findExactTransitAspects (#207)', () => {
   it('rejects a window that ends before it starts', async () => {
     const engine = await getEngine();
     const natalLongitudes = new Map([[SE.SE_VENUS, await longitudeAt(NATAL_JD, SE.SE_VENUS)]]);
-    await expect(findExactTransitAspects(engine, [SE.SE_MARS], natalLongitudes, NATAL_JD, NATAL_JD - 1)).rejects.toThrow();
+    await expect(
+      findExactTransitAspects(engine, [SE.SE_MARS], natalLongitudes, NATAL_JD, NATAL_JD - 1),
+    ).rejects.toThrow();
   });
 });
