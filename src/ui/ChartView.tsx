@@ -361,7 +361,9 @@ export function ChartDataView({
   // other display settings (`resolveWheelDisplayOptions`) — keeping this additive and
   // small rather than growing that settings bag for a first cut. AstroChart is the
   // default per the user's own preference; Astraya's own wheel is the opt-in alternate.
-  const [wheelKind, setWheelKind] = useState<'astrochart' | 'astraya'>('astrochart');
+  // AstroChart is a reference rendering kept around for comparing Astraya's own wheel
+  // against it during development (#231) — production users only ever see Astraya's.
+  const [wheelKind, setWheelKind] = useState<'astrochart' | 'astraya'>(import.meta.env.PROD ? 'astraya' : 'astrochart');
   const [pngSize, setPngSize] = useState(PNG_SIZES[1]?.size ?? 1200);
   const [pngError, setPngError] = useState<string | undefined>(undefined);
   const [pngBusy, setPngBusy] = useState(false);
@@ -498,28 +500,30 @@ export function ChartDataView({
               skipped while the report tab is active. */}
           {activeTab !== 'report' && sheet !== undefined && (
             <>
-              <div className="wheel-toggle" role="group" aria-label="Wheel rendering">
-                <button
-                  type="button"
-                  aria-pressed={wheelKind === 'astrochart'}
-                  className="quiet"
-                  onClick={() => {
-                    setWheelKind('astrochart');
-                  }}
-                >
-                  AstroChart
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={wheelKind === 'astraya'}
-                  className="quiet"
-                  onClick={() => {
-                    setWheelKind('astraya');
-                  }}
-                >
-                  Astraya
-                </button>
-              </div>
+              {!import.meta.env.PROD && (
+                <div className="wheel-toggle" role="group" aria-label="Wheel rendering">
+                  <button
+                    type="button"
+                    aria-pressed={wheelKind === 'astrochart'}
+                    className="quiet"
+                    onClick={() => {
+                      setWheelKind('astrochart');
+                    }}
+                  >
+                    AstroChart
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={wheelKind === 'astraya'}
+                    className="quiet"
+                    onClick={() => {
+                      setWheelKind('astraya');
+                    }}
+                  >
+                    Astraya
+                  </button>
+                </div>
+              )}
 
               {/* "Export PDF" prints whatever is in `.chart-wheel` on the page (#67), so the
                   Astraya rendering is forced here even when AstroChart is the active view —
