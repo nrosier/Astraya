@@ -63,6 +63,7 @@ import { svgToPngBlob } from './chart-raster.js';
 import { downloadBlob, downloadText } from './download.js';
 import { ExtendedSettingsPanel } from './ExtendedSettingsPanel.js';
 import { ReportView } from './ReportView.js';
+import { chartTab } from './route.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
@@ -149,6 +150,22 @@ const DERIVED_POINT_COLUMNS: readonly TableColumn<DerivedPointRow>[] = [
 ];
 
 type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived' | 'report';
+
+const TAB_KEYS: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived', 'report'];
+
+function isTabKey(value: string): value is TabKey {
+  return (TAB_KEYS as readonly string[]).includes(value);
+}
+
+/**
+ * The tab to open on, from a `?tab=...` query param (e.g. the "Report" nav link in
+ * `PersonForm.tsx` linking straight to `#/chart/:id?tab=report`) — falls back to
+ * `'positions'` when absent or unrecognised, same as visiting `#/chart/:id` plainly.
+ */
+function initialTabFromHash(): TabKey {
+  const requested = chartTab(window.location.hash);
+  return requested !== null && isTabKey(requested) ? requested : 'positions';
+}
 
 /**
  * The table(s) for one non-report tab, factored out of the tab panel below so the same
@@ -339,7 +356,7 @@ export function ChartDataView({
   /** A long-lived provider for the panel's own house-system/ayanamsa name lookups. */
   readonly settingsProvider?: EphemerisProvider | undefined;
 }): React.JSX.Element {
-  const [activeTab, setActiveTab] = useState<TabKey>('positions');
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromHash);
   // Which wheel rendering is on screen. Session-only, not persisted with the chart's
   // other display settings (`resolveWheelDisplayOptions`) — keeping this additive and
   // small rather than growing that settings bag for a first cut. AstroChart is the
@@ -467,7 +484,7 @@ export function ChartDataView({
             </p>
           )}
 
-          {onExtendedSettingsChange !== undefined && settingsProvider !== undefined && (
+          {activeTab !== 'report' && onExtendedSettingsChange !== undefined && settingsProvider !== undefined && (
             <ExtendedSettingsPanel
               value={extendedSettings}
               onRedraw={onExtendedSettingsChange}
@@ -475,7 +492,11 @@ export function ChartDataView({
             />
           )}
 
-          {sheet !== undefined && (
+          {/* The report is text from the chosen advisor, not a chart reading — none of the
+              wheel, its toggle, or the chart's own SVG/PNG/PDF export controls belong next to
+              it, so this whole block (which is otherwise identical for every other tab) is
+              skipped while the report tab is active. */}
+          {activeTab !== 'report' && sheet !== undefined && (
             <>
               <div className="wheel-toggle" role="group" aria-label="Wheel rendering">
                 <button

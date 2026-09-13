@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { newId } from '../src/domain/id.js';
-import { parseRoute, setPasswordToken, setupToken } from '../src/ui/route.js';
+import { chartTab, parseRoute, setPasswordToken, setupToken } from '../src/ui/route.js';
 
 const ID = newId('p');
 
@@ -186,5 +186,19 @@ describe('setupToken', () => {
 
   it('returns null when the query has no token', () => {
     expect(setupToken('#/setup?foo=bar')).toBeNull();
+  });
+});
+
+describe('chartTab', () => {
+  it('reads the tab out of the hash query (the "Report" nav link)', () => {
+    expect(chartTab(`#/chart/${ID}?tab=report`)).toBe('report');
+  });
+
+  it('returns null when there is no query at all', () => {
+    expect(chartTab(`#/chart/${ID}`)).toBeNull();
+  });
+
+  it('returns null when the query has no tab', () => {
+    expect(chartTab(`#/chart/${ID}?foo=bar`)).toBeNull();
   });
 });
