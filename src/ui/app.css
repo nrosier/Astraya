@@ -1130,7 +1130,7 @@ label.stacked textarea:focus-visible {
    * element table and a degree strip under the wheel, and those carry text that
    * stops being legible if the whole sheet is squeezed to wheel width.
    */
-  max-width: 44rem;
+  max-width: 55rem;
 }
 
 .chart-wheel svg {
