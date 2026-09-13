@@ -24,6 +24,7 @@ import { EPHEMERIS_DATA_FILES, EPHEMERIS_YEAR_RANGE, EPHE_BASE_URL, FIXED_STARS_
 import { SE } from './generated-constants.js';
 import {
   EphemerisError,
+  type AzimuthAltitudeOptions,
   type BodyId,
   type BodyPosition,
   type CalendarSystem,
@@ -32,6 +33,7 @@ import {
   type FixedStarMagnitude,
   type FixedStarPosition,
   type GeoPosition,
+  type HorizontalPosition,
   type HousePositions,
   type HouseSystem,
   type JulianDayUT,
@@ -124,6 +126,14 @@ interface SweInstance {
   swe_fixstar2_mag(star: string): { star_name: string; magnitude: number };
   swe_solcross_ut(x2cross: number, jd_ut: number, flag: number): number;
   swe_mooncross_ut(x2cross: number, jd_ut: number, flag: number): number;
+  swe_azalt(
+    tjd_ut: number,
+    calc_flag: number,
+    geopos: readonly [number, number, number],
+    atpress: number,
+    attemp: number,
+    xin: readonly [number, number, number],
+  ): readonly number[];
   swe_version(): string;
   swe_close(): void;
 }
@@ -528,6 +538,32 @@ export class SwissEphemerisEngine implements EphemerisProvider {
       });
     }
     return jd;
+  }
+
+  async azimuthAltitude(
+    jd: JulianDayUT,
+    point: { readonly longitude: Degrees; readonly latitude: Degrees },
+    place: GeoPosition,
+    options?: AzimuthAltitudeOptions,
+  ): Promise<HorizontalPosition> {
+    const calcFlag = options?.equatorial ? SE.SE_EQU2HOR : SE.SE_ECL2HOR;
+    const geopos: [number, number, number] = [place.longitude, place.latitude, place.altitude];
+    const xin: [number, number, number] = [point.longitude, point.latitude, 0];
+    let raw: readonly number[];
+    try {
+      raw = this.#instance().swe_azalt(
+        jd,
+        calcFlag,
+        geopos,
+        options?.pressureHPa ?? 0,
+        options?.temperatureC ?? 15,
+        xin,
+      );
+    } catch (cause) {
+      throw new EphemerisError(cause instanceof Error ? cause.message : String(cause), { call: 'swe_azalt', jd });
+    }
+    const [azSouthWest, altitude, apparentAltitude] = raw as [number, number, number];
+    return { azimuth: norm360(azSouthWest + 180), altitude, apparentAltitude };
   }
 
   /** Underlying Swiss Ephemeris version string, for the About page. */

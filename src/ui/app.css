@@ -1515,6 +1515,142 @@ label.stacked textarea:focus-visible {
   fill: var(--muted);
 }
 
+/*
+ * Astrocartography map (#171). Line kind is distinguished by dash pattern as
+ * well as colour (never colour alone, since ~10 bodies means several lines
+ * can land close together) — MC solid, IC dashed, AC dotted, DC dash-dot,
+ * Local Space its own fine dash. Per-body colour, defined once rather than
+ * re-declared per theme like `.wheel-sign-wedge-*` above, since these hues
+ * already read clearly on both a dark and a light map background.
+ */
+.acg-line-mc,
+.acg-line-ic,
+.acg-line-ac,
+.acg-line-dc,
+.acg-line-local-space {
+  fill: none;
+  stroke-width: 2;
+  opacity: 0.85;
+}
+
+.acg-line-ic {
+  stroke-dasharray: 6 4;
+}
+
+.acg-line-ac {
+  stroke-dasharray: 1 3;
+  stroke-linecap: round;
+}
+
+.acg-line-dc {
+  stroke-dasharray: 8 3 2 3;
+}
+
+.acg-line-local-space {
+  stroke-width: 1.5;
+  stroke-dasharray: 2 2;
+  opacity: 0.7;
+}
+
+.acg-graticule {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 0.5;
+  opacity: 0.6;
+}
+
+.acg-marker-natal {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+.acg-marker-relocation {
+  fill: var(--aspect-hard);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+.acg-line-mc-sun,
+.acg-line-ic-sun,
+.acg-line-ac-sun,
+.acg-line-dc-sun,
+.acg-line-local-space-sun {
+  stroke: #d97706;
+}
+
+.acg-line-mc-moon,
+.acg-line-ic-moon,
+.acg-line-ac-moon,
+.acg-line-dc-moon,
+.acg-line-local-space-moon {
+  stroke: #64748b;
+}
+
+.acg-line-mc-mercury,
+.acg-line-ic-mercury,
+.acg-line-ac-mercury,
+.acg-line-dc-mercury,
+.acg-line-local-space-mercury {
+  stroke: #059669;
+}
+
+.acg-line-mc-venus,
+.acg-line-ic-venus,
+.acg-line-ac-venus,
+.acg-line-dc-venus,
+.acg-line-local-space-venus {
+  stroke: #db2777;
+}
+
+.acg-line-mc-mars,
+.acg-line-ic-mars,
+.acg-line-ac-mars,
+.acg-line-dc-mars,
+.acg-line-local-space-mars {
+  stroke: #dc2626;
+}
+
+.acg-line-mc-jupiter,
+.acg-line-ic-jupiter,
+.acg-line-ac-jupiter,
+.acg-line-dc-jupiter,
+.acg-line-local-space-jupiter {
+  stroke: #7c3aed;
+}
+
+.acg-line-mc-saturn,
+.acg-line-ic-saturn,
+.acg-line-ac-saturn,
+.acg-line-dc-saturn,
+.acg-line-local-space-saturn {
+  stroke: #92400e;
+}
+
+.acg-line-mc-uranus,
+.acg-line-ic-uranus,
+.acg-line-ac-uranus,
+.acg-line-dc-uranus,
+.acg-line-local-space-uranus {
+  stroke: #0891b2;
+}
+
+.acg-line-mc-neptune,
+.acg-line-ic-neptune,
+.acg-line-ac-neptune,
+.acg-line-dc-neptune,
+.acg-line-local-space-neptune {
+  stroke: #2563eb;
+}
+
+.acg-line-mc-pluto,
+.acg-line-ic-pluto,
+.acg-line-ac-pluto,
+.acg-line-dc-pluto,
+.acg-line-local-space-pluto {
+  stroke: #1e293b;
+}
+
 /* Export controls under the wheel (#67): Download SVG/PNG and Export PDF. */
 .chart-export-actions {
   display: flex;

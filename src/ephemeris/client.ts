@@ -15,6 +15,7 @@ import {
   type EphemerisResult,
 } from './protocol.js';
 import type {
+  AzimuthAltitudeOptions,
   BodyId,
   BodyPosition,
   CalendarSystem,
@@ -23,6 +24,7 @@ import type {
   FixedStarMagnitude,
   FixedStarPosition,
   GeoPosition,
+  HorizontalPosition,
   HousePositions,
   HouseSystem,
   JulianDayUT,
@@ -190,6 +192,15 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
 
   nextMoonCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT> {
     return this.#call('nextMoonCrossing', [fromJd, longitude, zodiac]);
+  }
+
+  azimuthAltitude(
+    jd: JulianDayUT,
+    point: { readonly longitude: Degrees; readonly latitude: Degrees },
+    place: GeoPosition,
+    options?: AzimuthAltitudeOptions,
+  ): Promise<HorizontalPosition> {
+    return this.#call('azimuthAltitude', [jd, point, place, options]);
   }
 
   version(): Promise<string> {

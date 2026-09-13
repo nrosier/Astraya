@@ -35,6 +35,7 @@ function fakeProvider(): EphemerisProvider {
     fixedStarMagnitude: notImplemented,
     nextSunCrossing: notImplemented,
     nextMoonCrossing: notImplemented,
+    azimuthAltitude: notImplemented,
     version: notImplemented,
     dispose: notImplemented,
   };

@@ -131,6 +131,35 @@ export interface PositionOptions {
   readonly heliocentric?: boolean;
 }
 
+/** Azimuth/altitude of a point as seen from a place, via `swe_azalt`. */
+export interface HorizontalPosition {
+  /**
+   * Degrees from north, clockwise through east (compass convention) — converted
+   * from the library's south-origin, west-increasing convention via
+   * `(azSouthWest + 180) mod 360`.
+   */
+  readonly azimuth: Degrees;
+  /** True (geometric) altitude above the horizon, in degrees — unaffected by atmosphere. Use this, not `apparentAltitude`, for astrological purposes such as Local Space bearings. */
+  readonly altitude: Degrees;
+  /**
+   * `altitude` corrected for atmospheric refraction. `swe_azalt` has no "off"
+   * switch: a `pressureHPa` of 0 (the default) does not disable refraction, it
+   * estimates the atmosphere from the place's altitude and `temperatureC`
+   * instead of using given readings, so this still differs from `altitude`
+   * whenever the point is near the horizon.
+   */
+  readonly apparentAltitude: Degrees;
+}
+
+export interface AzimuthAltitudeOptions {
+  /** `point` is right ascension/declination rather than ecliptic longitude/latitude — mirrors `PositionOptions.equatorial`'s reinterpretation convention. */
+  readonly equatorial?: boolean;
+  /** Atmospheric pressure in hPa, for `apparentAltitude`'s refraction correction. 0 (default) estimates it from the place's altitude rather than disabling refraction — see `HorizontalPosition.apparentAltitude`. */
+  readonly pressureHPa?: number;
+  /** Atmospheric temperature in °C, used alongside `pressureHPa` (given or estimated). Default 15. */
+  readonly temperatureC?: number;
+}
+
 /**
  * The engine interface the rest of Astraya talks to.
  *
@@ -229,6 +258,17 @@ export interface EphemerisProvider {
    * network clause obliges us to provide.
    */
   version(): Promise<string>;
+
+  /**
+   * Topocentric azimuth/altitude of `point` as seen from `place`, via `swe_azalt`.
+   * `point` is ecliptic (longitude/latitude) unless `options.equatorial` is set.
+   */
+  azimuthAltitude(
+    jd: JulianDayUT,
+    point: { readonly longitude: Degrees; readonly latitude: Degrees },
+    place: GeoPosition,
+    options?: AzimuthAltitudeOptions,
+  ): Promise<HorizontalPosition>;
 
   /** Release the worker and WASM instance. */
   dispose(): Promise<void>;

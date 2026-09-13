@@ -125,7 +125,8 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
           &middot; <a href={`#/transit/${personId}`}>Transits</a> &middot;{' '}
           <a href={`#/synastry/${personId}`}>Synastry</a> &middot; <a href={`#/composite/${personId}`}>Composite</a>{' '}
           &middot; <a href={`#/harmonic/${personId}`}>Harmonic</a> &middot;{' '}
-          <a href={`#/periodic-transit/${personId}`}>Forecast</a>
+          <a href={`#/periodic-transit/${personId}`}>Forecast</a> &middot;{' '}
+          <a href={`#/astrocartography/${personId}`}>Astrocartography</a>
         </p>
       )}
 

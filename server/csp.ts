@@ -18,12 +18,16 @@
  *
  * `'wasm-unsafe-eval'` is required to compile the Swiss Ephemeris WebAssembly
  * module. It permits WASM compilation only, not `eval` of JavaScript.
+ *
+ * `img-src`'s `blob:` is for PNG chart export: `chart-raster.ts` rasterizes a
+ * chart's SVG by loading it into an `<img>` from a `blob:` URL before drawing
+ * it to a canvas.
  */
 export const CSP_DIRECTIVES: readonly string[] = [
   "default-src 'self'",
   "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
+  "img-src 'self' data: blob:",
   "font-src 'self'",
   "connect-src 'self'",
   "worker-src 'self' blob:",

@@ -35,6 +35,10 @@ export type Route =
   // screen's own "as of" date input plays the role a harmonic number or comparison person
   // plays elsewhere, and that's already excluded from the URL for the same reasons those are.
   | { readonly kind: 'periodic-transit'; readonly personId: string }
+  // Astrocartography/Local Space map (#171). No second parameter: line types, body picker,
+  // Local Space toggle and relocation place are all picked in-screen, same reasoning as
+  // periodic-transit's "as of" date above.
+  | { readonly kind: 'astrocartography'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'set-password' }
@@ -48,6 +52,7 @@ const SYNASTRY_PATH = /^#\/synastry\/(.+)$/;
 const COMPOSITE_PATH = /^#\/composite\/(.+)$/;
 const HARMONIC_PATH = /^#\/harmonic\/(.+)$/;
 const PERIODIC_TRANSIT_PATH = /^#\/periodic-transit\/(.+)$/;
+const ASTROCARTOGRAPHY_PATH = /^#\/astrocartography\/(.+)$/;
 
 export function parseRoute(hash: string): Route {
   // The query carries a birth record on #/time, so every match is on the path part alone.
@@ -110,6 +115,11 @@ export function parseRoute(hash: string): Route {
   const periodicTransit = PERIODIC_TRANSIT_PATH.exec(path);
   if (periodicTransit !== null && isPersonId(periodicTransit[1])) {
     return { kind: 'periodic-transit', personId: periodicTransit[1] };
+  }
+
+  const astrocartography = ASTROCARTOGRAPHY_PATH.exec(path);
+  if (astrocartography !== null && isPersonId(astrocartography[1])) {
+    return { kind: 'astrocartography', personId: astrocartography[1] };
   }
 
   return { kind: 'home' };

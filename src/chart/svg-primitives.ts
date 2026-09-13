@@ -35,6 +35,12 @@ export function polygon(points: readonly { readonly x: number; readonly y: numbe
   return `<polygon points="${pts}" class="${className}" />`;
 }
 
+/** An open path through the given points — unlike `polygon`, never closed back to the start. Used where closing the shape would be wrong (world-map lines, #171). */
+export function polyline(points: readonly { readonly x: number; readonly y: number }[], className: string): string {
+  const pts = points.map((point) => `${fmt(point.x)},${fmt(point.y)}`).join(' ');
+  return `<polyline points="${pts}" class="${className}" />`;
+}
+
 export type TextAnchor = 'start' | 'middle' | 'end';
 
 export function text(

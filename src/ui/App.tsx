@@ -5,6 +5,7 @@ import { startWarming } from '../pwa/warm-status.js';
 import { About } from './About.js';
 import { AccountPanel } from './AccountPanel.js';
 import { AdminPanel } from './AdminPanel.js';
+import { AstrocartographyView } from './AstrocartographyView.js';
 import { Changelog } from './Changelog.js';
 import { ChartView } from './ChartView.js';
 import { CompositeView } from './CompositeView.js';
@@ -267,6 +268,13 @@ function renderScreen(
     return (
       <Stored>
         <PeriodicTransitView key={parsed.personId} personId={parsed.personId} />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'astrocartography') {
+    return (
+      <Stored>
+        <AstrocartographyView key={parsed.personId} personId={parsed.personId} />
       </Stored>
     );
   }
