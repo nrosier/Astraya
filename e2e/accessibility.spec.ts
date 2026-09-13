@@ -76,7 +76,7 @@ test('the chart view (wheel plus data tables) has no automatically detectable ac
     latitude: '51.5072',
     longitude: '-0.1276',
   });
-  await page.getByRole('link', { name: 'View chart', exact: true }).click();
+  await page.getByRole('link', { name: 'Natal chart', exact: true }).click();
   await expect(page.locator('div.chart-wheel')).toBeVisible();
 
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();

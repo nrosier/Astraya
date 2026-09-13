@@ -75,6 +75,9 @@ async function closeDevices(...devices: readonly Device[]): Promise<void> {
  * If this device holds local changes from before sign-in, `AccountPanel` swaps in the
  * adoption prompt (#109) instead of completing the switch — accept it, since these tests
  * want the pre-sign-in data to end up on the account.
+ *
+ * Signed-in confirmation comes from `SyncBadge`'s "(logged in as: {username})" rather
+ * than from `AccountPanel` itself, which no longer repeats it (#230).
  */
 async function signIn(page: Page, username: string, password: string): Promise<void> {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
@@ -82,7 +85,7 @@ async function signIn(page: Page, username: string, password: string): Promise<v
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   const adopt = page.getByRole('button', { name: 'Add it to my account', exact: true });
-  const signedIn = page.getByText(`Signed in as ${username}`, { exact: true });
+  const signedIn = page.getByText(`(logged in as: ${username})`, { exact: true });
   await expect(adopt.or(signedIn)).toBeVisible();
   if (await adopt.isVisible()) {
     await adopt.click();

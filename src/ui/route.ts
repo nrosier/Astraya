@@ -138,3 +138,15 @@ export function setupToken(hash: string): string | null {
   if (queryIndex === -1) return null;
   return new URLSearchParams(hash.slice(queryIndex + 1)).get('token');
 }
+
+/**
+ * The tab requested by a `#/chart/:id?tab=...` link — e.g. the "Report" nav link jumping
+ * straight to the report tab instead of always landing on positions. `null` if missing;
+ * the caller (`ChartView`) is responsible for validating this against its own tab keys,
+ * since that type isn't visible here.
+ */
+export function chartTab(hash: string): string | null {
+  const queryIndex = hash.indexOf('?');
+  if (queryIndex === -1) return null;
+  return new URLSearchParams(hash.slice(queryIndex + 1)).get('tab');
+}

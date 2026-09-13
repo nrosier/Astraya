@@ -1,13 +1,14 @@
 /**
- * Sign-in/out UI (#78, #109). Mounted globally, top-left of every screen — signed-in
- * or signed-out state is the answer to "am I signed in", and that has to be visible
- * without navigating anywhere.
+ * Sign-in/out UI (#78, #109). Mounted globally in `topbar-right`, right next to
+ * `SyncBadge` (#230) — signed-in or signed-out state is the answer to "am I signed
+ * in", and that has to be visible without navigating anywhere.
  *
  * Signed out: a compact "Sign in" button that opens into a non-nagging explanation of
  * what an account adds (sync to other devices) plus a form — collapsed by default so
- * it costs no space on the common, signed-out path. Signed in: the username shown
- * inline, always, plus a sign-out button — no click needed to confirm you're signed
- * in. Between the two, at most once ever per device: the adoption prompt (#109), which
+ * it costs no space on the common, signed-out path. Signed in: a sign-out button, no
+ * click needed to confirm you're signed in since `SyncBadge`'s own "(logged in as:
+ * {username})" already says so right next to it (#230) — this panel doesn't repeat it.
+ * Between the two, at most once ever per device: the adoption prompt (#109), which
  * `signIn` puts this panel into instead of completing the switch on its own.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -290,7 +291,10 @@ function SignInForm({
   );
 }
 
-/** Always visible, no click needed — the answer to "am I signed in" shows up on its own. */
+/**
+ * No "signed in as" text here — `SyncBadge`'s "(logged in as: {username})" already
+ * says that, right next to this in `topbar-right` (#230).
+ */
 function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<void> }): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -306,9 +310,6 @@ function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<vo
 
   return (
     <div className="accountpanel-signedin">
-      <span>
-        Signed in as <strong>{user.username}</strong>
-      </span>
       <button className="quiet" disabled={busy} onClick={doSignOut}>
         Sign out
       </button>
@@ -334,13 +335,19 @@ export function AccountPanel(): React.JSX.Element {
       .catch(() => undefined);
   }, []);
 
-  if (adoption !== undefined) {
-    return <AdoptionPanel recordCount={adoption.recordCount} resolveAdoption={resolveAdoption} />;
-  }
-
-  return user === undefined ? (
-    <SignInForm signIn={signIn} oidcConfig={oidcConfig} />
-  ) : (
-    <SignedIn user={user} signOut={signOut} />
+  // Positioned so the popover/warning below — absolutely positioned, `left`/`right: 0`
+  // — anchors to this trigger's own box rather than to `.topbar-right`'s (#230: this now
+  // shares that fixed corner with `SyncBadge` and the toggles, so anchoring to the
+  // shared container would misplace the popover under whichever control sits first).
+  return (
+    <div className="accountpanel">
+      {adoption !== undefined ? (
+        <AdoptionPanel recordCount={adoption.recordCount} resolveAdoption={resolveAdoption} />
+      ) : user === undefined ? (
+        <SignInForm signIn={signIn} oidcConfig={oidcConfig} />
+      ) : (
+        <SignedIn user={user} signOut={signOut} />
+      )}
+    </div>
   );
 }

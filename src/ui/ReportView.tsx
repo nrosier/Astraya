@@ -133,16 +133,18 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
           ))}
         </select>
       </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={showProvenance}
-          onChange={(event) => {
-            setShowProvenance(event.target.checked);
-          }}
-        />{' '}
-        Show provenance (rule and corpus entry) for each paragraph
-      </label>
+      {!import.meta.env.PROD && (
+        <label>
+          <input
+            type="checkbox"
+            checked={showProvenance}
+            onChange={(event) => {
+              setShowProvenance(event.target.checked);
+            }}
+          />{' '}
+          Show provenance (rule and corpus entry) for each paragraph
+        </label>
+      )}
     </div>
   );
 
