@@ -8,7 +8,7 @@
  * or the ten days the Gregorian reform deleted.
  */
 import { describe, expect, it } from 'vitest';
-import { julianDayFor } from '../src/time/julian.js';
+import { civilFromJulianDay, julianDayFor } from '../src/time/julian.js';
 import { resolveMoment } from '../src/time/resolve.js';
 import type { CivilDateTime, Coordinates } from '../src/time/types.js';
 import { getEngine } from './engine-harness.js';
@@ -166,5 +166,44 @@ describe('julianDayFor', () => {
     for (let house = 1; house <= 12; house += 1) {
       expect(arc(a.cusps[house] ?? 0, b.cusps[house] ?? 0)).toBeGreaterThan(5);
     }
+  });
+});
+
+describe('civilFromJulianDay (#207)', () => {
+  it('recovers the J2000 epoch exactly', () => {
+    expect(civilFromJulianDay(2451545.0)).toEqual(civil(2000, 1, 1, 12));
+  });
+
+  it('recovers a midnight moment exactly', () => {
+    expect(civilFromJulianDay(2440587.5)).toEqual(civil(1970, 1, 1, 0));
+  });
+
+  it('round-trips through the real engine across a range of dates, including a month/year boundary', async () => {
+    const engine = await getEngine();
+    const cases: readonly CivilDateTime[] = [
+      civil(2024, 2, 29, 6, 15, 30), // leap day
+      civil(2024, 12, 31, 23, 59, 59), // year boundary
+      civil(1999, 1, 1, 0, 0, 0),
+      civil(2050, 7, 4, 12, 0, 0),
+    ];
+    for (const expected of cases) {
+      const jd = await engine.julianDayFromUtc(
+        expected.year,
+        expected.month,
+        expected.day,
+        expected.hour,
+        expected.minute,
+        expected.second,
+      );
+      expect(civilFromJulianDay(jd)).toEqual(expected);
+    }
+  });
+
+  it('is the exact inverse of julianDayFor for a UTC birth', async () => {
+    const engine = await getEngine();
+    const expected = civil(1990, 6, 15, 14, 30, 0);
+    const moment = resolveMoment({ civil: expected, coordinates: LONDON, offsetOverrideMinutes: 0 });
+    const jd = await julianDayFor(engine, moment);
+    expect(civilFromJulianDay(jd)).toEqual(expected);
   });
 });

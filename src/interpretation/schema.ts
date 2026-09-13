@@ -27,6 +27,7 @@ export const CORPUS_CATEGORIES = [
   'planet-in-house',
   'sign-on-cusp',
   'aspect-pair',
+  'transit-aspect',
   'dignity-state',
   'nakshatra',
   'pattern',
@@ -83,12 +84,28 @@ export function dignityState(dignities: EssentialDignities): DignityState | unde
  * seven shapes), but "pattern" is meant to also cover detectors this repo
  * doesn't have yet (grand trine, T-square, yod — M10 territory), so the
  * schema doesn't hard-code today's detector as the category's ceiling.
+ *
+ * `transit-aspect` (#207) is deliberately its own category rather than a
+ * qualified `aspect-pair`: an `aspect-pair` is symmetric (its two bodies are
+ * in the same chart, so `canonicalPair` alphabetizes them and
+ * `validatePlacementFields` enforces that order), but a transit aspect's two
+ * roles are not interchangeable — `transiting` is always the moving body at
+ * the moment in question, `natal` is always the fixed body in the reference
+ * chart, and swapping them would describe a different event. `transiting`
+ * and `natal` may even be the same body key (e.g. transiting Saturn aspecting
+ * natal Saturn, a Saturn return) — nothing here alphabetizes or forbids that.
  */
 export type CorpusPlacement =
   | { readonly category: 'planet-in-sign'; readonly body: string; readonly sign: number }
   | { readonly category: 'planet-in-house'; readonly body: string; readonly house: number }
   | { readonly category: 'sign-on-cusp'; readonly sign: number; readonly house: number }
   | { readonly category: 'aspect-pair'; readonly aspect: string; readonly bodyA: string; readonly bodyB: string }
+  | {
+      readonly category: 'transit-aspect';
+      readonly aspect: string;
+      readonly transiting: string;
+      readonly natal: string;
+    }
   | { readonly category: 'dignity-state'; readonly body: string; readonly state: DignityState }
   | { readonly category: 'nakshatra'; readonly body: string; readonly nakshatra: number }
   | { readonly category: 'pattern'; readonly pattern: string };
@@ -108,6 +125,8 @@ export function placementKey(placement: CorpusPlacement): string {
       const [bodyA, bodyB] = canonicalPair(placement.bodyA, placement.bodyB);
       return `aspect-pair:${placement.aspect}:${bodyA}:${bodyB}`;
     }
+    case 'transit-aspect':
+      return `transit-aspect:${placement.aspect}:${placement.transiting}:${placement.natal}`;
     case 'dignity-state':
       return `dignity-state:${placement.body}:${placement.state}`;
     case 'nakshatra':
@@ -152,6 +171,11 @@ export function parsePlacementKey(key: string): CorpusPlacement | undefined {
       const [aspect, bodyA, bodyB] = rest;
       if (aspect === undefined || bodyA === undefined || bodyB === undefined) return undefined;
       return { category, aspect, bodyA, bodyB };
+    }
+    case 'transit-aspect': {
+      const [aspect, transiting, natal] = rest;
+      if (aspect === undefined || transiting === undefined || natal === undefined) return undefined;
+      return { category, aspect, transiting, natal };
     }
     case 'dignity-state': {
       const [body, state] = rest;
@@ -278,6 +302,11 @@ function validatePlacementFields(placement: CorpusPlacement): string[] {
           `aspect-pair bodies must be in alphabetical order — got "${placement.bodyA}", "${placement.bodyB}"`,
         );
       }
+      break;
+    case 'transit-aspect':
+      if (aspectByKey(placement.aspect) === undefined) errors.push(`unknown aspect key "${placement.aspect}"`);
+      checkBody(placement.transiting, 'transiting');
+      checkBody(placement.natal, 'natal');
       break;
     case 'dignity-state':
       checkBody(placement.body, 'body');

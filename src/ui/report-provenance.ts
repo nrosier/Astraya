@@ -44,6 +44,8 @@ export function describePlacement(placement: CorpusPlacement): string {
       return `${signLabel(placement.sign)} on the house ${String(placement.house)} cusp`;
     case 'aspect-pair':
       return `${bodyLabel(placement.bodyA)} ${aspectLabel(placement.aspect)} ${bodyLabel(placement.bodyB)}`;
+    case 'transit-aspect':
+      return `transiting ${bodyLabel(placement.transiting)} ${aspectLabel(placement.aspect)} natal ${bodyLabel(placement.natal)}`;
     case 'dignity-state':
       return `${bodyLabel(placement.body)}: ${placement.state}`;
     case 'nakshatra':

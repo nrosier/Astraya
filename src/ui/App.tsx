@@ -11,6 +11,7 @@ import { CompositeView } from './CompositeView.js';
 import { HarmonicView } from './HarmonicView.js';
 import { LanguageToggle } from './LanguageToggle.js';
 import { People } from './People.js';
+import { PeriodicTransitView } from './PeriodicTransitView.js';
 import { PersonForm } from './PersonForm.js';
 import { ProfectionsView } from './ProfectionsView.js';
 import { PwaStatus } from './PwaStatus.js';
@@ -259,6 +260,13 @@ function renderScreen(
     return (
       <Stored>
         <HarmonicView key={parsed.personId} personId={parsed.personId} />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'periodic-transit') {
+    return (
+      <Stored>
+        <PeriodicTransitView key={parsed.personId} personId={parsed.personId} />
       </Stored>
     );
   }

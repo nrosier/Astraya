@@ -72,6 +72,19 @@ describe('coverage: no placement resolves to empty (#59)', () => {
     expectFullCoverage(placements, CORPUS);
   });
 
+  it('covers the full aspect x transiting-body x natal-body cross-product (#207)', () => {
+    // Unlike aspect-pair, transiting/natal are not interchangeable roles, so this is the full
+    // product (including transiting === natal, e.g. a Saturn return), not canonical pairs.
+    const keys = BODIES.map((body) => body.key);
+    const placements: CorpusPlacement[] = ASPECTS.flatMap((aspect) =>
+      keys.flatMap((transiting) =>
+        keys.map((natal) => ({ category: 'transit-aspect' as const, aspect: aspect.key, transiting, natal })),
+      ),
+    );
+    expect(placements).toHaveLength(ASPECTS.length * keys.length * keys.length);
+    expectFullCoverage(placements, CORPUS);
+  });
+
   it('covers the full body x dignity-state cross-product', () => {
     const placements: CorpusPlacement[] = BODIES.flatMap((body) =>
       DIGNITY_STATES.map((state) => ({ category: 'dignity-state' as const, body: body.key, state })),

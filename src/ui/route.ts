@@ -31,6 +31,10 @@ export type Route =
   // reasoning as composite: it changes far more often within one visit than it's worth
   // sharing as a link, and the screen's default (natal, n=1) is always a valid landing.
   | { readonly kind: 'harmonic'; readonly personId: string }
+  // Daily/weekly/monthly/yearly transit forecast (#207). No second parameter to pick — the
+  // screen's own "as of" date input plays the role a harmonic number or comparison person
+  // plays elsewhere, and that's already excluded from the URL for the same reasons those are.
+  | { readonly kind: 'periodic-transit'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'set-password' }
@@ -43,6 +47,7 @@ const TRANSIT_PATH = /^#\/transit\/(.+)$/;
 const SYNASTRY_PATH = /^#\/synastry\/(.+)$/;
 const COMPOSITE_PATH = /^#\/composite\/(.+)$/;
 const HARMONIC_PATH = /^#\/harmonic\/(.+)$/;
+const PERIODIC_TRANSIT_PATH = /^#\/periodic-transit\/(.+)$/;
 
 export function parseRoute(hash: string): Route {
   // The query carries a birth record on #/time, so every match is on the path part alone.
@@ -101,6 +106,11 @@ export function parseRoute(hash: string): Route {
 
   const harmonic = HARMONIC_PATH.exec(path);
   if (harmonic !== null && isPersonId(harmonic[1])) return { kind: 'harmonic', personId: harmonic[1] };
+
+  const periodicTransit = PERIODIC_TRANSIT_PATH.exec(path);
+  if (periodicTransit !== null && isPersonId(periodicTransit[1])) {
+    return { kind: 'periodic-transit', personId: periodicTransit[1] };
+  }
 
   return { kind: 'home' };
 }

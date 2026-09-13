@@ -16,6 +16,7 @@ const PLACEMENTS: readonly CorpusPlacement[] = [
   { category: 'planet-in-house', body: 'moon', house: 10 },
   { category: 'sign-on-cusp', sign: 4, house: 1 },
   { category: 'aspect-pair', aspect: 'square', bodyA: 'mars', bodyB: 'sun' },
+  { category: 'transit-aspect', aspect: 'trine', transiting: 'mars', natal: 'sun' },
   { category: 'dignity-state', body: 'jupiter', state: 'exalted' },
   { category: 'nakshatra', body: 'moon', nakshatra: 3 },
   { category: 'pattern', pattern: 'bowl' },
@@ -49,6 +50,25 @@ describe('placementKey / parsePlacementKey (#53)', () => {
   it('returns undefined for an unparseable key', () => {
     expect(parsePlacementKey('not-a-real-category:whatever')).toBeUndefined();
     expect(parsePlacementKey('dignity-state:mars:not-a-state')).toBeUndefined();
+  });
+
+  it('does not canonicalize transit-aspect roles — transiting and natal are not interchangeable (#207)', () => {
+    const forward = placementKey({ category: 'transit-aspect', aspect: 'trine', transiting: 'mars', natal: 'sun' });
+    const reversed = placementKey({ category: 'transit-aspect', aspect: 'trine', transiting: 'sun', natal: 'mars' });
+    expect(forward).toBe('transit-aspect:trine:mars:sun');
+    expect(reversed).toBe('transit-aspect:trine:sun:mars');
+    expect(forward).not.toBe(reversed);
+  });
+
+  it('allows a transit-aspect placement with the same body on both sides (a return, e.g. Saturn to natal Saturn)', () => {
+    const key = placementKey({ category: 'transit-aspect', aspect: 'conjunction', transiting: 'saturn', natal: 'saturn' });
+    expect(key).toBe('transit-aspect:conjunction:saturn:saturn');
+    expect(parsePlacementKey(key)).toEqual({
+      category: 'transit-aspect',
+      aspect: 'conjunction',
+      transiting: 'saturn',
+      natal: 'saturn',
+    });
   });
 
   it('categoryOfKey reads just the first segment', () => {
@@ -105,6 +125,29 @@ describe('validateCorpusEntries (#53)', () => {
     const result = validateCorpusEntries([validEntry({ key: 'aspect-pair:square:sun:sun' })]);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.issues[0]?.message).toMatch(/both "sun"/);
+  });
+
+  it('accepts a transit-aspect entry with identical bodies — a return is not an error (#207)', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'transit-aspect:conjunction:saturn:saturn' })]);
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects a transit-aspect entry with an unknown aspect key', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'transit-aspect:not-an-aspect:mars:sun' })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues[0]?.message).toMatch(/unknown aspect key/);
+  });
+
+  it('rejects a transit-aspect entry with an unknown transiting body', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'transit-aspect:trine:notabody:sun' })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues[0]?.message).toMatch(/unknown body key/);
+  });
+
+  it('rejects a transit-aspect entry with an unknown natal body', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'transit-aspect:trine:mars:notabody' })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues[0]?.message).toMatch(/unknown body key/);
   });
 
   it('rejects a non-kebab-case pattern key', () => {

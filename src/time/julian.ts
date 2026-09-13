@@ -16,7 +16,7 @@
  */
 import { DateTime, FixedOffsetZone } from 'luxon';
 import type { CalendarSystem, EphemerisProvider, JulianDayUT } from '../ephemeris/types.js';
-import type { ResolvedMoment } from './types.js';
+import type { CivilDateTime, ResolvedMoment } from './types.js';
 
 /**
  * First year for which `swe_utc_to_jd` has anything to add.
@@ -64,4 +64,25 @@ export async function julianDayFor(provider: EphemerisProvider, moment: Resolved
   // midnight, or a date beside the 1582 reform gap, a non-event.
   const midnight = await provider.julianDay(civil.year, civil.month, civil.day, 0, calendar satisfies CalendarSystem);
   return midnight + (decimalHour(moment) - offsetMinutes / 60) / 24;
+}
+
+/** Julian day (UT) of the Unix epoch, 1970-01-01T00:00:00 UTC — exact, not an approximation. */
+const UNIX_EPOCH_JD = 2440587.5;
+
+/**
+ * The reverse of `julianDayFor`'s forward path: a Julian day (UT) back to a Gregorian UTC civil
+ * date/time, for displaying a *computed* moment (#207's exact-aspect and station timestamps, a
+ * solar return's exact date) rather than converting one a person typed in.
+ *
+ * No `EphemerisProvider` round trip needed for this direction — `EphemerisProvider` exposes no
+ * `swe_revjul` binding, but every JD in play here is already a Gregorian-calendar UT moment,
+ * so shifting to milliseconds since the Unix epoch and letting Luxon (already this module's
+ * date-arithmetic dependency) decompose it into civil fields is exact and gets month/year
+ * rollover for free, rather than reimplementing that by hand.
+ */
+export function civilFromJulianDay(jd: JulianDayUT): CivilDateTime {
+  const millisSinceEpoch = Math.round((jd - UNIX_EPOCH_JD) * 86_400_000);
+  const dt = DateTime.fromMillis(millisSinceEpoch, { zone: 'utc' });
+  if (!dt.isValid) throw new Error(`Cannot convert Julian day ${String(jd)} to a civil date: ${dt.invalidReason}`);
+  return { year: dt.year, month: dt.month, day: dt.day, hour: dt.hour, minute: dt.minute, second: dt.second };
 }

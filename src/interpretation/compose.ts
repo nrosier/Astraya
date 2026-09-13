@@ -14,11 +14,13 @@
  * until they exist.
  *
  * Scoped to the same five categories #60's rule engine covers
- * (planet-in-sign, planet-in-house, sign-on-cusp, aspect-pair, dignity-state).
- * `nakshatra` and `pattern` are out of scope for the same reason #60 excluded
- * them: neither is produced by anything currently feeding this module, and
- * both would need chart data (sidereal longitude, whole-chart shape) rather
- * than a `CorpusPlacement`'s own fields.
+ * (planet-in-sign, planet-in-house, sign-on-cusp, aspect-pair, dignity-state),
+ * plus `transit-aspect` (#207), which reuses this same fallback machinery for
+ * a different pair of roles (transiting body, natal body) rather than a
+ * same-chart pair. `nakshatra` and `pattern` are out of scope for the same
+ * reason #60 excluded them: neither is produced by anything currently
+ * feeding this module, and both would need chart data (sidereal longitude,
+ * whole-chart shape) rather than a `CorpusPlacement`'s own fields.
  *
  * Dutch terminology note: the twelve sign names, ten planet/luminary names
  * and five major-aspect names below are standard, unremarkable translations.
@@ -223,6 +225,14 @@ export function composeFallbackText(placement: CorpusPlacement, locale: Locale):
       return locale === 'nl'
         ? `${capitalize(aspect)} tussen ${bodyA} en ${bodyB}.`
         : `${capitalize(aspect)} between ${bodyA} and ${bodyB}.`;
+    }
+    case 'transit-aspect': {
+      const aspect = aspectName(placement.aspect, locale);
+      const transiting = bodyName(placement.transiting, locale);
+      const natal = bodyName(placement.natal, locale);
+      return locale === 'nl'
+        ? `${capitalize(aspect)} tussen transiterende ${transiting} en radix ${natal}.`
+        : `${capitalize(aspect)} between transiting ${transiting} and natal ${natal}.`;
     }
     case 'dignity-state': {
       const body = capitalize(bodyName(placement.body, locale));

@@ -13,14 +13,23 @@
  * has, so they can't be empty either.
  *
  * A pure, synchronous function of one `ChartData`: no ephemeris access, no
- * "now". That is a deliberate scope cut on this issue's last checklist item,
+ * "now". That was a deliberate scope cut on this issue's last checklist item,
  * "current timing from progressions and the year's solar return" —
  * `SecondaryProgressionData`/a solar-return chart is not itself a
  * `ChartData` (no `dignities` or `sect`, and its cross-chart contacts aren't
  * the intra-chart `aspects` an `aspect-pair` placement models), and deciding
- * what a "current timing" placement even keys off is a real design question
- * of its own. Left for a follow-up rather than forced into this module's
- * shape.
+ * what a "current timing" placement even keys off was a real design question
+ * of its own.
+ *
+ * **Resolved by #207, not carried forward**: rather than forcing a solar
+ * return into this module's `ChartData`-shaped world, `domain/periodic-
+ * transit.ts` is a separate pipeline that ties directly into
+ * `computeSolarReturn` for its yearly tier, plus its own daily/weekly/monthly
+ * tiers of exact transit-to-natal aspects (`astrology/transit-events.ts`) and
+ * fast-planet stations (`astrology/stations.ts`). "Progressions" half of the
+ * old note already has its own dedicated screen (`SecondaryProgressionView.
+ * tsx`, M6) and needed no new work. This module (`report.ts`) stays exactly
+ * the pure, `ChartData`-only function its own doc above describes.
  *
  * "Nodes and Chiron axis" covers the True Node and Chiron, each with their
  * own `BODIES` entry and computed position. The South Node does not: it has
