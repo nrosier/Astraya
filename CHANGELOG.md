@@ -4,6 +4,60 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.10.0] — 2026-09-13
+
+**Six new chart types ship together: profections, transits, synastry, composite,
+harmonic/Varga charts, periodic transit forecasts, and now astrocartography — plus
+a fix for PNG export, which was silently broken for every chart in the app.**
+
+This is M10 (Extended techniques & world charts) progress, not a finished
+milestone: internationalization (#158) and the map-based birth-place picker
+(#159) are still open, and M9's own release (v1.0.0, #120) hasn't shipped
+either. None of the M10 features below have been in a tagged release before —
+they landed on `main` after `v0.9.6` and are all going out together now.
+
+### Added
+
+- **Astrocartography and Local Space lines (#171):** a world map of where each
+  planet's angles (MC/IC/AC/DC) fall right now, plus optional Local Space
+  lines (azimuth vectors from the birthplace) and relocation (recompute the
+  Ascendant/Midheaven for another place without moving any line). Traditional
+  bodies are shown by default; Uranus, Neptune, and Pluto are available as an
+  extended option. Exports to SVG and PNG like every other chart.
+- Periodic transit forecast screen (#207): solar-return-anchored forecasts of
+  upcoming transits, with narrative text.
+- Harmonic and Vedic Varga chart screen (#170).
+- Composite (midpoint) chart screen (#169).
+- Transit and synastry bi-wheel screens (#172).
+- Annual and monthly profections (#168).
+- Topbar tab order, popover keyboard handling, and table semantics fixes for
+  keyboard and screen-reader use (#69).
+
+### Fixed
+
+- **PNG export was broken for every chart in the app.** Chart PNG downloads
+  rasterize the chart's SVG through a `blob:` URL, but the Content Security
+  Policy's `img-src` directive never allowed `blob:`, so the browser silently
+  blocked the image and the download failed. No end-to-end test exercised the
+  "Download PNG" button anywhere, so this shipped unnoticed until
+  astrocartography's manual verification caught it. Fixed by adding `blob:` to
+  `img-src` in both the server's CSP header and `index.html`'s meta tag.
+- Forecast screen (#207): narrative text and formatting fixes.
+- Dialog semantics and focus loss on route change, for screen readers (#69).
+- An end-to-end test now waits for the service worker's post-activation reload
+  before the first store write, instead of racing it (#229).
+- Degenerate Horizon-system house cusps are now detected and rejected instead
+  of returning nonsense angles (#184).
+- The default search budget for outer-planet returns was too narrow and could
+  miss a return near the search boundary; widened (#71).
+- CI now actually runs a pull request's built image, not just builds it.
+
+### Performance
+
+- Dropped a redundant ephemeris call from crossing bisection (#71).
+- The ephemeris worker is now reused across chart recomputes instead of
+  restarted each time (#71).
+
 ## [0.9.6] — 2026-09-12
 
 **Authentik sign-in actually works now, end to end.**
