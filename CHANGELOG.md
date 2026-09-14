@@ -4,6 +4,35 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.12.0] — 2026-09-14
+
+**The whole UI now switches between English and Dutch — chart tables, forms,
+settings, and everything else, not just the interpretation report — completing
+M10.**
+
+This closes internationalization (#158), the last open item in M10 (Extended
+techniques & world charts). M9's own release (v1.0.0) still hasn't shipped.
+
+### Added
+
+- **Full English/Dutch UI internationalization (#158):** the existing
+  report-language toggle now switches the entire app. Every screen — chart
+  views, profections, synastry, transits, composite/harmonic charts,
+  astrocartography, forms, account, admin, extended settings, and about —
+  renders fully in the chosen language, with no leftover English. Dates,
+  times, and coordinates reformat for the locale, and sign/planet/aspect names
+  shown in chart tables are translated using the same standard Dutch
+  astrological vocabulary as the interpretation report. House-system names,
+  ayanamsas, and a handful of compound technical labels (ARMC, Vertex, Part of
+  Fortune, and similar) stay in English, matching how such terms are
+  conventionally handled.
+
+### Fixed
+
+- Dev-only: the AstroChart reference wheel now renders alongside Astraya's own
+  in development builds instead of one at a time, making the two easier to
+  compare. Production, which never had the toggle, is unaffected.
+
 ## [0.11.0] — 2026-09-14
 
 **A map-based way to set a birth place, "use my location" to center it, a
