@@ -10,6 +10,7 @@
  */
 import { useState } from 'react';
 import { draftFrom, draftToMutations, validateDraft, type Draft } from '../domain/person-form.js';
+import { personFormValidationMessages } from '../domain/person-form.messages.js';
 import { formatOffset, resolveMoment } from '../time/resolve.js';
 import { BirthPlaceMap } from './BirthPlaceMap.js';
 import { useMessages } from './messages.js';
@@ -36,6 +37,7 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
   const person = state.people.get(personId);
   const t = useMessages(personFormMessages);
   const shared = useMessages(sharedMessages);
+  const validationT = useMessages(personFormValidationMessages);
 
   // The stored person, as a draft, recomputed every render rather than memoized: until the user
   // edits a field, the form must keep tracking the store, so a sync pull that merges in a remote
@@ -51,7 +53,7 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
   }
 
   const current = draft ?? opened ?? draftFrom(person);
-  const { errors, moment } = validateDraft(current);
+  const { errors, moment } = validateDraft(current, validationT);
   const resolved = moment === undefined ? undefined : resolveMoment(moment);
 
   // `onPick` below needs to update latitude and longitude together: two separate `set` calls in
@@ -68,7 +70,7 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
 
   const save = (): void => {
     if (opened === undefined || moment === undefined) return;
-    const mutations = draftToMutations(personId, current, opened);
+    const mutations = draftToMutations(personId, current, opened, validationT);
     if (mutations.length === 0) {
       setSaved(true);
       return;
