@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { isTheme, nextTheme, THEME_CYCLE, THEME_LABELS } from '../src/ui/theme.js';
+import { isTheme, nextTheme, THEME_CYCLE, themeLabel } from '../src/ui/theme.js';
+import { themeToggleMessages } from '../src/ui/ThemeToggle.messages.js';
+
+const T = themeToggleMessages.en;
 
 describe('isTheme', () => {
   it('accepts every value in the cycle', () => {
@@ -22,8 +25,8 @@ describe('nextTheme', () => {
   });
 });
 
-describe('THEME_LABELS', () => {
+describe('themeLabel', () => {
   it('has a label for every theme in the cycle', () => {
-    for (const theme of THEME_CYCLE) expect(THEME_LABELS[theme]).toBeTruthy();
+    for (const theme of THEME_CYCLE) expect(themeLabel(theme, T)).toBeTruthy();
   });
 });

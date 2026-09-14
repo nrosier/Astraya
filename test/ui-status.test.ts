@@ -8,17 +8,19 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ago, describeStatus, type StatusInput, type SyncState } from '../src/ui/status.js';
+import { statusMessages } from '../src/ui/status.messages.js';
 import type { Persistence } from '../src/store/persist.js';
 
 const NOW = Date.UTC(2026, 8, 7, 12, 0, 0);
 const MINUTE = 60_000;
+const T = statusMessages.en;
 
 const PERSISTED: Persistence = { state: 'persisted' };
 const EVICTABLE: Persistence = { state: 'evictable' };
 
 function status(overrides: Partial<StatusInput> = {}): ReturnType<typeof describeStatus> {
   const sync: SyncState = { kind: 'synced', at: NOW - MINUTE };
-  return describeStatus({ online: true, persistence: PERSISTED, pending: 0, sync, now: NOW, ...overrides });
+  return describeStatus({ online: true, persistence: PERSISTED, pending: 0, sync, now: NOW, ...overrides }, T);
 }
 
 describe('signed out', () => {
@@ -119,22 +121,22 @@ describe('failing sync', () => {
 
 describe('elapsed time', () => {
   it('rounds the recent past to just now', () => {
-    expect(ago(NOW, NOW - 1000)).toBe('just now');
-    expect(ago(NOW, NOW - 44_000)).toBe('just now');
+    expect(ago(NOW, NOW - 1000, T)).toBe('just now');
+    expect(ago(NOW, NOW - 44_000, T)).toBe('just now');
   });
 
   it('reads a clock that ran backwards as just now rather than as the future', () => {
     // A peer's timestamp can be ahead of ours, and a device clock can be corrected while the
     // app is open. "in 3 minutes" would read as a bug in the sync rather than in the clock.
-    expect(ago(NOW, NOW + 3 * MINUTE)).toBe('just now');
+    expect(ago(NOW, NOW + 3 * MINUTE, T)).toBe('just now');
   });
 
   it('scales through minutes, hours and days', () => {
-    expect(ago(NOW, NOW - 7 * MINUTE)).toBe('7 minutes ago');
-    expect(ago(NOW, NOW - 59 * MINUTE)).toBe('59 minutes ago');
-    expect(ago(NOW, NOW - 75 * MINUTE)).toBe('an hour ago');
-    expect(ago(NOW, NOW - 5 * 60 * MINUTE)).toBe('5 hours ago');
-    expect(ago(NOW, NOW - 30 * 60 * MINUTE)).toBe('yesterday');
-    expect(ago(NOW, NOW - 4 * 24 * 60 * MINUTE)).toBe('4 days ago');
+    expect(ago(NOW, NOW - 7 * MINUTE, T)).toBe('7 minutes ago');
+    expect(ago(NOW, NOW - 59 * MINUTE, T)).toBe('59 minutes ago');
+    expect(ago(NOW, NOW - 75 * MINUTE, T)).toBe('an hour ago');
+    expect(ago(NOW, NOW - 5 * 60 * MINUTE, T)).toBe('5 hours ago');
+    expect(ago(NOW, NOW - 30 * 60 * MINUTE, T)).toBe('yesterday');
+    expect(ago(NOW, NOW - 4 * 24 * 60 * MINUTE, T)).toBe('4 days ago');
   });
 });

@@ -11,8 +11,11 @@
  * to scroll past.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useMessages } from './messages.js';
 import { useSession, useSyncEngine } from './session-context.js';
 import { describeStatus, type SyncState } from './status.js';
+import { statusMessages } from './status.messages.js';
+import { syncBadgeMessages } from './SyncBadge.messages.js';
 import { useOptionalStore } from './store-context.js';
 import type { Persistence } from '../store/persist.js';
 
@@ -75,6 +78,8 @@ export function SyncBadge(): React.JSX.Element {
   const now = useNow(30_000);
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const t = useMessages(syncBadgeMessages);
+  const statusT = useMessages(statusMessages);
 
   const close = (): void => {
     setOpen(false);
@@ -95,13 +100,16 @@ export function SyncBadge(): React.JSX.Element {
     };
   }, [open]);
 
-  const status = describeStatus({
-    online,
-    persistence: store?.persistence ?? UNKNOWN_PERSISTENCE,
-    pending: engine?.pending() ?? store?.outgoing().length ?? 0,
-    sync,
-    now,
-  });
+  const status = describeStatus(
+    {
+      online,
+      persistence: store?.persistence ?? UNKNOWN_PERSISTENCE,
+      pending: engine?.pending() ?? store?.outgoing().length ?? 0,
+      sync,
+      now,
+    },
+    statusT,
+  );
 
   return (
     <div
@@ -128,15 +136,15 @@ export function SyncBadge(): React.JSX.Element {
         >
           {status.label}
         </button>
-        {user !== undefined && <span className="syncbadge-user">(logged in as: {user.username})</span>}
+        {user !== undefined && <span className="syncbadge-user">{t.loggedInAs(user.username)}</span>}
       </span>
       {engine !== undefined && (
         <button
           type="button"
           className="syncbadge-sync"
           disabled={sync.kind === 'syncing'}
-          title="Sync now"
-          aria-label="Sync now"
+          title={t.syncNow}
+          aria-label={t.syncNow}
           onClick={() => {
             engine.syncNow();
           }}

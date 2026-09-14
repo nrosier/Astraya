@@ -8,11 +8,15 @@
  * has to re-apply on a change the user just made.
  */
 import { useState } from 'react';
+import { useMessages } from './messages.js';
 import { applyTheme, readStoredTheme, writeStoredTheme } from './theme-dom.js';
-import { nextTheme, THEME_LABELS, type Theme } from './theme.js';
+import { nextTheme, themeLabel, type Theme } from './theme.js';
+import { themeToggleMessages } from './ThemeToggle.messages.js';
 
 export function ThemeToggle(): React.JSX.Element {
+  const t = useMessages(themeToggleMessages);
   const [theme, setTheme] = useState<Theme>(() => readStoredTheme());
+  const label = themeLabel(theme, t);
 
   return (
     <button
@@ -26,8 +30,8 @@ export function ThemeToggle(): React.JSX.Element {
           return next;
         });
       }}
-      aria-label={`${THEME_LABELS[theme]} — activate to change`}
-      title={THEME_LABELS[theme]}
+      aria-label={t.activateToChange(label)}
+      title={label}
     >
       {theme === 'system' ? '◐' : theme === 'light' ? '☀' : '☾'}
     </button>

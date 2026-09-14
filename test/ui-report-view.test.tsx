@@ -16,6 +16,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReportView, PERSONA_LABELS } from '../src/ui/ReportView.js';
+import { reportViewMessages } from '../src/ui/ReportView.messages.js';
 import { getLocale, setLocale } from '../src/ui/locale.js';
 import { bodyByKey } from '../src/astrology/bodies.js';
 import type { EssentialDignities } from '../src/astrology/dignities.js';
@@ -185,7 +186,7 @@ describe('ReportView advisor picker (locale comes from the shared locale.ts stor
     expect(localStorage.getItem('astraya:reportLocale')).toBe('nl');
     expect(fetchMock).toHaveBeenCalledWith('/corpus/nl/neutral.json');
     // The advisor options relabel in the newly selected report language.
-    const advisorSelect = labeledSelect(container, 'Advisor');
+    const advisorSelect = labeledSelect(container, reportViewMessages.nl.advisor);
     expect(Array.from(advisorSelect.options).map((o) => o.textContent)).toContain('De Cynische Realist');
 
     act(() => {
@@ -220,7 +221,7 @@ describe('ReportView advisor picker (locale comes from the shared locale.ts stor
     const { container, root } = await mount();
 
     expect(getLocale()).toBe('nl');
-    expect(labeledSelect(container, 'Advisor').value).toBe('mystic');
+    expect(labeledSelect(container, reportViewMessages.nl.advisor).value).toBe('mystic');
     expect(fetchMock).toHaveBeenCalledWith('/corpus/nl/neutral.json');
     expect(fetchMock).toHaveBeenCalledWith('/corpus/nl/mystic.json');
 

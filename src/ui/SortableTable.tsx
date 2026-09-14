@@ -10,6 +10,8 @@
  */
 import { useId, useState } from 'react';
 import { downloadText } from './download.js';
+import { useMessages } from './messages.js';
+import { sortableTableMessages } from './SortableTable.messages.js';
 import { rowsToCsv, rowsToTsv, sortRows, toggleSort, type SortState, type TableColumn } from './table-sort.js';
 
 export function SortableTable<T>({
@@ -26,6 +28,7 @@ export function SortableTable<T>({
   /** Filename for this table's CSV download (#68), already derived from the person and chart. */
   readonly downloadFilename: string;
 }): React.JSX.Element {
+  const t = useMessages(sortableTableMessages);
   const [sort, setSort] = useState<SortState>();
   const [copied, setCopied] = useState(false);
   const sorted = sortRows(rows, columns, sort);
@@ -58,10 +61,10 @@ export function SortableTable<T>({
         <h3 id={captionId}>{caption}</h3>
         <div className="data-table-actions">
           <button type="button" className="quiet" onClick={copy}>
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? t.copied : t.copy}
           </button>
           <button type="button" className="quiet" onClick={download}>
-            Download CSV
+            {t.downloadCsv}
           </button>
         </div>
       </div>

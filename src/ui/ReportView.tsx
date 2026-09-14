@@ -33,6 +33,8 @@ import { loadRuntimeCorpus } from '../interpretation/corpus-client.js';
 import { PERSONA_IDS, type CorpusEntry, type Locale, type PersonaId } from '../interpretation/schema.js';
 import { describeParagraphProvenance } from './report-provenance.js';
 import { useLocale } from './locale.js';
+import { useMessages } from './messages.js';
+import { reportViewMessages } from './ReportView.messages.js';
 import type { ChartData } from '../domain/chart-compute.js';
 
 const PERSONA_KEY = 'astraya:reportPersona';
@@ -85,6 +87,7 @@ function Paragraph({
 }
 
 export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.Element {
+  const t = useMessages(reportViewMessages);
   const [showProvenance, setShowProvenance] = useState(false);
   const [locale] = useLocale();
   const [persona, setPersona] = useState<PersonaId | undefined>(initialPersona);
@@ -110,7 +113,7 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
   const controls = (
     <div className="report-controls">
       <label>
-        Advisor
+        {t.advisor}
         <select
           value={persona ?? ''}
           onChange={(event) => {
@@ -125,7 +128,7 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
             setPersona(next);
           }}
         >
-          <option value="">Neutral</option>
+          <option value="">{t.neutral}</option>
           {PERSONA_IDS.map((option) => (
             <option key={option} value={option}>
               {PERSONA_LABELS[option][locale]}
@@ -142,7 +145,7 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
               setShowProvenance(event.target.checked);
             }}
           />{' '}
-          Show provenance (rule and corpus entry) for each paragraph
+          {t.showProvenance}
         </label>
       )}
     </div>
@@ -152,7 +155,7 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
     return (
       <div className="report">
         {controls}
-        <p role="alert">Could not load the interpretation text: {loadError}</p>
+        <p role="alert">{t.couldNotLoad(loadError)}</p>
       </div>
     );
   }
@@ -160,7 +163,7 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
     return (
       <div className="report">
         {controls}
-        <p>Loading report…</p>
+        <p>{t.loadingReport}</p>
       </div>
     );
   }

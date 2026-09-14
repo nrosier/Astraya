@@ -10,6 +10,9 @@ import { chartSheetMetaLines } from '../domain/chart-tables.js';
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
 import { decodeChartShareLink, type ChartShareData } from '../domain/chart-share.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { useMessages } from './messages.js';
+import { sharedChartViewMessages } from './SharedChartView.messages.js';
+import { sharedMessages } from './shared.messages.js';
 
 type Load =
   | { readonly kind: 'loading' }
@@ -28,6 +31,8 @@ function fromLocation(): { data?: ChartShareData; error?: string } {
 }
 
 export function SharedChartView(): React.JSX.Element {
+  const t = useMessages(sharedChartViewMessages);
+  const shared = useMessages(sharedMessages);
   const initial = useMemo(fromLocation, []);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
 
@@ -57,26 +62,23 @@ export function SharedChartView(): React.JSX.Element {
   return (
     <main className="shell">
       <p className="back">
-        <a href="#/">&larr; Back</a>
+        <a href="#/">&larr; {shared.back}</a>
       </p>
-      <h1>Shared chart</h1>
-      <p className="hint">
-        This chart is calculated entirely in your browser from the link itself &mdash; nothing was sent to us to open
-        it, and nothing you do here is either.
-      </p>
+      <h1>{t.sharedChart}</h1>
+      <p className="hint">{t.hint}</p>
 
       {initial.error !== undefined && (
         <p className="warning" role="alert">
-          That link could not be read. {initial.error}
+          {t.linkCouldNotBeRead(initial.error)}
         </p>
       )}
 
       {initial.data !== undefined && (
         <ChartDataView
           load={load}
-          displayName="Shared chart"
+          displayName={t.sharedChart}
           showHouses={initial.data.housesKnown}
-          metaLines={chartSheetMetaLines('Shared chart', initial.data.moment)}
+          metaLines={chartSheetMetaLines(t.sharedChart, initial.data.moment)}
         />
       )}
     </main>
