@@ -1,6 +1,6 @@
 /**
- * The report language, promoted out of `ReportView` to sit next to `ThemeToggle` — see
- * `locale.ts` for why it's a shared store rather than a `ReportView`-local `useState`.
+ * The app's language switch (#158), sitting next to `ThemeToggle` — see `locale.ts` for why
+ * it's a shared store rather than a component-local `useState`.
  *
  * A single cycling button, same shape as `ThemeToggle`, rather than a `<select>`: two
  * locales today, and a button matches the toggle it sits beside instead of looking like
@@ -20,7 +20,7 @@ export function LanguageToggle(): React.JSX.Element {
         const index = CORPUS_LOCALES.indexOf(locale);
         setLocale(CORPUS_LOCALES[(index + 1) % CORPUS_LOCALES.length] ?? locale);
       }}
-      aria-label={`Report language: ${LOCALE_LABELS[locale]} — activate to change`}
+      aria-label={`Language: ${LOCALE_LABELS[locale]} — activate to change`}
       title={LOCALE_LABELS[locale]}
     >
       {locale.toUpperCase()}

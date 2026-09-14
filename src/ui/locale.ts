@@ -1,8 +1,9 @@
 /**
- * The report's language, promoted from a `ReportView`-only picker to an app-wide
- * setting next to `ThemeToggle` — a chart's interpretation text is the only thing it
- * currently affects, but the choice belongs with the other "how the app looks to me"
- * settings, not buried inside one tab of one screen.
+ * The app's UI locale (#158) — originally added as a `ReportView`-only picker, then promoted
+ * to sit next to `ThemeToggle` as an app-wide setting. It now drives every UI message
+ * catalogue (`useMessages`, in `messages.ts`) as well as the interpretation report's language.
+ * The storage key still says `reportLocale`: renaming it would reset every existing user's
+ * choice for no benefit, since the value it holds hasn't changed — only its scope has.
  *
  * A plain module-level store rather than React context: `LanguageToggle` (mounted once,
  * globally) and `ReportView` (mounted only while that tab is open) both need to read and

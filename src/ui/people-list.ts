@@ -6,7 +6,9 @@
  * the coordinates are missing, invites the user to expect a chart that cannot be cast.
  */
 import { formatOffset, resolveMoment } from '../time/resolve.js';
+import { peopleListMessages } from './people-list.messages.js';
 import type { Person } from '../domain/person.js';
+import type { Locale } from '../interpretation/schema.js';
 
 /** Sorted by name, with the unnamed last: an empty name sorts before everything otherwise. */
 export function ordered(people: ReadonlyMap<string, Person>): readonly Person[] {
@@ -30,12 +32,13 @@ export function caveated(person: Person): boolean {
 }
 
 /** One line saying what is on record, or what is not. */
-export function summary(person: Person): string {
+export function summary(person: Person, locale: Locale): string {
+  const t = peopleListMessages[locale];
   if (person.moment === undefined) {
     // Naming the missing fields rather than saying "incomplete": the user is the only one who
     // can supply them, and they cannot do that without knowing which.
-    const missing = person.missing.length > 0 ? person.missing.join(', ') : 'birth data';
-    return `No chart yet — still needed: ${missing}`;
+    const missing = person.missing.length > 0 ? person.missing.join(', ') : t.birthData;
+    return t.noChartYet(missing);
   }
   const { civil } = person.moment;
   const date = `${String(civil.year).padStart(4, '0')}-${String(civil.month).padStart(2, '0')}-${String(civil.day).padStart(2, '0')}`;
@@ -43,10 +46,10 @@ export function summary(person: Person): string {
   // printing it for a record that has none would be inventing data.
   const time =
     person.timeAccuracy === 'unknown'
-      ? 'time unknown'
+      ? t.timeUnknown
       : `${String(civil.hour).padStart(2, '0')}:${String(civil.minute).padStart(2, '0')}`;
   const resolved = resolveMoment(person.moment);
-  const place = person.placeLabel === '' ? 'place not recorded' : person.placeLabel;
+  const place = person.placeLabel === '' ? t.placeNotRecorded : person.placeLabel;
   // A row that prints an offset flatly presents it as settled. For a coordinate near a zone
   // boundary, an ambiguous hour or a pre-standard-time date it is not, and the list is where
   // the user decides which record to open. So the offset carries a flag when the resolution

@@ -8,12 +8,19 @@
  */
 import { useState } from 'react';
 import { newId } from '../domain/id.js';
+import { useLocale } from './locale.js';
+import { useMessages } from './messages.js';
 import { caveated, ordered, summary } from './people-list.js';
+import { peopleMessages } from './People.messages.js';
+import { sharedMessages } from './shared.messages.js';
 import { useStore, useStoreState } from './store-context.js';
 
 export function People(): React.JSX.Element {
   const store = useStore();
   const state = useStoreState();
+  const [locale] = useLocale();
+  const t = useMessages(peopleMessages);
+  const shared = useMessages(sharedMessages);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -49,7 +56,7 @@ export function People(): React.JSX.Element {
     // Confirmed here rather than left to a second screen: purge has no undo, unlike every
     // other action this page offers, so the warning has to land before the store call, not
     // instead of it.
-    if (!window.confirm(`Permanently delete ${name}? This cannot be undone.`)) return;
+    if (!window.confirm(t.confirmDelete(name))) return;
     void store.purge('person', id).catch((cause: unknown) => {
       setError(cause instanceof Error ? cause.message : String(cause));
     });
@@ -58,40 +65,35 @@ export function People(): React.JSX.Element {
   return (
     <main className="shell">
       <p className="back">
-        <a href="#/">&larr; Back</a>
+        <a href="#/">&larr; {shared.back}</a>
       </p>
-      <h1>People</h1>
-      <p className="tagline">
-        Charts belong to a person, so this is where they start. Everything here is stored on this device.
-      </p>
+      <h1>{t.heading}</h1>
+      <p className="tagline">{t.tagline}</p>
 
       {error !== undefined && (
         <p className="warning" role="alert">
-          That did not save. {error}
+          {t.saveFailed} {error}
         </p>
       )}
 
       <p>
         <button type="button" onClick={create} disabled={busy}>
-          Add a person
+          {t.addPerson}
         </button>
       </p>
 
       {people.length === 0 ? (
-        <p className="empty">
-          Nobody yet. Add a person and their birth record; a chart can be drawn once the date, time and coordinates are
-          in.
-        </p>
+        <p className="empty">{t.empty}</p>
       ) : (
         <ul className="people">
           {people.map((person) => (
             <li key={person.id}>
               <a className="person" href={`#/person/${person.id}`}>
                 <span className={person.displayName === '' ? 'name unnamed' : 'name'}>
-                  {person.displayName === '' ? 'Unnamed' : person.displayName}
+                  {person.displayName === '' ? t.unnamed : person.displayName}
                 </span>
                 <span className={person.moment === undefined ? 'summary incomplete' : 'summary'}>
-                  {summary(person)}
+                  {summary(person, locale)}
                 </span>
               </a>
             </li>
@@ -101,14 +103,13 @@ export function People(): React.JSX.Element {
 
       {people.some(caveated) && (
         <p className="hint">
-          A <code>?</code> after an offset means resolving it raised something &mdash; a timezone boundary, an hour the
-          clocks repeated, or a date before standard time. Open the person to see what and to overrule it.
+          {t.hintPrefix} <code>?</code> {t.hintSuffix}
         </p>
       )}
 
       {state.deleted.people.size > 0 && (
         <section className="deleted">
-          <h2>Deleted</h2>
+          <h2>{t.deletedHeading}</h2>
           {/* Deletes are tombstones, so "deleted" is a state a person can come back from.
               Showing them is the whole benefit of not having actually removed anything —
               and the fold materialises them, so each row can say who it is. */}
@@ -116,8 +117,8 @@ export function People(): React.JSX.Element {
             {ordered(state.deleted.people).map((person) => (
               <li key={person.id}>
                 <span className="person">
-                  <span className="name">{person.displayName === '' ? 'Unnamed' : person.displayName}</span>
-                  <span className="summary">{summary(person)}</span>
+                  <span className="name">{person.displayName === '' ? t.unnamed : person.displayName}</span>
+                  <span className="summary">{summary(person, locale)}</span>
                 </span>
                 <button
                   type="button"
@@ -126,16 +127,16 @@ export function People(): React.JSX.Element {
                     restore(person.id);
                   }}
                 >
-                  Restore
+                  {t.restore}
                 </button>
                 <button
                   type="button"
                   className="danger"
                   onClick={() => {
-                    purge(person.id, person.displayName === '' ? 'this person' : person.displayName);
+                    purge(person.id, person.displayName === '' ? t.unnamedPersonPlaceholder : person.displayName);
                   }}
                 >
-                  Delete permanently
+                  {t.deletePermanently}
                 </button>
               </li>
             ))}

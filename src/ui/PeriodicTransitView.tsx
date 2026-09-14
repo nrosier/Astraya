@@ -35,6 +35,7 @@ import type { StationEvent } from '../astrology/stations.js';
 import type { TransitAspectEvent } from '../astrology/transit-events.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { civilFromJulianDay } from '../time/julian.js';
+import { todayInputValue } from './format.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
@@ -157,15 +158,6 @@ const STATION_COLUMNS: readonly TableColumn<StationRow>[] = [
 function signHouseLabel(sign: number, house: number): string {
   const signName = SIGNS[sign]?.name ?? `sign ${String(sign)}`;
   return `${signName}, house ${String(house)}`;
-}
-
-/** Today's date as a `<input type="date">` value, in the visitor's local calendar. */
-function todayInputValue(): string {
-  const now = new Date();
-  const year = String(now.getFullYear()).padStart(4, '0');
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }
 
 export function PeriodicTransitView({ personId }: { personId: string }): React.JSX.Element {

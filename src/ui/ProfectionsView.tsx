@@ -17,6 +17,7 @@ import { degreeParts } from '../domain/chart-tables.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeProfections, type ProfectedPeriod, type ProfectionData } from '../domain/profections.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { todayInputValue } from './format.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
@@ -49,15 +50,6 @@ const COLUMNS: readonly TableColumn<ProfectionRow>[] = [
   { key: 'second', label: 'Sec', valueOf: (row) => row.second },
   { key: 'ruler', label: 'Lord', valueOf: (row) => row.ruler },
 ];
-
-/** Today's date as a `<input type="date">` value, in the visitor's local calendar. */
-function todayInputValue(): string {
-  const now = new Date();
-  const year = String(now.getFullYear()).padStart(4, '0');
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 export function ProfectionsView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();

@@ -12,7 +12,9 @@
  * local store — an update or a warm failure matters regardless.
  */
 import { useSyncExternalStore } from 'react';
+import { useMessages } from './messages.js';
 import { applyUpdate, getUpdateState, subscribeToUpdates } from '../pwa/register.js';
+import { pwaStatusMessages } from './PwaStatus.messages.js';
 import { getWarmState, subscribeToWarmState } from '../pwa/warm-status.js';
 
 function formatMebibytes(bytes: number): string {
@@ -22,6 +24,7 @@ function formatMebibytes(bytes: number): string {
 export function PwaStatus(): React.JSX.Element | null {
   const update = useSyncExternalStore(subscribeToUpdates, getUpdateState);
   const warm = useSyncExternalStore(subscribeToWarmState, getWarmState);
+  const t = useMessages(pwaStatusMessages);
 
   if (update.kind === 'none' && warm.kind !== 'failed' && warm.kind !== 'warming') return null;
 
@@ -29,17 +32,17 @@ export function PwaStatus(): React.JSX.Element | null {
     <div className="pwastatus">
       {update.kind === 'available' && (
         <p className="pwastatus-update" role="status">
-          An updated version is ready. <button onClick={applyUpdate}>Reload to update</button>
+          {t.updateReady} <button onClick={applyUpdate}>{t.reloadToUpdate}</button>
         </p>
       )}
       {warm.kind === 'warming' && (
         <p className="pwastatus-warm">
-          Preparing offline use: {formatMebibytes(warm.loadedBytes)} of {formatMebibytes(warm.totalBytes)}.
+          {t.warming(formatMebibytes(warm.loadedBytes), formatMebibytes(warm.totalBytes))}
         </p>
       )}
       {warm.kind === 'failed' && (
         <p className="warning" role="alert">
-          Could not prepare this device for offline use: {warm.message}
+          {t.warmFailed(warm.message)}
         </p>
       )}
     </div>
