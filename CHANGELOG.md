@@ -4,6 +4,24 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.13.1] — 2026-09-14
+
+**Fixes a rendering bug in v0.13.0's own changelog entry.**
+
+M9 (Polish & launch) progress, not a finished milestone — accessibility (#69),
+static build deploy (#73), and the human review of high-salience corpus entries
+(#63) are still open, and v1.0.0 hasn't shipped.
+
+### Fixed
+
+- **The in-app changelog no longer shows unrendered bold markers (v0.13.0):**
+  its Markdown renderer treats each list item as a single physical line, so a
+  bold span whose closing marker fell on a wrapped continuation line was left
+  unclosed and shown as literal asterisks instead of bold text. Reworded that
+  entry so the bold phrase and its closing marker share one line.
+  `test/markdown.test.ts` renders the committed CHANGELOG.md itself and now
+  catches this class of bug before it ships.
+
 ## [0.13.0] — 2026-09-14
 
 **A console warning points operators at the self-hosted tile server docs when the
@@ -15,8 +33,8 @@ static build deploy (#73), and the human review of high-salience corpus entries
 
 ### Fixed
 
-- **The birth-place map now explains tile failures instead of just showing them
-  (#261):** the default tile server (`tile.openstreetmap.org`, used whenever
+- **The birth-place map now explains tile failures, not just shows them (#261):**
+  the default tile server (`tile.openstreetmap.org`, used whenever
   `VITE_TILE_URL_TEMPLATE` is unset) enforces a usage policy that blocks clients
   without an identifying `User-Agent` or that exceed its limits — something any
   real deployment's traffic is expected to eventually trip. The map already fell
