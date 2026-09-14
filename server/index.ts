@@ -75,9 +75,11 @@ export async function build(options: BuildOptions = {}) {
     reply.header('Content-Security-Policy', csp.header);
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('Referrer-Policy', 'no-referrer');
-    // Birth data never leaves the browser, but the app has no use for these APIs
-    // either, so deny them rather than rely on nobody asking.
-    reply.header('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+    // Birth data never leaves the browser, and the app has no use for camera/microphone,
+    // so those stay denied. Geolocation is allowed for this origin only (#248's opt-in
+    // "Use my location" map control) — it never leaves the browser either, and the
+    // permission still requires an explicit user gesture and browser prompt per use.
+    reply.header('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
     if (request.url.startsWith('/ephe/') || request.url.startsWith('/assets/')) {
       reply.header('Cache-Control', IMMUTABLE);
     } else if (!request.url.startsWith('/healthz')) {
