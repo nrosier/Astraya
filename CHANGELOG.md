@@ -4,6 +4,28 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.13.0] — 2026-09-14
+
+**A console warning points operators at the self-hosted tile server docs when the
+default OpenStreetMap tile server blocks a deployment's traffic.**
+
+M9 (Polish & launch) progress, not a finished milestone — accessibility (#69),
+static build deploy (#73), and the human review of high-salience corpus entries
+(#63) are still open, and v1.0.0 hasn't shipped.
+
+### Fixed
+
+- **The birth-place map now explains tile failures instead of just showing them
+  (#261):** the default tile server (`tile.openstreetmap.org`, used whenever
+  `VITE_TILE_URL_TEMPLATE` is unset) enforces a usage policy that blocks clients
+  without an identifying `User-Agent` or that exceed its limits — something any
+  real deployment's traffic is expected to eventually trip. The map already fell
+  back to a visible "unavailable" message when tiles failed to load, but nothing
+  pointed at the cause. A one-time console warning, logged only when the default
+  server's tiles fail, now points whoever has the console open at README.md's
+  self-hosted tile server section — which now also says plainly that the default
+  isn't meant for production traffic.
+
 ## [0.12.0] — 2026-09-14
 
 **The whole UI now switches between English and Dutch — chart tables, forms,
