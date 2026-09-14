@@ -1076,67 +1076,53 @@ label.stacked textarea:focus-visible {
 }
 
 /*
- * Persistent per-person tab bar (#234): a real browser-style tab strip, contained to the same
- * width as the page content below it rather than running edge-to-edge. `.person-nav` supplies
- * that width match plus the top clearance every `.shell` needs to clear the fixed
- * `.topbar-right` — since this bar is now the first thing on the page, `.shell` no longer needs
- * to supply that clearance itself when one precedes it.
+ * The "shelf" tab strip (#234): one bordered, rounded box (`.person-shelf`, wrapping the tab
+ * bar and the person-scoped view together — see App.tsx) holds the tab row and its content
+ * panel as a single unit, contained to the same width the page content used before rather than
+ * running edge-to-edge. The box sits a step off the page background (`--surface`); the active
+ * tab and the content panel underneath it share the exact same background (`--bg`), with the
+ * seam between them closed by a negative margin rather than painted over, so the active tab
+ * reads as fused into the panel below it — the same illusion a browser's own tab strip, or
+ * Notion's, uses. `overflow: hidden` clips the tab row's and content's own square corners to
+ * the box's rounding. `.person-nav` itself supplies the top clearance every `.shell` needs to
+ * clear the fixed `.topbar-right`, moved here from the old borderless tab strip.
  */
-.person-nav {
+.person-shelf {
   max-width: 46rem;
-  margin: 0 auto;
-  padding: 3.5rem 1.5rem 0;
-}
-
-.person-nav + .shell {
-  padding-top: 1.5rem;
+  margin: 3.5rem auto 5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
 }
 
 .person-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.2rem;
-  border-bottom: 1px solid var(--line);
+  padding: 0.6rem 0.6rem 0;
 }
 
-/* Inactive tabs sit recessed (muted background) so the active one reads as "raised" above the
-   strip, the same visual language a browser's own tab bar uses. `top: 1px` nudges every tab
-   down onto the container's border-bottom; the active tab's `::after` then paints over that
-   one pixel directly beneath it, the classic trick for a tab that looks physically connected
-   to the content it belongs to. */
 .person-tab {
-  position: relative;
-  top: 1px;
   padding: 0.55rem 1rem;
-  border: 1px solid transparent;
-  border-bottom: none;
+  border: none;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  background: var(--surface-hover);
+  background: none;
   color: var(--muted);
   font-weight: 550;
 }
 
 .person-tab:hover:not(.active) {
-  background: var(--surface);
   color: var(--fg);
 }
 
-/* Matches `--bg`, not `--surface`: `.shell` (the content this tab belongs to) has no
-   background of its own, so it shows the plain page background underneath it. */
+/* The two load-bearing details for the fused look: this background must match `.person-shelf
+   .shell`'s exactly, and the negative margin pulls the tab down over the seam between the tab
+   row and the content panel so no gap or line shows through underneath it. */
 .person-tab.active {
   background: var(--bg);
-  border-color: var(--line);
   color: var(--fg);
-}
-
-.person-tab.active::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 1px;
-  background: var(--bg);
+  margin-bottom: -1px;
 }
 
 /* A tab gated on a birth record that isn't complete yet — same dimmed, still-legible treatment
@@ -1144,9 +1130,23 @@ label.stacked textarea:focus-visible {
 .person-tab.disabled,
 .person-tab.disabled:hover {
   opacity: 0.55;
-  background: var(--surface-hover);
   color: var(--muted);
   cursor: not-allowed;
+}
+
+.person-shelf .hint {
+  margin: 0;
+  padding: 0 1rem 0.75rem;
+}
+
+/* Overrides the standalone `.shell` (used everywhere else at full padding) down to the box's
+   own internal gutter: the outer spacing that `.shell` normally supplies on its own is already
+   supplied by `.person-shelf` once a tab strip precedes it. */
+.person-shelf .shell {
+  max-width: none;
+  margin: 0;
+  padding: 1.5rem 1.5rem 2rem;
+  background: var(--bg);
 }
 
 /* Report tab (#62): named sections of paragraphs, with an optional per-paragraph provenance line. */
@@ -1786,6 +1786,15 @@ label.stacked textarea:focus-visible {
 
   .shell {
     max-width: none;
+  }
+
+  /* The box itself is a screen-only affordance; only its content (`.shell`, still visible
+     above) needs to print. */
+  .person-shelf {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
   }
 
   .chart-wheel,

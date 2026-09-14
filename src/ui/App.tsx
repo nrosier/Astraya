@@ -236,9 +236,13 @@ function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.E
       <Stored>
         {/* Rendered once above whichever view is picked below (#234), rather than each of
             the nine person-scoped screens carrying its own copy of the nav chain that used
-            to live inside PersonForm. */}
-        <PersonNav personId={parsed.personId} route={parsed} />
-        {renderPersonView(parsed)}
+            to live inside PersonForm. `.person-shelf` is what makes the tab strip and the
+            view below it read as one bordered box rather than two stacked pieces — see
+            app.css. */}
+        <div className="person-shelf">
+          <PersonNav personId={parsed.personId} route={parsed} />
+          {renderPersonView(parsed)}
+        </div>
       </Stored>
     );
   }
