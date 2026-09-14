@@ -23,17 +23,20 @@ import {
   deleteUser,
 } from '../sync/admin-client.js';
 import { getOidcConfig } from '../sync/auth-client.js';
+import { adminPanelMessages } from './AdminPanel.messages.js';
+import { useMessages } from './messages.js';
+import { sharedMessages } from './shared.messages.js';
 import type { AdminUser, DeletionImpact } from '../sync/admin-client.js';
 import type { OidcConfig } from '../sync/auth-client.js';
 
-function describeImpact(impact: DeletionImpact): string {
+function describeImpact(impact: DeletionImpact, t: typeof adminPanelMessages.en): string {
   if (impact.kind === 'counted') {
-    const people = impact.people === 1 ? '1 person' : `${String(impact.people)} people`;
-    const charts = impact.charts === 1 ? '1 chart' : `${String(impact.charts)} charts`;
-    return `${people} and ${charts}`;
+    const people = impact.people === 1 ? t.onePerson : t.peopleCount(String(impact.people));
+    const charts = impact.charts === 1 ? t.oneChart : t.chartsCount(String(impact.charts));
+    return t.peopleAndCharts(people, charts);
   }
-  const rows = impact.opRows === 1 ? '1 stored change' : `${String(impact.opRows)} stored changes`;
-  return `${rows} (sync is not configured on this server, so an exact count of people/charts is not available)`;
+  const rows = impact.opRows === 1 ? t.oneStoredChange : t.storedChangesCount(String(impact.opRows));
+  return t.unconfiguredSyncSuffix(rows);
 }
 
 interface PendingDelete {
@@ -52,14 +55,11 @@ function CreateUserForm({
   const [isAdmin, setIsAdmin] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const t = useMessages(adminPanelMessages);
+  const shared = useMessages(sharedMessages);
 
   if (oidcEnabled) {
-    return (
-      <p className="hint">
-        Local accounts cannot be created while sign-in through Authentik is configured — new accounts are provisioned
-        there instead.
-      </p>
-    );
+    return <p className="hint">{t.oidcHint}</p>;
   }
 
   const submit = (event: React.SubmitEvent<HTMLFormElement>): void => {
@@ -88,7 +88,7 @@ function CreateUserForm({
       )}
       <div className="field-grid">
         <label>
-          Username
+          {shared.usernameLabel}
           <input
             type="text"
             autoComplete="off"
@@ -106,12 +106,12 @@ function CreateUserForm({
               setIsAdmin(event.target.checked);
             }}
           />
-          Admin
+          {t.adminCheckboxLabel}
         </label>
       </div>
       <p className="actions">
         <button type="submit" disabled={busy || username.trim() === ''}>
-          Create user
+          {t.createUserButton}
         </button>
       </p>
     </form>
@@ -135,30 +135,31 @@ function UserRow({
   requestReset: () => void;
   requestDelete: () => void;
 }): React.JSX.Element {
+  const t = useMessages(adminPanelMessages);
   return (
     <tr>
       <td>
         {user.username}
-        {user.disabledAt !== null && ' (disabled)'}
+        {user.disabledAt !== null && t.disabledSuffix}
       </td>
-      <td>{user.isAdmin ? 'Admin' : 'Member'}</td>
-      <td>{user.lastSeenAt === null ? 'never' : new Date(user.lastSeenAt).toLocaleString()}</td>
+      <td>{user.isAdmin ? t.adminRoleLabel : t.memberRoleLabel}</td>
+      <td>{user.lastSeenAt === null ? t.neverSeen : new Date(user.lastSeenAt).toLocaleString()}</td>
       <td className="actions">
         <button type="button" className="quiet" disabled={disabled} onClick={toggleEnabled}>
-          {user.disabledAt === null ? 'Disable' : 'Enable'}
+          {user.disabledAt === null ? t.disableButton : t.enableButton}
         </button>
         <button type="button" className="quiet" disabled={disabled} onClick={togglePromoted}>
-          {user.isAdmin ? 'Demote' : 'Promote'}
+          {user.isAdmin ? t.demoteButton : t.promoteButton}
         </button>
         <button type="button" className="quiet" disabled={disabled} onClick={requestReset}>
-          Reset password
+          {t.resetPasswordButton}
         </button>
         <button type="button" className="danger" disabled={disabled} onClick={requestDelete}>
-          Delete
+          {t.deleteButton}
         </button>
         {passwordLink !== undefined && (
           <p className="hint">
-            One-time link, shown once — copy it now: <code>{passwordLink}</code>
+            {t.copyLinkNow} <code>{passwordLink}</code>
           </p>
         )}
       </td>
@@ -173,6 +174,8 @@ export function AdminPanel(): React.JSX.Element {
   const [busyUserId, setBusyUserId] = useState<string>();
   const [passwordLink, setPasswordLink] = useState<{ userId: string; url: string }>();
   const [pendingDelete, setPendingDelete] = useState<PendingDelete>();
+  const t = useMessages(adminPanelMessages);
+  const shared = useMessages(sharedMessages);
 
   const refresh = (): Promise<void> =>
     listUsers().then((loaded) => {
@@ -249,9 +252,9 @@ export function AdminPanel(): React.JSX.Element {
   return (
     <main className="shell">
       <p className="back">
-        <a href="#/">&larr; Back</a>
+        <a href="#/">&larr; {shared.back}</a>
       </p>
-      <h1>Admin</h1>
+      <h1>{t.heading}</h1>
 
       {error !== undefined && (
         <p className="warning" role="alert">
@@ -261,9 +264,9 @@ export function AdminPanel(): React.JSX.Element {
 
       {pendingDelete !== undefined && (
         <p className="warning" role="alert">
-          Deleting {pendingDelete.user.username} removes {describeImpact(pendingDelete.impact)}. This cannot be undone.{' '}
+          {t.deleteWarning(pendingDelete.user.username, describeImpact(pendingDelete.impact, t))}{' '}
           <button type="button" className="danger" onClick={confirmDelete}>
-            Delete permanently
+            {t.deletePermanentlyButton}
           </button>{' '}
           <button
             type="button"
@@ -272,32 +275,32 @@ export function AdminPanel(): React.JSX.Element {
               setPendingDelete(undefined);
             }}
           >
-            Cancel
+            {t.cancelButton}
           </button>
         </p>
       )}
 
-      <h2>Create a user</h2>
+      <h2>{t.createUserHeading}</h2>
       <CreateUserForm oidcEnabled={oidcConfig?.enabled === true} create={create} />
       {passwordLink !== undefined && users?.every((u) => u.id !== passwordLink.userId) === true && (
         <p className="hint">
-          One-time link, shown once — copy it now: <code>{passwordLink.url}</code>
+          {t.copyLinkNow} <code>{passwordLink.url}</code>
         </p>
       )}
 
-      <h2>Users</h2>
+      <h2>{t.usersHeading}</h2>
       {users === undefined ? (
-        <p className="status">Loading users…</p>
+        <p className="status">{t.loadingUsers}</p>
       ) : (
         <div className="data-table">
           <div className="data-table-scroll">
             <table>
               <thead>
                 <tr>
-                  <th>Username</th>
-                  <th>Role</th>
-                  <th>Last seen</th>
-                  <th>Actions</th>
+                  <th>{shared.usernameLabel}</th>
+                  <th>{t.roleColumn}</th>
+                  <th>{t.lastSeenColumn}</th>
+                  <th>{t.actionsColumn}</th>
                 </tr>
               </thead>
               <tbody>

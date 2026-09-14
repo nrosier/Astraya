@@ -12,22 +12,30 @@ import { useState } from 'react';
 import { draftFrom, draftToMutations, validateDraft, type Draft } from '../domain/person-form.js';
 import { formatOffset, resolveMoment } from '../time/resolve.js';
 import { BirthPlaceMap } from './BirthPlaceMap.js';
+import { useMessages } from './messages.js';
 import { NEEDS_A_DECISION, PROVENANCE } from './moment-labels.js';
+import { personFormMessages } from './PersonForm.messages.js';
+import { PersonNotFound } from './PersonNotFound.js';
+import { sharedMessages } from './shared.messages.js';
 import { useStore, useStoreState } from './store-context.js';
 import type { Calendar } from '../time/types.js';
 import type { TimeAccuracy } from '../domain/person.js';
 
-const ACCURACY: Record<TimeAccuracy, string> = {
-  recorded: 'Recorded — from a certificate or record',
-  remembered: 'Remembered — someone’s recollection',
-  approximate: 'Approximate — “around teatime”',
-  unknown: 'Unknown — no time on record',
-};
+function accuracyOptions(t: typeof personFormMessages.en): Record<TimeAccuracy, string> {
+  return {
+    recorded: t.accuracyRecorded,
+    remembered: t.accuracyRemembered,
+    approximate: t.accuracyApproximate,
+    unknown: t.accuracyUnknown,
+  };
+}
 
 export function PersonForm({ personId }: { personId: string }): React.JSX.Element {
   const store = useStore();
   const state = useStoreState();
   const person = state.people.get(personId);
+  const t = useMessages(personFormMessages);
+  const shared = useMessages(sharedMessages);
 
   // The stored person, as a draft, recomputed every render rather than memoized: until the user
   // edits a field, the form must keep tracking the store, so a sync pull that merges in a remote
@@ -39,20 +47,7 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
   const [saved, setSaved] = useState(false);
 
   if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          {/* Deleted or never here — and the store cannot tell the difference for an id it has
-              no records for, so the message does not pretend to. */}
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
+    return <PersonNotFound />;
   }
 
   const current = draft ?? opened ?? draftFrom(person);
@@ -119,27 +114,24 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
   return (
     <main className="shell">
       <p className="back">
-        <a href="#/people">&larr; People</a>
+        <a href="#/people">&larr; {shared.people}</a>
       </p>
-      <h1>{current.displayName.trim() === '' ? 'New person' : current.displayName}</h1>
-      <p className="tagline">
-        A one-hour error moves the Ascendant about 15&deg;, so the resolved offset and how it was decided are shown
-        below the fields that produced them.
-      </p>
+      <h1>{current.displayName.trim() === '' ? t.newPerson : current.displayName}</h1>
+      <p className="tagline">{t.tagline}</p>
 
       {saveError !== undefined && (
         <p className="warning" role="alert">
-          That did not save, so nothing was changed. {saveError}
+          {t.saveFailed(saveError)}
         </p>
       )}
 
-      <h2>Birth record</h2>
+      <h2>{t.birthRecordHeading}</h2>
 
       <fieldset className="field-group">
-        <legend>Who</legend>
+        <legend>{t.whoLegend}</legend>
         <div className="field-grid">
           <label>
-            Name
+            {t.nameLabel}
             <input
               type="text"
               value={current.displayName}
@@ -151,10 +143,10 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
             <Error_ name="displayName" />
           </label>
           <label>
-            Place of birth
+            {t.placeOfBirthLabel}
             <input
               type="text"
-              placeholder="Vevay, Indiana"
+              placeholder={t.placeOfBirthPlaceholder}
               value={current.placeLabel}
               onChange={(event) => {
                 set('placeLabel', event.target.value);
@@ -167,10 +159,10 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>When</legend>
+        <legend>{t.whenLegend}</legend>
         <div className="field-grid">
           <label>
-            Date
+            {t.dateLabel}
             <input
               type="date"
               value={current.date}
@@ -182,7 +174,7 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
             <Error_ name="date" />
           </label>
           <label>
-            Time
+            {t.timeLabel}
             <input
               type="time"
               step={1}
@@ -196,14 +188,14 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
             <Error_ name="time" />
           </label>
           <label>
-            How the time is known
+            {t.timeKnownLabel}
             <select
               value={current.timeAccuracy}
               onChange={(event) => {
                 set('timeAccuracy', event.target.value as TimeAccuracy);
               }}
             >
-              {Object.entries(ACCURACY).map(([value, text]) => (
+              {Object.entries(accuracyOptions(t)).map(([value, text]) => (
                 <option key={value} value={value}>
                   {text}
                 </option>
@@ -214,10 +206,10 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Coordinates</legend>
+        <legend>{t.coordinatesLegend}</legend>
         <div className="field-grid">
           <label>
-            Latitude
+            {t.latitudeLabel}
             <input
               type="number"
               step="any"
@@ -234,7 +226,7 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
             <Error_ name="latitude" />
           </label>
           <label>
-            Longitude
+            {t.longitudeLabel}
             <input
               type="number"
               step="any"
@@ -259,27 +251,27 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Calendar &amp; time zone</legend>
+        <legend>{t.calendarZoneLegend}</legend>
         <div className="field-grid">
           <label>
-            Calendar
+            {t.calendarLabel}
             <select
               value={current.calendar}
               onChange={(event) => {
                 set('calendar', event.target.value as Calendar);
               }}
             >
-              <option value="auto">Automatic</option>
-              <option value="gregorian">Gregorian</option>
-              <option value="julian">Julian</option>
+              <option value="auto">{t.calendarAutomatic}</option>
+              <option value="gregorian">{t.calendarGregorian}</option>
+              <option value="julian">{t.calendarJulian}</option>
             </select>
           </label>
           <label>
-            UTC offset override
+            {t.utcOffsetOverrideLabel}
             <input
               type="number"
               step="any"
-              placeholder="minutes, e.g. -300"
+              placeholder={t.offsetOverridePlaceholder}
               value={current.offsetOverride}
               {...field('offsetOverride')}
               onChange={(event) => {
@@ -289,10 +281,10 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
             <Error_ name="offsetOverride" />
           </label>
           <label>
-            Timezone override
+            {t.timezoneOverrideLabel}
             <input
               type="text"
-              placeholder="America/Indiana/Vevay"
+              placeholder={t.timezoneOverridePlaceholder}
               value={current.zoneOverride}
               onChange={(event) => {
                 set('zoneOverride', event.target.value);
@@ -300,17 +292,13 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
             />
           </label>
         </div>
-        <p className="hint">
-          Leave the override empty to use the timezone database. Enter it in minutes east of UTC &mdash; a birth
-          certificate that states the offset beats any lookup we can do, and 0 means UTC rather than &ldquo;no
-          override&rdquo;.
-        </p>
+        <p className="hint">{t.timezoneHint}</p>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Notes</legend>
+        <legend>{t.notesLegend}</legend>
         <label className="stacked">
-          <span className="sr-only">Notes</span>
+          <span className="sr-only">{t.notesLabel}</span>
           <textarea
             rows={3}
             value={current.notes}
@@ -323,21 +311,19 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
 
       {resolved !== undefined && (
         <>
-          <h2>Resolved</h2>
+          <h2>{t.resolvedHeading}</h2>
           <dl>
-            <dt>UTC offset</dt>
+            <dt>{t.utcOffsetLabel}</dt>
             <dd>{formatOffset(resolved.offsetMinutes)}</dd>
-            <dt>Derived from</dt>
+            <dt>{t.derivedFromLabel}</dt>
             <dd>{PROVENANCE[resolved.provenance]}</dd>
-            <dt>Timezone</dt>
-            <dd>
-              {resolved.zone ?? <span className="muted">none &mdash; the offset came from longitude or from you</span>}
-            </dd>
-            <dt>Calendar</dt>
-            <dd>{resolved.calendar === 'julian' ? 'Julian' : 'Gregorian'}</dd>
+            <dt>{t.timezoneLabel}</dt>
+            <dd>{resolved.zone ?? <span className="muted">{t.noneOffsetFromLongitude}</span>}</dd>
+            <dt>{t.calendarResolvedLabel}</dt>
+            <dd>{resolved.calendar === 'julian' ? t.calendarJulian : t.calendarGregorian}</dd>
             {resolved.alternativeOffsetMinutes.length > 0 && (
               <>
-                <dt>Also valid</dt>
+                <dt>{t.alsoValidLabel}</dt>
                 <dd>{resolved.alternativeOffsetMinutes.map(formatOffset).join(', ')}</dd>
               </>
             )}
@@ -345,7 +331,7 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
 
           {resolved.warnings.length > 0 && (
             <>
-              <h2>Worth checking</h2>
+              <h2>{t.worthCheckingHeading}</h2>
               <ul className="warnings">
                 {resolved.warnings.map((warning) => (
                   <li
@@ -360,47 +346,35 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
             </>
           )}
 
-          <p className="hint">
-            Resolved against timezone data <code>{resolved.tzdbFingerprint}</code>, which is stored with the record so a
-            saved chart does not move when a timezone update ships.
-          </p>
+          <p className="hint">{t.tzdbHint(resolved.tzdbFingerprint)}</p>
         </>
       )}
 
-      {current.timeAccuracy === 'unknown' && (
-        <p className="hint">
-          With no birth time, houses, the Ascendant and the Midheaven cannot be calculated at all &mdash; they are not
-          approximate, they are undefined. Planetary positions are still meaningful, and the Moon moves about 13&deg; a
-          day, so its sign may be uncertain.
-        </p>
-      )}
+      {current.timeAccuracy === 'unknown' && <p className="hint">{t.unknownTimeHint}</p>}
 
       <p className="actions">
         <button type="button" onClick={save} disabled={saving || moment === undefined}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? t.saving : t.saveButton}
         </button>
         {saved && !saving && (
           <span className="status" role="status">
-            Saved on this device.
+            {t.savedStatus}
           </span>
         )}
         {moment === undefined && (
           <span className="muted">
             {/* Why the button is disabled, next to the button. A disabled control with no
                 explanation is the most common way a form wastes someone's afternoon. */}
-            Fill in the fields marked above to save.
+            {t.fillFieldsHint}
           </span>
         )}
       </p>
 
-      <h2>Delete</h2>
-      <p className="hint">
-        Deleting hides this person and their charts. Nothing is really removed, so it can be undone from the people
-        list.
-      </p>
+      <h2>{t.deleteHeading}</h2>
+      <p className="hint">{t.deleteHint}</p>
       <p>
         <button type="button" className="danger" onClick={remove}>
-          Delete {current.displayName.trim() === '' ? 'this person' : current.displayName}
+          {t.deleteButton(current.displayName.trim() === '' ? t.thisPerson : current.displayName)}
         </button>
       </p>
     </main>

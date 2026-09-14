@@ -6,8 +6,11 @@
  * open IndexedDB first to say so.
  */
 import { useState } from 'react';
+import { useMessages } from './messages.js';
 import { useSession } from './session-context.js';
 import { setupToken } from './route.js';
+import { setupFormMessages } from './SetupForm.messages.js';
+import { sharedMessages } from './shared.messages.js';
 
 export function SetupForm(): React.JSX.Element {
   const { setup } = useSession();
@@ -17,17 +20,18 @@ export function SetupForm(): React.JSX.Element {
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const t = useMessages(setupFormMessages);
+  const shared = useMessages(sharedMessages);
 
   if (token === null) {
     return (
       <main className="shell">
         <p className="back">
-          <a href="#/">&larr; Back</a>
+          <a href="#/">&larr; {shared.back}</a>
         </p>
-        <h1>Create the admin account</h1>
+        <h1>{t.heading}</h1>
         <p className="warning" role="alert">
-          This link is missing its token, so it cannot be used. Check the server log for the current one — it expires 15
-          minutes after the server starts.
+          {t.missingToken}
         </p>
       </main>
     );
@@ -36,7 +40,7 @@ export function SetupForm(): React.JSX.Element {
   const submit = (event: React.SubmitEvent<HTMLFormElement>): void => {
     event.preventDefault();
     if (password !== confirm) {
-      setError('Those two passwords do not match.');
+      setError(shared.passwordMismatch);
       return;
     }
     setBusy(true);
@@ -56,9 +60,9 @@ export function SetupForm(): React.JSX.Element {
   return (
     <main className="shell">
       <p className="back">
-        <a href="#/">&larr; Back</a>
+        <a href="#/">&larr; {shared.back}</a>
       </p>
-      <h1>Create the admin account</h1>
+      <h1>{t.heading}</h1>
       {error !== undefined && (
         <p className="warning" role="alert">
           {error}
@@ -67,7 +71,7 @@ export function SetupForm(): React.JSX.Element {
       <form onSubmit={submit}>
         <div className="field-grid">
           <label>
-            Username
+            {shared.usernameLabel}
             <input
               type="text"
               autoComplete="username"
@@ -78,7 +82,7 @@ export function SetupForm(): React.JSX.Element {
             />
           </label>
           <label>
-            Password
+            {t.passwordLabel}
             <input
               type="password"
               autoComplete="new-password"
@@ -89,7 +93,7 @@ export function SetupForm(): React.JSX.Element {
             />
           </label>
           <label>
-            Confirm password
+            {shared.confirmPasswordLabel}
             <input
               type="password"
               autoComplete="new-password"
@@ -102,7 +106,7 @@ export function SetupForm(): React.JSX.Element {
         </div>
         <p className="actions">
           <button type="submit" disabled={busy || username === '' || password === '' || confirm === ''}>
-            Create admin account
+            {t.submitButton}
           </button>
         </p>
       </form>
