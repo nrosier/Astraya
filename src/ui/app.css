@@ -1189,18 +1189,12 @@ label.stacked textarea:focus-visible {
   margin-top: 0.2rem;
 }
 
-/* Toggle between the two wheel renderings. `aria-pressed`, not a class, is the single
-   source of which one is active (#43-adjacent AstroChart addition). */
-.wheel-toggle {
-  display: flex;
-  justify-content: center;
-  gap: 0.4rem;
-  margin: 1.5rem 0 0;
-}
-
-.wheel-toggle button[aria-pressed='true'] {
-  border-color: var(--accent);
-  color: var(--fg);
+/* The AstroChart reference wheel shown alongside Astraya's own rendering in dev builds
+   only, for side-by-side comparison (#231-adjacent). */
+.chart-wheel-reference {
+  margin: 1.5rem auto 0;
+  max-width: 55rem;
+  text-align: center;
 }
 
 /*
@@ -1778,7 +1772,7 @@ label.stacked textarea:focus-visible {
   .back,
   .tabs,
   .person-nav,
-  .wheel-toggle,
+  .chart-wheel-reference,
   .chart-export-actions,
   .data-table-actions,
   .report-controls,

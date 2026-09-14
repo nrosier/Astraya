@@ -376,13 +376,6 @@ export function ChartDataView({
 }): React.JSX.Element {
   const t = useMessages(chartViewMessages);
   const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromHash);
-  // Which wheel rendering is on screen. Session-only, not persisted with the chart's
-  // other display settings (`resolveWheelDisplayOptions`) — keeping this additive and
-  // small rather than growing that settings bag for a first cut. AstroChart is the
-  // default per the user's own preference; Astraya's own wheel is the opt-in alternate.
-  // AstroChart is a reference rendering kept around for comparing Astraya's own wheel
-  // against it during development (#231) — production users only ever see Astraya's.
-  const [wheelKind, setWheelKind] = useState<'astrochart' | 'astraya'>(import.meta.env.PROD ? 'astraya' : 'astrochart');
   const [pngSize, setPngSize] = useState(1200);
   const [pngError, setPngError] = useState<string | undefined>(undefined);
   const [pngBusy, setPngBusy] = useState(false);
@@ -514,56 +507,33 @@ export function ChartDataView({
               skipped while the report tab is active. */}
           {activeTab !== 'report' && sheet !== undefined && (
             <>
-              {!import.meta.env.PROD && (
-                <div className="wheel-toggle" role="group" aria-label={t.wheelRenderingLabel}>
-                  <button
-                    type="button"
-                    aria-pressed={wheelKind === 'astrochart'}
-                    className="quiet"
-                    onClick={() => {
-                      setWheelKind('astrochart');
-                    }}
-                  >
-                    {t.astroChartButton}
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={wheelKind === 'astraya'}
-                    className="quiet"
-                    onClick={() => {
-                      setWheelKind('astraya');
-                    }}
-                  >
-                    {t.astrayaButton}
-                  </button>
+              <div
+                className="chart-wheel"
+                // Hidden from assistive tech rather than given an aria-label (#69): a chart
+                // wheel packs dozens of positions/aspects into overlapping glyphs, and no short
+                // label does that justice. The data tables right below are the actual accessible
+                // equivalent — they carry every value the wheel draws, as text a screen reader
+                // can read directly.
+                aria-hidden="true"
+                // The wheel is generated entirely by this app from data it just computed — never
+                // user-supplied markup — so injecting it is the same trust boundary as any other
+                // value this component renders, just carried as a string instead of JSX.
+                dangerouslySetInnerHTML={{ __html: sheet.markup }}
+              />
+
+              {/* AstroChart is a reference rendering kept alongside Astraya's own wheel so the
+                  two can be compared during development (#231) — production users only ever
+                  see Astraya's, and it never participates in export (#67), so it's hidden
+                  during the print-all pass "Export PDF" triggers. */}
+              {!import.meta.env.PROD && !printAll && (
+                <div className="chart-wheel-reference">
+                  <p className="hint">{t.astrochartReferenceHeading}</p>
+                  <div aria-hidden="true">
+                    <AstroChartWheel data={load.data} signWedgeStyle={toSignWedgeStyle(extendedSettings)} />
+                  </div>
+                  <p className="hint">{t.astrochartReferenceHint}</p>
                 </div>
               )}
-
-              {/* "Export PDF" prints whatever is in `.chart-wheel` on the page (#67), so the
-                  Astraya rendering is forced here even when AstroChart is the active view —
-                  otherwise a PDF export would silently disagree with the on-screen SVG/PNG
-                  exports below, which always render from `sheet` regardless of the toggle. */}
-              {wheelKind === 'astrochart' && !printAll ? (
-                <div className="chart-wheel" aria-hidden="true">
-                  <AstroChartWheel data={load.data} signWedgeStyle={toSignWedgeStyle(extendedSettings)} />
-                </div>
-              ) : (
-                <div
-                  className="chart-wheel"
-                  // Hidden from assistive tech rather than given an aria-label (#69): a chart
-                  // wheel packs dozens of positions/aspects into overlapping glyphs, and no short
-                  // label does that justice. The data tables right below are the actual accessible
-                  // equivalent — they carry every value the wheel draws, as text a screen reader
-                  // can read directly.
-                  aria-hidden="true"
-                  // The wheel is generated entirely by this app from data it just computed — never
-                  // user-supplied markup — so injecting it is the same trust boundary as any other
-                  // value this component renders, just carried as a string instead of JSX.
-                  dangerouslySetInnerHTML={{ __html: sheet.markup }}
-                />
-              )}
-
-              {wheelKind === 'astrochart' && <p className="hint">{t.astrochartExportHint}</p>}
 
               <div className="chart-export-actions">
                 <button type="button" className="quiet" onClick={downloadSvg}>

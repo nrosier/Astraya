@@ -52,10 +52,8 @@ const en = {
   calculating: 'Calculating…',
   chartError: (message: string) => `The chart could not be calculated. ${message}`,
 
-  wheelRenderingLabel: 'Wheel rendering',
-  astroChartButton: 'AstroChart',
-  astrayaButton: 'Astraya',
-  astrochartExportHint: 'Exports below always use Astraya’s own rendering, regardless of which wheel is shown here.',
+  astrochartReferenceHeading: 'AstroChart reference rendering (dev only)',
+  astrochartReferenceHint: 'Shown for comparison only — exports always use Astraya’s own rendering above.',
 
   downloadSvg: 'Download SVG',
   pngResolutionLabel: 'PNG resolution',
@@ -128,11 +126,9 @@ const nl: typeof en = {
   calculating: 'Berekenen…',
   chartError: (message: string) => `De horoscoop kon niet worden berekend. ${message}`,
 
-  wheelRenderingLabel: 'Wielweergave',
-  astroChartButton: 'AstroChart',
-  astrayaButton: 'Astraya',
-  astrochartExportHint:
-    'Exports hieronder gebruiken altijd Astraya’s eigen weergave, ongeacht welk wiel hier getoond wordt.',
+  astrochartReferenceHeading: 'AstroChart-referentieweergave (alleen dev)',
+  astrochartReferenceHint:
+    'Alleen getoond ter vergelijking — exports gebruiken altijd Astraya’s eigen weergave hierboven.',
 
   downloadSvg: 'SVG downloaden',
   pngResolutionLabel: 'PNG-resolutie',
