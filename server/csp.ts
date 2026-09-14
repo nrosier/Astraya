@@ -21,13 +21,15 @@
  *
  * `img-src`'s `blob:` is for PNG chart export: `chart-raster.ts` rasterizes a
  * chart's SVG by loading it into an `<img>` from a `blob:` URL before drawing
- * it to a canvas.
+ * it to a canvas. `https://tile.openstreetmap.org` is the default OpenStreetMap
+ * tile host the birth-place map (#159) requests raster tiles from as plain
+ * `<img>`s — never `fetch`/XHR, so no `connect-src` grant is needed for it.
  */
 export const CSP_DIRECTIVES: readonly string[] = [
   "default-src 'self'",
   "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://tile.openstreetmap.org",
   "font-src 'self'",
   "connect-src 'self'",
   "worker-src 'self' blob:",
@@ -46,6 +48,12 @@ export const CSP_HEADER_ONLY_DIRECTIVES: readonly string[] = ["frame-ancestors '
 export interface CspConfig {
   /** Scheme + host of the Authentik issuer, no path — the exact grant #136 calls for. */
   readonly issuerOrigin?: string;
+  /**
+   * Scheme + host of a self-hosted tile server, replacing the default public OSM
+   * host in `img-src` (#159) — not appended, since a deployer pointing at their
+   * own tiles has usually chosen to make zero calls to the public OSM host.
+   */
+  readonly tileOrigin?: string;
 }
 
 export interface BuiltCsp {
@@ -66,16 +74,17 @@ export interface BuiltCsp {
  * stay untouched. `form-action 'none'` becomes just the issuer origin rather than
  * appending to `'none'`, since `'none'` alongside another source is a contradiction,
  * not a grant — and nothing else in this app ever submits a form.
+ *
+ * `tileOrigin` similarly only ever rewrites `img-src`, replacing the default
+ * public OSM host rather than adding to it (#159).
  */
 export function buildCsp(config: CspConfig = {}): BuiltCsp {
-  const { issuerOrigin } = config;
-  const directives =
-    issuerOrigin === undefined
-      ? CSP_DIRECTIVES
-      : CSP_DIRECTIVES.map((directive) => {
-          if (directive === "form-action 'none'") return `form-action ${issuerOrigin}`;
-          return directive;
-        });
+  const { issuerOrigin, tileOrigin } = config;
+  const directives = CSP_DIRECTIVES.map((directive) => {
+    if (issuerOrigin !== undefined && directive === "form-action 'none'") return `form-action ${issuerOrigin}`;
+    if (tileOrigin !== undefined && directive.startsWith('img-src')) return `img-src 'self' data: blob: ${tileOrigin}`;
+    return directive;
+  });
   return {
     directives,
     header: [...directives, ...CSP_HEADER_ONLY_DIRECTIVES].join('; '),

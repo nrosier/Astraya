@@ -59,7 +59,14 @@ export async function build(options: BuildOptions = {}) {
   // `loadOidcConfig` throws on a present-but-malformed issuer — deliberately, so
   // a deployment mistake fails the boot rather than silently serving OIDC-less.
   const oidcConfig = loadOidcConfig();
-  const csp = buildCsp(oidcConfig ? { issuerOrigin: new URL(oidcConfig.issuer).origin } : {});
+  // A self-hosted tile server (#159): its origin replaces the default public OSM
+  // host in `img-src`. Must match the scheme+host `VITE_TILE_URL_TEMPLATE` was
+  // built against, or the browser's own CSP blocks tiles from the mismatched host.
+  const tileOrigin = process.env.ASTRAYA_TILE_ORIGIN;
+  const csp = buildCsp({
+    ...(oidcConfig ? { issuerOrigin: new URL(oidcConfig.issuer).origin } : {}),
+    ...(tileOrigin ? { tileOrigin } : {}),
+  });
 
   await app.register(fastifyCookie);
   await app.register(fastifyRateLimit, { global: false });
@@ -102,10 +109,11 @@ export async function build(options: BuildOptions = {}) {
   // `@fastify/static`'s `wildcard: true` (the default) registers exactly one
   // route, `GET/HEAD /*` — not a literal `/` — so find-my-way's exact-beats-
   // wildcard resolution means this route wins regardless of registration order.
-  // Only registered when an issuer is configured: the meta tag can't express an
-  // issuer-scoped `connect-src`/`form-action`, so once one exists the header
-  // becomes the only correct copy of the policy (see `stripCspMeta`'s doc comment).
-  if (oidcConfig) {
+  // Only registered when an issuer or a custom tile origin is configured: the
+  // static meta tag can't express an issuer-scoped `connect-src`/`form-action`
+  // or a non-default `img-src`, so once either exists the header becomes the
+  // only correct copy of the policy (see `stripCspMeta`'s doc comment).
+  if (oidcConfig || tileOrigin) {
     app.get('/', async (_request, reply) => {
       return reply
         .type('text/html; charset=utf-8')

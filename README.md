@@ -110,6 +110,18 @@ Authentik side after the initial sign-in exchange, so Authentik-derived
 sessions use a shorter TTL (24h, vs. 30 days for local accounts) to bound how
 long that gap can last.
 
+### Optional: self-hosted tile server
+
+The birth-place picker's map needs no setup either: by default it requests
+OpenStreetMap's public tiles, no API key required. To serve tiles from your own
+server instead — for a fully offline deployment, say — set `VITE_TILE_URL_TEMPLATE`
+and `ASTRAYA_TILE_ORIGIN` to matching values (see [`.env.example`](.env.example)).
+The two must describe the same origin: a mismatch fails closed, blocking tiles
+rather than allowing the wrong host through. Unlike the server-runtime
+variables above, `VITE_TILE_URL_TEMPLATE` is baked into the client bundle at
+build time, so it can't be changed by setting it on an already-built container —
+rebuild the image with it set instead.
+
 ## Licence
 
 **AGPL-3.0-or-later.** Astraya links the Swiss Ephemeris, which Astrodienst AG
