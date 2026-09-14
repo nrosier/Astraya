@@ -68,6 +68,16 @@ describe('content security policy', () => {
       expect(built.header).toContain("script-src 'self' 'wasm-unsafe-eval'");
       expect(built.header).toContain("frame-ancestors 'none'");
     });
+
+    it('with a tile origin, replaces the default OSM host in img-src rather than appending to it', () => {
+      const built = buildCsp({ tileOrigin: 'https://tiles.example.com' });
+      const changed = built.directives.filter((directive, index) => directive !== CSP_DIRECTIVES[index]);
+      expect(changed).toEqual(["img-src 'self' data: blob: https://tiles.example.com"]);
+      expect(built.header).not.toContain('tile.openstreetmap.org');
+      // Every other directive stays untouched, same as the issuer-only case above.
+      expect(built.header).toContain("connect-src 'self'");
+      expect(built.header).toContain("form-action 'none'");
+    });
   });
 
   describe('stripCspMeta', () => {

@@ -11,6 +11,7 @@
 import { useState } from 'react';
 import { draftFrom, draftToMutations, validateDraft, type Draft } from '../domain/person-form.js';
 import { formatOffset, resolveMoment } from '../time/resolve.js';
+import { BirthPlaceMap } from './BirthPlaceMap.js';
 import { NEEDS_A_DECISION, PROVENANCE } from './moment-labels.js';
 import { useStore, useStoreState } from './store-context.js';
 import type { Calendar } from '../time/types.js';
@@ -58,9 +59,16 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
   const { errors, moment } = validateDraft(current);
   const resolved = moment === undefined ? undefined : resolveMoment(moment);
 
-  const set = <K extends keyof Draft>(field: K, value: Draft[K]): void => {
+  // `onPick` below needs to update latitude and longitude together: two separate `set` calls in
+  // the same handler would both close over this render's `current` and the second would clobber
+  // the first's update with its own stale copy of the other field.
+  const setFields = (patch: Partial<Draft>): void => {
     setSaved(false);
-    setDraft({ ...current, [field]: value });
+    setDraft({ ...current, ...patch });
+  };
+
+  const set = <K extends keyof Draft>(field: K, value: Draft[K]): void => {
+    setFields({ [field]: value });
   };
 
   const save = (): void => {
@@ -241,6 +249,13 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
             <Error_ name="longitude" />
           </label>
         </div>
+        <BirthPlaceMap
+          latitude={moment?.coordinates.latitude}
+          longitude={moment?.coordinates.longitude}
+          onPick={(lat, lng) => {
+            setFields({ latitude: String(lat), longitude: String(lng) });
+          }}
+        />
       </fieldset>
 
       <fieldset className="field-group">

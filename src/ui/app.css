@@ -580,6 +580,26 @@ footer {
   max-width: 44rem;
 }
 
+/*
+ * The birth-place map (#159) sits below the Coordinates fieldset's box fields, not
+ * inside the field-grid — it isn't one more field, it's a second way to fill the
+ * two that are already there.
+ */
+.birth-place-map {
+  margin-top: 1rem;
+}
+
+.birth-place-map-canvas {
+  /* Leaflet renders nothing until its container has a real height. */
+  height: 300px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.birth-place-map .warning {
+  margin-top: 0.5rem;
+}
+
 .warnings {
   margin: 0;
   padding: 0;
@@ -1781,6 +1801,7 @@ label.stacked textarea:focus-visible {
   .statusbar,
   .pwastatus,
   .topbar-right,
+  .birth-place-map,
   .hint {
     display: none !important;
   }
