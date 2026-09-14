@@ -12,11 +12,14 @@
  * wrong look for those already-shipped in-page tabs if the classes were shared.
  */
 import { activeTabKey, isTabEnabled, PERSON_TABS } from './person-nav.js';
+import { personNavMessages } from './PersonNav.messages.js';
+import { useMessages } from './messages.js';
 import { useStoreState } from './store-context.js';
 import type { Route } from './route.js';
 
 export function PersonNav({ personId, route }: { personId: string; route: Route }): React.JSX.Element {
   const state = useStoreState();
+  const t = useMessages(personNavMessages);
   const person = state.people.get(personId);
   const hasBirthMoment = person?.moment !== undefined;
   const active = activeTabKey(route, window.location.hash);
@@ -24,8 +27,9 @@ export function PersonNav({ personId, route }: { personId: string; route: Route 
 
   return (
     <div className="person-nav">
-      <nav className="person-tabs" aria-label="Chart types">
+      <nav className="person-tabs" aria-label={t.chartTypesAriaLabel}>
         {PERSON_TABS.map((tab) => {
+          const label = t.tabLabels[tab.key];
           const enabled = isTabEnabled(tab.key, hasBirthMoment);
           if (!enabled) {
             return (
@@ -34,9 +38,9 @@ export function PersonNav({ personId, route }: { personId: string; route: Route 
                 type="button"
                 disabled
                 className="person-tab disabled"
-                aria-label={`${tab.label} — complete the birth record first`}
+                aria-label={t.disabledTabSuffix(label)}
               >
-                {tab.label}
+                {label}
               </button>
             );
           }
@@ -48,12 +52,12 @@ export function PersonNav({ personId, route }: { personId: string; route: Route 
               className={isActive ? 'person-tab active' : 'person-tab'}
               aria-current={isActive ? 'page' : undefined}
             >
-              {tab.label}
+              {label}
             </a>
           );
         })}
       </nav>
-      {anyDisabled && <p className="hint">Complete the birth record to unlock the other tabs.</p>}
+      {anyDisabled && <p className="hint">{t.completeBirthRecordHint}</p>}
     </div>
   );
 }

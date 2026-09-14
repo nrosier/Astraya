@@ -16,6 +16,8 @@ import { ASPECTS } from '../astrology/aspects.js';
 import { ayanamsaByKey, AYANAMSAS } from '../astrology/ayanamsas.js';
 import { HOUSE_SYSTEMS } from '../astrology/houses.js';
 import { DEFAULT_EXTENDED_SETTINGS, type ExtendedSettings } from '../chart/extended-settings.js';
+import { extendedSettingsPanelMessages } from './ExtendedSettingsPanel.messages.js';
+import { useMessages } from './messages.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
 
 const MINOR_ASPECTS = ASPECTS.filter((aspect) => aspect.family === 'minor');
@@ -56,6 +58,7 @@ export function ExtendedSettingsPanel({
   readonly provider: EphemerisProvider;
 }): React.JSX.Element {
   const [draft, setDraft] = useState<ExtendedSettings>(value);
+  const t = useMessages(extendedSettingsPanelMessages);
 
   const houseSystemNames = useNameLookup(
     HOUSE_SYSTEMS.map((system) => system.code),
@@ -82,13 +85,13 @@ export function ExtendedSettingsPanel({
 
   return (
     <details className="extended-settings">
-      <summary>Extended settings</summary>
+      <summary>{t.heading}</summary>
 
       <fieldset className="field-group">
-        <legend>House system</legend>
+        <legend>{t.houseSystemLegend}</legend>
         <div className="field-grid">
           <label>
-            System
+            {t.systemLabel}
             <select
               value={draft.houseSystem}
               onChange={(event) => {
@@ -106,8 +109,8 @@ export function ExtendedSettingsPanel({
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Zodiac</legend>
-        <div role="radiogroup" aria-label="Zodiac">
+        <legend>{t.zodiacLegend}</legend>
+        <div role="radiogroup" aria-label={t.zodiacLegend}>
           <label>
             <input
               type="radio"
@@ -117,7 +120,7 @@ export function ExtendedSettingsPanel({
                 patch({ zodiac: { kind: 'tropical' } });
               }}
             />{' '}
-            Tropical
+            {t.tropical}
           </label>{' '}
           <label>
             <input
@@ -128,12 +131,12 @@ export function ExtendedSettingsPanel({
                 patch({ zodiac: { kind: 'sidereal', ayanamsa: LAHIRI_AYANAMSA_ID } });
               }}
             />{' '}
-            Sidereal
+            {t.sidereal}
           </label>
         </div>
         {draft.zodiac.kind === 'sidereal' && (
           <label>
-            Ayanamsa
+            {t.ayanamsaLabel}
             <select
               value={ayanamsaId}
               onChange={(event) => {
@@ -151,13 +154,14 @@ export function ExtendedSettingsPanel({
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Orb</legend>
+        <legend>{t.orbLegend}</legend>
         <label>
-          Scale: {draft.orbScalePercent > 0 ? '+' : ''}
+          {t.scaleLabel}
+          {draft.orbScalePercent > 0 ? '+' : ''}
           {draft.orbScalePercent}%
           <input
             type="range"
-            aria-label="Orb scale"
+            aria-label={t.orbScaleAriaLabel}
             min={-90}
             max={90}
             step={10}
@@ -167,14 +171,11 @@ export function ExtendedSettingsPanel({
             }}
           />
         </label>
-        <p className="hint">
-          Major aspects: 7° base, 10° with a luminary. Sextile: 4° base, 5°30&prime; with a luminary. Minor aspects: a
-          flat 2°30&prime;. The scale above widens or narrows every one of these at once.
-        </p>
+        <p className="hint">{t.orbHint}</p>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Minor aspects</legend>
+        <legend>{t.minorAspectsLegend}</legend>
         {MINOR_ASPECTS.map((aspect) => (
           <label key={aspect.key}>
             <input
@@ -190,7 +191,7 @@ export function ExtendedSettingsPanel({
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Points shown</legend>
+        <legend>{t.pointsShownLegend}</legend>
         <label>
           <input
             type="checkbox"
@@ -199,7 +200,7 @@ export function ExtendedSettingsPanel({
               patch({ fortuneVisible: event.target.checked });
             }}
           />{' '}
-          Part of Fortune
+          {t.partOfFortune}
         </label>
         <label>
           <input
@@ -209,7 +210,7 @@ export function ExtendedSettingsPanel({
               patch({ vertexVisible: event.target.checked });
             }}
           />{' '}
-          Vertex
+          {t.vertex}
         </label>
         <label>
           <input
@@ -219,7 +220,7 @@ export function ExtendedSettingsPanel({
               patch({ chironVisible: event.target.checked });
             }}
           />{' '}
-          Chiron
+          {t.chiron}
         </label>
         <label>
           <input
@@ -229,10 +230,10 @@ export function ExtendedSettingsPanel({
               patch({ midpointsVisible: event.target.checked });
             }}
           />{' '}
-          Midpoints (ASC/MC, Sun/Moon)
+          {t.midpoints}
         </label>
-        <div role="radiogroup" aria-label="Lilith model">
-          Lilith:{' '}
+        <div role="radiogroup" aria-label={t.lilithModelAriaLabel}>
+          {t.lilithLabel}{' '}
           <label>
             <input
               type="radio"
@@ -242,7 +243,7 @@ export function ExtendedSettingsPanel({
                 patch({ lilithVariant: 'mean' });
               }}
             />{' '}
-            Mean
+            {t.mean}
           </label>{' '}
           <label>
             <input
@@ -253,11 +254,11 @@ export function ExtendedSettingsPanel({
                 patch({ lilithVariant: 'true' });
               }}
             />{' '}
-            True
+            {t.true}
           </label>
         </div>
-        <div role="radiogroup" aria-label="Lunar node model">
-          Lunar Nodes:{' '}
+        <div role="radiogroup" aria-label={t.lunarNodeModelAriaLabel}>
+          {t.lunarNodesLabel}{' '}
           <label>
             <input
               type="radio"
@@ -267,7 +268,7 @@ export function ExtendedSettingsPanel({
                 patch({ nodeVariant: 'mean' });
               }}
             />{' '}
-            Mean
+            {t.mean}
           </label>{' '}
           <label>
             <input
@@ -278,7 +279,7 @@ export function ExtendedSettingsPanel({
                 patch({ nodeVariant: 'true' });
               }}
             />{' '}
-            True
+            {t.true}
           </label>
         </div>
         <label>
@@ -289,12 +290,12 @@ export function ExtendedSettingsPanel({
               patch({ rainbowZodiac: event.target.checked });
             }}
           />{' '}
-          Rainbow Color Zodiac
+          {t.rainbowColorZodiac}
         </label>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Aspects to</legend>
+        <legend>{t.aspectsToLegend}</legend>
         <label>
           <input
             type="checkbox"
@@ -303,7 +304,7 @@ export function ExtendedSettingsPanel({
               patch({ aspectsToChiron: event.target.checked });
             }}
           />{' '}
-          Chiron
+          {t.chiron}
         </label>
         <label>
           <input
@@ -313,7 +314,7 @@ export function ExtendedSettingsPanel({
               patch({ aspectsToLilith: event.target.checked });
             }}
           />{' '}
-          Lilith
+          {t.lilith}
         </label>
         <label>
           <input
@@ -323,11 +324,9 @@ export function ExtendedSettingsPanel({
               patch({ aspectsToLunarNodes: event.target.checked });
             }}
           />{' '}
-          Lunar Nodes
+          {t.lunarNodes}
         </label>
-        <p className="hint">
-          Aspects to the Part of Fortune, Vertex, Ascendant and Midheaven aren&rsquo;t supported yet.
-        </p>
+        <p className="hint">{t.aspectsToHint}</p>
       </fieldset>
 
       <p>
@@ -338,7 +337,7 @@ export function ExtendedSettingsPanel({
             onRedraw(draft);
           }}
         >
-          Redraw
+          {t.redrawButton}
         </button>{' '}
         <button
           type="button"
@@ -347,7 +346,7 @@ export function ExtendedSettingsPanel({
             setDraft(DEFAULT_EXTENDED_SETTINGS);
           }}
         >
-          Reset to defaults
+          {t.resetToDefaultsButton}
         </button>
       </p>
     </details>
