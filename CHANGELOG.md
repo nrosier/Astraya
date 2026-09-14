@@ -4,6 +4,43 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.14.0] — 2026-09-14
+
+**A free MapTiler API key is now a drop-in fix for the birth-place map's
+tile-blocking on production deployments, and the per-person tab bar got a
+visual refresh.**
+
+M9 (Polish & launch) progress, not a finished milestone — accessibility (#69),
+static build deploy (#73), and the human review of high-salience corpus entries
+(#63) are still open, and v1.0.0 hasn't shipped.
+
+### Added
+
+- **A MapTiler API key as a lower-effort alternative to self-hosting (#267):**
+  set `VITE_MAPTILER_API_KEY` (and
+  `ASTRAYA_TILE_ORIGIN=https://api.maptiler.com`) to sidestep OpenStreetMap's
+  referrer-based blocking without running a tile server of your own —
+  MapTiler authenticates by the key itself, not by the browser's `Referer`
+  header. See `.env.example` and README.md for this alongside the existing
+  self-hosted option. With neither configured, the map now falls back to a
+  referrer-policy override on tile requests, which helps but doesn't
+  eliminate the blocking risk described in #261 and #267.
+
+### Changed
+
+- **The per-person tab bar now reads as one bordered box (#234):** the tab
+  strip and the view beneath it are visually fused — the active tab matches
+  the content panel's background and sits flush against it — instead of a
+  borderless strip floating above the page.
+
+### Fixed
+
+- The footer text is now centered.
+- Dev-only: the #64 guard against runtime LLM API access no longer flags
+  MapTiler's key as a violation — it authenticates map tiles, not a model
+  provider, and is meant to ship in the client bundle like any other
+  browser-side map API key.
+
 ## [0.13.1] — 2026-09-14
 
 **Fixes a rendering bug in v0.13.0's own changelog entry.**

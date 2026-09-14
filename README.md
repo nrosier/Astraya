@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/nrosier/Astraya/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/nrosier/Astraya/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/nrosier/Astraya/releases"><img alt="Release" src="https://img.shields.io/badge/release-v0.13.1-blue"></a>
+  <a href="https://github.com/nrosier/Astraya/releases"><img alt="Release" src="https://img.shields.io/badge/release-v0.14.0-blue"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue"></a>
 </p>
 
@@ -117,9 +117,10 @@ OpenStreetMap's public tiles, no API key required. That default is meant for
 trying Astraya out, not for a production deployment — OSM's
 [tile usage policy](https://operations.osmfoundation.org/policies/tiles/)
 blocks clients that don't identify themselves or that exceed its limits, and
-a real deployment's traffic is expected to eventually trip that (see #261 and
-#267). Without either option below, Astraya falls back to a referrer-policy
-override on tile requests only, which helps but doesn't eliminate the risk.
+a real deployment's traffic is expected to eventually trip that — see issues
+261 and 267. Without either option below, Astraya falls back to a
+referrer-policy override on tile requests only, which helps but doesn't
+eliminate the risk.
 
 The lower-effort fix is a free [MapTiler](https://cloud.maptiler.com/account/keys/)
 API key: set `VITE_MAPTILER_API_KEY` and `ASTRAYA_TILE_ORIGIN=https://api.maptiler.com`
