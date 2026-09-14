@@ -34,6 +34,25 @@ const TILE_URL_TEMPLATE = typeof rawTileUrlTemplate === 'string' ? rawTileUrlTem
 // leaving it blank — the issue's requirement is a visible "unavailable" state, not silence.
 const TILE_LOAD_TIMEOUT_MS = 8000;
 
+// The user-facing "unavailable" message (below) can't name the fix: it's shown to whoever opens
+// this form, not to whoever runs the deployment, and "set VITE_TILE_URL_TEMPLATE" means nothing
+// to the former. This warns the latter, in whatever console they have open, the one time tiles
+// actually fail — distinguishing "OSM's tile server enforces a usage policy that free-floating
+// production traffic is expected to eventually trip" (#261) from a generic network hiccup, and
+// pointing at the fix already documented in README.md's "self-hosted tile server" section.
+let warnedAboutDefaultTileServer = false;
+function warnIfDefaultTileServer(): void {
+  if (TILE_URL_TEMPLATE !== DEFAULT_TILE_URL_TEMPLATE || warnedAboutDefaultTileServer) return;
+  warnedAboutDefaultTileServer = true;
+  console.warn(
+    "Astraya: the birth-place map's tiles failed to load from OpenStreetMap's public tile " +
+      'server (the default when VITE_TILE_URL_TEMPLATE is unset). That server enforces a usage ' +
+      'policy that blocks unidentified or high-volume clients — likely, not a transient network ' +
+      "issue, if this keeps happening. Point at your own tile server instead: see README.md's " +
+      '"Optional: self-hosted tile server" section.',
+  );
+}
+
 const WORLD_CENTER: [number, number] = [20, 0];
 const WORLD_ZOOM = 2;
 const PIN_ZOOM = 6;
@@ -111,14 +130,20 @@ export function BirthPlaceMap({
           tileLoaded = true;
         });
 
+        const markUnavailable = (): void => {
+          setStatus('unavailable');
+          warnIfDefaultTileServer();
+        };
+
         timeoutId = setTimeout(() => {
-          if (!cancelled) setStatus('unavailable');
+          if (!cancelled) markUnavailable();
         }, TILE_LOAD_TIMEOUT_MS);
 
         tileLayer.once('load', () => {
           if (cancelled) return;
           clearTimeout(timeoutId);
-          setStatus(tileLoaded ? 'ready' : 'unavailable');
+          if (tileLoaded) setStatus('ready');
+          else markUnavailable();
         });
 
         const marker = L.marker(initialCenter, { draggable: true }).addTo(map);

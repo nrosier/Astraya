@@ -113,8 +113,12 @@ long that gap can last.
 ### Optional: self-hosted tile server
 
 The birth-place picker's map needs no setup either: by default it requests
-OpenStreetMap's public tiles, no API key required. To serve tiles from your own
-server instead — for a fully offline deployment, say — set `VITE_TILE_URL_TEMPLATE`
+OpenStreetMap's public tiles, no API key required. That default is meant for
+trying Astraya out, not for a production deployment — OSM's
+[tile usage policy](https://operations.osmfoundation.org/policies/tiles/)
+blocks clients that don't identify themselves or that exceed its limits, and
+a real deployment's traffic is expected to eventually trip that (see #261).
+To serve tiles from your own server instead, set `VITE_TILE_URL_TEMPLATE`
 and `ASTRAYA_TILE_ORIGIN` to matching values (see [`.env.example`](.env.example)).
 The two must describe the same origin: a mismatch fails closed, blocking tiles
 rather than allowing the wrong host through. Unlike the server-runtime
