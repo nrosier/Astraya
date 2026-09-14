@@ -36,8 +36,27 @@ test.afterAll(async () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('the landing page has no automatically detectable accessibility violations', async ({ page }) => {
+test('the bare landing page redirects to the people list with no automatically detectable accessibility violations', async ({
+  page,
+}) => {
+  // #/ no longer has a screen of its own (#234): it redirects to #/people as soon as the app
+  // mounts. Scanning immediately after `goto` would catch the page mid-redirect, so wait for
+  // it to land first — the same thing the "empty People list" test below waits for.
   await gotoAndSettle(page, `${baseUrl}/`);
+  await expect(page.getByRole('heading', { name: 'People' })).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test('a gated chart-type tab renders as a genuinely disabled control (#234)', async ({ page }) => {
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await page.getByRole('button', { name: 'Add a person' }).click();
+  await expect(page.getByRole('heading', { name: 'New person' })).toBeVisible();
+
+  // No birth data has been entered yet, so every tab but Birth record is gated.
+  await expect(page.getByRole('button', { name: /Natal chart/ })).toBeDisabled();
+
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(results.violations).toEqual([]);
 });

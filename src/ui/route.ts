@@ -15,7 +15,6 @@ export type Route =
   | { readonly kind: 'home' }
   | { readonly kind: 'about' }
   | { readonly kind: 'changelog' }
-  | { readonly kind: 'time' }
   | { readonly kind: 'people' }
   | { readonly kind: 'person'; readonly personId: string }
   | { readonly kind: 'chart'; readonly personId: string }
@@ -55,9 +54,9 @@ const PERIODIC_TRANSIT_PATH = /^#\/periodic-transit\/(.+)$/;
 const ASTROCARTOGRAPHY_PATH = /^#\/astrocartography\/(.+)$/;
 
 export function parseRoute(hash: string): Route {
-  // The query carries a birth record on #/time, so every match is on the path part alone.
-  // Trailing slashes are tolerated because people hand-edit these URLs and a bare '#' is
-  // what a browser leaves behind after an anchor click.
+  // Matching is on the path part alone; a query string (e.g. #/chart/:id?tab=report) is read
+  // separately by the screen that needs it. Trailing slashes are tolerated because people
+  // hand-edit these URLs and a bare '#' is what a browser leaves behind after an anchor click.
   const path = (hash.split('?')[0] ?? '').replace(/\/+$/, '');
 
   switch (path) {
@@ -65,8 +64,6 @@ export function parseRoute(hash: string): Route {
       return { kind: 'about' };
     case '#/changelog':
       return { kind: 'changelog' };
-    case '#/time':
-      return { kind: 'time' };
     case '#/people':
       return { kind: 'people' };
     // #65: a chart shared by link — everything it needs is in the query, not the store.
@@ -75,7 +72,7 @@ export function parseRoute(hash: string): Route {
     case '#/admin':
       return { kind: 'admin' };
     // The one-time token lives in the query (#135) — read directly off `location.hash`
-    // by the screen itself, the same way #/time reads its own query, rather than here.
+    // by the screen itself, rather than here.
     case '#/set-password':
       return { kind: 'set-password' };
     // The one-time admin-bootstrap token (`server/auth/bootstrap.ts`) lives in the query,
