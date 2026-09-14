@@ -1,8 +1,8 @@
 /**
  * Renders a chart entirely from a #65 share link's query — no local store, no saved
  * person, no account. Everything the wheel and tables need is recomputed in this browser
- * from what the link carries, the same offline/no-server principle `TimePlace.tsx`
- * established for a bare birth moment, extended here to a whole chart.
+ * from what the link carries, the same offline/no-server principle `PersonForm.tsx`'s
+ * offset resolution follows for a stored birth moment, extended here to a whole chart.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { ChartDataView } from './ChartView.js';

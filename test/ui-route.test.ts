@@ -15,7 +15,6 @@ describe('parseRoute', () => {
   it('routes the named screens', () => {
     expect(parseRoute('#/about')).toEqual({ kind: 'about' });
     expect(parseRoute('#/changelog')).toEqual({ kind: 'changelog' });
-    expect(parseRoute('#/time')).toEqual({ kind: 'time' });
     expect(parseRoute('#/people')).toEqual({ kind: 'people' });
   });
 
@@ -28,9 +27,9 @@ describe('parseRoute', () => {
   });
 
   it('keeps the query out of the match', () => {
-    // #/time carries the whole birth record in its query, which is what makes the panel
-    // shareable. Matching the raw hash would break every shared link.
-    expect(parseRoute('#/time?y=1960&mo=6')).toEqual({ kind: 'time' });
+    // #/chart/:id?tab=report carries the requested tab in its query — matching the raw
+    // hash would break that link instead of landing on the natal chart.
+    expect(parseRoute(`#/chart/${ID}?tab=report`)).toEqual({ kind: 'chart', personId: ID });
     expect(parseRoute(`#/person/${ID}?x=1`)).toEqual({ kind: 'person', personId: ID });
   });
 

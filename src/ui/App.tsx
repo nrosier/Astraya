@@ -14,6 +14,7 @@ import { LanguageToggle } from './LanguageToggle.js';
 import { People } from './People.js';
 import { PeriodicTransitView } from './PeriodicTransitView.js';
 import { PersonForm } from './PersonForm.js';
+import { PersonNav } from './PersonNav.js';
 import { ProfectionsView } from './ProfectionsView.js';
 import { PwaStatus } from './PwaStatus.js';
 import { parseRoute } from './route.js';
@@ -26,9 +27,9 @@ import { StoreProvider } from './store-context.js';
 import { SyncBadge } from './SyncBadge.js';
 import { SynastryView } from './SynastryView.js';
 import { ThemeToggle } from './ThemeToggle.js';
-import { TimePlace } from './TimePlace.js';
 import { TransitView } from './TransitView.js';
 import { APP_VERSION } from '../version.js';
+import type { Route } from './route.js';
 
 /**
  * The routes that need the local store, wrapped in the one place that opens it.
@@ -61,8 +62,7 @@ function Stored({ children }: { children: React.ReactNode }): React.JSX.Element 
         </p>
         <p>
           Private-browsing windows and blocked site data are the usual causes. Nothing has been lost &mdash; anything
-          saved earlier is still there once storage is available again. The <a href="#/time">when-and-where panel</a>{' '}
-          needs no storage and still works.
+          saved earlier is still there once storage is available again.
         </p>
       </main>
     );
@@ -159,7 +159,7 @@ export function App(): React.JSX.Element {
   }, []);
 
   const parsed = parseRoute(route);
-  const screen = renderScreen(parsed, engineStatus, seVersion);
+  const screen = renderScreen(parsed, seVersion);
 
   return (
     // Wraps the whole shell, not just `Stored`: which store is open follows who is signed
@@ -178,25 +178,39 @@ export function App(): React.JSX.Element {
           `SyncBadge` (#230): sign-in/out is the thing that changes the sync badge's
           state, so it belongs beside it rather than on the opposite side of the bar. */}
       <div className="topbar-right">
+        {/* Only shown while loading or on failure (#234) — once ready, the ephemeris is an
+            implementation detail again. A silent failure here is precisely the bug class
+            this project is built to avoid, so it stays visible on every route, not just a
+            landing page that no longer exists. */}
+        {engineStatus !== 'ready' && <p className="status">{engineStatus}</p>}
         <SyncBadge />
         <AccountPanel />
         <LanguageToggle />
         <ThemeToggle />
       </div>
       {screen}
+      <footer>
+        {/* The version itself is the changelog link: clicking a version to see what changed
+            in it is the behaviour people expect. Promoted here from the old landing page
+            (#234) so both routes stay reachable now that the landing page is gone. */}
+        <a href="#/changelog">Version {APP_VERSION}</a> &middot; <a href="#/about">about &amp; licence</a>
+      </footer>
       <PwaStatus />
     </SessionProvider>
   );
 }
 
-function renderScreen(
-  parsed: ReturnType<typeof parseRoute>,
-  engineStatus: string,
-  seVersion: string | undefined,
-): React.JSX.Element {
+/** `#/` (and any unmatched hash) always lands here; it redirects straight to the people list (#234) — no auto-created person, no "last active" state, just the one obvious next step. */
+function HomeRedirect(): React.JSX.Element | null {
+  useEffect(() => {
+    window.location.hash = '#/people';
+  }, []);
+  return null;
+}
+
+function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.Element {
   if (parsed.kind === 'about') return <About seVersion={seVersion} />;
   if (parsed.kind === 'changelog') return <Changelog />;
-  if (parsed.kind === 'time') return <TimePlace />;
   if (parsed.kind === 'shared') return <SharedChartView />;
   if (parsed.kind === 'set-password') return <SetPasswordForm />;
   if (parsed.kind === 'setup') return <SetupForm />;
@@ -214,102 +228,58 @@ function renderScreen(
       </Stored>
     );
   }
-  if (parsed.kind === 'person') {
+  if (
+    parsed.kind === 'person' ||
+    parsed.kind === 'chart' ||
+    parsed.kind === 'profections' ||
+    parsed.kind === 'transit' ||
+    parsed.kind === 'synastry' ||
+    parsed.kind === 'composite' ||
+    parsed.kind === 'harmonic' ||
+    parsed.kind === 'periodic-transit' ||
+    parsed.kind === 'astrocartography'
+  ) {
     return (
       <Stored>
-        {/* Keyed on the id so navigating from one person to another remounts the form
-            rather than showing the previous person's draft under a new name. */}
-        <PersonForm key={parsed.personId} personId={parsed.personId} />
+        {/* Rendered once above whichever view is picked below (#234), rather than each of
+            the nine person-scoped screens carrying its own copy of the nav chain that used
+            to live inside PersonForm. */}
+        <PersonNav personId={parsed.personId} route={parsed} />
+        {renderPersonView(parsed)}
       </Stored>
     );
   }
-  if (parsed.kind === 'chart') {
-    return (
-      <Stored>
-        <ChartView key={parsed.personId} personId={parsed.personId} />
-      </Stored>
-    );
+
+  return <HomeRedirect />;
+}
+
+type PersonRoute = Extract<
+  Route,
+  {
+    kind:
+      | 'person'
+      | 'chart'
+      | 'profections'
+      | 'transit'
+      | 'synastry'
+      | 'composite'
+      | 'harmonic'
+      | 'periodic-transit'
+      | 'astrocartography';
   }
-  if (parsed.kind === 'profections') {
-    return (
-      <Stored>
-        <ProfectionsView key={parsed.personId} personId={parsed.personId} />
-      </Stored>
-    );
-  }
-  if (parsed.kind === 'transit') {
-    return (
-      <Stored>
-        <TransitView key={parsed.personId} personId={parsed.personId} />
-      </Stored>
-    );
-  }
-  if (parsed.kind === 'synastry') {
-    return (
-      <Stored>
-        <SynastryView key={parsed.personId} personId={parsed.personId} />
-      </Stored>
-    );
-  }
-  if (parsed.kind === 'composite') {
-    return (
-      <Stored>
-        <CompositeView key={parsed.personId} personId={parsed.personId} />
-      </Stored>
-    );
-  }
-  if (parsed.kind === 'harmonic') {
-    return (
-      <Stored>
-        <HarmonicView key={parsed.personId} personId={parsed.personId} />
-      </Stored>
-    );
-  }
+>;
+
+/** Which chart-type view to show for a person-scoped route, keyed on the id so navigating from one person to another remounts the view rather than showing the previous person's data under a new name. */
+function renderPersonView(parsed: PersonRoute): React.JSX.Element {
+  if (parsed.kind === 'person') return <PersonForm key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'chart') return <ChartView key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'profections') return <ProfectionsView key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'transit') return <TransitView key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'synastry') return <SynastryView key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'composite') return <CompositeView key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'harmonic') return <HarmonicView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'periodic-transit') {
-    return (
-      <Stored>
-        <PeriodicTransitView key={parsed.personId} personId={parsed.personId} />
-      </Stored>
-    );
+    return <PeriodicTransitView key={parsed.personId} personId={parsed.personId} />;
   }
-  if (parsed.kind === 'astrocartography') {
-    return (
-      <Stored>
-        <AstrocartographyView key={parsed.personId} personId={parsed.personId} />
-      </Stored>
-    );
-  }
-
-  return (
-    <main className="shell">
-      <h1>Astraya</h1>
-      <p className="tagline">Astrological charts, calculated properly.</p>
-
-      <section aria-live="polite">
-        {engineStatus === 'ready' ? (
-          <p className="status" data-state="ready">
-            Swiss Ephemeris <strong>{seVersion}</strong> loaded.
-          </p>
-        ) : (
-          <p className="status">{engineStatus}</p>
-        )}
-      </section>
-
-      <h2>Start here</h2>
-      <p>
-        <a href="#/people">People</a> holds the birth records on this device. Everything is stored in this browser and
-        works with no network; signing in to sync across devices comes later and stays optional.
-      </p>
-      <p>
-        <a href="#/time">When and where</a> resolves a birth record to a UTC offset and shows how it decided &mdash; the
-        step where charts most often go quietly wrong.
-      </p>
-
-      <footer>
-        {/* The version itself is the changelog link: clicking a version to see
-            what changed in it is the behaviour people expect. */}
-        <a href="#/changelog">Version {APP_VERSION}</a> &middot; <a href="#/about">about &amp; licence</a>
-      </footer>
-    </main>
-  );
+  return <AstrocartographyView key={parsed.personId} personId={parsed.personId} />;
 }
