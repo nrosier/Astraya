@@ -84,7 +84,7 @@ describe('ordering people', () => {
 
 describe('summarising a person', () => {
   it('shows the date, the local time, the resolved offset and the place', () => {
-    const text = summary(person());
+    const text = summary(person(), 'en');
     expect(text).toContain('1960-06-15');
     expect(text).toContain('14:30');
     // -04:00 is what a coordinate lookup gives here: tz-lookup puts these coordinates in
@@ -99,7 +99,7 @@ describe('summarising a person', () => {
     // The whole point of the time module is that a contested offset never reads as settled.
     // The list is where a user picks which record to open, so the doubt has to survive here
     // too — the reasons are on the form.
-    expect(summary(person())).toContain('?');
+    expect(summary(person(), 'en')).toContain('?');
     // A location well inside a zone, with an unambiguous time, gets no flag: the marker has
     // to mean something, and a flag on every row would mean nothing.
     const clean = person({
@@ -109,30 +109,41 @@ describe('summarising a person', () => {
         coordinates: { latitude: 51.4779, longitude: 0 },
       },
     });
-    expect(summary(clean)).not.toContain('?');
+    expect(summary(clean, 'en')).not.toContain('?');
   });
 
   it('names what is missing rather than calling the record incomplete', () => {
     // The user is the only one who can supply these, and cannot without knowing which.
-    const text = summary(person({ moment: undefined, missing: ['coordinates', 'birth time'] }));
+    const text = summary(person({ moment: undefined, missing: ['coordinates', 'birth time'] }), 'en');
     expect(text).toContain('coordinates');
     expect(text).toContain('birth time');
     expect(text).not.toContain('1960');
   });
 
   it('falls back to naming birth data when nothing is recorded at all', () => {
-    expect(summary(person({ moment: undefined, missing: [] }))).toContain('birth data');
+    expect(summary(person({ moment: undefined, missing: [] }), 'en')).toContain('birth data');
   });
 
   it('says the time is unknown instead of printing midnight', () => {
     // Midnight is a real birth time. Showing 00:00 for a record that has none is inventing
     // data, and it is the kind of invention a user would never think to question.
-    const text = summary(person({ timeAccuracy: 'unknown' }));
+    const text = summary(person({ timeAccuracy: 'unknown' }), 'en');
     expect(text).toContain('time unknown');
     expect(text).not.toContain('00:00');
   });
 
   it('says the place is not recorded rather than leaving a gap', () => {
-    expect(summary(person({ placeLabel: '' }))).toContain('place not recorded');
+    expect(summary(person({ placeLabel: '' }), 'en')).toContain('place not recorded');
+  });
+
+  it('summarises in Dutch when asked', () => {
+    // Proves the catalogue is actually wired up, not just present: the fixed words around
+    // the date/time/place change language while the data itself does not.
+    const text = summary(person(), 'nl');
+    expect(text).toContain('1960-06-15');
+    expect(text).toContain('Vevay, Indiana');
+    expect(summary(person({ timeAccuracy: 'unknown' }), 'nl')).toContain('tijd onbekend');
+    expect(summary(person({ placeLabel: '' }), 'nl')).toContain('plaats niet geregistreerd');
+    expect(summary(person({ moment: undefined, missing: [] }), 'nl')).toContain('geboortegegevens');
   });
 });
