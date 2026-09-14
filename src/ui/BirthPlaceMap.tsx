@@ -19,6 +19,8 @@ import markerIconUrl from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2xUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import 'leaflet/dist/leaflet.css';
+import { birthPlaceMapMessages } from './BirthPlaceMap.messages.js';
+import { useMessages } from './messages.js';
 import type { LeafletMouseEvent, Map as LeafletMap, Marker } from 'leaflet';
 
 // No API key, no account, no setup required for this default. A self-hoster can point both this
@@ -62,6 +64,7 @@ export function BirthPlaceMap({
   onPickRef.current = onPick;
   const [status, setStatus] = useState<Status>('loading');
   const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle');
+  const t = useMessages(birthPlaceMapMessages);
   const hasCoordinates = latitude !== undefined && longitude !== undefined;
 
   useEffect(() => {
@@ -181,16 +184,16 @@ export function BirthPlaceMap({
       {!hasCoordinates && (
         <div className="birth-place-map-geo">
           <button type="button" className="quiet" onClick={useMyLocation} disabled={geoStatus === 'locating'}>
-            {geoStatus === 'locating' ? 'Locating…' : 'Use my location'}
+            {geoStatus === 'locating' ? t.locating : t.useMyLocation}
           </button>
           {geoStatus === 'denied' && (
             <p className="warning" role="alert">
-              Location permission was denied. You can still enter coordinates in the fields above.
+              {t.permissionDenied(t.enterCoordinatesHint)}
             </p>
           )}
           {geoStatus === 'unavailable' && (
             <p className="warning" role="alert">
-              Your location could not be determined. You can still enter coordinates in the fields above.
+              {t.positionUnavailable(t.enterCoordinatesHint)}
             </p>
           )}
         </div>
@@ -198,7 +201,7 @@ export function BirthPlaceMap({
       <div className="birth-place-map-canvas" ref={containerRef} />
       {status === 'unavailable' && (
         <p className="warning" role="alert">
-          Map tiles could not be loaded, so the map is unavailable. You can still enter coordinates in the fields above.
+          {t.tilesUnavailable(t.enterCoordinatesHint)}
         </p>
       )}
     </div>

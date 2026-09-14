@@ -20,24 +20,25 @@ export type PersonTabKey =
 
 export interface PersonTab {
   readonly key: PersonTabKey;
-  readonly label: string;
   readonly buildHref: (personId: string) => string;
 }
 
-// Same labels, order and hrefs as the middot chain this replaces (previously in
-// PersonForm.tsx). Report shares the chart route with a `?tab=report` query rather than
-// having its own route — see ChartView's own tab handling.
+// Same order and hrefs as the middot chain this replaces (previously in PersonForm.tsx).
+// Report shares the chart route with a `?tab=report` query rather than having its own
+// route — see ChartView's own tab handling. Labels are translated, so they live in
+// `PersonNav.messages.ts`, looked up by `key`, rather than here — this module has no
+// access to the current locale.
 export const PERSON_TABS: readonly PersonTab[] = [
-  { key: 'birth-record', label: 'Birth record', buildHref: (id) => `#/person/${id}` },
-  { key: 'chart', label: 'Natal chart', buildHref: (id) => `#/chart/${id}` },
-  { key: 'report', label: 'Report', buildHref: (id) => `#/chart/${id}?tab=report` },
-  { key: 'profections', label: 'Profections', buildHref: (id) => `#/profections/${id}` },
-  { key: 'transit', label: 'Transits', buildHref: (id) => `#/transit/${id}` },
-  { key: 'synastry', label: 'Synastry', buildHref: (id) => `#/synastry/${id}` },
-  { key: 'composite', label: 'Composite', buildHref: (id) => `#/composite/${id}` },
-  { key: 'harmonic', label: 'Harmonic', buildHref: (id) => `#/harmonic/${id}` },
-  { key: 'periodic-transit', label: 'Forecast', buildHref: (id) => `#/periodic-transit/${id}` },
-  { key: 'astrocartography', label: 'Astrocartography', buildHref: (id) => `#/astrocartography/${id}` },
+  { key: 'birth-record', buildHref: (id) => `#/person/${id}` },
+  { key: 'chart', buildHref: (id) => `#/chart/${id}` },
+  { key: 'report', buildHref: (id) => `#/chart/${id}?tab=report` },
+  { key: 'profections', buildHref: (id) => `#/profections/${id}` },
+  { key: 'transit', buildHref: (id) => `#/transit/${id}` },
+  { key: 'synastry', buildHref: (id) => `#/synastry/${id}` },
+  { key: 'composite', buildHref: (id) => `#/composite/${id}` },
+  { key: 'harmonic', buildHref: (id) => `#/harmonic/${id}` },
+  { key: 'periodic-transit', buildHref: (id) => `#/periodic-transit/${id}` },
+  { key: 'astrocartography', buildHref: (id) => `#/astrocartography/${id}` },
 ];
 
 /**

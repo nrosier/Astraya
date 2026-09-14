@@ -1,4 +1,7 @@
 import { APP_BUILT_AT, APP_COMMIT, APP_VERSION, SOURCE_URL, SOURCE_URL_FOR_BUILD } from '../version.js';
+import { aboutMessages } from './About.messages.js';
+import { useMessages } from './messages.js';
+import { sharedMessages } from './shared.messages.js';
 
 /**
  * About page.
@@ -10,72 +13,69 @@ import { APP_BUILT_AT, APP_COMMIT, APP_VERSION, SOURCE_URL, SOURCE_URL_FOR_BUILD
  * to delete it.
  */
 export function About({ seVersion }: { seVersion?: string | undefined }): React.JSX.Element {
+  const t = useMessages(aboutMessages);
+  const shared = useMessages(sharedMessages);
   return (
     <main className="shell">
       <p className="back">
-        <a href="#/">&larr; Back</a>
+        <a href="#/">&larr; {shared.back}</a>
       </p>
-      <h1>About Astraya</h1>
+      <h1>{t.heading}</h1>
 
-      <h2>Version</h2>
+      <h2>{t.versionHeading}</h2>
       <dl>
-        <dt>Release</dt>
+        <dt>{t.releaseLabel}</dt>
         <dd>{APP_VERSION}</dd>
-        <dt>Commit</dt>
+        <dt>{t.commitLabel}</dt>
         <dd>{APP_COMMIT}</dd>
-        <dt>Built</dt>
+        <dt>{t.builtLabel}</dt>
         <dd>{APP_BUILT_AT}</dd>
-        <dt>Swiss Ephemeris</dt>
-        <dd>{seVersion ?? 'not loaded'}</dd>
+        <dt>{t.swissEphemerisLabel}</dt>
+        <dd>{seVersion ?? t.notLoaded}</dd>
       </dl>
       <p>
-        <a href="#/changelog">What changed in this release</a>
+        <a href="#/changelog">{t.changelogLink}</a>
       </p>
 
-      <h2>Your data</h2>
+      <h2>{t.yourDataHeading}</h2>
       <p>
-        Charts are calculated <strong>entirely in your browser</strong>. Birth data you enter is stored on this device,
-        in its IndexedDB storage, and that copy is the authoritative one.
+        {t.yourDataParagraph1Before}
+        <strong>{t.yourDataParagraph1Strong}</strong>
+        {t.yourDataParagraph1After}
       </p>
       <p>
-        If you are not signed in, <strong>nothing you enter ever leaves this device</strong>. There is no analytics, no
-        tracking and no third-party request; the app makes no network call at all once it has loaded.
+        {t.yourDataParagraph2Before}
+        <strong>{t.yourDataParagraph2Strong}</strong>
+        {t.yourDataParagraph2After}
       </p>
       <p>
-        If you sign in, your people and charts sync to <em>this server</em> so they reach your other devices. They are
-        not shared with anyone else and are never sent to a third party. They are encrypted at rest. Note honestly that
-        this protects a stolen database file or backup, not someone who has compromised the server itself, because the
-        server needs the key in order to run.
+        {t.yourDataParagraph3Before}
+        <em>{t.yourDataParagraph3Em}</em>
+        {t.yourDataParagraph3After}
+      </p>
+      <p>{t.yourDataParagraph4}</p>
+      <p>{t.yourDataParagraph5}</p>
+
+      <h2>{t.licenceHeading}</h2>
+      <p>
+        {t.licenceParagraphBefore}
+        <strong>{t.licenceParagraphStrong}</strong>
+        {t.licenceParagraphAfter}
       </p>
       <p>
-        You can delete any person, along with every chart derived from them, from the person list. Deleting clears the
-        local copy and instructs the server to drop its copy.
-      </p>
-      <p>
-        Interpretation text is written ahead of release and shipped as part of the application. No AI service is
-        contacted while you use Astraya — the Content Security Policy makes that impossible rather than merely
-        unintended.
+        <a href={SOURCE_URL_FOR_BUILD}>{t.sourceCodeLink}</a>
       </p>
 
-      <h2>Licence and source</h2>
+      <h2>{t.acknowledgementsHeading}</h2>
       <p>
-        Astraya is free software under the <strong>GNU Affero General Public License, version 3 or later</strong>. You
-        may use, study, modify and redistribute it under those terms. Because the AGPL covers use over a network, you
-        are entitled to the source code of this running instance:
+        {t.acknowledgementsParagraph1Before}
+        <strong>{t.acknowledgementsParagraph1Strong}</strong>
+        {t.acknowledgementsParagraph1After}
       </p>
       <p>
-        <a href={SOURCE_URL_FOR_BUILD}>Source code for this build</a>
-      </p>
-
-      <h2>Acknowledgements</h2>
-      <p>
-        Positions are computed with the <strong>Swiss Ephemeris</strong>, copyright &copy; 1997&ndash;2021 Astrodienst
-        AG, Zürich, used under the AGPL. Swiss Ephemeris derives from the NASA JPL DE431 planetary ephemeris.
-        Astrodienst asks that this credit be visible, and it is.
-      </p>
-      <p>
-        Reference positions used to test Astraya come from the NASA JPL Horizons system. A full list of third-party
-        components and their licences is in <a href={`${SOURCE_URL}/blob/main/NOTICE`}>NOTICE</a>.
+        {t.acknowledgementsParagraph2Before}
+        <a href={`${SOURCE_URL}/blob/main/NOTICE`}>NOTICE</a>
+        {t.acknowledgementsParagraph2After}
       </p>
     </main>
   );
