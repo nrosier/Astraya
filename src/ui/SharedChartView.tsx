@@ -10,6 +10,7 @@ import { chartSheetMetaLines } from '../domain/chart-tables.js';
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
 import { decodeChartShareLink, type ChartShareData } from '../domain/chart-share.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { sharedChartViewMessages } from './SharedChartView.messages.js';
 import { sharedMessages } from './shared.messages.js';
@@ -33,6 +34,7 @@ function fromLocation(): { data?: ChartShareData; error?: string } {
 export function SharedChartView(): React.JSX.Element {
   const t = useMessages(sharedChartViewMessages);
   const shared = useMessages(sharedMessages);
+  const [locale] = useLocale();
   const initial = useMemo(fromLocation, []);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
 
@@ -78,7 +80,7 @@ export function SharedChartView(): React.JSX.Element {
           load={load}
           displayName={t.sharedChart}
           showHouses={initial.data.housesKnown}
-          metaLines={chartSheetMetaLines(t.sharedChart, initial.data.moment)}
+          metaLines={chartSheetMetaLines(t.sharedChart, initial.data.moment, locale)}
         />
       )}
     </main>

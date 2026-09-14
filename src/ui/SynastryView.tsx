@@ -21,6 +21,8 @@ import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeSynastry, type SynastryData } from '../domain/synastry.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderMultiWheelSvg, type CrossRingAspects } from '../chart/multi-wheel.js';
+import { aspectDisplayName, bodyDisplayName } from './astro-names.messages.js';
+import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { ordered } from './people-list.js';
 import { PersonNotFound } from './PersonNotFound.js';
@@ -29,6 +31,7 @@ import { useStoreState } from './store-context.js';
 import { synastryViewMessages } from './SynastryView.messages.js';
 import type { TableColumn } from './table-sort.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
+import type { Locale } from '../interpretation/schema.js';
 
 type Load =
   | { readonly kind: 'idle' }
@@ -36,11 +39,26 @@ type Load =
   | { readonly kind: 'ready'; readonly data: SynastryData }
   | { readonly kind: 'error'; readonly message: string };
 
-function aspectColumns(t: typeof synastryViewMessages.en): readonly TableColumn<AspectRow>[] {
+function aspectColumns(t: typeof synastryViewMessages.en, locale: Locale): readonly TableColumn<AspectRow>[] {
   return [
-    { key: 'bodyAName', label: t.personALabel, valueOf: (row) => row.bodyAName },
-    { key: 'aspect', label: t.aspectLabel, valueOf: (row) => row.aspect },
-    { key: 'bodyBName', label: t.personBLabel, valueOf: (row) => row.bodyBName },
+    {
+      key: 'bodyAName',
+      label: t.personALabel,
+      valueOf: (row) => row.bodyAName,
+      render: (row) => bodyDisplayName(row.bodyAKey, locale),
+    },
+    {
+      key: 'aspect',
+      label: t.aspectLabel,
+      valueOf: (row) => row.aspect,
+      render: (row) => aspectDisplayName(row.aspectKey, locale),
+    },
+    {
+      key: 'bodyBName',
+      label: t.personBLabel,
+      valueOf: (row) => row.bodyBName,
+      render: (row) => bodyDisplayName(row.bodyBKey, locale),
+    },
     { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
     {
       key: 'applying',
@@ -55,6 +73,7 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
   const state = useStoreState();
   const person = state.people.get(personId);
   const t = useMessages(synastryViewMessages);
+  const [locale] = useLocale();
 
   const candidates = useMemo(
     () =>
@@ -190,7 +209,7 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
 
           <SortableTable
             caption={t.aspectsCaption}
-            columns={aspectColumns(t)}
+            columns={aspectColumns(t, locale)}
             rows={crossAspectRows(load.data.aspects)}
             getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
             downloadFilename={deriveExportFilename(

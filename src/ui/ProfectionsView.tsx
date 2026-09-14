@@ -17,7 +17,9 @@ import { degreeParts } from '../domain/chart-tables.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeProfections, type ProfectedPeriod, type ProfectionData } from '../domain/profections.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { bodyDisplayName, signDisplayName } from './astro-names.messages.js';
 import { todayInputValue } from './format.js';
+import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { profectionsViewMessages } from './ProfectionsView.messages.js';
@@ -25,6 +27,7 @@ import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
+import type { Locale } from '../interpretation/schema.js';
 
 type Load =
   | { readonly kind: 'loading' }
@@ -38,21 +41,38 @@ interface ProfectionRow {
   readonly minute: number;
   readonly second: number;
   readonly ruler: string;
+  readonly rulerKey: string;
 }
 
 function toRow(period: string, profected: ProfectedPeriod): ProfectionRow {
   const parts = degreeParts(profected.longitude);
-  return { period, ...parts, ruler: bodyById(profected.ruler)?.name ?? String(profected.ruler) };
+  const ruler = bodyById(profected.ruler);
+  return {
+    period,
+    ...parts,
+    ruler: ruler?.name ?? String(profected.ruler),
+    rulerKey: ruler?.key ?? String(profected.ruler),
+  };
 }
 
-function columns(t: typeof profectionsViewMessages.en): readonly TableColumn<ProfectionRow>[] {
+function columns(t: typeof profectionsViewMessages.en, locale: Locale): readonly TableColumn<ProfectionRow>[] {
   return [
     { key: 'period', label: t.periodLabel, valueOf: (row) => row.period },
-    { key: 'sign', label: t.signLabel, valueOf: (row) => row.sign },
+    {
+      key: 'sign',
+      label: t.signLabel,
+      valueOf: (row) => row.sign,
+      render: (row) => signDisplayName(row.sign, locale),
+    },
     { key: 'degree', label: t.degLabel, valueOf: (row) => row.degree },
     { key: 'minute', label: t.minLabel, valueOf: (row) => row.minute },
     { key: 'second', label: t.secLabel, valueOf: (row) => row.second },
-    { key: 'ruler', label: t.lordLabel, valueOf: (row) => row.ruler },
+    {
+      key: 'ruler',
+      label: t.lordLabel,
+      valueOf: (row) => row.ruler,
+      render: (row) => bodyDisplayName(row.rulerKey, locale),
+    },
   ];
 }
 
@@ -60,6 +80,7 @@ export function ProfectionsView({ personId }: { personId: string }): React.JSX.E
   const state = useStoreState();
   const person = state.people.get(personId);
   const t = useMessages(profectionsViewMessages);
+  const [locale] = useLocale();
   const [asOf, setAsOf] = useState(todayInputValue);
   const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
@@ -177,7 +198,7 @@ export function ProfectionsView({ personId }: { personId: string }): React.JSX.E
           {rows !== undefined && (
             <SortableTable
               caption={t.profectionsCaption}
-              columns={columns(t)}
+              columns={columns(t, locale)}
               rows={rows}
               getRowKey={(row) => row.period}
               downloadFilename={deriveExportFilename(person.displayName, 'profections', 'csv')}
