@@ -1,16 +1,19 @@
 // @vitest-environment jsdom
 /**
  * Regression test for a real crash found by manually exercising the app in a
- * browser (not caught by any existing test): `useSyncState` in `StatusBar.tsx`
- * used to return a fresh `{ kind: 'off' }` object literal from
- * `useSyncExternalStore`'s `getSnapshot` on every call. With no sync engine —
- * i.e. every signed-out visitor — that breaks the snapshot's reference-
- * stability contract and React throws "Maximum update depth exceeded"
- * (minified as error #185), leaving the whole app blank.
+ * browser (not caught by any existing test): `useSyncState` used to return a
+ * fresh `{ kind: 'off' }` object literal from `useSyncExternalStore`'s
+ * `getSnapshot` on every call. With no sync engine — i.e. every signed-out
+ * visitor — that breaks the snapshot's reference-stability contract and React
+ * throws "Maximum update depth exceeded" (minified as error #185), leaving the
+ * whole app blank.
  *
- * Mounted through `SessionProvider`/`StoreProvider` the same way `App.tsx`
- * does, against a real `build()` server with no admin set up (`/api/auth/me`
- * is 401), so the signed-out, no-engine path is the one actually exercised.
+ * Mounted through `SessionProvider` alone, with no `StoreProvider`, against a
+ * real `build()` server with no admin set up (`/api/auth/me` is 401) — this is
+ * `SyncBadge`'s actual mounting context on most routes (#250: it now lives in
+ * `App.tsx`'s global top bar, outside `Stored`, rather than inside it as the
+ * old `StatusBar` did), so the signed-out, no-store, no-engine path is the one
+ * actually exercised.
  */
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -20,9 +23,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
-import { SessionProvider, useStoreStatus } from '../src/ui/session-context.js';
-import { StatusBar } from '../src/ui/StatusBar.js';
-import { StoreProvider } from '../src/ui/store-context.js';
+import { SessionProvider } from '../src/ui/session-context.js';
+import { SyncBadge } from '../src/ui/SyncBadge.js';
 
 const WAIT = { timeout: 5000 };
 
@@ -31,16 +33,6 @@ let app: FastifyInstance;
 let baseUrl: string;
 const realFetch = globalThis.fetch;
 
-function App(): React.JSX.Element | null {
-  const status = useStoreStatus();
-  if (status.kind !== 'ready') return null;
-  return (
-    <StoreProvider store={status.store}>
-      <StatusBar />
-    </StoreProvider>
-  );
-}
-
 function mount(): { container: HTMLElement; root: Root } {
   const container = document.createElement('div');
   document.body.append(container);
@@ -48,7 +40,7 @@ function mount(): { container: HTMLElement; root: Root } {
   act(() => {
     root.render(
       <SessionProvider>
-        <App />
+        <SyncBadge />
       </SessionProvider>,
     );
   });
@@ -63,7 +55,7 @@ function unmount(root: Root, container: HTMLElement): void {
 }
 
 beforeEach(async () => {
-  dir = mkdtempSync(join(tmpdir(), 'astraya-statusbar-test-'));
+  dir = mkdtempSync(join(tmpdir(), 'astraya-syncbadge-test-'));
   app = await build({ dbPath: join(dir, 'astraya.db') });
   await app.listen({ port: 0, host: '127.0.0.1' });
   const address = app.server.address();
@@ -79,14 +71,14 @@ afterEach(async () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-describe('signed out, no sync engine', () => {
+describe('signed out, no store, no sync engine', () => {
   it('renders without React throwing "Maximum update depth exceeded"', async () => {
     const { container, root } = mount();
     try {
       await vi.waitFor(() => {
-        expect(container.querySelector('.statusbar')).not.toBeNull();
+        expect(container.querySelector('.syncbadge')).not.toBeNull();
       }, WAIT);
-      expect(container.querySelector('.statusbar summary')?.textContent).toContain('Local only');
+      expect(container.querySelector('.syncbadge-label')?.textContent).toContain('Local only');
     } finally {
       unmount(root, container);
     }

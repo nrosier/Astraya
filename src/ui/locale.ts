@@ -7,7 +7,7 @@
  * A plain module-level store rather than React context: `LanguageToggle` (mounted once,
  * globally) and `ReportView` (mounted only while that tab is open) both need to read and
  * react to the same value with no provider wiring `App.tsx` would otherwise need. Same
- * `useSyncExternalStore` shape `StatusBar.tsx` uses for sync status, including its
+ * `useSyncExternalStore` shape `SyncBadge.tsx` uses for sync status, including its
  * `OFF_STATUS`-style stable snapshot: returning a fresh value from `getSnapshot` would
  * make React re-render forever.
  */
