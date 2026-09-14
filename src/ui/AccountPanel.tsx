@@ -14,11 +14,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSession } from './session-context.js';
 import { getOidcConfig } from '../sync/auth-client.js';
+import { accountPanelMessages } from './AccountPanel.messages.js';
+import { useMessages } from './messages.js';
 import { startOidcHandshake } from './oidc-pkce.js';
+import { sharedMessages } from './shared.messages.js';
 import type { AuthUser, OidcConfig } from '../sync/auth-client.js';
 
-function changes(count: number): string {
-  return count === 1 ? '1 change' : `${String(count)} changes`;
+function changes(count: number, t: typeof accountPanelMessages.en): string {
+  return count === 1 ? t.oneChange : t.changesCount(String(count));
 }
 
 function AdoptionPanel({
@@ -30,6 +33,7 @@ function AdoptionPanel({
 }): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const t = useMessages(accountPanelMessages);
 
   const resolve = (accept: boolean): void => {
     setBusy(true);
@@ -42,13 +46,10 @@ function AdoptionPanel({
 
   return (
     <div className="accountpanel-popover">
-      <p>
-        This device saved {changes(recordCount)} before you signed in. Add it to your account so it syncs to your other
-        devices, or leave it here.
-      </p>
+      <p>{t.adoptionPrompt(changes(recordCount, t))}</p>
       {error !== undefined && (
         <p className="warning" role="alert">
-          That did not go through, so nothing has changed. {error}
+          {t.adoptionFailed(error)}
         </p>
       )}
       <p className="actions">
@@ -58,7 +59,7 @@ function AdoptionPanel({
             resolve(true);
           }}
         >
-          Add it to my account
+          {t.addToAccountButton}
         </button>
         <button
           className="quiet"
@@ -67,7 +68,7 @@ function AdoptionPanel({
             resolve(false);
           }}
         >
-          Leave it on this device
+          {t.leaveOnDeviceButton}
         </button>
       </p>
     </div>
@@ -89,6 +90,7 @@ function AdoptionPanel({
 function OidcSignIn({ config }: { config: { clientId: string; authorizationEndpoint: string } }): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const t = useMessages(accountPanelMessages);
 
   const start = (): void => {
     setBusy(true);
@@ -131,7 +133,7 @@ function OidcSignIn({ config }: { config: { clientId: string; authorizationEndpo
   return (
     <p className="actions">
       <button type="button" disabled={busy} onClick={start}>
-        Sign in with Authentik
+        {t.signInWithOidcButton}
       </button>
       {error !== undefined && (
         <span className="warning" role="alert">
@@ -170,6 +172,8 @@ function SignInForm({
   // instead of dropping it back to the document body.
   const triggerRef = useRef<HTMLButtonElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
+  const t = useMessages(accountPanelMessages);
+  const shared = useMessages(sharedMessages);
 
   const close = (): void => {
     setOpen(false);
@@ -224,7 +228,7 @@ function SignInForm({
           setOpen(true);
         }}
       >
-        Sign in
+        {t.signInButton}
       </button>
     );
   }
@@ -240,15 +244,12 @@ function SignInForm({
       }}
     >
       <p className="accountpanel-popover-head">
-        <span id={SIGNIN_POPOVER_HEADING_ID}>Sign in to sync this device</span>
-        <button type="button" className="quiet" aria-label="Close" onClick={close}>
+        <span id={SIGNIN_POPOVER_HEADING_ID}>{t.signInPopoverHeading}</span>
+        <button type="button" className="quiet" aria-label={t.closeLabel} onClick={close}>
           ×
         </button>
       </p>
-      <p>
-        An account syncs your data to your other devices. It is optional — everything here already works with no
-        account, on this device alone.
-      </p>
+      <p>{t.signInExplainer}</p>
       {error !== undefined && (
         <p className="warning" role="alert">
           {error}
@@ -257,7 +258,7 @@ function SignInForm({
       <form onSubmit={submit}>
         <div className="field-grid">
           <label>
-            Username
+            {shared.usernameLabel}
             <input
               ref={usernameRef}
               type="text"
@@ -269,7 +270,7 @@ function SignInForm({
             />
           </label>
           <label>
-            Password
+            {t.passwordLabel}
             <input
               type="password"
               autoComplete="current-password"
@@ -282,7 +283,7 @@ function SignInForm({
         </div>
         <p className="actions">
           <button type="submit" disabled={busy || username.trim() === '' || password === ''}>
-            Sign in
+            {t.signInButton}
           </button>
         </p>
       </form>
@@ -298,6 +299,7 @@ function SignInForm({
 function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<void> }): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const t = useMessages(accountPanelMessages);
 
   const doSignOut = (): void => {
     setBusy(true);
@@ -311,12 +313,12 @@ function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<vo
   return (
     <div className="accountpanel-signedin">
       <button className="quiet" disabled={busy} onClick={doSignOut}>
-        Sign out
+        {t.signOutButton}
       </button>
-      {user.isAdmin && <a href="#/admin">Manage users</a>}
+      {user.isAdmin && <a href="#/admin">{t.manageUsersLink}</a>}
       {error !== undefined && (
         <p className="warning" role="alert">
-          That did not go through, so you are still signed in. {error}
+          {t.signOutFailed(error)}
         </p>
       )}
     </div>
