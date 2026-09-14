@@ -24,26 +24,31 @@ import {
 } from '../domain/astrocartography.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { astrocartographyViewMessages } from './AstrocartographyView.messages.js';
 import { svgToPngBlob } from './chart-raster.js';
 import { downloadBlob, downloadText } from './download.js';
+import { useMessages } from './messages.js';
+import { PersonNotFound } from './PersonNotFound.js';
 import { useStoreState } from './store-context.js';
 import type { BodyId, EphemerisProvider, GeoPosition } from '../ephemeris/types.js';
 
 type LineType = 'MC' | 'IC' | 'AC' | 'DC';
 const ALL_LINE_TYPES: readonly LineType[] = ['MC', 'IC', 'AC', 'DC'];
-const LINE_TYPE_LABELS: Record<LineType, string> = {
-  MC: 'MC (Midheaven)',
-  IC: 'IC (Nadir)',
-  AC: 'AC (Ascendant)',
-  DC: 'DC (Descendant)',
-};
+
+function lineTypeLabels(t: typeof astrocartographyViewMessages.en): Record<LineType, string> {
+  return { MC: t.mc, IC: t.ic, AC: t.ac, DC: t.dc };
+}
 
 /** PNG export resolutions, matching `ChartView.tsx`'s `PNG_SIZES`. */
-const PNG_SIZES: readonly { readonly label: string; readonly size: number }[] = [
-  { label: 'Small (900px)', size: 900 },
-  { label: 'Medium (1800px)', size: 1800 },
-  { label: 'Large (3600px)', size: 3600 },
-];
+function pngSizes(
+  t: typeof astrocartographyViewMessages.en,
+): readonly { readonly label: string; readonly size: number }[] {
+  return [
+    { label: t.pngSmall, size: 900 },
+    { label: t.pngMedium, size: 1800 },
+    { label: t.pngLarge, size: 3600 },
+  ];
+}
 
 type Load =
   | { readonly kind: 'loading' }
@@ -70,6 +75,7 @@ function parseCoordinate(value: string, min: number, max: number): number | unde
 export function AstrocartographyView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
+  const t = useMessages(astrocartographyViewMessages);
   const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
   const [lineTypes, setLineTypes] = useState<readonly LineType[]>(ALL_LINE_TYPES);
   const [bodies, setBodies] = useState<readonly BodyId[]>(TRADITIONAL_ACG_BODY_IDS);
@@ -77,9 +83,10 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
   const [relocationLat, setRelocationLat] = useState('');
   const [relocationLon, setRelocationLon] = useState('');
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
-  const [pngSize, setPngSize] = useState(PNG_SIZES[1]?.size ?? 1800);
+  const [pngSize, setPngSize] = useState(1800);
   const [pngError, setPngError] = useState<string | undefined>(undefined);
   const [pngBusy, setPngBusy] = useState(false);
+  const sizes = pngSizes(t);
 
   useEffect(() => {
     const worker = new WorkerEphemerisProvider();
@@ -176,30 +183,19 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
   };
 
   if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
+    return <PersonNotFound />;
   }
 
   if (person.moment === undefined) {
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Astrocartography</h1>
+        <h1>{t.astrocartographyFallback}</h1>
         <p>
-          {person.displayName || 'This person'}&rsquo;s birth record is not complete enough to calculate a map yet. Fill
-          in the missing fields on the <a href={`#/person/${personId}`}>person page</a>.
+          {t.notCompleteMap(person.displayName || t.thisPerson)} <a href={`#/person/${personId}`}>{t.personPageLink}</a>
+          .
         </p>
       </main>
     );
@@ -209,14 +205,10 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Astrocartography</h1>
-        <p>
-          Astrocartography lines shift about 15&deg; of longitude per hour of birth-time error, so this needs a known
-          birth time. {person.displayName || 'This person'}&rsquo;s birth time is unknown &mdash; the same reason their
-          chart has no houses.
-        </p>
+        <h1>{t.astrocartographyFallback}</h1>
+        <p>{t.needsKnownTime(person.displayName || t.thisPerson)}</p>
       </main>
     );
   }
@@ -224,17 +216,13 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
   return (
     <main className="shell">
       <p className="back">
-        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+        <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
       </p>
-      <h1>{person.displayName ? `${person.displayName}’s astrocartography` : 'Astrocartography'}</h1>
-      <p className="hint">
-        Where in the world each body&rsquo;s angles (MC/IC/AC/DC) fall on the horizon or meridian right now, plus
-        optional Local Space lines (azimuth vectors from the birthplace). Line kind is shown by both colour and dash
-        pattern, so it stays readable without colour.
-      </p>
+      <h1>{person.displayName ? t.heading(person.displayName) : t.astrocartographyFallback}</h1>
+      <p className="hint">{t.hint}</p>
 
       <fieldset className="field-group">
-        <legend>Line types</legend>
+        <legend>{t.lineTypesLegend}</legend>
         {ALL_LINE_TYPES.map((lineType) => (
           <label key={lineType}>
             <input
@@ -244,13 +232,13 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
                 toggleLineType(lineType, event.target.checked);
               }}
             />{' '}
-            {LINE_TYPE_LABELS[lineType]}
+            {lineTypeLabels(t)[lineType]}
           </label>
         ))}
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Bodies</legend>
+        <legend>{t.bodiesLegend}</legend>
         {TRADITIONAL_ACG_BODY_IDS.map((body) => (
           <label key={body}>
             <input
@@ -264,7 +252,7 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
           </label>
         ))}
         <details>
-          <summary>Extended</summary>
+          <summary>{t.extendedSummary}</summary>
           {EXTENDED_ACG_BODY_IDS.map((body) => (
             <label key={body}>
               <input
@@ -281,7 +269,7 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Local Space</legend>
+        <legend>{t.localSpaceLegend}</legend>
         <label>
           <input
             type="checkbox"
@@ -290,15 +278,15 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
               setLocalSpace(event.target.checked);
             }}
           />{' '}
-          Show Local Space lines for the checked bodies
+          {t.showLocalSpaceLines}
         </label>
       </fieldset>
 
       <fieldset className="field-group">
-        <legend>Relocation (optional)</legend>
-        <p className="hint">Recomputes the Ascendant/Midheaven for another place, without changing any line above.</p>
+        <legend>{t.relocationLegend}</legend>
+        <p className="hint">{t.relocationHint}</p>
         <label>
-          Latitude{' '}
+          {t.latitudeLabel}{' '}
           <input
             type="number"
             inputMode="decimal"
@@ -311,7 +299,7 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
           />
         </label>{' '}
         <label>
-          Longitude{' '}
+          {t.longitudeLabel}{' '}
           <input
             type="number"
             inputMode="decimal"
@@ -325,17 +313,19 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
         </label>
         {data?.relocatedHouses !== undefined && (
           <p>
-            Ascendant: {signDegreeLabel(data.relocatedHouses.ascendant)} &middot; Midheaven:{' '}
-            {signDegreeLabel(data.relocatedHouses.midheaven)}
+            {t.relocatedAscendantMidheaven(
+              signDegreeLabel(data.relocatedHouses.ascendant),
+              signDegreeLabel(data.relocatedHouses.midheaven),
+            )}
           </p>
         )}
       </fieldset>
 
-      {load.kind === 'loading' && <p className="status">Calculating&hellip;</p>}
+      {load.kind === 'loading' && <p className="status">{t.calculating}</p>}
 
       {load.kind === 'error' && (
         <p className="warning" role="alert">
-          The map could not be calculated. {load.message}
+          {t.error(load.message)}
         </p>
       )}
 
@@ -351,24 +341,24 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
 
           <div className="chart-export-actions">
             <button type="button" className="quiet" onClick={downloadSvg}>
-              Download SVG
+              {t.downloadSvg}
             </button>
             <span className="chart-export-png">
               <select
-                aria-label="PNG resolution"
+                aria-label={t.pngResolutionLabel}
                 value={pngSize}
                 onChange={(event) => {
                   setPngSize(Number(event.target.value));
                 }}
               >
-                {PNG_SIZES.map((option) => (
+                {sizes.map((option) => (
                   <option key={option.size} value={option.size}>
                     {option.label}
                   </option>
                 ))}
               </select>
               <button type="button" className="quiet" onClick={downloadPng} disabled={pngBusy}>
-                {pngBusy ? 'Rendering…' : 'Download PNG'}
+                {pngBusy ? t.rendering : t.downloadPng}
               </button>
             </span>
           </div>

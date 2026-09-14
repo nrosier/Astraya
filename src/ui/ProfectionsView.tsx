@@ -18,6 +18,9 @@ import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeProfections, type ProfectedPeriod, type ProfectionData } from '../domain/profections.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { todayInputValue } from './format.js';
+import { useMessages } from './messages.js';
+import { PersonNotFound } from './PersonNotFound.js';
+import { profectionsViewMessages } from './ProfectionsView.messages.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
@@ -42,18 +45,21 @@ function toRow(period: string, profected: ProfectedPeriod): ProfectionRow {
   return { period, ...parts, ruler: bodyById(profected.ruler)?.name ?? String(profected.ruler) };
 }
 
-const COLUMNS: readonly TableColumn<ProfectionRow>[] = [
-  { key: 'period', label: 'Period', valueOf: (row) => row.period },
-  { key: 'sign', label: 'Sign', valueOf: (row) => row.sign },
-  { key: 'degree', label: 'Deg', valueOf: (row) => row.degree },
-  { key: 'minute', label: 'Min', valueOf: (row) => row.minute },
-  { key: 'second', label: 'Sec', valueOf: (row) => row.second },
-  { key: 'ruler', label: 'Lord', valueOf: (row) => row.ruler },
-];
+function columns(t: typeof profectionsViewMessages.en): readonly TableColumn<ProfectionRow>[] {
+  return [
+    { key: 'period', label: t.periodLabel, valueOf: (row) => row.period },
+    { key: 'sign', label: t.signLabel, valueOf: (row) => row.sign },
+    { key: 'degree', label: t.degLabel, valueOf: (row) => row.degree },
+    { key: 'minute', label: t.minLabel, valueOf: (row) => row.minute },
+    { key: 'second', label: t.secLabel, valueOf: (row) => row.second },
+    { key: 'ruler', label: t.lordLabel, valueOf: (row) => row.ruler },
+  ];
+}
 
 export function ProfectionsView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
+  const t = useMessages(profectionsViewMessages);
   const [asOf, setAsOf] = useState(todayInputValue);
   const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
@@ -101,30 +107,19 @@ export function ProfectionsView({ personId }: { personId: string }): React.JSX.E
   }, [person, provider, targetDate]);
 
   if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
+    return <PersonNotFound />;
   }
 
   if (person.moment === undefined) {
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Profections</h1>
+        <h1>{t.profectionsFallback}</h1>
         <p>
-          {person.displayName || 'This person'}&rsquo;s birth record is not complete enough to calculate profections
-          yet. Fill in the missing fields on the <a href={`#/person/${personId}`}>person page</a>.
+          {t.notCompleteProfections(person.displayName || t.thisPerson)}{' '}
+          <a href={`#/person/${personId}`}>{t.personPageLink}</a>.
         </p>
       </main>
     );
@@ -134,33 +129,28 @@ export function ProfectionsView({ personId }: { personId: string }): React.JSX.E
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Profections</h1>
-        <p>
-          Profections rotate the natal Ascendant, so they need a known birth time. {person.displayName || 'This person'}
-          &rsquo;s birth time is unknown &mdash; the same reason their chart has no houses.
-        </p>
+        <h1>{t.profectionsFallback}</h1>
+        <p>{t.needsKnownTime(person.displayName || t.thisPerson)}</p>
       </main>
     );
   }
 
-  const rows = load.kind === 'ready' ? [toRow('Year', load.data.year), toRow('Month', load.data.month)] : undefined;
+  const rows =
+    load.kind === 'ready' ? [toRow(t.yearPeriod, load.data.year), toRow(t.monthPeriod, load.data.month)] : undefined;
 
   return (
     <main className="shell">
       <p className="back">
-        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+        <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
       </p>
-      <h1>{person.displayName ? `${person.displayName}’s profections` : 'Profections'}</h1>
-      <p className="hint">
-        Annual and monthly Hellenistic profections: a house-per-year rotation of the natal Ascendant, using the
-        traditional (pre-outer-planet) rulership scheme for &ldquo;Lord of the Year/Month.&rdquo;
-      </p>
+      <h1>{person.displayName ? t.heading(person.displayName) : t.profectionsFallback}</h1>
+      <p className="hint">{t.hint}</p>
 
       <p>
         <label>
-          As of{' '}
+          {t.asOfLabel}{' '}
           <input
             type="date"
             value={asOf}
@@ -171,23 +161,23 @@ export function ProfectionsView({ personId }: { personId: string }): React.JSX.E
         </label>
       </p>
 
-      {load.kind === 'loading' && <p className="status">Calculating&hellip;</p>}
+      {load.kind === 'loading' && <p className="status">{t.calculating}</p>}
 
       {load.kind === 'error' && (
         <p className="warning" role="alert">
-          Profections could not be calculated. {load.message}
+          {t.error(load.message)}
         </p>
       )}
 
       {load.kind === 'ready' && (
         <>
           <p className="hint">
-            Age {load.data.age.toFixed(2)} {load.data.age < 0 ? '(before birth)' : ''}
+            {t.ageLine(`${load.data.age.toFixed(2)}${load.data.age < 0 ? ` ${t.beforeBirth}` : ''}`)}
           </p>
           {rows !== undefined && (
             <SortableTable
-              caption="Profections"
-              columns={COLUMNS}
+              caption={t.profectionsCaption}
+              columns={columns(t)}
               rows={rows}
               getRowKey={(row) => row.period}
               downloadFilename={deriveExportFilename(person.displayName, 'profections', 'csv')}

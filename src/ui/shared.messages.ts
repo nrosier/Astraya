@@ -4,10 +4,19 @@
  */
 const en = {
   back: 'Back',
+  people: 'People',
+  notFoundHeading: 'Not found',
+  notFoundBody: 'There is no person with that id on this device. If they were deleted, they can be restored from the',
+  peopleList: 'people list',
 };
 
 const nl: typeof en = {
   back: 'Terug',
+  people: 'Personen',
+  notFoundHeading: 'Niet gevonden',
+  notFoundBody:
+    'Er staat geen persoon met dat id op dit apparaat. Als deze verwijderd is, kan hij worden hersteld vanuit de',
+  peopleList: 'personenlijst',
 };
 
 export const sharedMessages = { en, nl };

@@ -36,6 +36,9 @@ import type { TransitAspectEvent } from '../astrology/transit-events.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { civilFromJulianDay } from '../time/julian.js';
 import { todayInputValue } from './format.js';
+import { useMessages } from './messages.js';
+import { periodicTransitViewMessages } from './PeriodicTransitView.messages.js';
+import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
@@ -95,16 +98,18 @@ function contactRows(aspects: readonly Aspect[]): readonly ContactRow[] {
   }));
 }
 
-const CONTACT_COLUMNS: readonly TableColumn<ContactRow>[] = [
-  { key: 'sentence', label: 'Forecast', valueOf: (row) => row.sentence },
-  { key: 'orb', label: 'Orb', valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
-  {
-    key: 'applying',
-    label: 'Applying',
-    valueOf: (row) => row.applying,
-    render: (row) => (row.applying ? 'Applying' : 'Separating'),
-  },
-];
+function contactColumns(t: typeof periodicTransitViewMessages.en): readonly TableColumn<ContactRow>[] {
+  return [
+    { key: 'sentence', label: t.forecastLabel, valueOf: (row) => row.sentence },
+    { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
+    {
+      key: 'applying',
+      label: t.applyingLabel,
+      valueOf: (row) => row.applying,
+      render: (row) => (row.applying ? t.applying : t.separating),
+    },
+  ];
+}
 
 interface ExactEventRow {
   readonly key: string;
@@ -122,47 +127,58 @@ interface StationRow {
   readonly direction: string;
 }
 
-function exactEventRows(events: readonly TransitAspectEvent[]): readonly ExactEventRow[] {
+function exactEventRows(
+  events: readonly TransitAspectEvent[],
+  t: typeof periodicTransitViewMessages.en,
+): readonly ExactEventRow[] {
   return events.map((event, index) => ({
     key: `${String(event.jd)}-${String(event.transitingBody)}-${String(event.natalBody)}-${String(index)}`,
     jd: event.jd,
     date: formatUtc(event.jd),
     sentence:
       transitAspectSentence(event.transitingBody, event.natalBody, event.aspect.key) +
-      (event.retrograde ? ' (retrograde)' : ''),
+      (event.retrograde ? ` ${t.retrograde}` : ''),
     retrograde: event.retrograde,
   }));
 }
 
-const EXACT_EVENT_COLUMNS: readonly TableColumn<ExactEventRow>[] = [
-  { key: 'jd', label: 'Exact', valueOf: (row) => row.jd, render: (row) => row.date },
-  { key: 'sentence', label: 'Forecast', valueOf: (row) => row.sentence },
-];
+function exactEventColumns(t: typeof periodicTransitViewMessages.en): readonly TableColumn<ExactEventRow>[] {
+  return [
+    { key: 'jd', label: t.exactLabel, valueOf: (row) => row.jd, render: (row) => row.date },
+    { key: 'sentence', label: t.forecastLabel, valueOf: (row) => row.sentence },
+  ];
+}
 
-function stationRows(stations: readonly StationEvent[]): readonly StationRow[] {
+function stationRows(
+  stations: readonly StationEvent[],
+  t: typeof periodicTransitViewMessages.en,
+): readonly StationRow[] {
   return stations.map((station, index) => ({
     key: `${String(station.jd)}-${String(station.body)}-${String(index)}`,
     jd: station.jd,
     date: formatUtc(station.jd),
     body: bodyName(station.body),
-    direction: station.direction === 'retrograde' ? 'Turns retrograde' : 'Turns direct',
+    direction: station.direction === 'retrograde' ? t.turnsRetrograde : t.turnsDirect,
   }));
 }
 
-const STATION_COLUMNS: readonly TableColumn<StationRow>[] = [
-  { key: 'jd', label: 'Exact', valueOf: (row) => row.jd, render: (row) => row.date },
-  { key: 'body', label: 'Body', valueOf: (row) => row.body },
-  { key: 'direction', label: 'Direction', valueOf: (row) => row.direction },
-];
+function stationColumns(t: typeof periodicTransitViewMessages.en): readonly TableColumn<StationRow>[] {
+  return [
+    { key: 'jd', label: t.exactLabel, valueOf: (row) => row.jd, render: (row) => row.date },
+    { key: 'body', label: t.bodyLabel, valueOf: (row) => row.body },
+    { key: 'direction', label: t.directionLabel, valueOf: (row) => row.direction },
+  ];
+}
 
-function signHouseLabel(sign: number, house: number): string {
-  const signName = SIGNS[sign]?.name ?? `sign ${String(sign)}`;
-  return `${signName}, house ${String(house)}`;
+function signHouseLabel(sign: number, house: number, t: typeof periodicTransitViewMessages.en): string {
+  const signName = SIGNS[sign]?.name ?? t.signFallback(String(sign));
+  return `${signName}${t.houseSuffix(house)}`;
 }
 
 export function PeriodicTransitView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
+  const t = useMessages(periodicTransitViewMessages);
   const [asOf, setAsOf] = useState(todayInputValue);
   const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
@@ -217,30 +233,19 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
   }, [person, provider, targetDate]);
 
   if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
+    return <PersonNotFound />;
   }
 
   if (person.moment === undefined) {
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Forecast</h1>
+        <h1>{t.forecastFallback}</h1>
         <p>
-          {person.displayName || 'This person'}&rsquo;s birth record is not complete enough to calculate a forecast yet.
-          Fill in the missing fields on the <a href={`#/person/${personId}`}>person page</a>.
+          {t.notCompleteForecast(person.displayName || t.thisPerson)}{' '}
+          <a href={`#/person/${personId}`}>{t.personPageLink}</a>.
         </p>
       </main>
     );
@@ -250,14 +255,10 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Forecast</h1>
-        <p>
-          A transit forecast casts against the natal houses, so it needs a known birth time.{' '}
-          {person.displayName || 'This person'}&rsquo;s birth time is unknown &mdash; the same reason their chart has no
-          houses.
-        </p>
+        <h1>{t.forecastFallback}</h1>
+        <p>{t.needsKnownTime(person.displayName || t.thisPerson)}</p>
       </main>
     );
   }
@@ -268,18 +269,14 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
   return (
     <main className="shell">
       <p className="back">
-        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+        <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
       </p>
-      <h1>{person.displayName ? `${person.displayName}’s forecast` : 'Forecast'}</h1>
-      <p className="hint">
-        What&rsquo;s happening in the sky against {person.displayName || 'this'}&rsquo;s natal chart: the transiting
-        Moon and anything exact today, aspects going exact this week and this month, and this year&rsquo;s solar return.
-        All times are UT.
-      </p>
+      <h1>{person.displayName ? t.heading(person.displayName) : t.forecastFallback}</h1>
+      <p className="hint">{t.hint(person.displayName || t.thisFallback)}</p>
 
       <p>
         <label>
-          As of{' '}
+          {t.asOfLabel}{' '}
           <input
             type="date"
             value={asOf}
@@ -290,26 +287,26 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
         </label>
       </p>
 
-      {load.kind === 'loading' && <p className="status">Calculating&hellip;</p>}
+      {load.kind === 'loading' && <p className="status">{t.calculating}</p>}
 
       {load.kind === 'error' && (
         <p className="warning" role="alert">
-          The forecast could not be calculated. {load.message}
+          {t.error(load.message)}
         </p>
       )}
 
       {data !== undefined && (
         <>
           <section>
-            <h2>Daily</h2>
+            <h2>{t.dailyHeading}</h2>
             <p>
-              Moon in {signHouseLabel(data.daily.moon.sign, data.daily.moon.house)}
-              {data.daily.moon.position.retrograde ? ' (retrograde)' : ''}.
+              {t.moonInLabel} {signHouseLabel(data.daily.moon.sign, data.daily.moon.house, t)}
+              {data.daily.moon.position.retrograde ? ` ${t.retrograde}` : ''}.
             </p>
             {data.daily.moonAspects.length > 0 && (
               <SortableTable
-                caption="Moon's aspects to the natal chart"
-                columns={CONTACT_COLUMNS}
+                caption={t.moonAspectsCaption}
+                columns={contactColumns(t)}
                 rows={contactRows(data.daily.moonAspects)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-daily-moon', 'csv')}
@@ -317,18 +314,18 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
             )}
             {data.daily.exactToday.length > 0 && (
               <SortableTable
-                caption="Exact today"
-                columns={EXACT_EVENT_COLUMNS}
-                rows={exactEventRows(data.daily.exactToday)}
+                caption={t.exactTodayCaption}
+                columns={exactEventColumns(t)}
+                rows={exactEventRows(data.daily.exactToday, t)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-daily-exact', 'csv')}
               />
             )}
             {data.daily.stationsToday.length > 0 && (
               <SortableTable
-                caption="Stations today"
-                columns={STATION_COLUMNS}
-                rows={stationRows(data.daily.stationsToday)}
+                caption={t.stationsTodayCaption}
+                columns={stationColumns(t)}
+                rows={stationRows(data.daily.stationsToday, t)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-daily-stations', 'csv')}
               />
@@ -336,52 +333,58 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
           </section>
 
           <section>
-            <h2>Weekly</h2>
+            <h2>{t.weeklyHeading}</h2>
             <p className="hint">
               {formatUtc(data.weekly.fromJd)} &ndash; {formatUtc(data.weekly.toJd)}
             </p>
             {data.weekly.events.length > 0 ? (
               <SortableTable
-                caption="Exact this week"
-                columns={EXACT_EVENT_COLUMNS}
-                rows={exactEventRows(data.weekly.events)}
+                caption={t.exactThisWeekCaption}
+                columns={exactEventColumns(t)}
+                rows={exactEventRows(data.weekly.events, t)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-weekly', 'csv')}
               />
             ) : (
-              <p>No aspects go exact this week.</p>
+              <p>{t.noAspectsWeek}</p>
             )}
           </section>
 
           <section>
-            <h2>Monthly</h2>
+            <h2>{t.monthlyHeading}</h2>
             <p>
-              Sun in {signHouseLabel(data.monthly.sun.sign, data.monthly.sun.house)} this month, from{' '}
-              {formatUtc(data.monthly.fromJd)} to {formatUtc(data.monthly.toJd)}.
+              {t.sunInThisMonth(
+                signHouseLabel(data.monthly.sun.sign, data.monthly.sun.house, t),
+                formatUtc(data.monthly.fromJd),
+                formatUtc(data.monthly.toJd),
+              )}
             </p>
             {data.monthly.events.length > 0 ? (
               <SortableTable
-                caption="Exact this month"
-                columns={EXACT_EVENT_COLUMNS}
-                rows={exactEventRows(data.monthly.events)}
+                caption={t.exactThisMonthCaption}
+                columns={exactEventColumns(t)}
+                rows={exactEventRows(data.monthly.events, t)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-monthly', 'csv')}
               />
             ) : (
-              <p>No aspects go exact this month.</p>
+              <p>{t.noAspectsMonth}</p>
             )}
           </section>
 
           <section>
-            <h2>Yearly</h2>
+            <h2>{t.yearlyHeading}</h2>
             <p>
-              Solar return for {String(data.yearly.solarReturn.year)}: {formatUtc(data.yearly.solarReturn.returnJd)},
-              Ascendant in {SIGNS[returnAscendantSign]?.name ?? `sign ${String(returnAscendantSign)}`}.
+              {t.solarReturnSentence(
+                String(data.yearly.solarReturn.year),
+                formatUtc(data.yearly.solarReturn.returnJd),
+                SIGNS[returnAscendantSign]?.name ?? t.signFallback(String(returnAscendantSign)),
+              )}
             </p>
             {data.yearly.solarReturn.contacts.length > 0 && (
               <SortableTable
-                caption="Solar return contacts to the natal chart"
-                columns={CONTACT_COLUMNS}
+                caption={t.solarReturnContactsCaption}
+                columns={contactColumns(t)}
                 rows={contactRows(data.yearly.solarReturn.contacts)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-yearly-return', 'csv')}

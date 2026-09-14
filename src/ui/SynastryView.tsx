@@ -21,9 +21,12 @@ import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeSynastry, type SynastryData } from '../domain/synastry.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderMultiWheelSvg, type CrossRingAspects } from '../chart/multi-wheel.js';
+import { useMessages } from './messages.js';
 import { ordered } from './people-list.js';
+import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
+import { synastryViewMessages } from './SynastryView.messages.js';
 import type { TableColumn } from './table-sort.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
 
@@ -33,22 +36,25 @@ type Load =
   | { readonly kind: 'ready'; readonly data: SynastryData }
   | { readonly kind: 'error'; readonly message: string };
 
-const ASPECT_COLUMNS: readonly TableColumn<AspectRow>[] = [
-  { key: 'bodyAName', label: 'Person A', valueOf: (row) => row.bodyAName },
-  { key: 'aspect', label: 'Aspect', valueOf: (row) => row.aspect },
-  { key: 'bodyBName', label: 'Person B', valueOf: (row) => row.bodyBName },
-  { key: 'orb', label: 'Orb', valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
-  {
-    key: 'applying',
-    label: 'Applying',
-    valueOf: (row) => row.applying,
-    render: (row) => (row.applying ? 'Applying' : 'Separating'),
-  },
-];
+function aspectColumns(t: typeof synastryViewMessages.en): readonly TableColumn<AspectRow>[] {
+  return [
+    { key: 'bodyAName', label: t.personALabel, valueOf: (row) => row.bodyAName },
+    { key: 'aspect', label: t.aspectLabel, valueOf: (row) => row.aspect },
+    { key: 'bodyBName', label: t.personBLabel, valueOf: (row) => row.bodyBName },
+    { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
+    {
+      key: 'applying',
+      label: t.applyingLabel,
+      valueOf: (row) => row.applying,
+      render: (row) => (row.applying ? t.applying : t.separating),
+    },
+  ];
+}
 
 export function SynastryView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
+  const t = useMessages(synastryViewMessages);
 
   const candidates = useMemo(
     () =>
@@ -105,8 +111,8 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
     if (load.kind !== 'ready') return undefined;
     const nameA: string = person?.displayName ?? '';
     const nameB: string = partner?.displayName ?? '';
-    const ringA = chartWheelRing(load.data.chartA, nameA || 'Person A');
-    const ringB = chartWheelRing(load.data.chartB, nameB || 'Person B');
+    const ringA = chartWheelRing(load.data.chartA, nameA || t.personALabel);
+    const ringB = chartWheelRing(load.data.chartB, nameB || t.personBLabel);
     const crossAspects: readonly CrossRingAspects[] = [
       // `computeSynastry`'s aspects run bodyA from chartA (ring 0), bodyB from chartB (ring
       // 1) — outerRingIndex/innerRingIndex name which side of the aspect a ring resolves,
@@ -114,34 +120,22 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
       { outerRingIndex: 0, innerRingIndex: 1, aspects: load.data.aspects },
     ];
     return renderMultiWheelSvg([ringA, ringB], crossAspects);
-  }, [load, person, partner]);
+  }, [load, person, partner, t]);
 
   if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
+    return <PersonNotFound />;
   }
 
   if (person.moment === undefined || person.timeAccuracy === 'unknown') {
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Synastry</h1>
+        <h1>{t.synastryFallback}</h1>
         <p>
-          A synastry bi-wheel needs houses on both rings, so it needs a complete birth record with a known time.{' '}
-          {person.displayName || 'This person'}&rsquo;s does not have one yet. Fill in or correct it on the{' '}
-          <a href={`#/person/${personId}`}>person page</a>.
+          {t.needsCompleteRecord(person.displayName || t.thisPerson)}{' '}
+          <a href={`#/person/${personId}`}>{t.personPageLink}</a>.
         </p>
       </main>
     );
@@ -150,27 +144,24 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
   return (
     <main className="shell">
       <p className="back">
-        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+        <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
       </p>
-      <h1>{person.displayName ? `${person.displayName}’s synastry` : 'Synastry'}</h1>
-      <p className="hint">
-        A bi-wheel comparing two natal charts, plus the aspects between them. Only people with a complete, known-time
-        birth record can be compared.
-      </p>
+      <h1>{person.displayName ? t.heading(person.displayName) : t.synastryFallback}</h1>
+      <p className="hint">{t.hint}</p>
 
       <p>
         <label>
-          Compare with{' '}
+          {t.compareWithLabel}{' '}
           <select
             value={partnerId}
             onChange={(event) => {
               setPartnerId(event.target.value);
             }}
           >
-            <option value="">Choose a person&hellip;</option>
+            <option value="">{t.choosePersonOption}</option>
             {candidates.map((candidate) => (
               <option key={candidate.id} value={candidate.id}>
-                {candidate.displayName || 'Unnamed'}
+                {candidate.displayName || t.unnamedOption}
               </option>
             ))}
           </select>
@@ -179,15 +170,15 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
 
       {partnerId !== '' && candidates.every((candidate) => candidate.id !== partnerId) && (
         <p className="warning" role="alert">
-          That person is no longer available to compare with.
+          {t.partnerGoneWarning}
         </p>
       )}
 
-      {load.kind === 'loading' && <p className="status">Calculating&hellip;</p>}
+      {load.kind === 'loading' && <p className="status">{t.calculating}</p>}
 
       {load.kind === 'error' && (
         <p className="warning" role="alert">
-          Synastry could not be calculated. {load.message}
+          {t.error(load.message)}
         </p>
       )}
 
@@ -198,8 +189,8 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
           <div className="chart-wheel" dangerouslySetInnerHTML={{ __html: wheelMarkup }} />
 
           <SortableTable
-            caption="Aspects"
-            columns={ASPECT_COLUMNS}
+            caption={t.aspectsCaption}
+            columns={aspectColumns(t)}
             rows={crossAspectRows(load.data.aspects)}
             getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
             downloadFilename={deriveExportFilename(

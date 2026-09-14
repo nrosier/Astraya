@@ -23,8 +23,11 @@ import { computeTransit, type TransitData } from '../domain/transit.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderMultiWheelSvg, type CrossRingAspects } from '../chart/multi-wheel.js';
 import { todayInputValue } from './format.js';
+import { useMessages } from './messages.js';
+import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
+import { transitViewMessages } from './TransitView.messages.js';
 import type { TableColumn } from './table-sort.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
 
@@ -33,22 +36,25 @@ type Load =
   | { readonly kind: 'ready'; readonly data: TransitData }
   | { readonly kind: 'error'; readonly message: string };
 
-const CONTACT_COLUMNS: readonly TableColumn<AspectRow>[] = [
-  { key: 'bodyAName', label: 'Transiting', valueOf: (row) => row.bodyAName },
-  { key: 'aspect', label: 'Aspect', valueOf: (row) => row.aspect },
-  { key: 'bodyBName', label: 'Natal', valueOf: (row) => row.bodyBName },
-  { key: 'orb', label: 'Orb', valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
-  {
-    key: 'applying',
-    label: 'Applying',
-    valueOf: (row) => row.applying,
-    render: (row) => (row.applying ? 'Applying' : 'Separating'),
-  },
-];
+function contactColumns(t: typeof transitViewMessages.en): readonly TableColumn<AspectRow>[] {
+  return [
+    { key: 'bodyAName', label: t.transitingLabel, valueOf: (row) => row.bodyAName },
+    { key: 'aspect', label: t.aspectLabel, valueOf: (row) => row.aspect },
+    { key: 'bodyBName', label: t.natalLabel, valueOf: (row) => row.bodyBName },
+    { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
+    {
+      key: 'applying',
+      label: t.applyingLabel,
+      valueOf: (row) => row.applying,
+      render: (row) => (row.applying ? t.applying : t.separating),
+    },
+  ];
+}
 
 export function TransitView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
+  const t = useMessages(transitViewMessages);
   const [asOf, setAsOf] = useState(todayInputValue);
   const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
@@ -109,30 +115,19 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
   }, [load]);
 
   if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
+    return <PersonNotFound />;
   }
 
   if (person.moment === undefined) {
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Transits</h1>
+        <h1>{t.transitsFallback}</h1>
         <p>
-          {person.displayName || 'This person'}&rsquo;s birth record is not complete enough to calculate transits yet.
-          Fill in the missing fields on the <a href={`#/person/${personId}`}>person page</a>.
+          {t.notCompleteTransits(person.displayName || t.thisPerson)}{' '}
+          <a href={`#/person/${personId}`}>{t.personPageLink}</a>.
         </p>
       </main>
     );
@@ -142,14 +137,10 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Transits</h1>
-        <p>
-          A transit wheel needs houses on both rings, so it needs a known birth time.{' '}
-          {person.displayName || 'This person'}&rsquo;s birth time is unknown &mdash; the same reason their chart has no
-          houses.
-        </p>
+        <h1>{t.transitsFallback}</h1>
+        <p>{t.needsKnownTime(person.displayName || t.thisPerson)}</p>
       </main>
     );
   }
@@ -157,17 +148,14 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
   return (
     <main className="shell">
       <p className="back">
-        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+        <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
       </p>
-      <h1>{person.displayName ? `${person.displayName}’s transits` : 'Transits'}</h1>
-      <p className="hint">
-        A bi-wheel: {person.displayName || 'this person'}&rsquo;s natal chart on the inner ring, transiting positions
-        for the chosen date on the outer ring, cast for their natal place.
-      </p>
+      <h1>{person.displayName ? t.heading(person.displayName) : t.transitsFallback}</h1>
+      <p className="hint">{t.hint(person.displayName || t.thisPerson)}</p>
 
       <p>
         <label>
-          As of{' '}
+          {t.asOfLabel}{' '}
           <input
             type="date"
             value={asOf}
@@ -178,11 +166,11 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
         </label>
       </p>
 
-      {load.kind === 'loading' && <p className="status">Calculating&hellip;</p>}
+      {load.kind === 'loading' && <p className="status">{t.calculating}</p>}
 
       {load.kind === 'error' && (
         <p className="warning" role="alert">
-          Transits could not be calculated. {load.message}
+          {t.error(load.message)}
         </p>
       )}
 
@@ -193,8 +181,8 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
           <div className="chart-wheel" dangerouslySetInnerHTML={{ __html: wheelMarkup }} />
 
           <SortableTable
-            caption="Contacts"
-            columns={CONTACT_COLUMNS}
+            caption={t.contactsCaption}
+            columns={contactColumns(t)}
             rows={crossAspectRows(load.data.contacts)}
             getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
             downloadFilename={deriveExportFilename(person.displayName, 'transit-contacts', 'csv')}
