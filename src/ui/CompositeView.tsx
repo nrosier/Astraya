@@ -15,7 +15,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { computeComposite, type CompositeData } from '../domain/composite.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { ChartDataView } from './ChartView.js';
+import { compositeViewMessages } from './CompositeView.messages.js';
+import { useMessages } from './messages.js';
 import { ordered } from './people-list.js';
+import { PersonNotFound } from './PersonNotFound.js';
 import { useStoreState } from './store-context.js';
 import type { ChartData } from '../domain/chart-compute.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
@@ -29,6 +32,7 @@ type Load =
 export function CompositeView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
+  const t = useMessages(compositeViewMessages);
 
   const candidates = useMemo(
     () =>
@@ -82,63 +86,48 @@ export function CompositeView({ personId }: { personId: string }): React.JSX.Ele
   }, [person, partner, provider]);
 
   if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
+    return <PersonNotFound />;
   }
 
   if (person.moment === undefined || person.timeAccuracy === 'unknown') {
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Composite</h1>
+        <h1>{t.compositeFallback}</h1>
         <p>
-          A composite chart needs midpoint houses from both people, so it needs a complete birth record with a known
-          time. {person.displayName || 'This person'}&rsquo;s does not have one yet. Fill in or correct it on the{' '}
-          <a href={`#/person/${personId}`}>person page</a>.
+          {t.needsCompleteRecord(person.displayName || t.thisPerson)}{' '}
+          <a href={`#/person/${personId}`}>{t.personPageLink}</a>.
         </p>
       </main>
     );
   }
 
   const displayName =
-    partner !== undefined ? `${person.displayName || 'Person A'} / ${partner.displayName || 'Person B'}` : '';
+    partner !== undefined ? `${person.displayName || t.personALabel} / ${partner.displayName || t.personBLabel}` : '';
 
   return (
     <main className="shell">
       <p className="back">
-        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+        <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
       </p>
-      <h1>{person.displayName ? `${person.displayName}’s composite` : 'Composite'}</h1>
-      <p className="hint">
-        A synthetic midpoint chart between two natal charts &mdash; every position and house cusp is the near-arc
-        midpoint of the two. Only people with a complete, known-time birth record can be combined.
-      </p>
+      <h1>{person.displayName ? t.heading(person.displayName) : t.compositeFallback}</h1>
+      <p className="hint">{t.hint}</p>
 
       <p>
         <label>
-          Compose with{' '}
+          {t.composeWithLabel}{' '}
           <select
             value={partnerId}
             onChange={(event) => {
               setPartnerId(event.target.value);
             }}
           >
-            <option value="">Choose a person&hellip;</option>
+            <option value="">{t.choosePersonOption}</option>
             {candidates.map((candidate) => (
               <option key={candidate.id} value={candidate.id}>
-                {candidate.displayName || 'Unnamed'}
+                {candidate.displayName || t.unnamedOption}
               </option>
             ))}
           </select>
@@ -147,12 +136,17 @@ export function CompositeView({ personId }: { personId: string }): React.JSX.Ele
 
       {partnerId !== '' && candidates.every((candidate) => candidate.id !== partnerId) && (
         <p className="warning" role="alert">
-          That person is no longer available to compose with.
+          {t.partnerGoneWarning}
         </p>
       )}
 
       {partnerId !== '' && load.kind !== 'idle' && (
-        <ChartDataView load={load} displayName={displayName || 'Composite'} showHouses metaLines={[displayName]} />
+        <ChartDataView
+          load={load}
+          displayName={displayName || t.compositeFallback}
+          showHouses
+          metaLines={[displayName]}
+        />
       )}
     </main>
   );

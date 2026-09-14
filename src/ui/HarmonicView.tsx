@@ -12,6 +12,9 @@ import { VARGA_PRESETS } from '../astrology/harmonics.js';
 import { computeHarmonic, type HarmonicData } from '../domain/harmonic.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { ChartDataView } from './ChartView.js';
+import { harmonicViewMessages } from './HarmonicView.messages.js';
+import { useMessages } from './messages.js';
+import { PersonNotFound } from './PersonNotFound.js';
 import { useStoreState } from './store-context.js';
 import type { ChartData } from '../domain/chart-compute.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
@@ -27,6 +30,7 @@ const CUSTOM = 'custom';
 export function HarmonicView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
+  const t = useMessages(harmonicViewMessages);
 
   const [presetKey, setPresetKey] = useState<string>(VARGA_PRESETS[0]?.key ?? CUSTOM);
   const [customN, setCustomN] = useState<string>('5');
@@ -74,54 +78,38 @@ export function HarmonicView({ personId }: { personId: string }): React.JSX.Elem
   }, [person, provider, n, nValid]);
 
   if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
+    return <PersonNotFound />;
   }
 
   if (person.moment === undefined || person.timeAccuracy === 'unknown') {
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Harmonic &amp; Varga charts</h1>
+        <h1>{t.harmonicChartsFallback}</h1>
         <p>
-          A harmonic chart needs a real Ascendant to build its own houses from, so it needs a complete birth record with
-          a known time. {person.displayName || 'This person'}&rsquo;s does not have one yet. Fill in or correct it on
-          the <a href={`#/person/${personId}`}>person page</a>.
+          {t.needsCompleteRecord(person.displayName || t.thisPerson)}{' '}
+          <a href={`#/person/${personId}`}>{t.personPageLink}</a>.
         </p>
       </main>
     );
   }
 
-  const label = preset !== undefined ? preset.label : `Harmonic ${String(n)}`;
+  const label = preset !== undefined ? preset.label : t.harmonicLabel(String(n));
   const displayName = person.displayName ? `${person.displayName} — ${label}` : label;
 
   return (
     <main className="shell">
       <p className="back">
-        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+        <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
       </p>
-      <h1>{person.displayName ? `${person.displayName}’s harmonic chart` : 'Harmonic chart'}</h1>
-      <p className="hint">
-        Every longitude multiplied by a whole number and wrapped back into the zodiac, with whole-sign houses built from
-        the multiplied Ascendant &mdash; the general mechanism behind both harmonic charts and Vedic Varga (divisional)
-        charts. See the named presets&rsquo; own note on which Varga convention each one follows.
-      </p>
+      <h1>{person.displayName ? t.heading(person.displayName) : t.headingFallback}</h1>
+      <p className="hint">{t.hint}</p>
 
       <div className="field-grid">
         <label>
-          Divisional chart
+          {t.divisionalChartLabel}
           <select
             value={presetKey}
             onChange={(event) => {
@@ -133,12 +121,12 @@ export function HarmonicView({ personId }: { personId: string }): React.JSX.Elem
                 {candidate.label}
               </option>
             ))}
-            <option value={CUSTOM}>Custom harmonic&hellip;</option>
+            <option value={CUSTOM}>{t.customHarmonicOption}</option>
           </select>
         </label>
         {presetKey === CUSTOM && (
           <label>
-            Harmonic number
+            {t.harmonicNumberLabel}
             <input
               type="number"
               min={1}
@@ -155,7 +143,7 @@ export function HarmonicView({ personId }: { personId: string }): React.JSX.Elem
       {preset !== undefined && <p className="hint">{preset.description}</p>}
       {presetKey === CUSTOM && !nValid && (
         <p className="warning" role="alert">
-          Enter a whole number of 1 or more.
+          {t.invalidHarmonicNumber}
         </p>
       )}
 

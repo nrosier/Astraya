@@ -59,9 +59,12 @@ import {
 import { standaloneSvg } from '../chart/standalone-svg.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
 import { AstroChartWheel } from './AstroChartWheel.js';
+import { chartViewMessages } from './ChartView.messages.js';
 import { svgToPngBlob } from './chart-raster.js';
 import { downloadBlob, downloadText } from './download.js';
 import { ExtendedSettingsPanel } from './ExtendedSettingsPanel.js';
+import { useMessages } from './messages.js';
+import { PersonNotFound } from './PersonNotFound.js';
 import { ReportView } from './ReportView.js';
 import { chartTab } from './route.js';
 import { SortableTable } from './SortableTable.js';
@@ -77,77 +80,87 @@ type Load =
 
 const degreeColumns = <
   T extends { readonly sign: string; readonly degree: number; readonly minute: number; readonly second: number },
->(): readonly TableColumn<T>[] => [
-  { key: 'sign', label: 'Sign', valueOf: (row) => row.sign },
-  { key: 'degree', label: 'Deg', valueOf: (row) => row.degree },
-  { key: 'minute', label: 'Min', valueOf: (row) => row.minute },
-  { key: 'second', label: 'Sec', valueOf: (row) => row.second },
+>(
+  t: typeof chartViewMessages.en,
+): readonly TableColumn<T>[] => [
+  { key: 'sign', label: t.signLabel, valueOf: (row) => row.sign },
+  { key: 'degree', label: t.degLabel, valueOf: (row) => row.degree },
+  { key: 'minute', label: t.minLabel, valueOf: (row) => row.minute },
+  { key: 'second', label: t.secLabel, valueOf: (row) => row.second },
 ];
 
-const POSITION_COLUMNS: readonly TableColumn<PositionRow>[] = [
-  { key: 'glyph', label: 'Symbol', valueOf: (row) => row.glyph },
-  { key: 'bodyName', label: 'Body', valueOf: (row) => row.bodyName },
-  ...degreeColumns<PositionRow>(),
-  {
-    key: 'house',
-    label: 'House',
-    valueOf: (row) => row.house ?? '',
-    render: (row) => (row.house === undefined ? '—' : String(row.house)),
-  },
-  {
-    key: 'speed',
-    label: 'Speed',
-    valueOf: (row) => row.speed ?? '',
-    render: (row) => (row.speed === undefined ? '—' : row.speed.toFixed(4)),
-  },
-  {
-    key: 'retrograde',
-    label: 'Rx',
-    valueOf: (row) => row.retrograde ?? false,
-    render: (row) => (row.retrograde ? '℞' : ''),
-  },
-];
+function positionColumns(t: typeof chartViewMessages.en): readonly TableColumn<PositionRow>[] {
+  return [
+    { key: 'glyph', label: t.symbolLabel, valueOf: (row) => row.glyph },
+    { key: 'bodyName', label: t.bodyLabel, valueOf: (row) => row.bodyName },
+    ...degreeColumns<PositionRow>(t),
+    {
+      key: 'house',
+      label: t.houseLabel,
+      valueOf: (row) => row.house ?? '',
+      render: (row) => (row.house === undefined ? '—' : String(row.house)),
+    },
+    {
+      key: 'speed',
+      label: t.speedLabel,
+      valueOf: (row) => row.speed ?? '',
+      render: (row) => (row.speed === undefined ? '—' : row.speed.toFixed(4)),
+    },
+    {
+      key: 'retrograde',
+      label: t.rxLabel,
+      valueOf: (row) => row.retrograde ?? false,
+      render: (row) => (row.retrograde ? '℞' : ''),
+    },
+  ];
+}
 
-const HOUSE_CUSP_COLUMNS: readonly TableColumn<HouseCuspRow>[] = [
-  { key: 'house', label: 'House', valueOf: (row) => row.house },
-  ...degreeColumns<HouseCuspRow>(),
-];
+function houseCuspColumns(t: typeof chartViewMessages.en): readonly TableColumn<HouseCuspRow>[] {
+  return [{ key: 'house', label: t.houseLabel, valueOf: (row) => row.house }, ...degreeColumns<HouseCuspRow>(t)];
+}
 
-const ANGLE_COLUMNS: readonly TableColumn<AngleRow>[] = [
-  { key: 'label', label: 'Angle', valueOf: (row) => row.label },
-  ...degreeColumns<AngleRow>(),
-];
+function angleColumns(t: typeof chartViewMessages.en): readonly TableColumn<AngleRow>[] {
+  return [{ key: 'label', label: t.angleLabel, valueOf: (row) => row.label }, ...degreeColumns<AngleRow>(t)];
+}
 
-const ASPECT_COLUMNS: readonly TableColumn<AspectRow>[] = [
-  { key: 'bodyAName', label: 'Body A', valueOf: (row) => row.bodyAName },
-  { key: 'aspect', label: 'Aspect', valueOf: (row) => row.aspect },
-  { key: 'bodyBName', label: 'Body B', valueOf: (row) => row.bodyBName },
-  { key: 'orb', label: 'Orb', valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
-  {
-    key: 'applying',
-    label: 'Applying',
-    valueOf: (row) => row.applying,
-    render: (row) => (row.applying ? 'Applying' : 'Separating'),
-  },
-];
+function aspectColumns(t: typeof chartViewMessages.en): readonly TableColumn<AspectRow>[] {
+  return [
+    { key: 'bodyAName', label: t.bodyALabel, valueOf: (row) => row.bodyAName },
+    { key: 'aspect', label: t.aspectLabel, valueOf: (row) => row.aspect },
+    { key: 'bodyBName', label: t.bodyBLabel, valueOf: (row) => row.bodyBName },
+    { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
+    {
+      key: 'applying',
+      label: t.applyingLabel,
+      valueOf: (row) => row.applying,
+      render: (row) => (row.applying ? t.applying : t.separating),
+    },
+  ];
+}
 
-const DIGNITY_COLUMNS: readonly TableColumn<DignityRow>[] = [
-  { key: 'bodyName', label: 'Body', valueOf: (row) => row.bodyName },
-  { key: 'ruler', label: 'Ruler', valueOf: (row) => row.ruler, render: (row) => (row.ruler ? '✓' : '') },
-  { key: 'exalted', label: 'Exalted', valueOf: (row) => row.exalted, render: (row) => (row.exalted ? '✓' : '') },
-  {
-    key: 'detriment',
-    label: 'Detriment',
-    valueOf: (row) => row.detriment,
-    render: (row) => (row.detriment ? '✓' : ''),
-  },
-  { key: 'fall', label: 'Fall', valueOf: (row) => row.fall, render: (row) => (row.fall ? '✓' : '') },
-];
+function dignityColumns(t: typeof chartViewMessages.en): readonly TableColumn<DignityRow>[] {
+  return [
+    { key: 'bodyName', label: t.bodyLabel, valueOf: (row) => row.bodyName },
+    { key: 'ruler', label: t.rulerLabel, valueOf: (row) => row.ruler, render: (row) => (row.ruler ? '✓' : '') },
+    {
+      key: 'exalted',
+      label: t.exaltedLabel,
+      valueOf: (row) => row.exalted,
+      render: (row) => (row.exalted ? '✓' : ''),
+    },
+    {
+      key: 'detriment',
+      label: t.detrimentLabel,
+      valueOf: (row) => row.detriment,
+      render: (row) => (row.detriment ? '✓' : ''),
+    },
+    { key: 'fall', label: t.fallLabel, valueOf: (row) => row.fall, render: (row) => (row.fall ? '✓' : '') },
+  ];
+}
 
-const DERIVED_POINT_COLUMNS: readonly TableColumn<DerivedPointRow>[] = [
-  { key: 'label', label: 'Point', valueOf: (row) => row.label },
-  ...degreeColumns<DerivedPointRow>(),
-];
+function derivedPointColumns(t: typeof chartViewMessages.en): readonly TableColumn<DerivedPointRow>[] {
+  return [{ key: 'label', label: t.pointLabel, valueOf: (row) => row.label }, ...degreeColumns<DerivedPointRow>(t)];
+}
 
 type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived' | 'report';
 
@@ -179,13 +192,14 @@ function renderTableTab(
   displayName: string,
   pointVisibility: PointVisibilityOptions,
   showHouses: boolean,
+  t: typeof chartViewMessages.en,
 ): React.ReactNode {
   switch (tab) {
     case 'positions':
       return (
         <SortableTable
-          caption="Positions"
-          columns={POSITION_COLUMNS}
+          caption={t.positionsCaption}
+          columns={positionColumns(t)}
           rows={positionRows(data, pointVisibility, showHouses)}
           getRowKey={(row) => row.bodyKey}
           downloadFilename={deriveExportFilename(displayName, 'positions', 'csv')}
@@ -195,15 +209,15 @@ function renderTableTab(
       return (
         <>
           <SortableTable
-            caption="Houses"
-            columns={HOUSE_CUSP_COLUMNS}
+            caption={t.housesCaption}
+            columns={houseCuspColumns(t)}
             rows={houseCuspRows(data)}
             getRowKey={(row) => String(row.house)}
             downloadFilename={deriveExportFilename(displayName, 'houses', 'csv')}
           />
           <SortableTable
-            caption="Angles"
-            columns={ANGLE_COLUMNS}
+            caption={t.anglesCaption}
+            columns={angleColumns(t)}
             rows={angleRows(data, pointVisibility)}
             getRowKey={(row) => row.label}
             downloadFilename={deriveExportFilename(displayName, 'angles', 'csv')}
@@ -213,8 +227,8 @@ function renderTableTab(
     case 'aspects':
       return (
         <SortableTable
-          caption="Aspects"
-          columns={ASPECT_COLUMNS}
+          caption={t.aspectsCaption}
+          columns={aspectColumns(t)}
           rows={aspectRows(data)}
           getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
           downloadFilename={deriveExportFilename(displayName, 'aspects', 'csv')}
@@ -223,8 +237,8 @@ function renderTableTab(
     case 'dignities':
       return (
         <SortableTable
-          caption="Dignities"
-          columns={DIGNITY_COLUMNS}
+          caption={t.dignitiesCaption}
+          columns={dignityColumns(t)}
           rows={dignityRows(data, pointVisibility)}
           getRowKey={(row) => row.bodyKey}
           downloadFilename={deriveExportFilename(displayName, 'dignities', 'csv')}
@@ -233,10 +247,12 @@ function renderTableTab(
     case 'derived':
       return (
         <>
-          <p className="hint">Sect: {data.sect === 'day' ? 'Day chart' : 'Night chart'}</p>
+          <p className="hint">
+            {t.sectPrefix} {data.sect === 'day' ? t.dayChart : t.nightChart}
+          </p>
           <SortableTable
-            caption="Derived points"
-            columns={DERIVED_POINT_COLUMNS}
+            caption={t.derivedPointsCaption}
+            columns={derivedPointColumns(t)}
             rows={derivedPointRows(data, pointVisibility)}
             getRowKey={(row) => row.label}
             downloadFilename={deriveExportFilename(displayName, 'derived-points', 'csv')}
@@ -248,14 +264,16 @@ function renderTableTab(
   }
 }
 
-const TAB_LABELS: Record<TabKey, string> = {
-  positions: 'Positions',
-  houses: 'Houses',
-  aspects: 'Aspects',
-  dignities: 'Dignities',
-  derived: 'Derived points',
-  report: 'Report',
-};
+function tabLabels(t: typeof chartViewMessages.en): Record<TabKey, string> {
+  return {
+    positions: t.positionsCaption,
+    houses: t.housesCaption,
+    aspects: t.aspectsCaption,
+    dignities: t.dignitiesCaption,
+    derived: t.derivedPointsCaption,
+    report: t.reportTab,
+  };
+}
 
 /**
  * Every tab in display order; `houses`, `derived` and `report` are dropped by
@@ -267,11 +285,13 @@ const TAB_LABELS: Record<TabKey, string> = {
 const TAB_ORDER: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived', 'report'];
 
 /** PNG export resolutions (#67): the wheel's own default pixel size, and 2x/4x of it. */
-const PNG_SIZES: readonly { readonly label: string; readonly size: number }[] = [
-  { label: 'Small (600px)', size: 600 },
-  { label: 'Medium (1200px)', size: 1200 },
-  { label: 'Large (2400px)', size: 2400 },
-];
+function pngSizes(t: typeof chartViewMessages.en): readonly { readonly label: string; readonly size: number }[] {
+  return [
+    { label: t.pngSmall, size: 600 },
+    { label: t.pngMedium, size: 1200 },
+    { label: t.pngLarge, size: 2400 },
+  ];
+}
 
 /**
  * Copies a #65 share link for one birth moment to the clipboard — the chart itself is
@@ -285,6 +305,7 @@ function ShareLink({
   readonly moment: BirthMomentInput;
   readonly housesKnown: boolean;
 }): React.JSX.Element {
+  const t = useMessages(chartViewMessages);
   const [copied, setCopied] = useState(false);
 
   const copy = (): void => {
@@ -306,12 +327,9 @@ function ShareLink({
   return (
     <p>
       <button type="button" className="quiet" onClick={copy}>
-        {copied ? 'Link copied' : 'Copy share link'}
+        {copied ? t.linkCopied : t.copyShareLink}
       </button>{' '}
-      <span className="hint">
-        The link holds the whole birth record and settings &mdash; nothing is sent to us to create it, and opening it
-        needs no account.
-      </span>
+      <span className="hint">{t.shareLinkHint}</span>
     </p>
   );
 }
@@ -356,6 +374,7 @@ export function ChartDataView({
   /** A long-lived provider for the panel's own house-system/ayanamsa name lookups. */
   readonly settingsProvider?: EphemerisProvider | undefined;
 }): React.JSX.Element {
+  const t = useMessages(chartViewMessages);
   const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromHash);
   // Which wheel rendering is on screen. Session-only, not persisted with the chart's
   // other display settings (`resolveWheelDisplayOptions`) — keeping this additive and
@@ -364,13 +383,14 @@ export function ChartDataView({
   // AstroChart is a reference rendering kept around for comparing Astraya's own wheel
   // against it during development (#231) — production users only ever see Astraya's.
   const [wheelKind, setWheelKind] = useState<'astrochart' | 'astraya'>(import.meta.env.PROD ? 'astraya' : 'astrochart');
-  const [pngSize, setPngSize] = useState(PNG_SIZES[1]?.size ?? 1200);
+  const [pngSize, setPngSize] = useState(1200);
   const [pngError, setPngError] = useState<string | undefined>(undefined);
   const [pngBusy, setPngBusy] = useState(false);
   // True only for the moment between clicking "Export PDF" and the print dialog closing
   // (see `exportPdf` below): while true, every table renders at once instead of just the
   // active tab, so the PDF the browser's own "Save as PDF" produces has all of them (#67).
   const [printAll, setPrintAll] = useState(false);
+  const sizes = pngSizes(t);
 
   const pointVisibility = toPointVisibilityOptions(extendedSettings);
 
@@ -379,8 +399,8 @@ export function ChartDataView({
     return renderChartSheetSvg(
       chartSheetInput(
         load.data,
-        metaLines ?? [displayName || 'Chart'],
-        displayName || 'Natal',
+        metaLines ?? [displayName || t.chartFallback],
+        displayName || t.natalFallback,
         toPointVisibilityOptions(extendedSettings),
       ),
       {
@@ -388,7 +408,7 @@ export function ChartDataView({
         signWedgeStyle: toSignWedgeStyle(extendedSettings),
       },
     );
-  }, [load, showHouses, displayName, metaLines, extendedSettings]);
+  }, [load, showHouses, displayName, metaLines, extendedSettings, t]);
 
   useEffect(() => {
     if (!printAll) return undefined;
@@ -462,19 +482,13 @@ export function ChartDataView({
 
   return (
     <>
-      {!showHouses && (
-        <p className="hint">
-          The birth time for {displayName || 'this person'} is unknown, so houses, angles and the Ascendant-based
-          derived points cannot be calculated &mdash; they are not shown below. Positions, aspects and dignities are
-          still meaningful, though the Moon&rsquo;s sign may be uncertain.
-        </p>
-      )}
+      {!showHouses && <p className="hint">{t.housesUnknownHint(displayName || t.thisPerson)}</p>}
 
-      {load.kind === 'loading' && <p className="status">Calculating&hellip;</p>}
+      {load.kind === 'loading' && <p className="status">{t.calculating}</p>}
 
       {load.kind === 'error' && (
         <p className="warning" role="alert">
-          The chart could not be calculated. {load.message}
+          {t.chartError(load.message)}
         </p>
       )}
 
@@ -501,7 +515,7 @@ export function ChartDataView({
           {activeTab !== 'report' && sheet !== undefined && (
             <>
               {!import.meta.env.PROD && (
-                <div className="wheel-toggle" role="group" aria-label="Wheel rendering">
+                <div className="wheel-toggle" role="group" aria-label={t.wheelRenderingLabel}>
                   <button
                     type="button"
                     aria-pressed={wheelKind === 'astrochart'}
@@ -510,7 +524,7 @@ export function ChartDataView({
                       setWheelKind('astrochart');
                     }}
                   >
-                    AstroChart
+                    {t.astroChartButton}
                   </button>
                   <button
                     type="button"
@@ -520,7 +534,7 @@ export function ChartDataView({
                       setWheelKind('astraya');
                     }}
                   >
-                    Astraya
+                    {t.astrayaButton}
                   </button>
                 </div>
               )}
@@ -549,36 +563,32 @@ export function ChartDataView({
                 />
               )}
 
-              {wheelKind === 'astrochart' && (
-                <p className="hint">
-                  Exports below always use Astraya&rsquo;s own rendering, regardless of which wheel is shown here.
-                </p>
-              )}
+              {wheelKind === 'astrochart' && <p className="hint">{t.astrochartExportHint}</p>}
 
               <div className="chart-export-actions">
                 <button type="button" className="quiet" onClick={downloadSvg}>
-                  Download SVG
+                  {t.downloadSvg}
                 </button>
                 <span className="chart-export-png">
                   <select
-                    aria-label="PNG resolution"
+                    aria-label={t.pngResolutionLabel}
                     value={pngSize}
                     onChange={(event) => {
                       setPngSize(Number(event.target.value));
                     }}
                   >
-                    {PNG_SIZES.map((option) => (
+                    {sizes.map((option) => (
                       <option key={option.size} value={option.size}>
                         {option.label}
                       </option>
                     ))}
                   </select>
                   <button type="button" className="quiet" onClick={downloadPng} disabled={pngBusy}>
-                    {pngBusy ? 'Rendering…' : 'Download PNG'}
+                    {pngBusy ? t.rendering : t.downloadPng}
                   </button>
                 </span>
                 <button type="button" className="quiet" onClick={exportPdf}>
-                  Export PDF&hellip;
+                  {t.exportPdf}
                 </button>
               </div>
               {pngError !== undefined && (
@@ -586,10 +596,7 @@ export function ChartDataView({
                   {pngError}
                 </p>
               )}
-              <p className="hint">
-                &ldquo;Export PDF&rdquo; opens your browser&rsquo;s print dialog with the wheel and every data table
-                laid out for paper &mdash; choose &ldquo;Save as PDF&rdquo; there.
-              </p>
+              <p className="hint">{t.exportPdfHint}</p>
             </>
           )}
 
@@ -598,12 +605,12 @@ export function ChartDataView({
               {tabs
                 .filter((tab) => tab !== 'report')
                 .map((tab) => (
-                  <div key={tab}>{renderTableTab(tab, load.data, displayName, pointVisibility, showHouses)}</div>
+                  <div key={tab}>{renderTableTab(tab, load.data, displayName, pointVisibility, showHouses, t)}</div>
                 ))}
             </div>
           ) : (
             <>
-              <div className="tabs" role="tablist" aria-label="Chart data" onKeyDown={onTabKeyDown}>
+              <div className="tabs" role="tablist" aria-label={t.chartDataTablist} onKeyDown={onTabKeyDown}>
                 {tabs.map((tab) => (
                   <button
                     key={tab}
@@ -618,7 +625,7 @@ export function ChartDataView({
                       setActiveTab(tab);
                     }}
                   >
-                    {TAB_LABELS[tab]}
+                    {tabLabels(t)[tab]}
                   </button>
                 ))}
               </div>
@@ -631,7 +638,7 @@ export function ChartDataView({
               >
                 {activeTab === 'report'
                   ? showHouses && <ReportView chart={load.data} />
-                  : renderTableTab(activeTab, load.data, displayName, pointVisibility, showHouses)}
+                  : renderTableTab(activeTab, load.data, displayName, pointVisibility, showHouses, t)}
               </div>
             </>
           )}
@@ -644,6 +651,7 @@ export function ChartDataView({
 export function ChartView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
+  const t = useMessages(chartViewMessages);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [settings, setSettings] = useState<ExtendedSettings>(DEFAULT_EXTENDED_SETTINGS);
   // A separate provider dedicated to the "Extended settings" panel's own house-system/
@@ -708,30 +716,19 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
   }, [personId, person, settings, chartProvider]);
 
   if (person === undefined) {
-    return (
-      <main className="shell">
-        <p className="back">
-          <a href="#/people">&larr; People</a>
-        </p>
-        <h1>Not found</h1>
-        <p>
-          There is no person with that id on this device. If they were deleted, they can be restored from the{' '}
-          <a href="#/people">people list</a>.
-        </p>
-      </main>
-    );
+    return <PersonNotFound />;
   }
 
   if (person.moment === undefined) {
     return (
       <main className="shell">
         <p className="back">
-          <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+          <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
         </p>
-        <h1>Chart</h1>
+        <h1>{t.chartFallback}</h1>
         <p>
-          {person.displayName || 'This person'}&rsquo;s birth record is not complete enough to calculate a chart yet.
-          Fill in the missing fields on the <a href={`#/person/${personId}`}>person page</a>.
+          {t.notCompleteChart(person.displayName || t.thisPersonCapitalized)}{' '}
+          <a href={`#/person/${personId}`}>{t.personPageLink}</a>.
         </p>
       </main>
     );
@@ -742,9 +739,9 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
   return (
     <main className="shell">
       <p className="back">
-        <a href={`#/person/${personId}`}>&larr; {person.displayName || 'Person'}</a>
+        <a href={`#/person/${personId}`}>&larr; {person.displayName || t.personFallback}</a>
       </p>
-      <h1>{person.displayName || 'Chart'}</h1>
+      <h1>{person.displayName || t.chartFallback}</h1>
       <ShareLink moment={person.moment} housesKnown={showHouses} />
       <ChartDataView
         load={load}
