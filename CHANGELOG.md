@@ -4,6 +4,40 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.11.0] — 2026-09-14
+
+**A map-based way to set a birth place, "use my location" to center it, a
+persistent per-person tab bar, and the sync-status explanation moved onto the
+badge itself.**
+
+This is M10 (Extended techniques & world charts) progress, not a finished
+milestone: internationalization (#158) is still open.
+
+### Added
+
+- **Map-based birth-place picker (#159):** an embedded Leaflet + OpenStreetMap
+  map with a draggable pin, shown alongside the existing Latitude/Longitude
+  fields as a second way to set the same two fields — either stays a single
+  source of truth for the other. Degrades to a visible "map unavailable"
+  message (not a silent blank area) if tiles can't load, and needs no API key
+  for the default public-tile configuration; self-hosting your own tile
+  server is documented.
+- **"Use my location" (#248):** an opt-in button on the birth-place map that
+  pans/zooms to the browser's reported position. It only ever moves the map's
+  view, never the pin or the coordinate fields, so centering the map is never
+  mistaken for picking a birth place. Shows an inline message if permission
+  is denied or the position can't be determined.
+- Persistent per-person tab bar, with the "Birth record" tab gated until a
+  person has one; the home screen is retired in favour of the people list
+  (#234).
+
+### Changed
+
+- The "local only"/sync-status explanation is now a disclosure popover
+  anchored to the sync badge itself, discoverable from every screen, instead
+  of a footer notice that only appeared on screens long enough to scroll past
+  it (#250).
+
 ## [0.10.1] — 2026-09-13
 
 **UI cleanup: no more duplicate sign-in messaging, dev-only controls hidden in
