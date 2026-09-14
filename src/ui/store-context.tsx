@@ -29,6 +29,16 @@ export function useStore(): Store {
 }
 
 /**
+ * The store, when one happens to be open — `undefined` outside a `StoreProvider` rather than
+ * throwing. For the handful of callers (`SyncBadge`, mounted globally on every route including
+ * the few that never open a store) that need to work equally well either way, not for anything
+ * that actually requires the store to function.
+ */
+export function useOptionalStore(): Store | undefined {
+  return useContext(StoreContext);
+}
+
+/**
  * The current fold.
  *
  * `store.state` is replaced wholesale on every change and never mutated, which is what makes

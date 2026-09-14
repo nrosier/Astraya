@@ -8,8 +8,8 @@
  *    succeeds; a failure is shown, since it means the *next* offline session
  *    will be missing an asset it needs.
  *
- * Present on every screen, unlike `StatusBar` — an update or a warm failure
- * matters even on `/about`, which never opens the local store.
+ * Present on every screen, including `/about` and the other routes that never open the
+ * local store — an update or a warm failure matters regardless.
  */
 import { useSyncExternalStore } from 'react';
 import { applyUpdate, getUpdateState, subscribeToUpdates } from '../pwa/register.js';

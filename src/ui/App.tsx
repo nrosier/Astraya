@@ -22,7 +22,6 @@ import { SessionProvider, useStoreStatus } from './session-context.js';
 import { SetPasswordForm } from './SetPasswordForm.js';
 import { SetupForm } from './SetupForm.js';
 import { SharedChartView } from './SharedChartView.js';
-import { StatusBar } from './StatusBar.js';
 import { StoreProvider } from './store-context.js';
 import { SyncBadge } from './SyncBadge.js';
 import { SynastryView } from './SynastryView.js';
@@ -68,16 +67,7 @@ function Stored({ children }: { children: React.ReactNode }): React.JSX.Element 
     );
   }
 
-  return (
-    <StoreProvider store={status.store}>
-      {children}
-      {/* Inside the provider and after the screen: every route that shows the user's data
-          gets the same answer to "does this exist anywhere but here?", in the same place.
-          Sign-in status and the global sync badge live outside `Stored` now (rendered by
-          `App` itself) since they don't need the store, only the session. */}
-      <StatusBar />
-    </StoreProvider>
-  );
+  return <StoreProvider store={status.store}>{children}</StoreProvider>;
 }
 
 /**

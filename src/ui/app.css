@@ -124,9 +124,8 @@
  * in, sync status, the language choice and the theme toggle, all together — previously
  * split across both top corners, which made sign-in state and sync status say the same
  * thing twice in two separate places. Fixed rather than in the flow, unlike
- * `.statusbar`/`.accountpanel-signedin` below — these are meant to be visible from
- * anywhere, on every screen including the landing page, not just where a signed-in
- * device's data shows up.
+ * `.accountpanel-signedin` below — these are meant to be visible from anywhere, on every
+ * screen including the landing page, not just where a signed-in device's data shows up.
  */
 .topbar-right {
   position: fixed;
@@ -259,9 +258,11 @@
   margin-top: 0.75rem;
 }
 
-/* The global sync/server badge (#137) — deliberately plain text plus one icon button,
-   the compact companion to the fuller, in-flow `.statusbar` below. */
+/* The global sync/server badge (#101, #137, #230) — a compact pill that expands, on click,
+   into `.syncbadge-popover`'s full explanation (#250). `position: relative` anchors that
+   popover to the badge itself, same as `.accountpanel` anchors its own above. */
 .syncbadge {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -286,12 +287,55 @@
   align-items: flex-end;
 }
 
+/* A disclosure trigger, not a label: the `›` mirrors the old `.statusbar summary::after`
+   marker so opening feels like the same gesture that used to live in the footer. */
 .syncbadge-label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
   font-weight: 600;
+  cursor: pointer;
+}
+
+.syncbadge-label::after {
+  content: '›';
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+
+.syncbadge-label[aria-expanded='true']::after {
+  transform: rotate(90deg);
 }
 
 .syncbadge-user {
   color: var(--muted);
+}
+
+/* Floats beneath the badge rather than in the page flow, same shape as
+   `.accountpanel-popover` — right-anchored since the badge sits near the right edge of
+   the viewport (#230). */
+.syncbadge-popover {
+  position: absolute;
+  top: 2.5rem;
+  right: 0;
+  width: 18rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 0.875rem;
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 20%);
+}
+
+.syncbadge-popover p {
+  margin: 0;
+  max-width: 44rem;
 }
 
 .syncbadge-sync {
@@ -862,75 +906,6 @@ label.stacked textarea:focus-visible {
   border: 1px dashed var(--line);
   border-radius: var(--radius);
   color: var(--muted);
-}
-
-/*
- * The status line.
- *
- * Collapsed to a few words until it has something to say, and opened by itself when it
- * does. A bar in the flow rather than a fixed overlay: fixed bars cover the bottom of a
- * form on a phone, which is where the save button is.
- */
-.statusbar {
-  margin-top: 2.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
-  font-size: 0.875rem;
-  color: var(--muted);
-}
-
-.statusbar summary {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  list-style: none;
-  font-weight: 550;
-}
-
-.statusbar summary::-webkit-details-marker {
-  display: none;
-}
-
-.statusbar summary::after {
-  content: '›';
-  color: var(--muted);
-  transition: transform 0.15s;
-}
-
-.statusbar details[open] summary::after {
-  transform: rotate(90deg);
-}
-
-.statusbar p {
-  margin: 0.5rem 0 0;
-  max-width: 44rem;
-}
-
-/* Tone carries in the dot and the label weight, never in colour alone — the same rule the
-   warning panels follow, for the same reason. */
-.statusbar .dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  background: var(--muted);
-}
-
-.statusbar[data-tone='ok'] summary {
-  color: var(--fg);
-}
-
-.statusbar[data-tone='ok'] .dot {
-  background: color-mix(in oklab, var(--accent) 80%, var(--fg));
-}
-
-.statusbar[data-tone='warn'] summary {
-  color: var(--solar);
-}
-
-.statusbar[data-tone='warn'] .dot {
-  background: var(--solar);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--solar) 22%, transparent);
 }
 
 /* Fixed to the bottom rather than inline: PwaStatus sits outside every screen's own
@@ -1798,7 +1773,6 @@ label.stacked textarea:focus-visible {
   .chart-export-actions,
   .data-table-actions,
   .report-controls,
-  .statusbar,
   .pwastatus,
   .topbar-right,
   .birth-place-map,
