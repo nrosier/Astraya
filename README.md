@@ -110,21 +110,32 @@ Authentik side after the initial sign-in exchange, so Authentik-derived
 sessions use a shorter TTL (24h, vs. 30 days for local accounts) to bound how
 long that gap can last.
 
-### Optional: self-hosted tile server
+### Optional: a map tile provider that doesn't need a referrer
 
 The birth-place picker's map needs no setup either: by default it requests
 OpenStreetMap's public tiles, no API key required. That default is meant for
 trying Astraya out, not for a production deployment — OSM's
 [tile usage policy](https://operations.osmfoundation.org/policies/tiles/)
 blocks clients that don't identify themselves or that exceed its limits, and
-a real deployment's traffic is expected to eventually trip that (see #261).
+a real deployment's traffic is expected to eventually trip that (see #261 and
+#267). Without either option below, Astraya falls back to a referrer-policy
+override on tile requests only, which helps but doesn't eliminate the risk.
+
+The lower-effort fix is a free [MapTiler](https://cloud.maptiler.com/account/keys/)
+API key: set `VITE_MAPTILER_API_KEY` and `ASTRAYA_TILE_ORIGIN=https://api.maptiler.com`
+(see [`.env.example`](.env.example)). MapTiler authenticates by the key, not by
+the browser's `Referer` header, so it works unaffected by this server's
+`Referrer-Policy: no-referrer`.
+
 To serve tiles from your own server instead, set `VITE_TILE_URL_TEMPLATE`
-and `ASTRAYA_TILE_ORIGIN` to matching values (see [`.env.example`](.env.example)).
-The two must describe the same origin: a mismatch fails closed, blocking tiles
-rather than allowing the wrong host through. Unlike the server-runtime
-variables above, `VITE_TILE_URL_TEMPLATE` is baked into the client bundle at
-build time, so it can't be changed by setting it on an already-built container —
-rebuild the image with it set instead.
+and `ASTRAYA_TILE_ORIGIN` to matching values, which takes priority over a
+MapTiler key if both are set. The two must describe the same origin: a mismatch
+fails closed, blocking tiles rather than allowing the wrong host through.
+
+Unlike the server-runtime variables above, `VITE_TILE_URL_TEMPLATE` and
+`VITE_MAPTILER_API_KEY` are baked into the client bundle at build time, so
+neither can be changed by setting it on an already-built container — rebuild
+the image with it set instead.
 
 ## Licence
 

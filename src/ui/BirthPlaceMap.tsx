@@ -25,10 +25,37 @@ import type { LeafletMouseEvent, Map as LeafletMap, Marker } from 'leaflet';
 
 // No API key, no account, no setup required for this default. A self-hoster can point both this
 // and the server's `ASTRAYA_TILE_ORIGIN` (which grants the origin in the CSP) at their own tile
-// server instead — see README.md and .env.example.
+// server instead — see README.md and .env.example. `VITE_TILE_URL_TEMPLATE`, if set, always wins
+// over `VITE_MAPTILER_API_KEY` below: a deployer who has gone to the trouble of pointing at their
+// own tile server has already solved the problem the MapTiler key exists to solve.
 const DEFAULT_TILE_URL_TEMPLATE = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const rawTileUrlTemplate: unknown = import.meta.env.VITE_TILE_URL_TEMPLATE;
-const TILE_URL_TEMPLATE = typeof rawTileUrlTemplate === 'string' ? rawTileUrlTemplate : DEFAULT_TILE_URL_TEMPLATE;
+const explicitTileUrlTemplate =
+  typeof rawTileUrlTemplate === 'string' && rawTileUrlTemplate !== '' ? rawTileUrlTemplate : undefined;
+
+// A MapTiler Cloud API key (#267) sidesteps the default OSM host's referrer-based anti-abuse
+// blocking entirely — MapTiler authenticates by this key, not by `Referer`/`Origin` headers, so it
+// works unchanged under the server's `Referrer-Policy: no-referrer`. Requires `ASTRAYA_TILE_ORIGIN`
+// set to `https://api.maptiler.com` server-side too, exactly like the self-hosted case above, or
+// the CSP blocks the tiles.
+const rawMaptilerApiKey: unknown = import.meta.env.VITE_MAPTILER_API_KEY;
+const maptilerApiKey =
+  typeof rawMaptilerApiKey === 'string' && rawMaptilerApiKey !== '' ? rawMaptilerApiKey : undefined;
+function maptilerTileUrlTemplate(apiKey: string): string {
+  return `https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=${apiKey}`;
+}
+
+// True only for the true zero-config default: no self-hosted server and no MapTiler key. This is
+// the one case that actually needs the `referrerPolicy` override below, and the one the startup
+// warning below is about.
+const usingDefaultOsmTiles = explicitTileUrlTemplate === undefined && maptilerApiKey === undefined;
+const TILE_URL_TEMPLATE =
+  explicitTileUrlTemplate ??
+  (maptilerApiKey !== undefined ? maptilerTileUrlTemplate(maptilerApiKey) : DEFAULT_TILE_URL_TEMPLATE);
+const TILE_ATTRIBUTION =
+  maptilerApiKey !== undefined
+    ? '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 // How long to wait for the first tile to load before treating the map as unavailable rather than
 // leaving it blank — the issue's requirement is a visible "unavailable" state, not silence.
@@ -38,18 +65,19 @@ const TILE_LOAD_TIMEOUT_MS = 8000;
 // this form, not to whoever runs the deployment, and "set VITE_TILE_URL_TEMPLATE" means nothing
 // to the former. This warns the latter, in whatever console they have open, the one time tiles
 // actually fail — distinguishing "OSM's tile server enforces a usage policy that free-floating
-// production traffic is expected to eventually trip" (#261) from a generic network hiccup, and
-// pointing at the fix already documented in README.md's "self-hosted tile server" section.
+// production traffic is expected to eventually trip" (#261, #267) from a generic network hiccup,
+// and pointing at the fixes already documented in README.md's tile server sections.
 let warnedAboutDefaultTileServer = false;
 function warnIfDefaultTileServer(): void {
-  if (TILE_URL_TEMPLATE !== DEFAULT_TILE_URL_TEMPLATE || warnedAboutDefaultTileServer) return;
+  if (!usingDefaultOsmTiles || warnedAboutDefaultTileServer) return;
   warnedAboutDefaultTileServer = true;
   console.warn(
     "Astraya: the birth-place map's tiles failed to load from OpenStreetMap's public tile " +
-      'server (the default when VITE_TILE_URL_TEMPLATE is unset). That server enforces a usage ' +
-      'policy that blocks unidentified or high-volume clients — likely, not a transient network ' +
-      "issue, if this keeps happening. Point at your own tile server instead: see README.md's " +
-      '"Optional: self-hosted tile server" section.',
+      'server (the default when neither VITE_TILE_URL_TEMPLATE nor VITE_MAPTILER_API_KEY is set). ' +
+      'That server enforces a usage policy that blocks unidentified or high-volume clients — ' +
+      'likely, not a transient network issue, if this keeps happening even with the referrer-' +
+      'policy override this build already applies to tile requests. Set a MapTiler API key or ' +
+      "point at your own tile server instead: see README.md's tile server sections.",
   );
 }
 
@@ -118,7 +146,14 @@ export function BirthPlaceMap({
         mapRef.current = map;
 
         const tileLayer = L.tileLayer(TILE_URL_TEMPLATE, {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          attribution: TILE_ATTRIBUTION,
+          // Only the zero-config OSM default needs this: the server's blanket `Referrer-Policy:
+          // no-referrer` header (set for every response, tile requests included) otherwise strips
+          // the referrer from these `<img>` requests, and OSM's anti-abuse system treats a missing
+          // referrer as unidentified traffic and silently serves a "blocked" placeholder tile
+          // instead of an error (#267). `'origin'` discloses just this site's origin, not the full
+          // page URL — enough for OSM to identify the requester without leaking a birth-chart URL.
+          ...(usingDefaultOsmTiles ? { referrerPolicy: 'origin' as const } : {}),
         }).addTo(map);
 
         // GridLayer's `'load'` fires once every requested tile has settled, whether each one
