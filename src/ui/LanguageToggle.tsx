@@ -7,9 +7,12 @@
  * a form control dropped into the corner of the screen.
  */
 import { CORPUS_LOCALES } from '../interpretation/schema.js';
+import { languageToggleMessages } from './LanguageToggle.messages.js';
 import { LOCALE_LABELS, useLocale } from './locale.js';
+import { useMessages } from './messages.js';
 
 export function LanguageToggle(): React.JSX.Element {
+  const t = useMessages(languageToggleMessages);
   const [locale, setLocale] = useLocale();
 
   return (
@@ -20,7 +23,7 @@ export function LanguageToggle(): React.JSX.Element {
         const index = CORPUS_LOCALES.indexOf(locale);
         setLocale(CORPUS_LOCALES[(index + 1) % CORPUS_LOCALES.length] ?? locale);
       }}
-      aria-label={`Language: ${LOCALE_LABELS[locale]} — activate to change`}
+      aria-label={t.languageLabel(LOCALE_LABELS[locale])}
       title={LOCALE_LABELS[locale]}
     >
       {locale.toUpperCase()}

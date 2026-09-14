@@ -10,6 +10,7 @@
  * `ThemeToggle.tsx`, the same "thin `.tsx`, tested `.ts`" split `SortableTable.tsx`/
  * `table-sort.ts` already use.
  */
+import type { themeToggleMessages } from './ThemeToggle.messages.js';
 
 export type Theme = 'system' | 'light' | 'dark';
 
@@ -24,8 +25,6 @@ export function nextTheme(current: Theme): Theme {
   return THEME_CYCLE[(index + 1) % THEME_CYCLE.length] ?? 'system';
 }
 
-export const THEME_LABELS: Record<Theme, string> = {
-  system: 'Theme: System',
-  light: 'Theme: Light',
-  dark: 'Theme: Dark',
-};
+export function themeLabel(theme: Theme, t: typeof themeToggleMessages.en): string {
+  return t[theme];
+}

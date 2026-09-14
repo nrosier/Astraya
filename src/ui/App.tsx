@@ -5,12 +5,14 @@ import { startWarming } from '../pwa/warm-status.js';
 import { About } from './About.js';
 import { AccountPanel } from './AccountPanel.js';
 import { AdminPanel } from './AdminPanel.js';
+import { appMessages } from './App.messages.js';
 import { AstrocartographyView } from './AstrocartographyView.js';
 import { Changelog } from './Changelog.js';
 import { ChartView } from './ChartView.js';
 import { CompositeView } from './CompositeView.js';
 import { HarmonicView } from './HarmonicView.js';
 import { LanguageToggle } from './LanguageToggle.js';
+import { useMessages } from './messages.js';
 import { People } from './People.js';
 import { PeriodicTransitView } from './PeriodicTransitView.js';
 import { PersonForm } from './PersonForm.js';
@@ -22,6 +24,7 @@ import { SessionProvider, useStoreStatus } from './session-context.js';
 import { SetPasswordForm } from './SetPasswordForm.js';
 import { SetupForm } from './SetupForm.js';
 import { SharedChartView } from './SharedChartView.js';
+import { sharedMessages } from './shared.messages.js';
 import { StoreProvider } from './store-context.js';
 import { SyncBadge } from './SyncBadge.js';
 import { SynastryView } from './SynastryView.js';
@@ -40,11 +43,13 @@ import type { Route } from './route.js';
  */
 function Stored({ children }: { children: React.ReactNode }): React.JSX.Element {
   const status = useStoreStatus();
+  const t = useMessages(appMessages);
+  const shared = useMessages(sharedMessages);
 
   if (status.kind === 'opening') {
     return (
       <main className="shell">
-        <p className="status">Opening your local data…</p>
+        <p className="status">{t.openingLocalData}</p>
       </main>
     );
   }
@@ -53,16 +58,13 @@ function Stored({ children }: { children: React.ReactNode }): React.JSX.Element 
     return (
       <main className="shell">
         <p className="back">
-          <a href="#/">&larr; Back</a>
+          <a href="#/">&larr; {shared.back}</a>
         </p>
-        <h1>No local storage</h1>
+        <h1>{t.noLocalStorage}</h1>
         <p className="warning" role="alert">
-          Your data is stored in this browser, and this browser will not let us open it. {status.message}
+          {t.noLocalStorageWarning(status.message)}
         </p>
-        <p>
-          Private-browsing windows and blocked site data are the usual causes. Nothing has been lost &mdash; anything
-          saved earlier is still there once storage is available again.
-        </p>
+        <p>{t.noLocalStorageHint}</p>
       </main>
     );
   }
@@ -78,8 +80,9 @@ function Stored({ children }: { children: React.ReactNode }): React.JSX.Element 
  * handful of screens, and a hash keeps every URL shareable as a plain static file.
  */
 export function App(): React.JSX.Element {
+  const t = useMessages(appMessages);
   const [route, setRoute] = useState(() => window.location.hash);
-  const [engineStatus, setEngineStatus] = useState<string>('Loading ephemeris…');
+  const [engineStatus, setEngineStatus] = useState<string>(t.loadingEphemeris);
   const [seVersion, setSeVersion] = useState<string>();
   const isFirstRoute = useRef(true);
 
@@ -183,7 +186,7 @@ export function App(): React.JSX.Element {
         {/* The version itself is the changelog link: clicking a version to see what changed
             in it is the behaviour people expect. Promoted here from the old landing page
             (#234) so both routes stay reachable now that the landing page is gone. */}
-        <a href="#/changelog">Version {APP_VERSION}</a> &middot; <a href="#/about">about &amp; licence</a>
+        <a href="#/changelog">{t.changelogLink(APP_VERSION)}</a> &middot; <a href="#/about">{t.aboutLink}</a>
       </footer>
       <PwaStatus />
     </SessionProvider>

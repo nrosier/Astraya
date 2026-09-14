@@ -18,6 +18,7 @@
  * Sync itself arrives in M8. Its states are modelled now so the indicator does not have to
  * be redesigned around them later; until then the store reports `off`.
  */
+import type { statusMessages } from './status.messages.js';
 import type { Persistence } from '../store/persist.js';
 
 export type SyncState =
@@ -62,23 +63,23 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
 /** "just now", "7 minutes ago" — vague where precision would be false. */
-export function ago(now: number, then: number): string {
+export function ago(now: number, then: number, t: typeof statusMessages.en): string {
   const elapsed = now - then;
   // A clock that moved backwards, or a timestamp from a peer whose clock is ahead. Rounding
   // it to "just now" is honest; "in 3 minutes" would read as a bug in the sync, not the clock.
-  if (elapsed < 45_000) return 'just now';
-  if (elapsed < HOUR) return `${String(Math.round(elapsed / MINUTE))} minutes ago`;
-  if (elapsed < 2 * HOUR) return 'an hour ago';
-  if (elapsed < DAY) return `${String(Math.floor(elapsed / HOUR))} hours ago`;
-  if (elapsed < 2 * DAY) return 'yesterday';
-  return `${String(Math.floor(elapsed / DAY))} days ago`;
+  if (elapsed < 45_000) return t.justNow;
+  if (elapsed < HOUR) return t.minutesAgo(String(Math.round(elapsed / MINUTE)));
+  if (elapsed < 2 * HOUR) return t.anHourAgo;
+  if (elapsed < DAY) return t.hoursAgo(String(Math.floor(elapsed / HOUR)));
+  if (elapsed < 2 * DAY) return t.yesterday;
+  return t.daysAgo(String(Math.floor(elapsed / DAY)));
 }
 
-function changes(pending: number): string {
-  return pending === 1 ? '1 change' : `${String(pending)} changes`;
+function changes(pending: number, t: typeof statusMessages.en): string {
+  return pending === 1 ? t.oneChange : t.changesCount(String(pending));
 }
 
-export function describeStatus(input: StatusInput): Status {
+export function describeStatus(input: StatusInput, t: typeof statusMessages.en): Status {
   const { sync, persistence, pending, online, now } = input;
 
   if (sync.kind === 'failing') {
@@ -87,9 +88,9 @@ export function describeStatus(input: StatusInput): Status {
     const stale = now - sync.since >= LOUD_AFTER_MS;
     return {
       tone: stale ? 'warn' : 'note',
-      label: stale ? 'Sync failing' : 'Sync retrying',
-      detail: `Syncing has been failing since ${ago(now, sync.since)}. Nothing has been lost — every change is saved on this device and will be sent when syncing recovers. ${sync.message}`,
-      action: { href: '#/about', text: 'Export a copy' },
+      label: stale ? t.syncFailing : t.syncRetrying,
+      detail: t.syncFailingDetail(ago(now, sync.since, t), sync.message),
+      action: { href: '#/about', text: t.exportACopy },
     };
   }
 
@@ -97,28 +98,25 @@ export function describeStatus(input: StatusInput): Status {
     const evictable = persistence.state !== 'persisted';
     return {
       tone: evictable ? 'warn' : 'note',
-      label: 'Local only',
+      label: t.localOnly,
       detail: evictable
         ? // The honest version of "your data is safe": it is here, and the browser is
           // entitled to delete it. Naming the remedy matters more than naming the risk.
-          'This device holds the only copy of your data, and the browser has not promised to keep it. Export a copy, or sign in to sync.'
-        : 'This device holds the only copy of your data. The browser has agreed to keep it, but a lost device is a lost copy — export a copy, or sign in to sync.',
-      action: { href: '#/about', text: 'How to keep a copy' },
+          t.localOnlyEvictableDetail
+        : t.localOnlyPersistedDetail,
+      action: { href: '#/about', text: t.howToKeepACopy },
     };
   }
 
   if (sync.kind === 'syncing') {
-    return { tone: 'ok', label: 'Syncing…', detail: `Sending ${changes(pending)} to your server.` };
+    return { tone: 'ok', label: t.syncingLabel, detail: t.sendingDetail(changes(pending, t)) };
   }
 
   if (!online) {
     return {
       tone: 'note',
-      label: pending === 0 ? 'Offline' : `Offline — ${changes(pending)} waiting`,
-      detail:
-        pending === 0
-          ? 'No network. Everything works offline; nothing is waiting to be sent.'
-          : `No network. ${changes(pending)} are saved on this device and will be sent when you are back online.`,
+      label: pending === 0 ? t.offline : t.offlineWaitingLabel(changes(pending, t)),
+      detail: pending === 0 ? t.offlineNoneWaitingDetail : t.offlineWaitingDetail(changes(pending, t)),
     };
   }
 
@@ -126,8 +124,8 @@ export function describeStatus(input: StatusInput): Status {
     // Online, not syncing, and something is unsent. Not an error yet — the engine batches —
     // but it is not "synced" either, and claiming it would be the lie this file exists to
     // prevent.
-    return { tone: 'note', label: `${changes(pending)} to send`, detail: 'Waiting to sync.' };
+    return { tone: 'note', label: t.toSendLabel(changes(pending, t)), detail: t.waitingToSync };
   }
 
-  return { tone: 'ok', label: 'Synced', detail: `Everything reached your server ${ago(now, sync.at)}.` };
+  return { tone: 'ok', label: t.synced, detail: t.syncedDetail(ago(now, sync.at, t)) };
 }
