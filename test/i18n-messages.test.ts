@@ -13,7 +13,10 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-const UI_ROOT = resolve(import.meta.dirname, '..', 'src', 'ui');
+// Scans all of `src/`, not just `src/ui/`: most catalogues are colocated with a component
+// there, but a few (e.g. `domain/person-form.messages.ts`) belong to a domain module whose
+// validation output is user-facing text, and must stay in parity the same way.
+const SRC_ROOT = resolve(import.meta.dirname, '..', 'src');
 
 function messageFiles(dir: string): string[] {
   const files: string[] = [];
@@ -26,7 +29,7 @@ function messageFiles(dir: string): string[] {
 }
 
 function relative(file: string): string {
-  return file.slice(UI_ROOT.length + 1);
+  return file.slice(SRC_ROOT.length + 1);
 }
 
 /** A catalogue module exports exactly one `{ en, nl }` object; the export's name varies per file. */
@@ -39,7 +42,7 @@ function catalogsOf(module: Record<string, unknown>): Record<string, unknown>[] 
 
 describe('UI message catalogues stay in parity (#158)', () => {
   it('gives every locale the same keys as every other', async () => {
-    const files = messageFiles(UI_ROOT);
+    const files = messageFiles(SRC_ROOT);
     expect(files.length).toBeGreaterThan(0);
 
     const problems: string[] = [];

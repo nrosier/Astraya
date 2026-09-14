@@ -18,6 +18,7 @@
  * user did not touch must keep whatever timestamp they already had.
  */
 import type { Person, TimeAccuracy } from './person.js';
+import type { personFormValidationMessages } from './person-form.messages.js';
 import type { BirthMomentInput, Calendar } from '../time/types.js';
 import type { Mutation } from '../store/oplog.js';
 import type { JsonValue } from '../store/ops.js';
@@ -106,11 +107,11 @@ function daysInMonth(year: number, month: number, calendar: Calendar): number {
   return leap ? 29 : 28;
 }
 
-export function validateDraft(draft: Draft): Validated {
+export function validateDraft(draft: Draft, t: typeof personFormValidationMessages.en): Validated {
   const errors: Record<string, string> = {};
 
   if (draft.displayName.trim() === '') {
-    errors.displayName = 'A name is needed, even a placeholder — it is how you will find this person again.';
+    errors.displayName = t.nameRequired;
   }
 
   const dateMatch = DATE.exec(draft.date.trim());
@@ -118,9 +119,9 @@ export function validateDraft(draft: Draft): Validated {
   let month = 0;
   let day = 0;
   if (draft.date.trim() === '') {
-    errors.date = 'A birth date is required.';
+    errors.date = t.dateRequired;
   } else if (dateMatch?.[1] === undefined || dateMatch[2] === undefined || dateMatch[3] === undefined) {
-    errors.date = 'Give the date as YYYY-MM-DD.';
+    errors.date = t.dateFormat;
   } else {
     year = Number(dateMatch[1]);
     month = Number(dateMatch[2]);
@@ -128,11 +129,11 @@ export function validateDraft(draft: Draft): Validated {
     if (year === 0) {
       // There is no year zero in either calendar; astronomers use one, historians do not.
       // Refusing it is better than silently deciding which convention the user meant.
-      errors.date = 'There is no year 0. Use 1 BC as -1 if you mean the year before 1 AD.';
+      errors.date = t.noYearZero;
     } else if (month < 1 || month > 12) {
-      errors.date = 'The month must be between 1 and 12.';
+      errors.date = t.monthRange;
     } else if (day < 1 || day > daysInMonth(year, month, draft.calendar)) {
-      errors.date = `${pad(year, 4)}-${pad(month)} has ${String(daysInMonth(year, month, draft.calendar))} days.`;
+      errors.date = t.daysInMonth(`${pad(year, 4)}-${pad(month)}`, daysInMonth(year, month, draft.calendar));
     }
   }
 
@@ -145,34 +146,33 @@ export function validateDraft(draft: Draft): Validated {
   let minute = 0;
   let second = 0;
   if (draft.time.trim() === '') {
-    if (timeRequired) errors.time = 'A birth time is required. Choose “Time unknown” if there is none on record.';
+    if (timeRequired) errors.time = t.timeRequired;
   } else if (timeMatch?.[1] === undefined || timeMatch[2] === undefined) {
-    errors.time = 'Give the time as HH:MM, on a 24-hour clock.';
+    errors.time = t.timeFormat;
   } else {
     hour = Number(timeMatch[1]);
     minute = Number(timeMatch[2]);
     second = Number(timeMatch[3] ?? '0');
-    if (hour > 23) errors.time = 'The hour must be between 0 and 23.';
-    else if (minute > 59) errors.time = 'The minute must be between 0 and 59.';
+    if (hour > 23) errors.time = t.hourRange;
+    else if (minute > 59) errors.time = t.minuteRange;
     // 60 is allowed: a leap second is a real reading off a real wall clock.
-    else if (second > 60) errors.time = 'The second must be between 0 and 60.';
+    else if (second > 60) errors.time = t.secondRange;
   }
 
   const latitude = number(draft.latitude);
-  if (latitude === undefined) errors.latitude = 'A latitude is required, in decimal degrees.';
-  else if (latitude < -90 || latitude > 90) errors.latitude = 'Latitude runs from -90 (south) to 90 (north).';
+  if (latitude === undefined) errors.latitude = t.latitudeRequired;
+  else if (latitude < -90 || latitude > 90) errors.latitude = t.latitudeRange;
 
   const longitude = number(draft.longitude);
-  if (longitude === undefined) errors.longitude = 'A longitude is required, in decimal degrees.';
-  else if (longitude < -180 || longitude > 180) errors.longitude = 'Longitude runs from -180 (west) to 180 (east).';
+  if (longitude === undefined) errors.longitude = t.longitudeRequired;
+  else if (longitude < -180 || longitude > 180) errors.longitude = t.longitudeRange;
 
   let offsetOverrideMinutes: number | undefined;
   if (draft.offsetOverride.trim() !== '') {
     const parsed = number(draft.offsetOverride);
-    if (parsed === undefined) errors.offsetOverride = 'Give the offset in minutes east of UTC, such as -300.';
+    if (parsed === undefined) errors.offsetOverride = t.offsetFormat;
     // Not ±12 hours: Kiribati moved to +14, and historical offsets have been stranger.
-    else if (parsed < -18 * 60 || parsed > 18 * 60)
-      errors.offsetOverride = 'An offset must be within ±18 hours of UTC.';
+    else if (parsed < -18 * 60 || parsed > 18 * 60) errors.offsetOverride = t.offsetRange;
     else offsetOverrideMinutes = parsed;
   }
 
@@ -208,10 +208,15 @@ function number(raw: string): number | undefined {
  * nobody touched keeps the timestamp it already had — so saving here cannot overwrite a
  * note another device edited while this form was open.
  */
-export function draftToMutations(entityId: string, draft: Draft, previous: Draft = EMPTY_DRAFT): readonly Mutation[] {
-  const validated = validateDraft(draft);
+export function draftToMutations(
+  entityId: string,
+  draft: Draft,
+  previous: Draft,
+  t: typeof personFormValidationMessages.en,
+): readonly Mutation[] {
+  const validated = validateDraft(draft, t);
   if (validated.moment === undefined) throw new Error('refusing to write a draft that does not validate');
-  const before = validateDraft(previous);
+  const before = validateDraft(previous, t);
   const mutations: Mutation[] = [];
   const write = (field: string, value: JsonValue): void => {
     mutations.push({ entity: 'person', entityId, field, value });
