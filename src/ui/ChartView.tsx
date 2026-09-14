@@ -59,10 +59,12 @@ import {
 import { standaloneSvg } from '../chart/standalone-svg.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
 import { AstroChartWheel } from './AstroChartWheel.js';
+import { aspectDisplayName, bodyDisplayName, signDisplayName } from './astro-names.messages.js';
 import { chartViewMessages } from './ChartView.messages.js';
 import { svgToPngBlob } from './chart-raster.js';
 import { downloadBlob, downloadText } from './download.js';
 import { ExtendedSettingsPanel } from './ExtendedSettingsPanel.js';
+import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { ReportView } from './ReportView.js';
@@ -71,6 +73,7 @@ import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
+import type { Locale } from '../interpretation/schema.js';
 import type { BirthMomentInput } from '../time/types.js';
 
 type Load =
@@ -82,18 +85,29 @@ const degreeColumns = <
   T extends { readonly sign: string; readonly degree: number; readonly minute: number; readonly second: number },
 >(
   t: typeof chartViewMessages.en,
+  locale: Locale,
 ): readonly TableColumn<T>[] => [
-  { key: 'sign', label: t.signLabel, valueOf: (row) => row.sign },
+  {
+    key: 'sign',
+    label: t.signLabel,
+    valueOf: (row) => row.sign,
+    render: (row) => signDisplayName(row.sign, locale),
+  },
   { key: 'degree', label: t.degLabel, valueOf: (row) => row.degree },
   { key: 'minute', label: t.minLabel, valueOf: (row) => row.minute },
   { key: 'second', label: t.secLabel, valueOf: (row) => row.second },
 ];
 
-function positionColumns(t: typeof chartViewMessages.en): readonly TableColumn<PositionRow>[] {
+function positionColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<PositionRow>[] {
   return [
     { key: 'glyph', label: t.symbolLabel, valueOf: (row) => row.glyph },
-    { key: 'bodyName', label: t.bodyLabel, valueOf: (row) => row.bodyName },
-    ...degreeColumns<PositionRow>(t),
+    {
+      key: 'bodyName',
+      label: t.bodyLabel,
+      valueOf: (row) => row.bodyName,
+      render: (row) => bodyDisplayName(row.bodyKey, locale),
+    },
+    ...degreeColumns<PositionRow>(t, locale),
     {
       key: 'house',
       label: t.houseLabel,
@@ -115,19 +129,37 @@ function positionColumns(t: typeof chartViewMessages.en): readonly TableColumn<P
   ];
 }
 
-function houseCuspColumns(t: typeof chartViewMessages.en): readonly TableColumn<HouseCuspRow>[] {
-  return [{ key: 'house', label: t.houseLabel, valueOf: (row) => row.house }, ...degreeColumns<HouseCuspRow>(t)];
-}
-
-function angleColumns(t: typeof chartViewMessages.en): readonly TableColumn<AngleRow>[] {
-  return [{ key: 'label', label: t.angleLabel, valueOf: (row) => row.label }, ...degreeColumns<AngleRow>(t)];
-}
-
-function aspectColumns(t: typeof chartViewMessages.en): readonly TableColumn<AspectRow>[] {
+function houseCuspColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<HouseCuspRow>[] {
   return [
-    { key: 'bodyAName', label: t.bodyALabel, valueOf: (row) => row.bodyAName },
-    { key: 'aspect', label: t.aspectLabel, valueOf: (row) => row.aspect },
-    { key: 'bodyBName', label: t.bodyBLabel, valueOf: (row) => row.bodyBName },
+    { key: 'house', label: t.houseLabel, valueOf: (row) => row.house },
+    ...degreeColumns<HouseCuspRow>(t, locale),
+  ];
+}
+
+function angleColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<AngleRow>[] {
+  return [{ key: 'label', label: t.angleLabel, valueOf: (row) => row.label }, ...degreeColumns<AngleRow>(t, locale)];
+}
+
+function aspectColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<AspectRow>[] {
+  return [
+    {
+      key: 'bodyAName',
+      label: t.bodyALabel,
+      valueOf: (row) => row.bodyAName,
+      render: (row) => bodyDisplayName(row.bodyAKey, locale),
+    },
+    {
+      key: 'aspect',
+      label: t.aspectLabel,
+      valueOf: (row) => row.aspect,
+      render: (row) => aspectDisplayName(row.aspectKey, locale),
+    },
+    {
+      key: 'bodyBName',
+      label: t.bodyBLabel,
+      valueOf: (row) => row.bodyBName,
+      render: (row) => bodyDisplayName(row.bodyBKey, locale),
+    },
     { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
     {
       key: 'applying',
@@ -138,9 +170,14 @@ function aspectColumns(t: typeof chartViewMessages.en): readonly TableColumn<Asp
   ];
 }
 
-function dignityColumns(t: typeof chartViewMessages.en): readonly TableColumn<DignityRow>[] {
+function dignityColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<DignityRow>[] {
   return [
-    { key: 'bodyName', label: t.bodyLabel, valueOf: (row) => row.bodyName },
+    {
+      key: 'bodyName',
+      label: t.bodyLabel,
+      valueOf: (row) => row.bodyName,
+      render: (row) => bodyDisplayName(row.bodyKey, locale),
+    },
     { key: 'ruler', label: t.rulerLabel, valueOf: (row) => row.ruler, render: (row) => (row.ruler ? '✓' : '') },
     {
       key: 'exalted',
@@ -158,8 +195,11 @@ function dignityColumns(t: typeof chartViewMessages.en): readonly TableColumn<Di
   ];
 }
 
-function derivedPointColumns(t: typeof chartViewMessages.en): readonly TableColumn<DerivedPointRow>[] {
-  return [{ key: 'label', label: t.pointLabel, valueOf: (row) => row.label }, ...degreeColumns<DerivedPointRow>(t)];
+function derivedPointColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<DerivedPointRow>[] {
+  return [
+    { key: 'label', label: t.pointLabel, valueOf: (row) => row.label },
+    ...degreeColumns<DerivedPointRow>(t, locale),
+  ];
 }
 
 type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived' | 'report';
@@ -193,13 +233,14 @@ function renderTableTab(
   pointVisibility: PointVisibilityOptions,
   showHouses: boolean,
   t: typeof chartViewMessages.en,
+  locale: Locale,
 ): React.ReactNode {
   switch (tab) {
     case 'positions':
       return (
         <SortableTable
           caption={t.positionsCaption}
-          columns={positionColumns(t)}
+          columns={positionColumns(t, locale)}
           rows={positionRows(data, pointVisibility, showHouses)}
           getRowKey={(row) => row.bodyKey}
           downloadFilename={deriveExportFilename(displayName, 'positions', 'csv')}
@@ -210,14 +251,14 @@ function renderTableTab(
         <>
           <SortableTable
             caption={t.housesCaption}
-            columns={houseCuspColumns(t)}
+            columns={houseCuspColumns(t, locale)}
             rows={houseCuspRows(data)}
             getRowKey={(row) => String(row.house)}
             downloadFilename={deriveExportFilename(displayName, 'houses', 'csv')}
           />
           <SortableTable
             caption={t.anglesCaption}
-            columns={angleColumns(t)}
+            columns={angleColumns(t, locale)}
             rows={angleRows(data, pointVisibility)}
             getRowKey={(row) => row.label}
             downloadFilename={deriveExportFilename(displayName, 'angles', 'csv')}
@@ -228,7 +269,7 @@ function renderTableTab(
       return (
         <SortableTable
           caption={t.aspectsCaption}
-          columns={aspectColumns(t)}
+          columns={aspectColumns(t, locale)}
           rows={aspectRows(data)}
           getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
           downloadFilename={deriveExportFilename(displayName, 'aspects', 'csv')}
@@ -238,7 +279,7 @@ function renderTableTab(
       return (
         <SortableTable
           caption={t.dignitiesCaption}
-          columns={dignityColumns(t)}
+          columns={dignityColumns(t, locale)}
           rows={dignityRows(data, pointVisibility)}
           getRowKey={(row) => row.bodyKey}
           downloadFilename={deriveExportFilename(displayName, 'dignities', 'csv')}
@@ -252,7 +293,7 @@ function renderTableTab(
           </p>
           <SortableTable
             caption={t.derivedPointsCaption}
-            columns={derivedPointColumns(t)}
+            columns={derivedPointColumns(t, locale)}
             rows={derivedPointRows(data, pointVisibility)}
             getRowKey={(row) => row.label}
             downloadFilename={deriveExportFilename(displayName, 'derived-points', 'csv')}
@@ -375,6 +416,7 @@ export function ChartDataView({
   readonly settingsProvider?: EphemerisProvider | undefined;
 }): React.JSX.Element {
   const t = useMessages(chartViewMessages);
+  const [locale] = useLocale();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromHash);
   const [pngSize, setPngSize] = useState(1200);
   const [pngError, setPngError] = useState<string | undefined>(undefined);
@@ -575,7 +617,9 @@ export function ChartDataView({
               {tabs
                 .filter((tab) => tab !== 'report')
                 .map((tab) => (
-                  <div key={tab}>{renderTableTab(tab, load.data, displayName, pointVisibility, showHouses, t)}</div>
+                  <div key={tab}>
+                    {renderTableTab(tab, load.data, displayName, pointVisibility, showHouses, t, locale)}
+                  </div>
                 ))}
             </div>
           ) : (
@@ -608,7 +652,7 @@ export function ChartDataView({
               >
                 {activeTab === 'report'
                   ? showHouses && <ReportView chart={load.data} />
-                  : renderTableTab(activeTab, load.data, displayName, pointVisibility, showHouses, t)}
+                  : renderTableTab(activeTab, load.data, displayName, pointVisibility, showHouses, t, locale)}
               </div>
             </>
           )}
@@ -622,6 +666,7 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
   const state = useStoreState();
   const person = state.people.get(personId);
   const t = useMessages(chartViewMessages);
+  const [locale] = useLocale();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [settings, setSettings] = useState<ExtendedSettings>(DEFAULT_EXTENDED_SETTINGS);
   // A separate provider dedicated to the "Extended settings" panel's own house-system/
@@ -717,7 +762,7 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
         load={load}
         displayName={person.displayName}
         showHouses={showHouses}
-        metaLines={chartSheetMetaLines(person.displayName, person.moment)}
+        metaLines={chartSheetMetaLines(person.displayName || t.chartFallback, person.moment, locale)}
         extendedSettings={settings}
         onExtendedSettingsChange={setSettings}
         settingsProvider={settingsProvider}

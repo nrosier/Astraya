@@ -11,8 +11,10 @@ import { bodyById, bodyByKey } from '../astrology/bodies.js';
 import { houseOf } from '../astrology/emphasis.js';
 import { midpointOf } from '../astrology/midpoints.js';
 import { degreesInSign, signOf } from '../astrology/signs.js';
+import { formatCoordinate } from '../ui/format.js';
 import type { ChartData } from './chart-compute.js';
 import type { Aspect } from '../astrology/aspects.js';
+import type { Locale } from '../interpretation/schema.js';
 import type { BodyPosition, Degrees } from '../ephemeris/types.js';
 import type { BirthMomentInput } from '../time/types.js';
 import type { WheelRingInput } from '../chart/multi-wheel.js';
@@ -190,6 +192,11 @@ export interface AngleRow extends DegreeParts {
  * Ascendant and Midheaven — those two now live in the Positions table instead (see
  * `positionRows`' `includeAngles`), matching Astro-Seek's combined layout. The Vertex is
  * dropped unless `vertexVisible` is true.
+ *
+ * These `label`s are deliberately left untranslated by #158's glossary (`astro-names.messages.ts`):
+ * unlike signs/bodies/aspects, there's no established Dutch astrological vocabulary for ARMC,
+ * the Equatorial/Polar Ascendant, or the Co-Ascendant variants — the same out-of-scope treatment
+ * house-system names already get.
  */
 export function angleRows(data: ChartData, options: PointVisibilityOptions = {}): readonly AngleRow[] {
   const angles: readonly (readonly [string, Degrees])[] = [
@@ -209,6 +216,7 @@ export interface AspectRow {
   readonly bodyBKey: string;
   readonly bodyBName: string;
   readonly aspect: string;
+  readonly aspectKey: string;
   readonly angle: Degrees;
   readonly separation: Degrees;
   readonly orb: Degrees;
@@ -224,6 +232,7 @@ function aspectRow(aspect: Aspect): AspectRow {
     bodyBKey: bodyB?.key ?? String(aspect.bodyB),
     bodyBName: bodyB?.name ?? String(aspect.bodyB),
     aspect: aspect.aspect.name,
+    aspectKey: aspect.aspect.key,
     angle: aspect.aspect.angle,
     separation: aspect.separation,
     orb: aspect.orb,
@@ -280,6 +289,9 @@ export interface DerivedPointRow extends DegreeParts {
  * Part of Fortune (dropped unless `fortuneVisible` is true), Part of Spirit
  * (sect-corrected in `computeChartData` already), and — when `midpointsVisible`
  * is true — the ASC/MC and Sun/Moon midpoints Astro-Seek shows by default.
+ *
+ * Same as `angleRows`, these `label`s stay untranslated — no vetted Dutch term exists for these
+ * compound derived-point names, so #158's glossary treats them as out of scope.
  */
 export function derivedPointRows(data: ChartData, options: PointVisibilityOptions = {}): readonly DerivedPointRow[] {
   const midpointRows: DerivedPointRow[] = [];
@@ -342,16 +354,20 @@ function pad2(value: number): string {
  * certificate, not the UTC instant derived from them. Coordinates are given in
  * decimal degrees with a hemisphere letter, which is unambiguous at any
  * precision (unlike a signed number, whose sign convention differs by source).
+ *
+ * `displayName` is printed as given, empty string included — a fallback for that case (as
+ * `chartSheetInput`'s own call site already resolves via `t.chartFallback`) is the caller's
+ * job, not this pure function's, since only the caller has a `t` to translate it with.
  */
-export function chartSheetMetaLines(displayName: string, moment: BirthMomentInput): readonly string[] {
+export function chartSheetMetaLines(displayName: string, moment: BirthMomentInput, locale: Locale): readonly string[] {
   const { civil, coordinates } = moment;
   const date = `${String(civil.year)}-${pad2(civil.month)}-${pad2(civil.day)}`;
   const time = `${pad2(civil.hour)}:${pad2(civil.minute)}`;
-  const latitude = `${Math.abs(coordinates.latitude).toFixed(2)}°${coordinates.latitude < 0 ? 'S' : 'N'}`;
-  const longitude = `${Math.abs(coordinates.longitude).toFixed(2)}°${coordinates.longitude < 0 ? 'W' : 'E'}`;
+  const latitude = formatCoordinate(coordinates.latitude, 'lat', locale);
+  const longitude = formatCoordinate(coordinates.longitude, 'lon', locale);
   const zone = moment.zoneOverride ?? (moment.offsetOverrideMinutes === undefined ? undefined : 'stated offset');
   return [
-    displayName || 'Chart',
+    displayName,
     zone === undefined ? `${date} ${time}` : `${date} ${time} (${zone})`,
     `${latitude} ${longitude}`,
   ];

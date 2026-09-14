@@ -22,7 +22,9 @@ import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeTransit, type TransitData } from '../domain/transit.js';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderMultiWheelSvg, type CrossRingAspects } from '../chart/multi-wheel.js';
+import { aspectDisplayName, bodyDisplayName } from './astro-names.messages.js';
 import { todayInputValue } from './format.js';
+import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
@@ -30,17 +32,33 @@ import { useStoreState } from './store-context.js';
 import { transitViewMessages } from './TransitView.messages.js';
 import type { TableColumn } from './table-sort.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
+import type { Locale } from '../interpretation/schema.js';
 
 type Load =
   | { readonly kind: 'loading' }
   | { readonly kind: 'ready'; readonly data: TransitData }
   | { readonly kind: 'error'; readonly message: string };
 
-function contactColumns(t: typeof transitViewMessages.en): readonly TableColumn<AspectRow>[] {
+function contactColumns(t: typeof transitViewMessages.en, locale: Locale): readonly TableColumn<AspectRow>[] {
   return [
-    { key: 'bodyAName', label: t.transitingLabel, valueOf: (row) => row.bodyAName },
-    { key: 'aspect', label: t.aspectLabel, valueOf: (row) => row.aspect },
-    { key: 'bodyBName', label: t.natalLabel, valueOf: (row) => row.bodyBName },
+    {
+      key: 'bodyAName',
+      label: t.transitingLabel,
+      valueOf: (row) => row.bodyAName,
+      render: (row) => bodyDisplayName(row.bodyAKey, locale),
+    },
+    {
+      key: 'aspect',
+      label: t.aspectLabel,
+      valueOf: (row) => row.aspect,
+      render: (row) => aspectDisplayName(row.aspectKey, locale),
+    },
+    {
+      key: 'bodyBName',
+      label: t.natalLabel,
+      valueOf: (row) => row.bodyBName,
+      render: (row) => bodyDisplayName(row.bodyBKey, locale),
+    },
     { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
     {
       key: 'applying',
@@ -55,6 +73,7 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
   const state = useStoreState();
   const person = state.people.get(personId);
   const t = useMessages(transitViewMessages);
+  const [locale] = useLocale();
   const [asOf, setAsOf] = useState(todayInputValue);
   const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
@@ -103,8 +122,8 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
 
   const wheelMarkup = useMemo(() => {
     if (load.kind !== 'ready') return undefined;
-    const natalRing = chartWheelRing(load.data.natal, 'Natal');
-    const transitRing = chartWheelRing(load.data.transit, 'Transit');
+    const natalRing = chartWheelRing(load.data.natal, t.natalLabel);
+    const transitRing = chartWheelRing(load.data.transit, t.transitRingLabel);
     const crossAspects: readonly CrossRingAspects[] = [
       // Natal is ring 0 (innermost), transit ring 1 (outer). `computeTransit`'s contacts are
       // already ordered transiting-first (bodyA), natal-second (bodyB) — the same order
@@ -112,7 +131,7 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
       { innerRingIndex: 0, outerRingIndex: 1, aspects: load.data.contacts },
     ];
     return renderMultiWheelSvg([natalRing, transitRing], crossAspects);
-  }, [load]);
+  }, [load, t]);
 
   if (person === undefined) {
     return <PersonNotFound />;
@@ -182,7 +201,7 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
 
           <SortableTable
             caption={t.contactsCaption}
-            columns={contactColumns(t)}
+            columns={contactColumns(t, locale)}
             rows={crossAspectRows(load.data.contacts)}
             getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
             downloadFilename={deriveExportFilename(person.displayName, 'transit-contacts', 'csv')}

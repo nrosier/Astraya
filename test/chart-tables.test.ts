@@ -243,6 +243,7 @@ describe('aspectRows (#44)', () => {
         bodyBKey: 'mars',
         bodyBName: 'Mars',
         aspect: 'Square',
+        aspectKey: 'square',
         angle: 90,
         separation: 91,
         orb: 1,
@@ -269,6 +270,7 @@ describe('crossAspectRows (#172)', () => {
         bodyBKey: 'moon',
         bodyBName: 'Moon',
         aspect: 'Trine',
+        aspectKey: 'trine',
         angle: 120,
         separation: 119,
         orb: 1,
@@ -523,28 +525,39 @@ describe('chartSheetMetaLines', () => {
   };
 
   it('states the name, the civil date and time as entered, and the place', () => {
-    expect(chartSheetMetaLines('Ada Lovelace', moment)).toEqual(['Ada Lovelace', '1815-12-10 06:05', '51.50°N 0.12°W']);
+    expect(chartSheetMetaLines('Ada Lovelace', moment, 'en')).toEqual([
+      'Ada Lovelace',
+      '1815-12-10 06:05',
+      '51.50°N 0.12°W',
+    ]);
   });
 
   it('names the zone when the record overrides it', () => {
-    expect(chartSheetMetaLines('Ada', { ...moment, zoneOverride: 'Europe/London' })[1]).toBe(
+    expect(chartSheetMetaLines('Ada', { ...moment, zoneOverride: 'Europe/London' }, 'en')[1]).toBe(
       '1815-12-10 06:05 (Europe/London)',
     );
   });
 
   it('says so when the offset was stated rather than looked up', () => {
-    expect(chartSheetMetaLines('Ada', { ...moment, offsetOverrideMinutes: -75 })[1]).toBe(
+    expect(chartSheetMetaLines('Ada', { ...moment, offsetOverrideMinutes: -75 }, 'en')[1]).toBe(
       '1815-12-10 06:05 (stated offset)',
     );
   });
 
   it('marks a southern latitude and an eastern longitude by hemisphere', () => {
-    expect(chartSheetMetaLines('Anon', { ...moment, coordinates: { latitude: -33.87, longitude: 151.21 } })[2]).toBe(
-      '33.87°S 151.21°E',
-    );
+    expect(
+      chartSheetMetaLines('Anon', { ...moment, coordinates: { latitude: -33.87, longitude: 151.21 } }, 'en')[2],
+    ).toBe('33.87°S 151.21°E');
   });
 
-  it('falls back to a generic title rather than an empty first line', () => {
-    expect(chartSheetMetaLines('', moment)[0]).toBe('Chart');
+  it('prints the coordinates with Dutch hemisphere letters and a comma decimal separator in nl', () => {
+    expect(chartSheetMetaLines('Anon', moment, 'nl')[2]).toBe('51,50°N 0,12°W');
+    expect(
+      chartSheetMetaLines('Anon', { ...moment, coordinates: { latitude: -33.87, longitude: 151.21 } }, 'nl')[2],
+    ).toBe('33,87°Z 151,21°O');
+  });
+
+  it('passes the name straight through, empty string included — a fallback is the caller’s job', () => {
+    expect(chartSheetMetaLines('', moment, 'en')[0]).toBe('');
   });
 });
