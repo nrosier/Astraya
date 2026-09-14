@@ -640,6 +640,15 @@ footer {
   border-radius: var(--radius-sm);
 }
 
+/* Only shown while there are no coordinates yet (#248) — sits above the canvas, in the same
+   spot the "map unavailable" fallback occupies below it, so the two never compete for space. */
+.birth-place-map-geo {
+  margin-bottom: 0.5rem;
+  display: grid;
+  gap: 0.5rem;
+  justify-content: start;
+}
+
 .birth-place-map .warning {
   margin-top: 0.5rem;
 }

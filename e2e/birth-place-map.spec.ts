@@ -175,3 +175,60 @@ test('a tile-server failure shows an unavailable message, and the fields still w
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByText('Saved on this device.')).toBeVisible();
 });
+
+/** Starts a new, still-coordinate-less person: `createPerson` always fills Latitude/Longitude,
+ *  but the "Use my location" control (#248) is only offered before either field has a value. */
+async function startPersonWithoutCoordinates(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Add a person', exact: true }).click();
+  await labeledField(page, /^Name/, 'input[type="text"]').fill('New Person');
+  await page.locator('input[type="date"]').fill('1990-06-15');
+}
+
+test('"Use my location" pans the map without moving the pin or the fields (#248)', async ({ page }) => {
+  await page.context().grantPermissions(['geolocation'], { origin: baseUrl });
+  await page.context().setGeolocation({ latitude: 48.8566, longitude: 2.3522 });
+
+  const tileRequests: string[] = [];
+  await page.route('**/tile.openstreetmap.org/**', async (route) => {
+    tileRequests.push(route.request().url());
+    await route.fulfill({ contentType: 'image/png', body: FIXTURE_TILE });
+  });
+
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await startPersonWithoutCoordinates(page);
+
+  const before = {
+    latitude: await labeledField(page, /^Latitude/, 'input[type="number"]').inputValue(),
+    longitude: await labeledField(page, /^Longitude/, 'input[type="number"]').inputValue(),
+  };
+
+  await page.getByRole('button', { name: 'Use my location', exact: true }).click();
+
+  // The initial view is a world zoom (2); panning/zooming to a specific point (6) is the
+  // observable proxy for "the map moved to the geolocated position" without reaching into
+  // Leaflet's internals — a fresh request for a zoom-6 tile only happens after that move.
+  await expect.poll(() => tileRequests.some((url) => /\/6\/\d+\/\d+\.png/.test(url))).toBe(true);
+
+  expect(await labeledField(page, /^Latitude/, 'input[type="number"]').inputValue()).toBe(before.latitude);
+  expect(await labeledField(page, /^Longitude/, 'input[type="number"]').inputValue()).toBe(before.longitude);
+  await expect(page.getByRole('alert')).not.toBeVisible();
+});
+
+test('a denied geolocation permission shows an inline message, and the fields still work (#248)', async ({ page }) => {
+  // No `grantPermissions` call: Playwright denies an ungranted geolocation request by default.
+  await stubTiles(page);
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await startPersonWithoutCoordinates(page);
+
+  await page.getByRole('button', { name: 'Use my location', exact: true }).click();
+
+  await expect(page.getByRole('alert').filter({ hasText: 'Location permission was denied' })).toBeVisible();
+
+  await labeledField(page, /^Latitude/, 'input[type="number"]').fill('51.5072');
+  await labeledField(page, /^Longitude/, 'input[type="number"]').fill('-0.1276');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Saved on this device.')).toBeVisible();
+
+  // Once coordinates exist, the map already centers on them — the control has nothing left to do.
+  await expect(page.getByRole('button', { name: 'Use my location', exact: true })).not.toBeVisible();
+});

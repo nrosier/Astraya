@@ -9,6 +9,10 @@
  * mirroring how `src/ephemeris/client.ts` keeps the Swiss Ephemeris WASM engine out of the main
  * chunk. `leaflet/dist/leaflet.css` stays a static import: it's small, and needs to be present
  * before Leaflet's first paint.
+ *
+ * "Use my location" (#248) is opt-in and only offered while there are no coordinates yet — it
+ * only pans/zooms the map to the browser's reported position, never the pin or the fields
+ * themselves, so a visitor centering the map is never mistaken for one who picked a birth place.
  */
 import { useEffect, useRef, useState } from 'react';
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -34,6 +38,11 @@ const PIN_ZOOM = 6;
 
 type Status = 'loading' | 'ready' | 'unavailable';
 
+// Only ever changes the map *view* (#248) — never the pin or the Latitude/Longitude fields, so
+// a visitor who merely wants the map centered somewhere useful is never mistaken for one who
+// just picked their birth coordinates.
+type GeoStatus = 'idle' | 'locating' | 'denied' | 'unavailable';
+
 export function BirthPlaceMap({
   latitude,
   longitude,
@@ -52,6 +61,8 @@ export function BirthPlaceMap({
   const onPickRef = useRef(onPick);
   onPickRef.current = onPick;
   const [status, setStatus] = useState<Status>('loading');
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle');
+  const hasCoordinates = latitude !== undefined && longitude !== undefined;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -79,8 +90,8 @@ export function BirthPlaceMap({
           shadowSize: [41, 41],
         });
 
-        const hasCoordinates = latitude !== undefined && longitude !== undefined;
-        const initialCenter: [number, number] = hasCoordinates ? [latitude, longitude] : WORLD_CENTER;
+        const initialCenter: [number, number] =
+          latitude !== undefined && longitude !== undefined ? [latitude, longitude] : WORLD_CENTER;
         const map = L.map(container).setView(initialCenter, hasCoordinates ? PIN_ZOOM : WORLD_ZOOM);
         mapRef.current = map;
 
@@ -148,8 +159,42 @@ export function BirthPlaceMap({
     map.panTo([latitude, longitude]);
   }, [latitude, longitude]);
 
+  const useMyLocation = (): void => {
+    if (!('geolocation' in navigator)) {
+      setGeoStatus('unavailable');
+      return;
+    }
+    setGeoStatus('locating');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setGeoStatus('idle');
+        mapRef.current?.setView([position.coords.latitude, position.coords.longitude], PIN_ZOOM);
+      },
+      (error) => {
+        setGeoStatus(error.code === error.PERMISSION_DENIED ? 'denied' : 'unavailable');
+      },
+    );
+  };
+
   return (
     <div className="birth-place-map">
+      {!hasCoordinates && (
+        <div className="birth-place-map-geo">
+          <button type="button" className="quiet" onClick={useMyLocation} disabled={geoStatus === 'locating'}>
+            {geoStatus === 'locating' ? 'Locating…' : 'Use my location'}
+          </button>
+          {geoStatus === 'denied' && (
+            <p className="warning" role="alert">
+              Location permission was denied. You can still enter coordinates in the fields above.
+            </p>
+          )}
+          {geoStatus === 'unavailable' && (
+            <p className="warning" role="alert">
+              Your location could not be determined. You can still enter coordinates in the fields above.
+            </p>
+          )}
+        </div>
+      )}
       <div className="birth-place-map-canvas" ref={containerRef} />
       {status === 'unavailable' && (
         <p className="warning" role="alert">
