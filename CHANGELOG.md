@@ -4,6 +4,25 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.16.0] — 2026-09-15
+
+**Report is now its own page instead of a hidden query parameter on the chart
+page.**
+
+M9 (Polish & launch) progress, not a finished milestone — accessibility (#69),
+static build deploy (#73), and the human review of high-salience corpus entries
+(#63) are still open, and v1.0.0 hasn't shipped.
+
+### Fixed
+
+- **Report has its own address now (#271).** It used to live at
+  `#/chart/:id?tab=report`; now it is `#/report/:id`, so the Report link in
+  the nav points at its own page instead of the chart page's, and no longer
+  carries the chart page's leftover chrome — the Positions/Houses/Aspects/
+  Dignities/Derived-points sub-tabs and the share-link button, both dating
+  from before Report was split out of the natal chart page. The new page
+  shows only the report text.
+
 ## [0.15.0] — 2026-09-15
 
 **A round of small navigation and layout bug fixes: first login no longer
