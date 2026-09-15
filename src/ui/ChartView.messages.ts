@@ -32,6 +32,7 @@ const en = {
   dignitiesCaption: 'Dignities',
   derivedPointsCaption: 'Derived points',
   reportTab: 'Report',
+  reportUnavailableHint: "A written report isn't available for this chart yet.",
 
   sectPrefix: 'Sect:',
   dayChart: 'Day chart',
@@ -106,6 +107,7 @@ const nl: typeof en = {
   dignitiesCaption: 'Waardigheden',
   derivedPointsCaption: 'Afgeleide punten',
   reportTab: 'Rapport',
+  reportUnavailableHint: 'Een schriftelijk rapport is nog niet beschikbaar voor deze horoscoop.',
 
   sectPrefix: 'Sect:',
   dayChart: 'Daghoroscoop',
