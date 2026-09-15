@@ -47,7 +47,11 @@ export function SetupForm(): React.JSX.Element {
     setError(undefined);
     void setup(token, username, password)
       .then(() => {
-        window.location.hash = '#/';
+        // Not '#/': `parseRoute` strips the trailing slash, leaving a bare '#' that matches
+        // no route and falls through to `home`, whose `HomeRedirect` renders nothing for one
+        // frame before correcting itself (#263) — a blank flash this skips by landing on the
+        // real destination directly.
+        window.location.hash = '#/people';
       })
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : String(cause));

@@ -193,12 +193,17 @@ export function App(): React.JSX.Element {
   );
 }
 
-/** `#/` (and any unmatched hash) always lands here; it redirects straight to the people list (#234) — no auto-created person, no "last active" state, just the one obvious next step. */
-function HomeRedirect(): React.JSX.Element | null {
+/** `#/` (and any unmatched hash) always lands here; it redirects straight to the people list (#234) — no auto-created person, no "last active" state, just the one obvious next step. Rendering the same loading line `Stored` uses while opening, rather than nothing, means the redirect never shows as a blank main content area (#263) — however briefly — while the `hashchange` it fires works its way back around. */
+export function HomeRedirect(): React.JSX.Element {
+  const t = useMessages(appMessages);
   useEffect(() => {
     window.location.hash = '#/people';
   }, []);
-  return null;
+  return (
+    <main className="shell">
+      <p className="status">{t.openingLocalData}</p>
+    </main>
+  );
 }
 
 function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.Element {
