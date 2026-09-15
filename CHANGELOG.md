@@ -4,6 +4,29 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.16.1] — 2026-09-15
+
+Patch release: two bug fixes and one opt-in feature, none of them milestone work.
+
+### Fixed
+
+- **The birth-place map now notices when OpenStreetMap silently blocks it (#267).**
+  OSM's tile server can return `200 OK` with a valid-looking "blocked" placeholder
+  tile instead of an error when it's throttling a deployment — the map used to
+  show that placeholder as if the tiles had loaded fine. It's now detected and
+  shown as the existing "map unavailable" warning instead.
+- **The theme/language toggle's icon is centered in its button now (#268).** It
+  was sitting slightly off-center.
+
+### Added
+
+- **The report's "Advisor" persona picker is now opt-in (#62).**
+  `VITE_ENABLE_REPORT_PERSONAS` (off by default, see `.env.example`) controls it.
+  Personas are newer and less-reviewed than the report's neutral voice, so a
+  deployer now turns them on rather than every build getting them for free. A
+  device that already had a persona chosen keeps it hidden and falls back to the
+  neutral voice while the setting is off.
+
 ## [0.16.0] — 2026-09-15
 
 **Report is now its own page instead of a hidden query parameter on the chart
