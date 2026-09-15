@@ -67,8 +67,6 @@ import { ExtendedSettingsPanel } from './ExtendedSettingsPanel.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
-import { ReportView } from './ReportView.js';
-import { chartTab } from './route.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
@@ -202,29 +200,11 @@ function derivedPointColumns(t: typeof chartViewMessages.en, locale: Locale): re
   ];
 }
 
-type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived' | 'report';
-
-const TAB_KEYS: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived', 'report'];
-
-function isTabKey(value: string): value is TabKey {
-  return (TAB_KEYS as readonly string[]).includes(value);
-}
+type TabKey = 'positions' | 'houses' | 'aspects' | 'dignities' | 'derived';
 
 /**
- * The tab to open on, from a `?tab=...` query param (e.g. the "Report" nav link in
- * `PersonForm.tsx` linking straight to `#/chart/:id?tab=report`) — falls back to
- * `'positions'` when absent or unrecognised, same as visiting `#/chart/:id` plainly.
- */
-function initialTabFromHash(): TabKey {
-  const requested = chartTab(window.location.hash);
-  return requested !== null && isTabKey(requested) ? requested : 'positions';
-}
-
-/**
- * The table(s) for one non-report tab, factored out of the tab panel below so the same
- * markup can also be stacked for every tab at once in the PDF export (#67) without being
- * duplicated. `undefined` for `'report'`, which isn't a data table and is rendered by its
- * caller instead.
+ * The table(s) for one tab, factored out of the tab panel below so the same markup can also
+ * be stacked for every tab at once in the PDF export (#67) without being duplicated.
  */
 function renderTableTab(
   tab: TabKey,
@@ -300,8 +280,6 @@ function renderTableTab(
           />
         </>
       );
-    case 'report':
-      return undefined;
   }
 }
 
@@ -312,18 +290,11 @@ function tabLabels(t: typeof chartViewMessages.en): Record<TabKey, string> {
     aspects: t.aspectsCaption,
     dignities: t.dignitiesCaption,
     derived: t.derivedPointsCaption,
-    report: t.reportTab,
   };
 }
 
-/**
- * Every tab in display order; `houses`, `derived` and `report` are dropped by
- * the caller when `!showHouses` — the report's core-identity and houses
- * sections both read the Ascendant, so it is gated the same way those two
- * existing tabs already are, rather than showing a report with a missing
- * first section.
- */
-const TAB_ORDER: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived', 'report'];
+/** Every tab in display order; `houses` and `derived` are dropped by the caller when `!showHouses`. */
+const TAB_ORDER: readonly TabKey[] = ['positions', 'houses', 'aspects', 'dignities', 'derived'];
 
 /** PNG export resolutions (#67): the wheel's own default pixel size, and 2x/4x of it. */
 function pngSizes(t: typeof chartViewMessages.en): readonly { readonly label: string; readonly size: number }[] {
@@ -388,7 +359,6 @@ export function ChartDataView({
   extendedSettings = DEFAULT_EXTENDED_SETTINGS,
   onExtendedSettingsChange,
   settingsProvider,
-  reportAvailable = true,
 }: {
   readonly load: Load;
   readonly displayName: string;
@@ -415,31 +385,10 @@ export function ChartDataView({
   readonly onExtendedSettingsChange?: (next: ExtendedSettings) => void;
   /** A long-lived provider for the panel's own house-system/ayanamsa name lookups. */
   readonly settingsProvider?: EphemerisProvider | undefined;
-  /**
-   * `false` for `CompositeView` (#269): its `ChartData` is a synthetic two-person midpoint
-   * chart, not an individual's, so `ReportView`'s natal-style interpretive text doesn't apply
-   * to it — the Report tab shows a plain "not available" hint instead. Defaults to `true` so
-   * `ChartView`'s own natal usage and `SharedChartView` (which never passes this) are
-   * unaffected.
-   */
-  readonly reportAvailable?: boolean;
 }): React.JSX.Element {
   const t = useMessages(chartViewMessages);
   const [locale] = useLocale();
-  const [activeTab, setActiveTab] = useState<TabKey>(initialTabFromHash);
-  useEffect(() => {
-    // The "Report" tab in the top-level person nav (`PersonNav.tsx`) points at this same
-    // `chart` route with `?tab=report` rather than a route of its own, so navigating to it
-    // from elsewhere on the Chart tab changes only the hash, not the mounted component —
-    // `activeTab`'s initial value above would otherwise go stale forever (#265).
-    const resync = (): void => {
-      setActiveTab(initialTabFromHash());
-    };
-    window.addEventListener('hashchange', resync);
-    return () => {
-      window.removeEventListener('hashchange', resync);
-    };
-  }, []);
+  const [activeTab, setActiveTab] = useState<TabKey>('positions');
   const [pngSize, setPngSize] = useState(1200);
   const [pngError, setPngError] = useState<string | undefined>(undefined);
   const [pngBusy, setPngBusy] = useState(false);
@@ -518,14 +467,9 @@ export function ChartDataView({
       });
   };
 
-  // 'report' is deliberately excluded here even though it's a valid TabKey: the top-level
-  // nav bar (`PersonNav.tsx`) already has its own "Report" tab pointing at this same route
-  // with `?tab=report`, and this internal tab strip showing a second "Report" button
-  // alongside it was a visible duplicate (#264). It stays reachable — just not as a button
-  // in this row — via `activeTab`, which the hashchange effect above can still set to it.
-  const tabs: readonly TabKey[] = (
-    showHouses ? TAB_ORDER : TAB_ORDER.filter((tab) => tab !== 'houses' && tab !== 'derived')
-  ).filter((tab) => tab !== 'report');
+  const tabs: readonly TabKey[] = showHouses
+    ? TAB_ORDER
+    : TAB_ORDER.filter((tab) => tab !== 'houses' && tab !== 'derived');
 
   const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
     const currentIndex = tabs.indexOf(activeTab);
@@ -562,7 +506,7 @@ export function ChartDataView({
             </p>
           )}
 
-          {activeTab !== 'report' && onExtendedSettingsChange !== undefined && settingsProvider !== undefined && (
+          {onExtendedSettingsChange !== undefined && settingsProvider !== undefined && (
             <ExtendedSettingsPanel
               value={extendedSettings}
               onRedraw={onExtendedSettingsChange}
@@ -570,11 +514,7 @@ export function ChartDataView({
             />
           )}
 
-          {/* The report is text from the chosen advisor, not a chart reading — none of the
-              wheel, its toggle, or the chart's own SVG/PNG/PDF export controls belong next to
-              it, so this whole block (which is otherwise identical for every other tab) is
-              skipped while the report tab is active. */}
-          {activeTab !== 'report' && sheet !== undefined && (
+          {sheet !== undefined && (
             <>
               <div
                 className="chart-wheel"
@@ -650,7 +590,7 @@ export function ChartDataView({
           ) : (
             <>
               <div className="tabs" role="tablist" aria-label={t.chartDataTablist} onKeyDown={onTabKeyDown}>
-                {tabs.map((tab, index) => (
+                {tabs.map((tab) => (
                   <button
                     key={tab}
                     type="button"
@@ -658,10 +598,7 @@ export function ChartDataView({
                     role="tab"
                     aria-selected={activeTab === tab}
                     aria-controls={`chart-tabpanel-${tab}`}
-                    // When `activeTab` is 'report' (reached only via the top-level nav, not
-                    // a button in this strip), none of these tabs match it — fall back to
-                    // the first one so the roving tabindex still lands somewhere focusable.
-                    tabIndex={activeTab === tab || (!tabs.includes(activeTab) && index === 0) ? 0 : -1}
+                    tabIndex={activeTab === tab ? 0 : -1}
                     className={activeTab === tab ? 'tab active' : 'tab'}
                     onClick={() => {
                       setActiveTab(tab);
@@ -678,14 +615,7 @@ export function ChartDataView({
                 aria-labelledby={`chart-tab-${activeTab}`}
                 tabIndex={0}
               >
-                {activeTab === 'report'
-                  ? showHouses &&
-                    (reportAvailable ? (
-                      <ReportView chart={load.data} />
-                    ) : (
-                      <p className="hint">{t.reportUnavailableHint}</p>
-                    ))
-                  : renderTableTab(activeTab, load.data, displayName, pointVisibility, showHouses, t, locale)}
+                {renderTableTab(activeTab, load.data, displayName, pointVisibility, showHouses, t, locale)}
               </div>
             </>
           )}

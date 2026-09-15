@@ -22,7 +22,7 @@ export function PersonNav({ personId, route }: { personId: string; route: Route 
   const t = useMessages(personNavMessages);
   const person = state.people.get(personId);
   const hasBirthMoment = person?.moment !== undefined;
-  const active = activeTabKey(route, window.location.hash);
+  const active = activeTabKey(route);
   const anyDisabled = PERSON_TABS.some((tab) => !isTabEnabled(tab.key, hasBirthMoment));
 
   return (

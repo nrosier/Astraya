@@ -12,24 +12,16 @@ const ID = newId('p');
 
 describe('activeTabKey', () => {
   it('maps every person-scoped route kind to its tab', () => {
-    expect(activeTabKey({ kind: 'person', personId: ID }, `#/person/${ID}`)).toBe('birth-record');
-    expect(activeTabKey({ kind: 'profections', personId: ID }, `#/profections/${ID}`)).toBe('profections');
-    expect(activeTabKey({ kind: 'transit', personId: ID }, `#/transit/${ID}`)).toBe('transit');
-    expect(activeTabKey({ kind: 'synastry', personId: ID }, `#/synastry/${ID}`)).toBe('synastry');
-    expect(activeTabKey({ kind: 'composite', personId: ID }, `#/composite/${ID}`)).toBe('composite');
-    expect(activeTabKey({ kind: 'harmonic', personId: ID }, `#/harmonic/${ID}`)).toBe('harmonic');
-    expect(activeTabKey({ kind: 'periodic-transit', personId: ID }, `#/periodic-transit/${ID}`)).toBe(
-      'periodic-transit',
-    );
-    expect(activeTabKey({ kind: 'astrocartography', personId: ID }, `#/astrocartography/${ID}`)).toBe(
-      'astrocartography',
-    );
-  });
-
-  it('splits chart into natal chart vs. report by the ?tab= query, defaulting to the chart', () => {
-    expect(activeTabKey({ kind: 'chart', personId: ID }, `#/chart/${ID}`)).toBe('chart');
-    expect(activeTabKey({ kind: 'chart', personId: ID }, `#/chart/${ID}?tab=positions`)).toBe('chart');
-    expect(activeTabKey({ kind: 'chart', personId: ID }, `#/chart/${ID}?tab=report`)).toBe('report');
+    expect(activeTabKey({ kind: 'person', personId: ID })).toBe('birth-record');
+    expect(activeTabKey({ kind: 'chart', personId: ID })).toBe('chart');
+    expect(activeTabKey({ kind: 'report', personId: ID })).toBe('report');
+    expect(activeTabKey({ kind: 'profections', personId: ID })).toBe('profections');
+    expect(activeTabKey({ kind: 'transit', personId: ID })).toBe('transit');
+    expect(activeTabKey({ kind: 'synastry', personId: ID })).toBe('synastry');
+    expect(activeTabKey({ kind: 'composite', personId: ID })).toBe('composite');
+    expect(activeTabKey({ kind: 'harmonic', personId: ID })).toBe('harmonic');
+    expect(activeTabKey({ kind: 'periodic-transit', personId: ID })).toBe('periodic-transit');
+    expect(activeTabKey({ kind: 'astrocartography', personId: ID })).toBe('astrocartography');
   });
 
   it('is null for routes with no tab of their own', () => {
@@ -44,7 +36,7 @@ describe('activeTabKey', () => {
       { kind: 'setup' },
     ];
     for (const route of nonPersonRoutes) {
-      expect(activeTabKey(route, '#/whatever')).toBeNull();
+      expect(activeTabKey(route)).toBeNull();
     }
   });
 });
@@ -70,7 +62,7 @@ describe('PERSON_TABS', () => {
     expect(hrefs).toEqual({
       'birth-record': `#/person/${ID}`,
       chart: `#/chart/${ID}`,
-      report: `#/chart/${ID}?tab=report`,
+      report: `#/report/${ID}`,
       profections: `#/profections/${ID}`,
       transit: `#/transit/${ID}`,
       synastry: `#/synastry/${ID}`,

@@ -18,6 +18,9 @@ export type Route =
   | { readonly kind: 'people' }
   | { readonly kind: 'person'; readonly personId: string }
   | { readonly kind: 'chart'; readonly personId: string }
+  // The written report (#271) — previously reached as `#/chart/:id?tab=report`, a query
+  // modifier on the chart route rather than a route of its own like every sibling here.
+  | { readonly kind: 'report'; readonly personId: string }
   | { readonly kind: 'profections'; readonly personId: string }
   | { readonly kind: 'transit'; readonly personId: string }
   // The second person is picked from within the screen, not the URL (#172) — every other
@@ -45,6 +48,7 @@ export type Route =
 
 const PERSON_PATH = /^#\/person\/(.+)$/;
 const CHART_PATH = /^#\/chart\/(.+)$/;
+const REPORT_PATH = /^#\/report\/(.+)$/;
 const PROFECTIONS_PATH = /^#\/profections\/(.+)$/;
 const TRANSIT_PATH = /^#\/transit\/(.+)$/;
 const SYNASTRY_PATH = /^#\/synastry\/(.+)$/;
@@ -54,7 +58,7 @@ const PERIODIC_TRANSIT_PATH = /^#\/periodic-transit\/(.+)$/;
 const ASTROCARTOGRAPHY_PATH = /^#\/astrocartography\/(.+)$/;
 
 export function parseRoute(hash: string): Route {
-  // Matching is on the path part alone; a query string (e.g. #/chart/:id?tab=report) is read
+  // Matching is on the path part alone; a query string (e.g. #/set-password?token=...) is read
   // separately by the screen that needs it. Trailing slashes are tolerated because people
   // hand-edit these URLs and a bare '#' is what a browser leaves behind after an anchor click.
   const path = (hash.split('?')[0] ?? '').replace(/\/+$/, '');
@@ -93,6 +97,9 @@ export function parseRoute(hash: string): Route {
 
   const chart = CHART_PATH.exec(path);
   if (chart !== null && isPersonId(chart[1])) return { kind: 'chart', personId: chart[1] };
+
+  const report = REPORT_PATH.exec(path);
+  if (report !== null && isPersonId(report[1])) return { kind: 'report', personId: report[1] };
 
   const profections = PROFECTIONS_PATH.exec(path);
   if (profections !== null && isPersonId(profections[1])) return { kind: 'profections', personId: profections[1] };
@@ -134,16 +141,4 @@ export function setupToken(hash: string): string | null {
   const queryIndex = hash.indexOf('?');
   if (queryIndex === -1) return null;
   return new URLSearchParams(hash.slice(queryIndex + 1)).get('token');
-}
-
-/**
- * The tab requested by a `#/chart/:id?tab=...` link — e.g. the "Report" nav link jumping
- * straight to the report tab instead of always landing on positions. `null` if missing;
- * the caller (`ChartView`) is responsible for validating this against its own tab keys,
- * since that type isn't visible here.
- */
-export function chartTab(hash: string): string | null {
-  const queryIndex = hash.indexOf('?');
-  if (queryIndex === -1) return null;
-  return new URLSearchParams(hash.slice(queryIndex + 1)).get('tab');
 }

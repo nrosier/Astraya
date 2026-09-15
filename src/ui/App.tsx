@@ -19,6 +19,7 @@ import { PersonForm } from './PersonForm.js';
 import { PersonNav } from './PersonNav.js';
 import { ProfectionsView } from './ProfectionsView.js';
 import { PwaStatus } from './PwaStatus.js';
+import { ReportScreen } from './ReportScreen.js';
 import { parseRoute } from './route.js';
 import { SessionProvider, useStoreStatus } from './session-context.js';
 import { SetPasswordForm } from './SetPasswordForm.js';
@@ -229,6 +230,7 @@ function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.E
   if (
     parsed.kind === 'person' ||
     parsed.kind === 'chart' ||
+    parsed.kind === 'report' ||
     parsed.kind === 'profections' ||
     parsed.kind === 'transit' ||
     parsed.kind === 'synastry' ||
@@ -261,6 +263,7 @@ type PersonRoute = Extract<
     kind:
       | 'person'
       | 'chart'
+      | 'report'
       | 'profections'
       | 'transit'
       | 'synastry'
@@ -275,6 +278,7 @@ type PersonRoute = Extract<
 function renderPersonView(parsed: PersonRoute): React.JSX.Element {
   if (parsed.kind === 'person') return <PersonForm key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'chart') return <ChartView key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'report') return <ReportScreen key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'profections') return <ProfectionsView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'transit') return <TransitView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'synastry') return <SynastryView key={parsed.personId} personId={parsed.personId} />;

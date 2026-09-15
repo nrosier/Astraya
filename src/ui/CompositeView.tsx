@@ -146,9 +146,6 @@ export function CompositeView({ personId }: { personId: string }): React.JSX.Ele
           displayName={displayName || t.compositeFallback}
           showHouses
           metaLines={[displayName]}
-          // #269: this ChartData is a synthetic midpoint between two people, not an
-          // individual's natal chart, so the natal-style Report tab doesn't apply to it yet.
-          reportAvailable={false}
         />
       )}
     </main>

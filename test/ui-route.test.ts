@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { newId } from '../src/domain/id.js';
-import { chartTab, parseRoute, setPasswordToken, setupToken } from '../src/ui/route.js';
+import { parseRoute, setPasswordToken, setupToken } from '../src/ui/route.js';
 
 const ID = newId('p');
 
@@ -27,9 +27,7 @@ describe('parseRoute', () => {
   });
 
   it('keeps the query out of the match', () => {
-    // #/chart/:id?tab=report carries the requested tab in its query — matching the raw
-    // hash would break that link instead of landing on the natal chart.
-    expect(parseRoute(`#/chart/${ID}?tab=report`)).toEqual({ kind: 'chart', personId: ID });
+    expect(parseRoute(`#/chart/${ID}?x=1`)).toEqual({ kind: 'chart', personId: ID });
     expect(parseRoute(`#/person/${ID}?x=1`)).toEqual({ kind: 'person', personId: ID });
   });
 
@@ -57,6 +55,18 @@ describe('parseRoute', () => {
     expect(parseRoute('#/chart/')).toEqual({ kind: 'home' });
     expect(parseRoute('#/chart/nope')).toEqual({ kind: 'home' });
     expect(parseRoute('#/chart/../about')).toEqual({ kind: 'home' });
+  });
+
+  it('routes a report id through (#271)', () => {
+    expect(parseRoute(`#/report/${ID}`)).toEqual({ kind: 'report', personId: ID });
+    expect(parseRoute(`#/report/${ID}/`)).toEqual({ kind: 'report', personId: ID });
+    expect(parseRoute(`#/report/${ID}?x=1`)).toEqual({ kind: 'report', personId: ID });
+  });
+
+  it('sends a malformed report id home rather than to a blank screen', () => {
+    expect(parseRoute('#/report/')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/report/nope')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/report/../about')).toEqual({ kind: 'home' });
   });
 
   it('routes a profections id through (#168)', () => {
@@ -185,19 +195,5 @@ describe('setupToken', () => {
 
   it('returns null when the query has no token', () => {
     expect(setupToken('#/setup?foo=bar')).toBeNull();
-  });
-});
-
-describe('chartTab', () => {
-  it('reads the tab out of the hash query (the "Report" nav link)', () => {
-    expect(chartTab(`#/chart/${ID}?tab=report`)).toBe('report');
-  });
-
-  it('returns null when there is no query at all', () => {
-    expect(chartTab(`#/chart/${ID}`)).toBeNull();
-  });
-
-  it('returns null when the query has no tab', () => {
-    expect(chartTab(`#/chart/${ID}?foo=bar`)).toBeNull();
   });
 });
