@@ -4,6 +4,38 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.15.0] — 2026-09-15
+
+**A round of small navigation and layout bug fixes: first login no longer
+flashes blank, the Report tab works correctly from every entry point, and a
+few dead-end links are gone.**
+
+M9 (Polish & launch) progress, not a finished milestone — accessibility (#69),
+static build deploy (#73), and the human review of high-salience corpus entries
+(#63) are still open, and v1.0.0 hasn't shipped.
+
+### Fixed
+
+- **First login no longer shows a blank page for a frame (#263):** the route
+  the app lands on before redirecting to the people list now renders a status
+  message immediately instead of nothing, and creating the very first account
+  goes straight to the people list rather than bouncing through it.
+- **The chart page's Report tab no longer duplicates itself (#264):** the
+  per-chart tab strip already had its own "Report" button sitting alongside
+  the identical one in the top-level person nav; the strip's copy is gone —
+  the nav's is the only way to reach it.
+- **The Report nav tab now works without a reload (#265):** clicking it from
+  an already-open chart page used to change only the hash, leaving the tab
+  strip's own state stale until a reload; the chart page now listens for the
+  change instead of only reading it once when it first mounts.
+- **The people list's "back" link went nowhere useful (#266):** it pointed at
+  the same page it was already on, so it's been removed.
+- **Composite charts no longer show a natal-style report (#269):** the
+  Report tab on a composite (midpoint) chart rendered individual-voiced
+  interpretive text keyed off degrees that belong to no real person. It now
+  shows a plain "not available yet" message instead, matching how
+  Synastry — the other two-person chart — makes no such claim either.
+
 ## [0.14.0] — 2026-09-14
 
 **A free MapTiler API key is now a drop-in fix for the birth-place map's
