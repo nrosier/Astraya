@@ -12,7 +12,6 @@ import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { caveated, ordered, summary } from './people-list.js';
 import { peopleMessages } from './People.messages.js';
-import { sharedMessages } from './shared.messages.js';
 import { useStore, useStoreState } from './store-context.js';
 
 export function People(): React.JSX.Element {
@@ -20,7 +19,6 @@ export function People(): React.JSX.Element {
   const state = useStoreState();
   const [locale] = useLocale();
   const t = useMessages(peopleMessages);
-  const shared = useMessages(sharedMessages);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -64,9 +62,6 @@ export function People(): React.JSX.Element {
 
   return (
     <main className="shell">
-      <p className="back">
-        <a href="#/">&larr; {shared.back}</a>
-      </p>
       <h1>{t.heading}</h1>
       <p className="tagline">{t.tagline}</p>
 
