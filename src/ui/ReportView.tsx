@@ -21,6 +21,14 @@
  * picker existed. Language is a shared, app-wide setting (`locale.ts`), not
  * this component's own state — this view only consumes it.
  *
+ * The picker itself is a deployment-time toggle, `VITE_ENABLE_REPORT_PERSONAS`
+ * (.env.example), off by default: personas are a newer, less-reviewed part of
+ * the corpus than the neutral voice, so a deployer opts in rather than every
+ * build getting them for free. Off, the control is hidden and any persona a
+ * device already had saved in `localStorage` from before the toggle existed
+ * (or from a deployment where it's since been turned back off) is ignored —
+ * the report always renders in the neutral voice.
+ *
  * Fetches its corpus chunk at runtime via `loadRuntimeCorpus` rather than
  * importing `CORPUS` from `../interpretation/index.js` — that export is the
  * full, synchronous, every-locale-every-persona corpus the test suite needs,
@@ -38,6 +46,17 @@ import { reportViewMessages } from './ReportView.messages.js';
 import type { ChartData } from '../domain/chart-compute.js';
 
 const PERSONA_KEY = 'astraya:reportPersona';
+
+// Off by default: unset, empty, or anything other than 'true' disables the picker. Not the
+// string-presence pattern BirthPlaceMap.tsx's tile-server env vars use — those are "which
+// value", this is "on or off", so it's a literal truthy-string check instead.
+// Read inside a function rather than hoisted to a module-level constant, the same reason
+// `!import.meta.env.PROD` below is checked inline rather than hoisted: it keeps this test-visible
+// per render/mount rather than frozen at whatever value happened to hold at first import.
+function reportPersonasEnabled(): boolean {
+  const raw: unknown = import.meta.env.VITE_ENABLE_REPORT_PERSONAS;
+  return raw === 'true';
+}
 
 /**
  * Mirrors `tools/corpus-gen/personas.json`'s `title` field — kept as a plain
@@ -60,6 +79,7 @@ function isPersonaId(value: string): value is PersonaId {
 }
 
 function initialPersona(): PersonaId | undefined {
+  if (!reportPersonasEnabled()) return undefined;
   const stored = localStorage.getItem(PERSONA_KEY);
   return stored !== null && isPersonaId(stored) ? stored : undefined;
 }
@@ -112,30 +132,32 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
 
   const controls = (
     <div className="report-controls">
-      <label>
-        {t.advisor}
-        <select
-          value={persona ?? ''}
-          onChange={(event) => {
-            const next = event.target.value;
-            if (next === '') {
-              localStorage.removeItem(PERSONA_KEY);
-              setPersona(undefined);
-              return;
-            }
-            if (!isPersonaId(next)) return;
-            localStorage.setItem(PERSONA_KEY, next);
-            setPersona(next);
-          }}
-        >
-          <option value="">{t.neutral}</option>
-          {PERSONA_IDS.map((option) => (
-            <option key={option} value={option}>
-              {PERSONA_LABELS[option][locale]}
-            </option>
-          ))}
-        </select>
-      </label>
+      {reportPersonasEnabled() && (
+        <label>
+          {t.advisor}
+          <select
+            value={persona ?? ''}
+            onChange={(event) => {
+              const next = event.target.value;
+              if (next === '') {
+                localStorage.removeItem(PERSONA_KEY);
+                setPersona(undefined);
+                return;
+              }
+              if (!isPersonaId(next)) return;
+              localStorage.setItem(PERSONA_KEY, next);
+              setPersona(next);
+            }}
+          >
+            <option value="">{t.neutral}</option>
+            {PERSONA_IDS.map((option) => (
+              <option key={option} value={option}>
+                {PERSONA_LABELS[option][locale]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {!import.meta.env.PROD && (
         <label>
           <input

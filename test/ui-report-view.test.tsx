@@ -146,10 +146,14 @@ describe('ReportView advisor picker (locale comes from the shared locale.ts stor
       () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }) as unknown as ReturnType<typeof fetch>,
     );
     vi.stubGlobal('fetch', fetchMock);
+    // This describe block is entirely about the picker itself, so it opts into the
+    // feature explicitly rather than relying on its off-by-default value (#62).
+    vi.stubEnv('VITE_ENABLE_REPORT_PERSONAS', 'true');
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('defaults to English/Neutral and fetches only the neutral chunk', async () => {
@@ -224,6 +228,82 @@ describe('ReportView advisor picker (locale comes from the shared locale.ts stor
     expect(labeledSelect(container, reportViewMessages.nl.advisor).value).toBe('mystic');
     expect(fetchMock).toHaveBeenCalledWith('/corpus/nl/neutral.json');
     expect(fetchMock).toHaveBeenCalledWith('/corpus/nl/mystic.json');
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+});
+
+describe('report personas, off by default (VITE_ENABLE_REPORT_PERSONAS)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setLocale('en');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }) as unknown as ReturnType<typeof fetch>,
+      ),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it('hides the advisor picker and stays in the neutral voice when unset', async () => {
+    const { container, root } = await mount();
+
+    const label = Array.from(container.querySelectorAll('label')).find((candidate) =>
+      candidate.textContent.includes('Advisor'),
+    );
+    expect(label).toBeUndefined();
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('ignores a persona already saved in localStorage from before the toggle existed', async () => {
+    localStorage.setItem('astraya:reportPersona', 'cynic');
+    const { root, container } = await mount();
+
+    const label = Array.from(container.querySelectorAll('label')).find((candidate) =>
+      candidate.textContent.includes('Advisor'),
+    );
+    expect(label).toBeUndefined();
+    expect(fetch).toHaveBeenCalledWith('/corpus/en/neutral.json');
+    expect(fetch).not.toHaveBeenCalledWith('/corpus/en/cynic.json');
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('anything other than the literal string "true" also disables it', async () => {
+    vi.stubEnv('VITE_ENABLE_REPORT_PERSONAS', '1');
+    const { container, root } = await mount();
+
+    const label = Array.from(container.querySelectorAll('label')).find((candidate) =>
+      candidate.textContent.includes('Advisor'),
+    );
+    expect(label).toBeUndefined();
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('shows the picker once VITE_ENABLE_REPORT_PERSONAS=true', async () => {
+    vi.stubEnv('VITE_ENABLE_REPORT_PERSONAS', 'true');
+    const { container, root } = await mount();
+
+    expect(labeledSelect(container, 'Advisor')).toBeInstanceOf(HTMLSelectElement);
 
     act(() => {
       root.unmount();
