@@ -61,6 +61,25 @@ const TILE_ATTRIBUTION =
 // leaving it blank — the issue's requirement is a visible "unavailable" state, not silence.
 const TILE_LOAD_TIMEOUT_MS = 8000;
 
+// OSM's anti-abuse system can return `200 OK` with a small, otherwise-valid "blocked" placeholder
+// tile instead of an error (#267) — Leaflet's `tileload` event fires normally for it, since it is
+// a real image that really loaded, so it alone can never distinguish that case from a genuinely
+// rendered tile. A raw `fetch()` of one tile URL sidesteps the opacity of an `<img>` load: OSM's
+// blocked response carries an `x-blocked` header (and grants `access-control-allow-origin: *`, so
+// a cross-origin fetch can read it), which a real tile response never has. Scoped to the default
+// OSM host only — the one case this specific anti-abuse behaviour is known to apply to — and to
+// exactly the origin `img-src` already trusts for these tiles (`server/csp.ts`'s `connect-src`
+// grant mirrors it one-for-one, never wider).
+async function probeForOsmBlock(): Promise<boolean> {
+  const probeUrl = DEFAULT_TILE_URL_TEMPLATE.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0');
+  try {
+    const response = await fetch(probeUrl, { referrerPolicy: 'origin' });
+    return response.headers.has('x-blocked');
+  } catch {
+    return false;
+  }
+}
+
 // The user-facing "unavailable" message (below) can't name the fix: it's shown to whoever opens
 // this form, not to whoever runs the deployment, and "set VITE_TILE_URL_TEMPLATE" means nothing
 // to the former. This warns the latter, in whatever console they have open, the one time tiles
@@ -177,8 +196,21 @@ export function BirthPlaceMap({
         tileLayer.once('load', () => {
           if (cancelled) return;
           clearTimeout(timeoutId);
-          if (tileLoaded) setStatus('ready');
-          else markUnavailable();
+          if (!tileLoaded) {
+            markUnavailable();
+            return;
+          }
+          // `tileLoaded` alone can't rule out OSM's silent block (#267) — confirm with the
+          // header probe before declaring the map ready.
+          if (usingDefaultOsmTiles) {
+            void probeForOsmBlock().then((blocked) => {
+              if (cancelled) return;
+              if (blocked) markUnavailable();
+              else setStatus('ready');
+            });
+          } else {
+            setStatus('ready');
+          }
         });
 
         const marker = L.marker(initialCenter, { draggable: true }).addTo(map);

@@ -38,9 +38,14 @@ function relative(file: string): string {
 }
 
 describe('no runtime LLM access in src/ (#64)', () => {
-  it('carries no connect-src exception for a model provider', () => {
+  it('carries no connect-src exception beyond the one tile host the map already trusts for images', () => {
+    // The one exception (#267) is the same origin `img-src` already grants the
+    // birth-place map's tiles — a fetch() probe reading that host's `x-blocked`
+    // response header, not a new external destination. Anything wider than that
+    // single origin would be a model-provider-reachable regression, so this
+    // asserts the exact value rather than merely that the directive exists.
     const connectSrc = CSP_DIRECTIVES.find((directive) => directive.startsWith('connect-src'));
-    expect(connectSrc).toBe("connect-src 'self'");
+    expect(connectSrc).toBe("connect-src 'self' https://tile.openstreetmap.org");
   });
 
   it('holds no API key identifier', () => {
@@ -52,8 +57,9 @@ describe('no runtime LLM access in src/ (#64)', () => {
     // authenticates tile requests to a map provider, not a model provider, and —
     // like any browser-side map API key (Mapbox, Google Maps) — is meant to ship
     // in the client bundle rather than stay secret. It only ever reaches an
-    // `<img>` src via Leaflet's tile layer, never a fetch/XHR target, so the
-    // `connect-src 'self'` invariant above still holds.
+    // `<img>` src via Leaflet's tile layer or the tile-probe `fetch()` above,
+    // neither of which is a model-provider destination, so the connect-src
+    // invariant above still holds.
     const ALLOWED_FILES = new Set(['ui/BirthPlaceMap.tsx']);
     const offenders = FILES.filter((file) => pattern.test(readFileSync(file, 'utf8')))
       .map(relative)

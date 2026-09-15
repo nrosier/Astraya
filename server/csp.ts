@@ -23,7 +23,17 @@
  * chart's SVG by loading it into an `<img>` from a `blob:` URL before drawing
  * it to a canvas. `https://tile.openstreetmap.org` is the default OpenStreetMap
  * tile host the birth-place map (#159) requests raster tiles from as plain
- * `<img>`s — never `fetch`/XHR, so no `connect-src` grant is needed for it.
+ * `<img>`s, which needs no `connect-src` grant on its own.
+ *
+ * `connect-src` carries that same single tile host as its only exception to
+ * `'self'` (#267): OpenStreetMap's anti-abuse system can return `200 OK` with a
+ * small, valid "blocked" placeholder tile instead of an error, which Leaflet's
+ * own `tileload` event cannot tell apart from a real tile. `BirthPlaceMap.tsx`
+ * detects that case with a `fetch()` probe reading the response's `x-blocked`
+ * header directly — something an `<img>` load can never expose. The grant is
+ * exactly the origin already trusted for `img-src`, never broadened beyond it,
+ * so `test/no-runtime-llm-access.test.ts`'s guarantee holds: this is the tile
+ * host the map already loads images from, not a new external destination.
  */
 export const CSP_DIRECTIVES: readonly string[] = [
   "default-src 'self'",
@@ -31,7 +41,7 @@ export const CSP_DIRECTIVES: readonly string[] = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://tile.openstreetmap.org",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://tile.openstreetmap.org",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'none'",
@@ -75,14 +85,17 @@ export interface BuiltCsp {
  * appending to `'none'`, since `'none'` alongside another source is a contradiction,
  * not a grant — and nothing else in this app ever submits a form.
  *
- * `tileOrigin` similarly only ever rewrites `img-src`, replacing the default
- * public OSM host rather than adding to it (#159).
+ * `tileOrigin` similarly only ever rewrites `img-src` and `connect-src`,
+ * replacing the default public OSM host rather than adding to it (#159, #267)
+ * — a self-hosted or MapTiler tile server gets exactly the same pair of grants
+ * the default OSM host has, never both at once.
  */
 export function buildCsp(config: CspConfig = {}): BuiltCsp {
   const { issuerOrigin, tileOrigin } = config;
   const directives = CSP_DIRECTIVES.map((directive) => {
     if (issuerOrigin !== undefined && directive === "form-action 'none'") return `form-action ${issuerOrigin}`;
     if (tileOrigin !== undefined && directive.startsWith('img-src')) return `img-src 'self' data: blob: ${tileOrigin}`;
+    if (tileOrigin !== undefined && directive.startsWith('connect-src')) return `connect-src 'self' ${tileOrigin}`;
     return directive;
   });
   return {

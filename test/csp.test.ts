@@ -27,12 +27,13 @@ describe('content security policy', () => {
     expect(normalize(metaPolicy())).toBe(normalize(CSP_META));
   });
 
-  it('forbids any external connection, which is what keeps model providers unreachable', () => {
+  it('forbids any external connection but the default OSM tile host, which is what keeps model providers unreachable', () => {
     // The interpretation corpus is generated at build time and shipped as data. If
-    // connect-src ever gains a host, that guarantee is gone — so assert the exact
-    // value rather than merely that the directive exists.
-    expect(CSP_DIRECTIVES).toContain("connect-src 'self'");
-    expect(normalize(metaPolicy())).toContain("connect-src 'self'");
+    // connect-src ever gains a host beyond the one tile host it already trusts for
+    // img-src (#267), that guarantee is gone — so assert the exact value rather
+    // than merely that the directive exists.
+    expect(CSP_DIRECTIVES).toContain("connect-src 'self' https://tile.openstreetmap.org");
+    expect(normalize(metaPolicy())).toContain("connect-src 'self' https://tile.openstreetmap.org");
   });
 
   it('allows WASM compilation without allowing eval of JavaScript', () => {
@@ -62,20 +63,22 @@ describe('content security policy', () => {
       const changed = built.directives.filter((directive, index) => directive !== CSP_DIRECTIVES[index]);
       expect(changed).toEqual(['form-action https://auth.example.com']);
       // Every other directive, including the header-only one, is untouched. In
-      // particular connect-src stays bare 'self': the browser never fetches the
-      // issuer directly, so it needs no grant there.
-      expect(built.header).toContain("connect-src 'self'");
+      // particular connect-src keeps its one tile-host exception and nothing more:
+      // the browser never fetches the issuer directly, so it needs no grant there.
+      expect(built.header).toContain("connect-src 'self' https://tile.openstreetmap.org");
       expect(built.header).toContain("script-src 'self' 'wasm-unsafe-eval'");
       expect(built.header).toContain("frame-ancestors 'none'");
     });
 
-    it('with a tile origin, replaces the default OSM host in img-src rather than appending to it', () => {
+    it('with a tile origin, replaces the default OSM host in img-src and connect-src rather than appending to them', () => {
       const built = buildCsp({ tileOrigin: 'https://tiles.example.com' });
       const changed = built.directives.filter((directive, index) => directive !== CSP_DIRECTIVES[index]);
-      expect(changed).toEqual(["img-src 'self' data: blob: https://tiles.example.com"]);
+      expect(changed).toEqual([
+        "img-src 'self' data: blob: https://tiles.example.com",
+        "connect-src 'self' https://tiles.example.com",
+      ]);
       expect(built.header).not.toContain('tile.openstreetmap.org');
       // Every other directive stays untouched, same as the issuer-only case above.
-      expect(built.header).toContain("connect-src 'self'");
       expect(built.header).toContain("form-action 'none'");
     });
   });
