@@ -1,5 +1,10 @@
 # syntax=docker/dockerfile:1
 
+# Reference/fallback only: the image CI builds and publishes is Dockerfile
+# (Chainguard/Wolfi, glibc). This musl-based build is kept for comparison and
+# as an escape hatch, but is not built by CI — see the tracking issue for the
+# Chainguard migration for why.
+
 # Astraya ships as a single image: the built SPA plus the Fastify process that
 # serves it. One image rather than two, because the sync relay (M8) is another
 # route on this same server — adding it later must not mean re-architecting how
@@ -13,30 +18,20 @@
 # $BUILDPLATFORM and run natively even for an arm64 target. Only the runtime
 # layers are built per architecture. Multi-arch therefore costs one extra small
 # `npm ci --omit=dev` under emulation instead of a full toolchain run.
-#
-# Base: Chainguard/Wolfi (glibc), not Alpine (musl). @node-rs/argon2 ships
-# prebuilt native binaries per libc; glibc is what avoids the musl ABI class of
-# problems entirely, and every stage below builds on it end to end so no
-# musl-linked artifact ever meets a glibc runtime. Chainguard's free tier only
-# publishes `latest`/`latest-dev` — there is no pinned-point-release tag to ARG
-# in, unlike the old `node:24-alpine`. `-dev` (has npm, a shell, coreutils) for
-# anything that installs or builds; the bare runtime tag for the final stage.
-# The musl build is kept as Dockerfile.alpine for reference; it is not built by CI.
+
+ARG NODE_VERSION=24-alpine
 
 # ---- dependencies (cached on the lockfile alone) ----------------------------
-FROM --platform=$BUILDPLATFORM cgr.dev/chainguard/node:latest-dev AS deps
+FROM --platform=$BUILDPLATFORM node:${NODE_VERSION} AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
 # ---- build ------------------------------------------------------------------
-FROM --platform=$BUILDPLATFORM cgr.dev/chainguard/node:latest-dev AS build
+FROM --platform=$BUILDPLATFORM node:${NODE_VERSION} AS build
 WORKDIR /app
-# --chown throughout: the default runtime-dev user (65532, "node") has to own
-# what it builds — a plain COPY lands as root, and tsc/ephe:sync/corpus:split
-# then can't write their build outputs into node_modules or public/.
-COPY --from=deps --chown=node:node /app/node_modules ./node_modules
-COPY --chown=node:node . .
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 
 # The About page and the in-app changelog report the running commit, which is
 # also how the AGPL source-for-this-build link is formed. Passed in rather than
@@ -57,13 +52,13 @@ RUN npm run corpus:split
 RUN npm run build
 
 # ---- runtime dependencies ---------------------------------------------------
-FROM cgr.dev/chainguard/node:latest-dev AS runtime-deps
+FROM node:${NODE_VERSION} AS runtime-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # ---- runtime ----------------------------------------------------------------
-FROM cgr.dev/chainguard/node:latest AS runtime
+FROM node:${NODE_VERSION} AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production \
@@ -82,33 +77,20 @@ COPY server ./server
 # than the whole client tree.
 COPY --from=build /app/src/store/hlc.ts ./src/store/hlc.ts
 
-# `data/` is the one writable path in the tree — it holds the SQLite file plus
-# its WAL/SHM siblings (server/db.ts). Owned by UID:GID 1000, not Chainguard's
-# own nonroot account (65532): existing deployments' `-v astraya-data:/app/data`
-# (README) is a named volume already owned by 1000 from the Alpine `node` user,
-# and there's no host bind-mount here to protect from UID collisions — so
-# matching the old UID avoids forcing a chown migration on every deployment for
-# no real benefit. A numeric USER doesn't need a passwd entry (Chainguard has
-# none for 1000, only for its own 65532); Linux runs a process by UID whether or
-# not a name resolves. USER root below is build-time only — chown to a UID
-# other than the image's own default requires it — the USER after is what the
-# running container actually gets.
-USER root
-RUN mkdir -p data && chown 1000:1000 data
+# node:alpine already provides an unprivileged `node` user. `data/` is the one
+# writable path in the tree — it holds the SQLite file plus its WAL/SHM
+# siblings (server/db.ts) — created and owned by that user up front, since
+# `USER node` below means the process itself can't chown it later.
+RUN mkdir -p data && chown node:node data
 VOLUME /app/data
 
-USER 1000:1000
+USER node
 
 EXPOSE 8080
 
 # /healthz is served by the app itself, so this checks the process is actually
-# answering requests rather than merely still running. Exec form (not `CMD
-# node -e ...` as a string): the runtime image has no guaranteed shell to
-# interpret a shell-form CMD through.
+# answering requests rather than merely still running.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD ["node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT??8080)+'/healthz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT??8080)+'/healthz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
 
-# Chainguard's node image sets ENTRYPOINT ["/usr/bin/node"] itself, so CMD is
-# just the script path — "node", "server/index.ts" would run `node node
-# server/index.ts` and fail to find a module named "node".
-CMD ["server/index.ts"]
+CMD ["node", "server/index.ts"]
