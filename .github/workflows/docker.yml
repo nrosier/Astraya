@@ -130,3 +130,86 @@ jobs:
           echo 'Image never became healthy. Logs:' >&2
           docker logs astraya-smoke >&2
           exit 1
+
+  # Only runs on a tag push (the `image` job never pushes anything on a PR, so
+  # there'd be nothing new for Harbor to pull). Assumes Harbor already has a
+  # pull-based replication policy pointed at this Docker Hub repo — this job
+  # triggers that policy's execution rather than pushing the image again
+  # itself, then triggers Harbor's own vulnerability scan once the replicated
+  # artifact has landed.
+  #
+  # Repo settings required (Settings -> Secrets and variables -> Actions):
+  #   Secrets: HARBOR_ROBOT_USER, HARBOR_ROBOT_TOKEN
+  #     A robot account scoped to just this Harbor project, not an admin login.
+  #   Variables: HARBOR_URL (e.g. https://harbor.example.com, no trailing slash),
+  #     HARBOR_PROJECT, HARBOR_REPOSITORY, HARBOR_REPLICATION_POLICY_ID
+  #     (the numeric id of the existing Docker Hub -> Harbor replication policy).
+  harbor-scan:
+    name: Trigger Harbor replication + scan
+    needs: image
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Work out the artifact tag
+        id: tag
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger Harbor replication from Docker Hub
+        id: replicate
+        env:
+          HARBOR_URL: ${{ vars.HARBOR_URL }}
+          HARBOR_REPLICATION_POLICY_ID: ${{ vars.HARBOR_REPLICATION_POLICY_ID }}
+          HARBOR_ROBOT_USER: ${{ secrets.HARBOR_ROBOT_USER }}
+          HARBOR_ROBOT_TOKEN: ${{ secrets.HARBOR_ROBOT_TOKEN }}
+        run: |
+          # Harbor returns the new execution's id via a Location header
+          # (.../replication/executions/<id>), not in the response body.
+          id="$(curl -fsS -u "$HARBOR_ROBOT_USER:$HARBOR_ROBOT_TOKEN" \
+            -X POST "$HARBOR_URL/api/v2.0/replication/executions" \
+            -H 'Content-Type: application/json' \
+            -d "{\"policy_id\": $HARBOR_REPLICATION_POLICY_ID}" \
+            -D - -o /dev/null | grep -i '^Location:' | grep -o '[0-9]*$' | tr -d '\r')"
+          if [[ -z "$id" ]]; then
+            echo 'Harbor did not return a replication execution id.' >&2
+            exit 1
+          fi
+          echo "execution_id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the replication to finish
+        env:
+          HARBOR_URL: ${{ vars.HARBOR_URL }}
+          HARBOR_ROBOT_USER: ${{ secrets.HARBOR_ROBOT_USER }}
+          HARBOR_ROBOT_TOKEN: ${{ secrets.HARBOR_ROBOT_TOKEN }}
+          EXECUTION_ID: ${{ steps.replicate.outputs.execution_id }}
+        run: |
+          for _ in $(seq 1 60); do
+            status="$(curl -fsS -u "$HARBOR_ROBOT_USER:$HARBOR_ROBOT_TOKEN" \
+              "$HARBOR_URL/api/v2.0/replication/executions/$EXECUTION_ID" | jq -r '.status')"
+            case "$status" in
+              Succeed)
+                echo "Replication execution $EXECUTION_ID succeeded."
+                exit 0
+                ;;
+              Failed | Stopped)
+                echo "Replication execution $EXECUTION_ID ended as $status." >&2
+                exit 1
+                ;;
+            esac
+            sleep 5
+          done
+          echo "Replication execution $EXECUTION_ID never finished within 5 minutes." >&2
+          exit 1
+
+      - name: Trigger a vulnerability scan
+        env:
+          HARBOR_URL: ${{ vars.HARBOR_URL }}
+          HARBOR_PROJECT: ${{ vars.HARBOR_PROJECT }}
+          HARBOR_REPOSITORY: ${{ vars.HARBOR_REPOSITORY }}
+          HARBOR_ROBOT_USER: ${{ secrets.HARBOR_ROBOT_USER }}
+          HARBOR_ROBOT_TOKEN: ${{ secrets.HARBOR_ROBOT_TOKEN }}
+          TAG: ${{ steps.tag.outputs.value }}
+        run: |
+          curl -fsS -u "$HARBOR_ROBOT_USER:$HARBOR_ROBOT_TOKEN" \
+            -X POST "$HARBOR_URL/api/v2.0/projects/$HARBOR_PROJECT/repositories/$HARBOR_REPOSITORY/artifacts/$TAG/scan" \
+            -H 'Content-Type: application/json'
+          echo "Scan triggered for $HARBOR_PROJECT/$HARBOR_REPOSITORY:$TAG"
