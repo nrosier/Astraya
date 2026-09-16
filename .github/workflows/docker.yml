@@ -147,7 +147,10 @@ jobs:
   harbor-scan:
     name: Trigger Harbor replication + scan
     needs: image
-    if: github.event_name != 'pull_request'
+    # Skips cleanly (rather than failing) until the repo variables below are
+    # actually set, so this doesn't show a red X on every release in the
+    # meantime.
+    if: github.event_name != 'pull_request' && vars.HARBOR_URL != ''
     runs-on: ubuntu-latest
     steps:
       - name: Work out the artifact tag
