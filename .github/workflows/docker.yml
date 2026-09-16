@@ -23,6 +23,8 @@ permissions:
 jobs:
   image:
     runs-on: ubuntu-latest
+    outputs:
+      moved-latest: ${{ steps.latest.outputs.tags != '' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -131,8 +133,10 @@ jobs:
           docker logs astraya-smoke >&2
           exit 1
 
-  # Only runs on a tag push (the `image` job never pushes anything on a PR, so
-  # there'd be nothing new for Harbor to pull). Assumes Harbor already has a
+  # Only runs on a tag push that actually moved `latest` (a prerelease tag
+  # doesn't — see the `image` job's `Decide whether this moves latest` step —
+  # and Harbor's replication policy here only pulls the `latest` tag, so
+  # there'd be nothing new to scan otherwise). Assumes Harbor already has a
   # pull-based replication policy pointed at this Docker Hub repo — this job
   # triggers that policy's execution rather than pushing the image again
   # itself, then triggers Harbor's own vulnerability scan once the replicated
@@ -141,6 +145,8 @@ jobs:
   # Repo settings required (Settings -> Secrets and variables -> Actions):
   #   Secrets: HARBOR_ROBOT_USER, HARBOR_ROBOT_TOKEN
   #     A robot account scoped to just this Harbor project, not an admin login.
+  #     It needs Replication (create + read) at system level, and Scan (create)
+  #     on the target project.
   #   Variables: HARBOR_URL (e.g. https://harbor.example.com, no trailing slash),
   #     HARBOR_PROJECT, HARBOR_REPOSITORY, HARBOR_REPLICATION_POLICY_ID
   #     (the numeric id of the existing Docker Hub -> Harbor replication policy).
@@ -150,13 +156,9 @@ jobs:
     # Skips cleanly (rather than failing) until the repo variables below are
     # actually set, so this doesn't show a red X on every release in the
     # meantime.
-    if: github.event_name != 'pull_request' && vars.HARBOR_URL != ''
+    if: github.event_name != 'pull_request' && vars.HARBOR_URL != '' && needs.image.outputs.moved-latest == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Work out the artifact tag
-        id: tag
-        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
       - name: Trigger Harbor replication from Docker Hub
         id: replicate
         env:
@@ -210,7 +212,9 @@ jobs:
           HARBOR_REPOSITORY: ${{ vars.HARBOR_REPOSITORY }}
           HARBOR_ROBOT_USER: ${{ secrets.HARBOR_ROBOT_USER }}
           HARBOR_ROBOT_TOKEN: ${{ secrets.HARBOR_ROBOT_TOKEN }}
-          TAG: ${{ steps.tag.outputs.value }}
+          # The replication policy only pulls `latest`, so that's the only tag
+          # that's ever actually present to scan on the Harbor side.
+          TAG: latest
         run: |
           curl -fsS -u "$HARBOR_ROBOT_USER:$HARBOR_ROBOT_TOKEN" \
             -X POST "$HARBOR_URL/api/v2.0/projects/$HARBOR_PROJECT/repositories/$HARBOR_REPOSITORY/artifacts/$TAG/scan" \
