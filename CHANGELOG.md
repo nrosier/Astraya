@@ -4,6 +4,20 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.17.0] — 2026-09-16
+
+**Production image moves off Alpine (musl) onto Chainguard/Wolfi (glibc), and there's now a static, no-accounts demo build published to GitHub Pages.**
+
+M9 (Polish & launch) progress, not a finished milestone — the human review of high-salience corpus entries (#63) is still open, and v1.0.0 hasn't shipped. Keyboard/screen-reader accessibility (#69) and a documented deploy target with a live AGPL source link (#73) are both closed as of this release.
+
+### Changed
+
+- **Production image now builds on Chainguard/Wolfi (glibc) instead of Alpine (musl) (#273, #272).** The main reason is correctness, not size: `@node-rs/argon2` ships separate prebuilt binaries for `-gnu` and `-musl` libc, and staying on musl was one more place a native dependency could silently resolve to the wrong ABI. Chainguard's runtime image also has no shell or package manager and gets frequent upstream CVE rebuilds. The image itself is larger as a result (~546 MB vs ~410 MB), which is an accepted tradeoff, not a regression — there was no size budget in this repo to begin with. The old Alpine build is kept as `Dockerfile.alpine` for reference but is no longer built by CI.
+
+### Added
+
+- **A static, no-accounts demo build, published to GitHub Pages (#73).** `npm run build:demo` produces a build with sign-in and sync disabled entirely — there's no server for it to talk to — and a new `VITE_BASE_PATH` variable makes the app (including the service worker and its precache manifest) work correctly from a subpath. Live at [nrosier.github.io/Astraya](https://nrosier.github.io/Astraya/), deployed by `.github/workflows/pages.yml` on tagged releases. `.env.example` now documents Vite's mode-selection mechanism (`development`/`production`/`test`/the new `demo`), which was in use but undocumented.
+
 ## [0.16.1] — 2026-09-15
 
 Patch release: two bug fixes and one opt-in feature, none of them milestone work.
