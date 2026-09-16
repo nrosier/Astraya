@@ -18,6 +18,7 @@ import { accountPanelMessages } from './AccountPanel.messages.js';
 import { useMessages } from './messages.js';
 import { startOidcHandshake } from './oidc-pkce.js';
 import { sharedMessages } from './shared.messages.js';
+import { IS_DEMO_MODE } from '../demo-mode.js';
 import type { AuthUser, OidcConfig } from '../sync/auth-client.js';
 
 function changes(count: number, t: typeof accountPanelMessages.en): string {
@@ -328,8 +329,12 @@ function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<vo
 export function AccountPanel(): React.JSX.Element {
   const { user, adoption, signIn, signOut, resolveAdoption } = useSession();
   const [oidcConfig, setOidcConfig] = useState<OidcConfig>();
+  const t = useMessages(accountPanelMessages);
 
   useEffect(() => {
+    // Demo mode has no server to ask — skip the fetch entirely rather than let
+    // it fail every load.
+    if (IS_DEMO_MODE) return;
     // Best-effort: the password form above works regardless, so a failed fetch here
     // just means no "Sign in with Authentik" button rather than a broken panel.
     void getOidcConfig()
@@ -343,7 +348,9 @@ export function AccountPanel(): React.JSX.Element {
   // shared container would misplace the popover under whichever control sits first).
   return (
     <div className="accountpanel">
-      {adoption !== undefined ? (
+      {IS_DEMO_MODE ? (
+        <span className="accountpanel-demo">{t.demoModeBadge}</span>
+      ) : adoption !== undefined ? (
         <AdoptionPanel recordCount={adoption.recordCount} resolveAdoption={resolveAdoption} />
       ) : user === undefined ? (
         <SignInForm signIn={signIn} oidcConfig={oidcConfig} />

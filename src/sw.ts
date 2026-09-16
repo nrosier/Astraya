@@ -13,6 +13,7 @@
 import { installServiceWorker, type ServiceWorkerScope } from './pwa/sw-core.js';
 
 declare const __APP_VERSION__: string;
+declare const __BASE_PATH__: string;
 
 // Self-start only when genuinely running as a service worker. The guard keeps
 // this module importable from tests — none currently import it directly, since
@@ -22,5 +23,6 @@ if (typeof ServiceWorkerGlobalScope !== 'undefined' && globalThis instanceof Ser
   installServiceWorker(globalThis as unknown as ServiceWorkerScope, {
     version: __APP_VERSION__,
     fetch: fetch.bind(globalThis),
+    basePath: __BASE_PATH__,
   });
 }

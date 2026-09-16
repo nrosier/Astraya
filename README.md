@@ -64,6 +64,14 @@ small per-(locale, persona) files under `public/corpus/`, so the app fetches
 only the interpretation text a reader can actually see instead of the entire
 corpus. Re-run it whenever those source files change.
 
+## Try it
+
+A static, no-server demo build runs at
+<https://nrosier.github.io/Astraya/>. It's the same client — calculation,
+charting and the report all run in your browser exactly as below — but built in
+a `demo` mode with sign-in and sync disabled entirely, since GitHub Pages has no
+server to have an account on. Nothing you enter there ever leaves your device.
+
 ## Running it
 
 A single image serves the built application; there is nothing else to deploy.
@@ -137,6 +145,19 @@ Unlike the server-runtime variables above, `VITE_TILE_URL_TEMPLATE` and
 `VITE_MAPTILER_API_KEY` are baked into the client bundle at build time, so
 neither can be changed by setting it on an already-built container — rebuild
 the image with it set instead.
+
+### Optional: serving from a subpath
+
+Set `VITE_BASE_PATH` (e.g. `/Astraya/`) when the app is served from something
+other than the domain root, such as a GitHub Pages project site — this is how
+the demo build above gets served from `/Astraya/` rather than `/`. Like the
+tile variables above, it's baked in at build time; see
+[`.env.example`](.env.example) for the exact requirements (leading and
+trailing slashes).
+
+Which of the four build modes (`development`/`production`/`test`/`demo`) a
+build uses, and which npm script selects each, is also documented in
+[`.env.example`](.env.example).
 
 ## Licence
 

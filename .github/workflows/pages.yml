@@ -1,0 +1,54 @@
+name: Deploy demo to GitHub Pages
+
+# Publishes the `demo` mode build (#73) — a fully static, no-server build with
+# no accounts or sync — to GitHub Pages. Tag-triggered, same as
+# release.yml/docker.yml: the public demo only moves on a tagged release, never
+# on an untagged main commit.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run ephe:sync
+      - run: npm run corpus:split
+
+      - name: Build the demo
+        env:
+          # Project-site subpath (https://nrosier.github.io/Astraya/), not root.
+          # GITHUB_SHA is already set by Actions, so the AGPL source link
+          # (src/version.ts) needs no extra wiring here.
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+        run: npm run build:demo
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

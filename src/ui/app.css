@@ -187,6 +187,22 @@
   background: var(--surface-hover);
 }
 
+/* The static "Demo — no sign-in or sync here" badge that replaces the sign-in
+   button entirely in a `demo`-mode build (#73) — same pill shape as
+   `.topbar-signin`, but not interactive: there's no server for it to act on. */
+.accountpanel-demo {
+  display: flex;
+  align-items: center;
+  height: 2.25rem;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted, var(--fg));
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
 /* Always-visible confirmation of who is signed in (#137) — no click needed, unlike the
    collapsed `.topbar-signin` button it replaces once signed in. */
 .accountpanel-signedin {

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
 const pkg: { version: string } = JSON.parse(readFileSync('./package.json', 'utf8')) as { version: string };
 
@@ -13,18 +13,32 @@ const pkg: { version: string } = JSON.parse(readFileSync('./package.json', 'utf8
  * `emptyOutDir: false` keeps this from wiping out what the main build just
  * produced in `dist/`.
  */
-export default defineConfig({
-  define: {
-    __APP_VERSION__: JSON.stringify(pkg.version),
-  },
-  build: {
-    target: 'es2022',
-    emptyOutDir: false,
-    lib: {
-      entry: 'src/sw.ts',
-      formats: ['iife'],
-      name: 'AstrayaServiceWorker',
-      fileName: () => 'sw.js',
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
+  const base = env.VITE_BASE_PATH ?? '/';
+
+  return {
+    define: {
+      __APP_VERSION__: JSON.stringify(pkg.version),
+      // Read by src/sw.ts and threaded into installServiceWorker's config —
+      // this build has no `import.meta.env.BASE_URL` of its own (it isn't an
+      // app entry Vite's `base` option rewrites), so it's passed the same way
+      // __APP_VERSION__ already is.
+      __BASE_PATH__: JSON.stringify(base),
     },
-  },
+    build: {
+      target: 'es2022',
+      emptyOutDir: false,
+      // This build never needs public/ at all, and copying it here would
+      // clobber the main build's already-base-patched manifest.webmanifest
+      // back to its unprefixed form (#73).
+      copyPublicDir: false,
+      lib: {
+        entry: 'src/sw.ts',
+        formats: ['iife'],
+        name: 'AstrayaServiceWorker',
+        fileName: () => 'sw.js',
+      },
+    },
+  };
 });

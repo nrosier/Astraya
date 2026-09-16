@@ -41,39 +41,56 @@ export interface ServiceWorkerConfig {
   readonly fetch: typeof fetch;
   /** Where to find the list of app-shell files to precache. Overridable for tests. */
   readonly manifestPath?: string;
+  /**
+   * The path prefix the app is served under, e.g. `/Astraya/` for a GitHub
+   * Pages project site. Defaults to `/`. `classify()` (`./routing.js`) stays
+   * root-relative and untouched — this prefix is stripped from a request's
+   * pathname before it's classified, and used as-is for the manifest default
+   * and its fallback.
+   */
+  readonly basePath?: string;
 }
-
-const DEFAULT_MANIFEST_PATH = '/precache-manifest.json';
 
 /**
  * The app shell's file list, written at build time by the `precacheManifest`
  * Vite plugin (`vite.config.ts`) because the real filenames are content-hashed
  * and unknowable to this module otherwise.
  *
- * Falls back to just `/` on any failure to read it: a worse precache is a worse
- * offline experience, not a broken one — the shell cache still fills in
+ * Falls back to just `basePath` on any failure to read it: a worse precache is
+ * a worse offline experience, not a broken one — the shell cache still fills in
  * opportunistically as `shell-asset` and `shell-navigate` requests come through.
  */
-async function readManifest(fetchImpl: typeof fetch, manifestPath: string): Promise<readonly string[]> {
+async function readManifest(
+  fetchImpl: typeof fetch,
+  manifestPath: string,
+  basePath: string,
+): Promise<readonly string[]> {
   try {
     const response = await fetchImpl(manifestPath);
-    if (!response.ok) return ['/'];
+    if (!response.ok) return [basePath];
     const parsed: unknown = await response.json();
     if (Array.isArray(parsed) && parsed.every((entry) => typeof entry === 'string')) return parsed;
-    return ['/'];
+    return [basePath];
   } catch {
-    return ['/'];
+    return [basePath];
   }
+}
+
+/** Strips `basePath` off the front of `pathname`, leaving `classify()` root-relative. */
+function stripBasePath(pathname: string, basePath: string): string {
+  if (basePath === '/' || !pathname.startsWith(basePath)) return pathname;
+  return pathname.slice(basePath.length - 1);
 }
 
 export function installServiceWorker(scope: ServiceWorkerScope, config: ServiceWorkerConfig): void {
   const { version, fetch: fetchImpl } = config;
-  const manifestPath = config.manifestPath ?? DEFAULT_MANIFEST_PATH;
+  const basePath = config.basePath ?? '/';
+  const manifestPath = config.manifestPath ?? `${basePath}precache-manifest.json`;
 
   scope.addEventListener('install', (event) => {
     event.waitUntil(
       (async () => {
-        const paths = await readManifest(fetchImpl, manifestPath);
+        const paths = await readManifest(fetchImpl, manifestPath, basePath);
         const cache = await scope.caches.open(shellCacheName(version));
         await Promise.all(
           paths.map(async (path) => {
@@ -98,7 +115,7 @@ export function installServiceWorker(scope: ServiceWorkerScope, config: ServiceW
   scope.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     const strategy = classify({
-      pathname: url.pathname,
+      pathname: stripBasePath(url.pathname, basePath),
       method: event.request.method,
       sameOrigin: url.origin === scope.location.origin,
       mode: event.request.mode,

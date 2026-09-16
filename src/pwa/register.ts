@@ -69,7 +69,7 @@ export function registerServiceWorker(): void {
   });
 
   navigator.serviceWorker
-    .register('/sw.js')
+    .register(`${import.meta.env.BASE_URL}sw.js`)
     .then(watch)
     .catch((error: unknown) => {
       console.error('Service worker registration failed:', error);

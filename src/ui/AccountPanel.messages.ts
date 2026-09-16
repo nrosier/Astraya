@@ -22,6 +22,8 @@ const en = {
   signOutButton: 'Sign out',
   manageUsersLink: 'Manage users',
   signOutFailed: (message: string) => `That did not go through, so you are still signed in. ${message}`,
+
+  demoModeBadge: 'Demo — no sign-in or sync here',
 };
 
 const nl: typeof en = {
@@ -45,6 +47,8 @@ const nl: typeof en = {
   signOutButton: 'Uitloggen',
   manageUsersLink: 'Gebruikers beheren',
   signOutFailed: (message: string) => `Dat is niet gelukt, je bent dus nog steeds ingelogd. ${message}`,
+
+  demoModeBadge: 'Demo — geen inloggen of synchronisatie hier',
 };
 
 export const accountPanelMessages = { en, nl };

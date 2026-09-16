@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && vite build --config vite.sw.config.ts",
+    "build:demo": "tsc -b && vite build --mode demo && vite build --mode demo --config vite.sw.config.ts",
     "preview": "vite preview",
     "serve": "node server/index.ts",
     "test": "vitest run",

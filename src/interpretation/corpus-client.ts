@@ -21,7 +21,7 @@
  */
 import type { CorpusEntry, Locale, PersonaId } from './schema.js';
 
-export const CORPUS_BASE_URL = '/corpus/';
+export const CORPUS_BASE_URL = `${import.meta.env.BASE_URL}corpus/`;
 
 async function fetchChunk(locale: Locale, scope: string, fetchImpl: typeof fetch): Promise<readonly CorpusEntry[]> {
   const url = `${CORPUS_BASE_URL}${locale}/${scope}.json`;

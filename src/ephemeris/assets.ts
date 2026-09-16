@@ -71,7 +71,7 @@ export const WASM_BINARY: EphemerisAsset = {
 export const ALL_ASSETS: readonly EphemerisAsset[] = [...EPHEMERIS_DATA_FILES, FIXED_STARS_ASSET, WASM_BINARY];
 
 /** Public URL prefix the assets are served from. Must stay same-origin for CSP. */
-export const EPHE_BASE_URL = '/ephe/';
+export const EPHE_BASE_URL = `${import.meta.env.BASE_URL}ephe/`;
 
 /** Directory the data files are mounted at inside the WASM filesystem. */
 export const EPHE_MOUNT = '/ephe';

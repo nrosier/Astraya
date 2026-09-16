@@ -8,6 +8,7 @@ import { openStore } from '../store/store.js';
 import { exchangeOidcCode, login, logout, me, setup as apiSetup } from '../sync/auth-client.js';
 import { createSyncEngine, pushRecords } from '../sync/engine.js';
 import { consumeOidcCallback } from './oidc-pkce.js';
+import { IS_DEMO_MODE } from '../demo-mode.js';
 import type { AuthUser } from '../sync/auth-client.js';
 import type { SyncEngine } from '../sync/engine.js';
 import type { OpRecord } from '../store/ops.js';
@@ -96,6 +97,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     }
 
     void (async () => {
+      // Demo mode (#73) has no server at all — not even one to 401 against —
+      // so it skips the OIDC/`me()` dance entirely and opens the anonymous
+      // store directly, exactly as the ordinary signed-out path below does.
+      if (IS_DEMO_MODE) {
+        const anonymous = await openStore();
+        if (isCancelled()) {
+          anonymous.close();
+          return;
+        }
+        storeRef.current = anonymous;
+        setStatus({ kind: 'ready', store: anonymous });
+        return;
+      }
+
       // Checked first, before anything else reads the URL: a completed Authentik
       // redirect (#75) is exchanged and driven through the exact same adoption
       // dance as an interactive password sign-in (`completeSignIn`), never a

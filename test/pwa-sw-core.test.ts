@@ -212,6 +212,58 @@ describe('installServiceWorker: fetch', () => {
   });
 });
 
+describe('installServiceWorker: basePath', () => {
+  it('precaches from and falls back to the manifest under basePath, not "/"', async () => {
+    const fetchImpl = fetchServing({
+      '/Astraya/precache-manifest.json': JSON.stringify(['/Astraya/', '/Astraya/assets/index.js']),
+      '/Astraya/': '<html>shell</html>',
+      '/Astraya/assets/index.js': 'console.log(1)',
+    });
+    const fake = fakeScope(ORIGIN);
+    installServiceWorker(fake.scope, { version: VERSION, fetch: fetchImpl, basePath: '/Astraya/' });
+
+    await fake.fireInstall();
+
+    const cache = await fake.caches.open(shellCacheName(VERSION));
+    expect(await (await cache.match('/Astraya/'))?.text()).toBe('<html>shell</html>');
+    expect(await (await cache.match('/Astraya/assets/index.js'))?.text()).toBe('console.log(1)');
+  });
+
+  it('falls back to precaching just basePath when the manifest cannot be fetched', async () => {
+    const fetchImpl = fetchServing({ '/Astraya/': '<html>shell</html>' });
+    const fake = fakeScope(ORIGIN);
+    installServiceWorker(fake.scope, { version: VERSION, fetch: fetchImpl, basePath: '/Astraya/' });
+
+    await fake.fireInstall();
+
+    const cache = await fake.caches.open(shellCacheName(VERSION));
+    expect(await (await cache.match('/Astraya/'))?.text()).toBe('<html>shell</html>');
+  });
+
+  it('classifies a request under basePath as if it were root-relative', async () => {
+    const fetchImpl = fetchServing({ '/Astraya/ephe/sepl_18.se1': 'ephemeris-bytes' });
+    const fake = fakeScope(ORIGIN);
+    installServiceWorker(fake.scope, { version: VERSION, fetch: fetchImpl, basePath: '/Astraya/' });
+
+    const response = await fake.fireFetch(new Request(`${ORIGIN}/Astraya/ephe/sepl_18.se1`, { mode: 'cors' }));
+
+    expect(await response?.text()).toBe('ephemeris-bytes');
+    const cache = await fake.caches.open(ephemerisCacheName(VERSION));
+    expect(await (await cache.match(`${ORIGIN}/Astraya/ephe/sepl_18.se1`))?.text()).toBe('ephemeris-bytes');
+  });
+
+  it('still bypasses /api/ requests when nested under basePath', async () => {
+    const fetchImpl = fetchServing({});
+    const fake = fakeScope(ORIGIN);
+    installServiceWorker(fake.scope, { version: VERSION, fetch: fetchImpl, basePath: '/Astraya/' });
+
+    const response = await fake.fireFetch(new Request(`${ORIGIN}/api/ops`, { method: 'POST' }));
+
+    expect(response).toBeUndefined();
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
 describe('installServiceWorker: message', () => {
   it('calls skipWaiting only when told to, never on its own', async () => {
     const fake = fakeScope(ORIGIN);
