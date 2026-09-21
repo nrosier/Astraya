@@ -2,9 +2,11 @@
  * The birth-place map (#159): a second, complementary way to set the same Latitude/Longitude
  * fields `createPerson`/`support.ts` already exercises via the box inputs. Also covers "Fill in
  * place name" (#291), the reverse-geocoding button that lives in the same UI slot as "Use my
- * location". Coverage here is intentionally e2e-only — see `BirthPlaceMap.tsx`'s doc comment for
- * why it has no unit test; `reverse-geocode.ts`'s own lookup logic has its Vitest unit test in
- * `test/reverse-geocode.test.ts`.
+ * location", and "Search for a place by name" (#290), the forward-geocoding search row shown
+ * above that slot regardless of whether coordinates already exist. Coverage here is
+ * intentionally e2e-only — see `BirthPlaceMap.tsx`'s doc comment for why it has no unit test;
+ * `reverse-geocode.ts`'s/`forward-geocode.ts`'s own lookup logic has its Vitest unit tests in
+ * `test/reverse-geocode.test.ts`/`test/forward-geocode.test.ts`.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -61,6 +63,19 @@ async function stubTiles(page: Page): Promise<void> {
 // policy-violating in CI as the real tile calls `stubTiles` above avoids (#291).
 async function stubNominatim(page: Page, response: unknown, options: { status?: number } = {}): Promise<void> {
   await page.route('**/nominatim.openstreetmap.org/**', async (route) => {
+    await route.fulfill({
+      status: options.status ?? 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    });
+  });
+}
+
+// Scoped to `/search` specifically (rather than reusing `stubNominatim`'s broader `/reverse`-
+// shaped route) since the two endpoints return differently-shaped bodies — an array of results
+// here, not a single `{ address }` object (#290).
+async function stubNominatimSearch(page: Page, response: unknown, options: { status?: number } = {}): Promise<void> {
+  await page.route('**/nominatim.openstreetmap.org/search**', async (route) => {
     await route.fulfill({
       status: options.status ?? 200,
       contentType: 'application/json',
@@ -315,4 +330,90 @@ test('a reverse-geocoding failure shows an inline message, and the field is stil
 
   await labeledField(page, /^Place of birth/, 'input[type="text"]').fill('London');
   await expect(labeledField(page, /^Place of birth/, 'input[type="text"]')).toHaveValue('London');
+});
+
+test('"Search for a place by name" stays visible whether or not coordinates already exist, unlike "Use my location" (#290)', async ({
+  page,
+}) => {
+  await stubTiles(page);
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await startPersonWithoutCoordinates(page);
+
+  await expect(labeledField(page, /^Search for a place by name/, 'input[type="text"]')).toBeVisible();
+
+  await labeledField(page, /^Latitude/, 'input[type="number"]').fill('51.5072');
+  await labeledField(page, /^Longitude/, 'input[type="number"]').fill('-0.1276');
+
+  await expect(labeledField(page, /^Search for a place by name/, 'input[type="text"]')).toBeVisible();
+});
+
+test('a single search match is still shown as a click-to-confirm list, and picking it fills coordinates and Place of birth (#290)', async ({
+  page,
+}) => {
+  await stubTiles(page);
+  await stubNominatimSearch(page, [{ lat: '48.8566', lon: '2.3522', display_name: 'Paris, Île-de-France, France' }]);
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await startPersonWithoutCoordinates(page);
+
+  await labeledField(page, /^Search for a place by name/, 'input[type="text"]').fill('Paris');
+  await page.getByRole('button', { name: 'Search', exact: true }).click();
+
+  const result = page.getByRole('button', { name: 'Paris, Île-de-France, France', exact: true });
+  await expect(result).toBeVisible();
+  await result.click();
+
+  await expect(labeledField(page, /^Latitude/, 'input[type="number"]')).toHaveValue('48.8566');
+  await expect(labeledField(page, /^Longitude/, 'input[type="number"]')).toHaveValue('2.3522');
+  await expect(labeledField(page, /^Place of birth/, 'input[type="text"]')).toHaveValue('Paris, Île-de-France, France');
+});
+
+test('multiple search matches are each shown as a separate clickable result (#290)', async ({ page }) => {
+  await stubTiles(page);
+  await stubNominatimSearch(page, [
+    { lat: '48.8566', lon: '2.3522', display_name: 'Paris, Île-de-France, France' },
+    { lat: '33.6609', lon: '-95.5555', display_name: 'Paris, Texas, United States' },
+  ]);
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await startPersonWithoutCoordinates(page);
+
+  await labeledField(page, /^Search for a place by name/, 'input[type="text"]').fill('Paris');
+  await page.getByRole('button', { name: 'Search', exact: true }).click();
+
+  await expect(page.getByRole('button', { name: 'Paris, Île-de-France, France', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Paris, Texas, United States', exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Paris, Texas, United States', exact: true }).click();
+
+  await expect(labeledField(page, /^Latitude/, 'input[type="number"]')).toHaveValue('33.6609');
+  await expect(labeledField(page, /^Longitude/, 'input[type="number"]')).toHaveValue('-95.5555');
+});
+
+test('a search with no matches shows an inline "not found" message (#290)', async ({ page }) => {
+  await stubTiles(page);
+  await stubNominatimSearch(page, []);
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await startPersonWithoutCoordinates(page);
+
+  await labeledField(page, /^Search for a place by name/, 'input[type="text"]').fill('Nowhereville');
+  await page.getByRole('button', { name: 'Search', exact: true }).click();
+
+  await expect(page.getByRole('alert').filter({ hasText: 'No matching place was found' })).toBeVisible();
+});
+
+test('a search-request failure shows an inline message, and coordinates are still editable by hand (#290)', async ({
+  page,
+}) => {
+  await stubTiles(page);
+  await stubNominatimSearch(page, [], { status: 503 });
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await startPersonWithoutCoordinates(page);
+
+  await labeledField(page, /^Search for a place by name/, 'input[type="text"]').fill('Paris');
+  await page.getByRole('button', { name: 'Search', exact: true }).click();
+
+  await expect(page.getByRole('alert').filter({ hasText: 'The place search failed' })).toBeVisible();
+
+  await labeledField(page, /^Latitude/, 'input[type="number"]').fill('51.5072');
+  await labeledField(page, /^Longitude/, 'input[type="number"]').fill('-0.1276');
+  expect(await readFields(page)).toEqual({ latitude: 51.5072, longitude: -0.1276 });
 });
