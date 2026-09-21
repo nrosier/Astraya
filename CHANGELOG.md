@@ -4,6 +4,19 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.18.1] — 2026-09-21
+
+Patch release: a bug fix and two related additions to the birth-place map's geocoding, none of them milestone work.
+
+### Fixed
+
+- **"Fill in place name" no longer fails with a CORS error against the default Nominatim provider (#294).** Nominatim only grants CORS to requests that carry a `Referer` header, but Astraya's server sets a blanket `Referrer-Policy: no-referrer` on every response — the reverse-geocoding request never got the same referrer-policy override the map's tile requests already had. It now does, disclosing only this site's origin to Nominatim, same trade-off as the tiles.
+
+### Added
+
+- **MapTiler can now serve geocoding too, not just map tiles (#294).** If `VITE_MAPTILER_API_KEY` is already set, it's reused automatically for both "Fill in place name" and the new search field below — MapTiler authenticates by that key, not by `Referer`, so no referrer is ever sent to it. Nothing further to set.
+- **"Search for a place by name" on the birth-place map (#290).** A new field above the map, the reverse direction of "Fill in place name" — turns a free-text place name into candidate coordinates instead of the other way around. Matches are always a click-to-confirm list, even for a single match, so a search never silently moves the pin: picking one fills both the Latitude/Longitude fields and Place of birth. Shares the same provider configuration as "Fill in place name" — no new setup for self-hosters or MapTiler users.
+
 ## [0.18.0] — 2026-09-21
 
 **The birth-place map can now fill in the place name for you.**
