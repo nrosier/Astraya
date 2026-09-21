@@ -55,14 +55,14 @@ describe('no runtime LLM access in src/ (#64)', () => {
     // (`GEMINI_API_KEY`, `VITE_GEMINI_API_KEY`), and `_` counts as a word character,
     // so `\bAPI_KEY\b` would silently pass over exactly the names that matter.
     const pattern = /API_KEY|apiKey/;
-    // MapTiler's key (#267) is a deliberate exception, not a loophole: it
-    // authenticates tile requests to a map provider, not a model provider, and —
-    // like any browser-side map API key (Mapbox, Google Maps) — is meant to ship
-    // in the client bundle rather than stay secret. It only ever reaches an
-    // `<img>` src via Leaflet's tile layer or the tile-probe `fetch()` above,
-    // neither of which is a model-provider destination, so the connect-src
-    // invariant above still holds.
-    const ALLOWED_FILES = new Set(['ui/BirthPlaceMap.tsx']);
+    // MapTiler's key (#267, and #294 for geocoding) is a deliberate exception, not
+    // a loophole: it authenticates requests to a map provider, not a model
+    // provider, and — like any browser-side map API key (Mapbox, Google Maps) — is
+    // meant to ship in the client bundle rather than stay secret. It only ever
+    // reaches an `<img>` src via Leaflet's tile layer, the tile-probe `fetch()`
+    // above, or MapTiler's Geocoding API, none of which is a model-provider
+    // destination, so the connect-src invariant above still holds.
+    const ALLOWED_FILES = new Set(['ui/BirthPlaceMap.tsx', 'ui/reverse-geocode.ts']);
     const offenders = FILES.filter((file) => pattern.test(readFileSync(file, 'utf8')))
       .map(relative)
       .filter((file) => !ALLOWED_FILES.has(file));
