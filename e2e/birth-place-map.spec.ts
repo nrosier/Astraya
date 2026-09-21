@@ -1,7 +1,10 @@
 /**
  * The birth-place map (#159): a second, complementary way to set the same Latitude/Longitude
- * fields `createPerson`/`support.ts` already exercises via the box inputs. Coverage here is
- * intentionally e2e-only — see `BirthPlaceMap.tsx`'s doc comment for why it has no unit test.
+ * fields `createPerson`/`support.ts` already exercises via the box inputs. Also covers "Fill in
+ * place name" (#291), the reverse-geocoding button that lives in the same UI slot as "Use my
+ * location". Coverage here is intentionally e2e-only — see `BirthPlaceMap.tsx`'s doc comment for
+ * why it has no unit test; `reverse-geocode.ts`'s own lookup logic has its Vitest unit test in
+ * `test/reverse-geocode.test.ts`.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -51,6 +54,18 @@ const FIXTURE_TILE = Buffer.from(
 async function stubTiles(page: Page): Promise<void> {
   await page.route('**/tile.openstreetmap.org/**', async (route) => {
     await route.fulfill({ contentType: 'image/png', body: FIXTURE_TILE });
+  });
+}
+
+// Real calls to Nominatim from an automated test run would be just as flaky (rate-limited) and
+// policy-violating in CI as the real tile calls `stubTiles` above avoids (#291).
+async function stubNominatim(page: Page, response: unknown, options: { status?: number } = {}): Promise<void> {
+  await page.route('**/nominatim.openstreetmap.org/**', async (route) => {
+    await route.fulfill({
+      status: options.status ?? 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    });
   });
 }
 
@@ -231,4 +246,73 @@ test('a denied geolocation permission shows an inline message, and the fields st
 
   // Once coordinates exist, the map already centers on them — the control has nothing left to do.
   await expect(page.getByRole('button', { name: 'Use my location', exact: true })).not.toBeVisible();
+});
+
+test('"Fill in place name" only appears once coordinates exist, in the same slot "Use my location" vacates (#291)', async ({
+  page,
+}) => {
+  await stubTiles(page);
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await startPersonWithoutCoordinates(page);
+
+  await expect(page.getByRole('button', { name: 'Fill in place name', exact: true })).not.toBeVisible();
+
+  await labeledField(page, /^Latitude/, 'input[type="number"]').fill('51.5072');
+  await labeledField(page, /^Longitude/, 'input[type="number"]').fill('-0.1276');
+
+  await expect(page.getByRole('button', { name: 'Fill in place name', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Use my location', exact: true })).not.toBeVisible();
+});
+
+test('"Fill in place name" fills the Place of birth field from coordinates (#291)', async ({ page }) => {
+  await stubTiles(page);
+  await stubNominatim(page, { address: { city: 'Paris', country: 'France' } });
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '48.8566',
+    longitude: '2.3522',
+  });
+
+  await page.getByRole('button', { name: 'Fill in place name', exact: true }).click();
+  await expect(labeledField(page, /^Place of birth/, 'input[type="text"]')).toHaveValue('Paris, France');
+});
+
+test('a reverse-geocoding result with no address shows an inline "not found" message (#291)', async ({ page }) => {
+  await stubTiles(page);
+  await stubNominatim(page, {});
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '0',
+    longitude: '0',
+  });
+
+  await page.getByRole('button', { name: 'Fill in place name', exact: true }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'No place name could be found' })).toBeVisible();
+});
+
+test('a reverse-geocoding failure shows an inline message, and the field is still editable by hand (#291)', async ({
+  page,
+}) => {
+  await stubTiles(page);
+  await stubNominatim(page, {}, { status: 503 });
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+
+  await page.getByRole('button', { name: 'Fill in place name', exact: true }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'The place name lookup failed' })).toBeVisible();
+
+  await labeledField(page, /^Place of birth/, 'input[type="text"]').fill('London');
+  await expect(labeledField(page, /^Place of birth/, 'input[type="text"]')).toHaveValue('London');
 });

@@ -25,7 +25,7 @@
  * tile host the birth-place map (#159) requests raster tiles from as plain
  * `<img>`s, which needs no `connect-src` grant on its own.
  *
- * `connect-src` carries that same single tile host as its only exception to
+ * `connect-src` carries that same single tile host as one exception to
  * `'self'` (#267): OpenStreetMap's anti-abuse system can return `200 OK` with a
  * small, valid "blocked" placeholder tile instead of an error, which Leaflet's
  * own `tileload` event cannot tell apart from a real tile. `BirthPlaceMap.tsx`
@@ -34,14 +34,26 @@
  * exactly the origin already trusted for `img-src`, never broadened beyond it,
  * so `test/no-runtime-llm-access.test.ts`'s guarantee holds: this is the tile
  * host the map already loads images from, not a new external destination.
+ *
+ * The second `connect-src` exception is Nominatim's reverse-geocoding host
+ * (#291): `BirthPlaceMap.tsx`'s "Fill in place name" button turns coordinates
+ * into a town/city label via a `fetch()` to `nominatim.openstreetmap.org`, the
+ * same zero-config OSM default the tile host mirrors. It is additive rather
+ * than a replacement for the tile grant — the two are unrelated destinations —
+ * and kept as its own `geocodeOrigin` config field rather than reusing
+ * `tileOrigin`, so a self-hoster can point either one independently (or not at
+ * all) without the other silently following it.
  */
+const DEFAULT_TILE_ORIGIN = 'https://tile.openstreetmap.org';
+const DEFAULT_GEOCODE_ORIGIN = 'https://nominatim.openstreetmap.org';
+
 export const CSP_DIRECTIVES: readonly string[] = [
   "default-src 'self'",
   "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://tile.openstreetmap.org",
+  `img-src 'self' data: blob: ${DEFAULT_TILE_ORIGIN}`,
   "font-src 'self'",
-  "connect-src 'self' https://tile.openstreetmap.org",
+  `connect-src 'self' ${DEFAULT_TILE_ORIGIN} ${DEFAULT_GEOCODE_ORIGIN}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'none'",
@@ -64,6 +76,12 @@ export interface CspConfig {
    * own tiles has usually chosen to make zero calls to the public OSM host.
    */
   readonly tileOrigin?: string;
+  /**
+   * Scheme + host of a self-hosted Nominatim instance, replacing the default
+   * public `nominatim.openstreetmap.org` in `connect-src` (#291) — not
+   * appended, for the same reason as `tileOrigin` above.
+   */
+  readonly geocodeOrigin?: string;
 }
 
 export interface BuiltCsp {
@@ -85,17 +103,25 @@ export interface BuiltCsp {
  * appending to `'none'`, since `'none'` alongside another source is a contradiction,
  * not a grant — and nothing else in this app ever submits a form.
  *
- * `tileOrigin` similarly only ever rewrites `img-src` and `connect-src`,
- * replacing the default public OSM host rather than adding to it (#159, #267)
- * — a self-hosted or MapTiler tile server gets exactly the same pair of grants
- * the default OSM host has, never both at once.
+ * `tileOrigin` similarly only ever rewrites `img-src` and the tile-host half
+ * of `connect-src`, replacing the default public OSM host rather than adding
+ * to it (#159, #267) — a self-hosted or MapTiler tile server gets exactly the
+ * same pair of grants the default OSM host has, never both at once.
+ *
+ * `geocodeOrigin` independently rewrites just the Nominatim-host half of
+ * `connect-src` (#291), the same way — the two origins are unrelated
+ * destinations, so overriding one never touches the other.
  */
 export function buildCsp(config: CspConfig = {}): BuiltCsp {
-  const { issuerOrigin, tileOrigin } = config;
+  const { issuerOrigin, tileOrigin, geocodeOrigin } = config;
+  const effectiveTileOrigin = tileOrigin ?? DEFAULT_TILE_ORIGIN;
+  const effectiveGeocodeOrigin = geocodeOrigin ?? DEFAULT_GEOCODE_ORIGIN;
   const directives = CSP_DIRECTIVES.map((directive) => {
     if (issuerOrigin !== undefined && directive === "form-action 'none'") return `form-action ${issuerOrigin}`;
-    if (tileOrigin !== undefined && directive.startsWith('img-src')) return `img-src 'self' data: blob: ${tileOrigin}`;
-    if (tileOrigin !== undefined && directive.startsWith('connect-src')) return `connect-src 'self' ${tileOrigin}`;
+    if (directive.startsWith('img-src')) return `img-src 'self' data: blob: ${effectiveTileOrigin}`;
+    if (directive.startsWith('connect-src')) {
+      return `connect-src 'self' ${effectiveTileOrigin} ${effectiveGeocodeOrigin}`;
+    }
     return directive;
   });
   return {

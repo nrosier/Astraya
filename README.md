@@ -146,6 +146,19 @@ Unlike the server-runtime variables above, `VITE_TILE_URL_TEMPLATE` and
 neither can be changed by setting it on an already-built container — rebuild
 the image with it set instead.
 
+### Optional: a self-hosted reverse-geocoding server
+
+The birth-place map's "Fill in place name" button, which turns Latitude/
+Longitude into a nearest town/city label, needs no setup either: by default
+it queries Nominatim's public reverse-geocoding endpoint, no API key
+required. It's subject to the same usage-policy risk as the default map
+tiles above, for the same reason — see the section above.
+
+To serve lookups from your own Nominatim instance instead, set
+`VITE_NOMINATIM_URL` and `ASTRAYA_GEOCODE_ORIGIN` to matching values (see
+[`.env.example`](.env.example)). As with the tile variables, a mismatch
+fails closed, and `VITE_NOMINATIM_URL` is baked in at build time.
+
 ### Optional: serving from a subpath
 
 Set `VITE_BASE_PATH` (e.g. `/Astraya/`) when the app is served from something

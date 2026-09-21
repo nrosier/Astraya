@@ -10,6 +10,10 @@ const en = {
   permissionDenied: (hint: string) => `Location permission was denied. ${hint}`,
   positionUnavailable: (hint: string) => `Your location could not be determined. ${hint}`,
   tilesUnavailable: (hint: string) => `Map tiles could not be loaded, so the map is unavailable. ${hint}`,
+  fillPlaceName: 'Fill in place name',
+  lookingUpPlaceName: 'Looking up place name…',
+  placeNameNotFound: 'No place name could be found for these coordinates.',
+  placeNameLookupFailed: 'The place name lookup failed. You can still type it in yourself.',
 };
 
 const nl: typeof en = {
@@ -20,6 +24,10 @@ const nl: typeof en = {
   positionUnavailable: (hint: string) => `Je locatie kon niet worden bepaald. ${hint}`,
   tilesUnavailable: (hint: string) =>
     `De kaarttegels konden niet worden geladen, dus de kaart is niet beschikbaar. ${hint}`,
+  fillPlaceName: 'Vul plaatsnaam in',
+  lookingUpPlaceName: 'Plaatsnaam opzoeken…',
+  placeNameNotFound: 'Er is geen plaatsnaam gevonden voor deze coördinaten.',
+  placeNameLookupFailed: 'De plaatsnaam kon niet worden opgezocht. Je kunt hem nog steeds zelf intypen.',
 };
 
 export const birthPlaceMapMessages = { en, nl };

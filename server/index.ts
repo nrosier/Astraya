@@ -63,9 +63,14 @@ export async function build(options: BuildOptions = {}) {
   // host in `img-src`. Must match the scheme+host `VITE_TILE_URL_TEMPLATE` was
   // built against, or the browser's own CSP blocks tiles from the mismatched host.
   const tileOrigin = process.env.ASTRAYA_TILE_ORIGIN;
+  // A self-hosted Nominatim instance (#291): its origin replaces the default
+  // public Nominatim host in `connect-src`. Must match the scheme+host
+  // `VITE_NOMINATIM_URL` was built against, or the CSP blocks the lookup.
+  const geocodeOrigin = process.env.ASTRAYA_GEOCODE_ORIGIN;
   const csp = buildCsp({
     ...(oidcConfig ? { issuerOrigin: new URL(oidcConfig.issuer).origin } : {}),
     ...(tileOrigin ? { tileOrigin } : {}),
+    ...(geocodeOrigin ? { geocodeOrigin } : {}),
   });
 
   await app.register(fastifyCookie);

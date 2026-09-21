@@ -64,7 +64,11 @@ export interface Person {
    * to cast a chart must handle that rather than substitute a default.
    */
   readonly moment?: BirthMomentInput;
-  /** What the user typed for the place. Free text: no geocoding, so this is a label only. */
+  /**
+   * What the user typed for the place. Free text: it can be filled in from the coordinates via
+   * reverse geocoding (#291), but is never itself geocoded back — this is a label only, and the
+   * coordinates above are what a chart calculation actually uses.
+   */
   readonly placeLabel: string;
   readonly timeAccuracy: TimeAccuracy;
   readonly notes: string;
