@@ -14,6 +14,13 @@ const en = {
   lookingUpPlaceName: 'Looking up place name…',
   placeNameNotFound: 'No place name could be found for these coordinates.',
   placeNameLookupFailed: 'The place name lookup failed. You can still type it in yourself.',
+  searchByName: 'Search for a place by name',
+  searchByNamePlaceholder: 'e.g. Paris, France',
+  search: 'Search',
+  searching: 'Searching…',
+  searchNotFound: 'No matching place was found.',
+  searchFailed: 'The place search failed. You can still enter coordinates yourself.',
+  searchResultsLabel: 'Matching places — choose one',
 };
 
 const nl: typeof en = {
@@ -28,6 +35,13 @@ const nl: typeof en = {
   lookingUpPlaceName: 'Plaatsnaam opzoeken…',
   placeNameNotFound: 'Er is geen plaatsnaam gevonden voor deze coördinaten.',
   placeNameLookupFailed: 'De plaatsnaam kon niet worden opgezocht. Je kunt hem nog steeds zelf intypen.',
+  searchByName: 'Zoek een plaats op naam',
+  searchByNamePlaceholder: 'bijv. Amsterdam, Nederland',
+  search: 'Zoeken',
+  searching: 'Zoeken…',
+  searchNotFound: 'Er is geen overeenkomende plaats gevonden.',
+  searchFailed: 'Het zoeken naar de plaats is mislukt. Je kunt nog steeds zelf coördinaten invoeren.',
+  searchResultsLabel: 'Overeenkomende plaatsen — kies er een',
 };
 
 export const birthPlaceMapMessages = { en, nl };

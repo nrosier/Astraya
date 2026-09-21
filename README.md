@@ -149,24 +149,27 @@ the image with it set instead.
 ### Optional: a geocoding provider that doesn't need a referrer
 
 The birth-place map's "Fill in place name" button, which turns Latitude/
-Longitude into a nearest town/city label, needs no setup either: by default
-it queries Nominatim's public reverse-geocoding endpoint, no API key
-required. Nominatim only grants CORS to requests carrying a `Referer`, so
-this one request overrides this server's blanket `Referrer-Policy:
-no-referrer` for itself, disclosing this site's origin to Nominatim (nothing
-more). It's also subject to the same usage-policy risk as the default map
-tiles above, for the same reason — see the section above.
+Longitude into a nearest town/city label, and its "Search for a place by
+name" field, which does the reverse, both need no setup either: by default
+they query Nominatim's public reverse/forward-geocoding endpoints, no API
+key required. Nominatim only grants CORS to requests carrying a `Referer`,
+so these requests override this server's blanket `Referrer-Policy:
+no-referrer` for themselves, disclosing this site's origin to Nominatim
+(nothing more). They're also subject to the same usage-policy risk as the
+default map tiles above, for the same reason — see the section above.
 
 If you've already set `VITE_MAPTILER_API_KEY` for tiles, it's reused
-automatically here too: MapTiler's Geocoding API authenticates by that key,
-not by `Referer`, so no referrer is ever sent and the usage-policy risk
-doesn't apply. Nothing further to set.
+automatically here too, for both directions: MapTiler's Geocoding API
+authenticates by that key, not by `Referer`, so no referrer is ever sent and
+the usage-policy risk doesn't apply. Nothing further to set.
 
 To serve lookups from your own Nominatim-compatible server instead, set
 `VITE_NOMINATIM_URL` and `ASTRAYA_GEOCODE_ORIGIN` to matching values (see
 [`.env.example`](.env.example)) — this takes priority over a MapTiler key if
-both are set. As with the tile variables, a mismatch fails closed, and
-`VITE_NOMINATIM_URL` is baked in at build time.
+both are set, and covers both directions: the search field's `/search`
+request is derived from the same origin as the reverse-lookup `/reverse` URL.
+As with the tile variables, a mismatch fails closed, and `VITE_NOMINATIM_URL`
+is baked in at build time.
 
 ### Optional: serving from a subpath
 

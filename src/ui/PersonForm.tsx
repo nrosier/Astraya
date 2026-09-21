@@ -248,8 +248,12 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
         <BirthPlaceMap
           latitude={moment?.coordinates.latitude}
           longitude={moment?.coordinates.longitude}
-          onPick={(lat, lng) => {
-            setFields({ latitude: String(lat), longitude: String(lng) });
+          onPick={(lat, lng, placeLabel) => {
+            setFields({
+              latitude: String(lat),
+              longitude: String(lng),
+              ...(placeLabel === undefined ? {} : { placeLabel }),
+            });
           }}
           onFillPlaceLabel={(label) => {
             set('placeLabel', label);
