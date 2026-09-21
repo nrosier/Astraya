@@ -4,6 +4,20 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.18.0] — 2026-09-21
+
+**The birth-place map can now fill in the place name for you.**
+
+M9 (Polish & launch) progress, not a finished milestone — v1.0.0 hasn't shipped yet.
+
+### Added
+
+- **"Fill in place name" button on the birth-place map (#291).** Sits in the same slot as "Use my location", shown once Latitude/Longitude are set instead of before it. Resolves the coordinates to the nearest town or city (falling back through town, village, hamlet, municipality and county) via Nominatim, plus the country when available, and fills the Place of birth field with it. The field stays plain free text afterwards, exactly as if typed by hand — it's a label for the reader, never re-derived or locked, and never touched again by this button. A self-hoster can point both `VITE_NOMINATIM_URL` and the server's `ASTRAYA_GEOCODE_ORIGIN` at their own reverse-geocoding server instead of the public Nominatim default — see README.md and `.env.example`.
+
+### Fixed
+
+- **The Harbor replication scan now checks the tag it actually replicates, not a version tag that never gets pulled.** The replication policy only mirrors `latest`, so gating on a version tag like `0.17.0` always 404ed on the scan endpoint; it now waits on `latest` moving, and skips prereleases entirely, since `latest` never moves for those. Release-pipeline-internal; nothing user-facing changed.
+
 ## [0.17.0] — 2026-09-16
 
 **Production image moves off Alpine (musl) onto Chainguard/Wolfi (glibc), and there's now a static, no-accounts demo build published to GitHub Pages.**
