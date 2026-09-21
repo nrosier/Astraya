@@ -146,18 +146,27 @@ Unlike the server-runtime variables above, `VITE_TILE_URL_TEMPLATE` and
 neither can be changed by setting it on an already-built container — rebuild
 the image with it set instead.
 
-### Optional: a self-hosted reverse-geocoding server
+### Optional: a geocoding provider that doesn't need a referrer
 
 The birth-place map's "Fill in place name" button, which turns Latitude/
 Longitude into a nearest town/city label, needs no setup either: by default
 it queries Nominatim's public reverse-geocoding endpoint, no API key
-required. It's subject to the same usage-policy risk as the default map
+required. Nominatim only grants CORS to requests carrying a `Referer`, so
+this one request overrides this server's blanket `Referrer-Policy:
+no-referrer` for itself, disclosing this site's origin to Nominatim (nothing
+more). It's also subject to the same usage-policy risk as the default map
 tiles above, for the same reason — see the section above.
 
-To serve lookups from your own Nominatim instance instead, set
+If you've already set `VITE_MAPTILER_API_KEY` for tiles, it's reused
+automatically here too: MapTiler's Geocoding API authenticates by that key,
+not by `Referer`, so no referrer is ever sent and the usage-policy risk
+doesn't apply. Nothing further to set.
+
+To serve lookups from your own Nominatim-compatible server instead, set
 `VITE_NOMINATIM_URL` and `ASTRAYA_GEOCODE_ORIGIN` to matching values (see
-[`.env.example`](.env.example)). As with the tile variables, a mismatch
-fails closed, and `VITE_NOMINATIM_URL` is baked in at build time.
+[`.env.example`](.env.example)) — this takes priority over a MapTiler key if
+both are set. As with the tile variables, a mismatch fails closed, and
+`VITE_NOMINATIM_URL` is baked in at build time.
 
 ### Optional: serving from a subpath
 

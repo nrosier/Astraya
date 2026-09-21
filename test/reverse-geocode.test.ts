@@ -1,28 +1,33 @@
 /**
- * `src/ui/reverse-geocode.ts` (#291): a plain `fetch()` wrapper around Nominatim, mocked here
- * rather than hit for real — the same reasoning `e2e/birth-place-map.spec.ts` gives for stubbing
- * OSM's tile host applies equally to Nominatim: real calls in a test suite would be flaky
- * (rate-limited) and a policy violation in CI.
+ * `src/ui/reverse-geocode.ts` (#291, #294): a plain `fetch()` wrapper around Nominatim or
+ * MapTiler, mocked here rather than hit for real — the same reasoning `e2e/birth-place-map.spec.ts`
+ * gives for stubbing OSM's tile host applies equally here: real calls in a test suite would be
+ * flaky (rate-limited) and a policy violation in CI.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { reverseGeocode } from '../src/ui/reverse-geocode.ts';
 
 const realFetch = globalThis.fetch;
 let lastRequestUrl: URL | undefined;
+let lastRequestInit: RequestInit | undefined;
 
 function mockFetch(body: unknown, init: { ok?: boolean; status?: number } = {}): void {
-  globalThis.fetch = async (input) => {
+  globalThis.fetch = async (input, requestInit) => {
     lastRequestUrl = new URL(input instanceof Request ? input.url : String(input));
+    lastRequestInit = requestInit;
     return new Response(JSON.stringify(body), { status: init.ok === false ? (init.status ?? 500) : 200 });
   };
 }
 
 beforeEach(() => {
   lastRequestUrl = undefined;
+  lastRequestInit = undefined;
 });
 
 afterEach(() => {
   globalThis.fetch = realFetch;
+  vi.unstubAllEnvs();
+  vi.resetModules();
 });
 
 describe('reverseGeocode', () => {
@@ -69,5 +74,40 @@ describe('reverseGeocode', () => {
     expect(lastRequestUrl?.searchParams.get('lon')).toBe('2.3522');
     expect(lastRequestUrl?.searchParams.get('zoom')).toBe('10');
     expect(lastRequestUrl?.searchParams.get('addressdetails')).toBe('1');
+  });
+
+  it('sends a referrer to Nominatim despite the app-wide no-referrer policy (#294)', async () => {
+    mockFetch({ address: { city: 'Paris' } });
+    await reverseGeocode(48.8566, 2.3522);
+    expect(lastRequestInit?.referrerPolicy).toBe('origin');
+  });
+});
+
+describe('reverseGeocode, with a MapTiler API key configured (#294)', () => {
+  it("resolves to the top result's place name, sending no referrer override", async () => {
+    vi.stubEnv('VITE_MAPTILER_API_KEY', 'test-key');
+    vi.resetModules();
+    const { reverseGeocode: reverseGeocodeWithMaptiler } = await import('../src/ui/reverse-geocode.ts');
+    mockFetch({ features: [{ place_name: 'Paris, Île-de-France, France' }] });
+    expect(await reverseGeocodeWithMaptiler(48.8566, 2.3522)).toBe('Paris, Île-de-France, France');
+    expect(lastRequestUrl?.hostname).toBe('api.maptiler.com');
+    expect(lastRequestUrl?.searchParams.get('key')).toBe('test-key');
+    expect(lastRequestInit?.referrerPolicy).toBeUndefined();
+  });
+
+  it('resolves to undefined when there are no features', async () => {
+    vi.stubEnv('VITE_MAPTILER_API_KEY', 'test-key');
+    vi.resetModules();
+    const { reverseGeocode: reverseGeocodeWithMaptiler } = await import('../src/ui/reverse-geocode.ts');
+    mockFetch({ features: [] });
+    expect(await reverseGeocodeWithMaptiler(0, 0)).toBeUndefined();
+  });
+
+  it('throws when the request fails', async () => {
+    vi.stubEnv('VITE_MAPTILER_API_KEY', 'test-key');
+    vi.resetModules();
+    const { reverseGeocode: reverseGeocodeWithMaptiler } = await import('../src/ui/reverse-geocode.ts');
+    mockFetch({}, { ok: false, status: 403 });
+    await expect(reverseGeocodeWithMaptiler(0, 0)).rejects.toThrow('403');
   });
 });
