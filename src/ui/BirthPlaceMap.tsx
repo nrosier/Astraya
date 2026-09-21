@@ -13,6 +13,12 @@
  * "Use my location" (#248) is opt-in and only offered while there are no coordinates yet — it
  * only pans/zooms the map to the browser's reported position, never the pin or the fields
  * themselves, so a visitor centering the map is never mistaken for one who picked a birth place.
+ *
+ * "Fill in place name" (#291) sits in that same spot once coordinates exist, so the two buttons
+ * are never shown together but always occupy the same slot. Unlike "Use my location" it *does*
+ * write to a field — `placeLabel`, via `onFillPlaceLabel` — but only the once, on click: the
+ * label stays plain free text afterwards, never re-derived or locked, matching `PersonForm.tsx`'s
+ * comment that it is a label for the reader, not what the calculation uses.
  */
 import { useEffect, useRef, useState } from 'react';
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -21,6 +27,7 @@ import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import 'leaflet/dist/leaflet.css';
 import { birthPlaceMapMessages } from './BirthPlaceMap.messages.js';
 import { useMessages } from './messages.js';
+import { reverseGeocode } from './reverse-geocode.js';
 import type { LeafletMouseEvent, Map as LeafletMap, Marker } from 'leaflet';
 
 // No API key, no account, no setup required for this default. A self-hoster can point both this
@@ -111,14 +118,20 @@ type Status = 'loading' | 'ready' | 'unavailable';
 // just picked their birth coordinates.
 type GeoStatus = 'idle' | 'locating' | 'denied' | 'unavailable';
 
+// The one-shot result of a "Fill in place name" click (#291) — 'idle' covers both "never
+// clicked" and "succeeded", since a successful fill needs no lingering status of its own.
+type PlaceLookupStatus = 'idle' | 'looking-up' | 'not-found' | 'error';
+
 export function BirthPlaceMap({
   latitude,
   longitude,
   onPick,
+  onFillPlaceLabel,
 }: {
   latitude: number | undefined;
   longitude: number | undefined;
   onPick: (latitude: number, longitude: number) => void;
+  onFillPlaceLabel: (label: string) => void;
 }): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | undefined>(undefined);
@@ -130,6 +143,7 @@ export function BirthPlaceMap({
   onPickRef.current = onPick;
   const [status, setStatus] = useState<Status>('loading');
   const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle');
+  const [placeLookupStatus, setPlaceLookupStatus] = useState<PlaceLookupStatus>('idle');
   const t = useMessages(birthPlaceMapMessages);
   const hasCoordinates = latitude !== undefined && longitude !== undefined;
 
@@ -271,6 +285,24 @@ export function BirthPlaceMap({
     );
   };
 
+  const fillPlaceName = (): void => {
+    if (latitude === undefined || longitude === undefined) return;
+    setPlaceLookupStatus('looking-up');
+    void reverseGeocode(latitude, longitude).then(
+      (label) => {
+        if (label === undefined) {
+          setPlaceLookupStatus('not-found');
+          return;
+        }
+        setPlaceLookupStatus('idle');
+        onFillPlaceLabel(label);
+      },
+      () => {
+        setPlaceLookupStatus('error');
+      },
+    );
+  };
+
   return (
     <div className="birth-place-map">
       {!hasCoordinates && (
@@ -286,6 +318,23 @@ export function BirthPlaceMap({
           {geoStatus === 'unavailable' && (
             <p className="warning" role="alert">
               {t.positionUnavailable(t.enterCoordinatesHint)}
+            </p>
+          )}
+        </div>
+      )}
+      {hasCoordinates && (
+        <div className="birth-place-map-geo">
+          <button type="button" className="quiet" onClick={fillPlaceName} disabled={placeLookupStatus === 'looking-up'}>
+            {placeLookupStatus === 'looking-up' ? t.lookingUpPlaceName : t.fillPlaceName}
+          </button>
+          {placeLookupStatus === 'not-found' && (
+            <p className="warning" role="alert">
+              {t.placeNameNotFound}
+            </p>
+          )}
+          {placeLookupStatus === 'error' && (
+            <p className="warning" role="alert">
+              {t.placeNameLookupFailed}
             </p>
           )}
         </div>

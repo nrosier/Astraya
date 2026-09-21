@@ -38,14 +38,16 @@ function relative(file: string): string {
 }
 
 describe('no runtime LLM access in src/ (#64)', () => {
-  it('carries no connect-src exception beyond the one tile host the map already trusts for images', () => {
-    // The one exception (#267) is the same origin `img-src` already grants the
+  it('carries no connect-src exception beyond the tile host and the Nominatim host the map already uses', () => {
+    // The first exception (#267) is the same origin `img-src` already grants the
     // birth-place map's tiles — a fetch() probe reading that host's `x-blocked`
-    // response header, not a new external destination. Anything wider than that
-    // single origin would be a model-provider-reachable regression, so this
-    // asserts the exact value rather than merely that the directive exists.
+    // response header, not a new external destination. The second (#291) is
+    // Nominatim's reverse-geocoding host the "Fill in place name" button queries.
+    // Anything wider than these two origins would be a model-provider-reachable
+    // regression, so this asserts the exact value rather than merely that the
+    // directive exists.
     const connectSrc = CSP_DIRECTIVES.find((directive) => directive.startsWith('connect-src'));
-    expect(connectSrc).toBe("connect-src 'self' https://tile.openstreetmap.org");
+    expect(connectSrc).toBe("connect-src 'self' https://tile.openstreetmap.org https://nominatim.openstreetmap.org");
   });
 
   it('holds no API key identifier', () => {

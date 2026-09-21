@@ -154,8 +154,10 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
                 set('placeLabel', event.target.value);
               }}
             />
-            {/* A label, not a lookup: there is no geocoding, so the coordinates below are what
-                the calculation uses and this text is only for the reader. */}
+            {/* A label, not a lookup: the coordinates below are what the calculation uses, and
+                this text is only for the reader. "Fill in place name" below can reverse-geocode
+                it from those coordinates, but the result is still just typed text afterward —
+                never re-derived or locked (#291). */}
           </label>
         </div>
       </fieldset>
@@ -248,6 +250,9 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
           longitude={moment?.coordinates.longitude}
           onPick={(lat, lng) => {
             setFields({ latitude: String(lat), longitude: String(lng) });
+          }}
+          onFillPlaceLabel={(label) => {
+            set('placeLabel', label);
           }}
         />
       </fieldset>
