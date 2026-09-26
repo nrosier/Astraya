@@ -3,6 +3,7 @@
  * per route. Same shape as `auth-client.ts`: nothing here interprets a response beyond
  * its own shape, and every rejection carries the server's own message.
  */
+import type { CorpusTier, Locale, PersonaId } from '../interpretation/schema.js';
 
 /** Mirrors `server/auth/admin-routes.ts`'s `AdminUser` shape. */
 export interface AdminUser {
@@ -93,4 +94,56 @@ export async function getDeletionImpact(id: string): Promise<DeletionImpact> {
 
 export async function deleteUser(id: string): Promise<void> {
   await call(`/api/admin/users/${id}`, { method: 'DELETE' });
+}
+
+/** Mirrors `server/corpus-overrides.ts`'s `CorpusOverride` shape (#292). */
+export interface CorpusOverride {
+  readonly id: string;
+  readonly key: string;
+  readonly locale: Locale;
+  /** Absent means the neutral, persona-agnostic override. */
+  readonly persona: PersonaId | undefined;
+  readonly text: string;
+  readonly tier: CorpusTier;
+  readonly tags: readonly string[];
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly updatedByUserId: string;
+  readonly updatedByUsername: string;
+}
+
+export interface UpsertCorpusOverrideParams {
+  readonly key: string;
+  readonly locale: Locale;
+  readonly persona?: PersonaId;
+  readonly text: string;
+  readonly tier: CorpusTier;
+  readonly tags: readonly string[];
+}
+
+export async function listCorpusOverrides(locale?: Locale): Promise<readonly CorpusOverride[]> {
+  const query = locale !== undefined ? `?locale=${locale}` : '';
+  const { overrides } = await call<{ overrides: readonly CorpusOverride[] }>(`/api/admin/corpus-overrides${query}`);
+  return overrides;
+}
+
+export async function upsertCorpusOverride(params: UpsertCorpusOverrideParams): Promise<CorpusOverride> {
+  const { override } = await call<{ override: CorpusOverride }>('/api/admin/corpus-overrides', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  return override;
+}
+
+export async function deleteCorpusOverride(id: string): Promise<void> {
+  await call(`/api/admin/corpus-overrides/${id}`, { method: 'DELETE' });
+}
+
+/** `server/corpus-overrides-routes.ts`'s export route returns the file body directly, not `{ ... }`-wrapped JSON — a `Blob`, not `call<T>`, is the right shape for a client-side download. */
+export async function exportCorpusOverrides(locale?: Locale): Promise<Blob> {
+  const query = locale !== undefined ? `?locale=${locale}` : '';
+  const response = await fetch(`/api/admin/corpus-overrides/export${query}`);
+  if (!response.ok) throw new AdminError(await errorMessage(response), response.status);
+  return response.blob();
 }
