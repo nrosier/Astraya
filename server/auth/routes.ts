@@ -7,6 +7,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { Database } from '../db.ts';
+import { promoteLocalUserIfAllowlisted, promoteOidcUserIfGroupMatched } from './admin-promotion.ts';
 import { adminExists, announceBootstrap, checkBootstrapToken } from './bootstrap.ts';
 import {
   getUserByUsername,
@@ -77,7 +78,8 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
       }
 
       clearLoginThrottle(username);
-      const session = createSession(db, credentials.user.id);
+      const user = promoteLocalUserIfAllowlisted(db, credentials.user, username);
+      const session = createSession(db, user.id);
       reply.setCookie(SESSION_COOKIE, session.id, {
         httpOnly: true,
         sameSite: 'lax',
@@ -85,7 +87,7 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
         path: '/',
         expires: new Date(session.expiresAt),
       });
-      return reply.send({ user: credentials.user });
+      return reply.send({ user });
     },
   );
 
@@ -174,6 +176,10 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
         if (user.disabledAt !== null) {
           return await reply.code(401).send({ error: 'OIDC sign-in failed' });
         }
+
+        // Every callback, not just JIT provisioning: group membership can change on
+        // the IdP side after the account already exists.
+        user = promoteOidcUserIfGroupMatched(db, user, claims.groups);
 
         const session = createSession(db, user.id, { oidcIdToken: idToken });
         reply.setCookie(SESSION_COOKIE, session.id, {

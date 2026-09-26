@@ -12,8 +12,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { FastifyInstance } from 'fastify';
+import { randomUUID } from 'node:crypto';
 import { build } from '../server/index.ts';
 import { clearLoginThrottle } from '../server/auth/login-throttle.ts';
+import { hashPassword } from '../server/auth/passwords.ts';
 
 const BOOTSTRAP_TOKEN = 'test-bootstrap-token';
 const SESSION_COOKIE = 'astraya_session';
@@ -36,8 +38,10 @@ beforeEach(async () => {
 afterEach(async () => {
   await app.close();
   delete process.env.ASTRAYA_BOOTSTRAP_TOKEN;
+  delete process.env.ASTRAYA_ADMIN_USERNAMES;
   rmSync(dir, { recursive: true, force: true });
   clearLoginThrottle('admin');
+  clearLoginThrottle('carol');
 });
 
 function setupAdmin(username = 'admin', password = 'correct-horse-battery') {
@@ -145,6 +149,52 @@ describe('POST /api/auth/login and GET /api/auth/me', () => {
       );
     }
     expect(attempts.some((response) => response.statusCode === 429)).toBe(true);
+  });
+
+  it('promotes a local user matching ASTRAYA_ADMIN_USERNAMES on login, case-insensitively', async () => {
+    process.env.ASTRAYA_ADMIN_USERNAMES = 'Carol,dave';
+    const passwordHash = await hashPassword('correct-horse-battery');
+    const raw = new DatabaseSync(dbPath);
+    raw
+      .prepare('INSERT INTO users (id, username, password_hash, is_admin, created_at) VALUES (?, ?, ?, 0, ?)')
+      .run(randomUUID(), 'carol', passwordHash, new Date().toISOString());
+    raw.close();
+
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { username: 'carol', password: 'correct-horse-battery' },
+    });
+    expect(login.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(true);
+  });
+
+  it('does not promote a local user not on ASTRAYA_ADMIN_USERNAMES', async () => {
+    process.env.ASTRAYA_ADMIN_USERNAMES = 'someone-else';
+    const passwordHash = await hashPassword('correct-horse-battery');
+    const raw = new DatabaseSync(dbPath);
+    raw
+      .prepare('INSERT INTO users (id, username, password_hash, is_admin, created_at) VALUES (?, ?, ?, 0, ?)')
+      .run(randomUUID(), 'carol', passwordHash, new Date().toISOString());
+    raw.close();
+
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { username: 'carol', password: 'correct-horse-battery' },
+    });
+    expect(login.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(false);
+  });
+
+  it('never demotes an existing admin removed from ASTRAYA_ADMIN_USERNAMES', async () => {
+    process.env.ASTRAYA_ADMIN_USERNAMES = 'someone-else';
+    await setupAdmin('admin', 'correct-horse-battery');
+
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { username: 'admin', password: 'correct-horse-battery' },
+    });
+    expect(login.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(true);
   });
 
   it('rejects a session whose user has since been disabled', async () => {
