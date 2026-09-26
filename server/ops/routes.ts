@@ -10,7 +10,7 @@ import { requireUser, type User } from '../auth/identity.ts';
 import { decodeHlc, isHlc } from '../../src/store/hlc.ts';
 import { CURRENT_KEY_VERSION, decryptPayload, encryptPayload, loadEncryptionKey } from './crypto.ts';
 
-/** An HLC this far ahead of the server's own clock is rejected outright (#105). */
+/** An HLC this far ahead of the server's own clock is quarantined (#105, #312). */
 const MAX_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000;
 /** Within the reject bound but still this far ahead: accepted, but logged, so a persistent offender is diagnosable. */
 const SKEW_WARN_THRESHOLD_MS = 5 * 60 * 1000;
@@ -69,98 +69,120 @@ export function registerOpsRoutes(app: FastifyInstance, db: Database): void {
     );
   }
 
-  app.post<{ Body: AppendBody }>('/api/ops', { preHandler: requireUser(db) }, async (request, reply) => {
-    // Never a silent no-op: a disabled relay says so, rather than accepting a
-    // write it would have to leave unencrypted.
-    const key = configuredKey;
-    if (!key) return reply.code(503).send({ error: 'Sync is not configured on this server.' });
-    const user = authenticatedUser(request);
+  app.post<{ Body: AppendBody }>(
+    '/api/ops',
+    { preHandler: requireUser(db), config: { rateLimit: { max: 120, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      // Never a silent no-op: a disabled relay says so, rather than accepting a
+      // write it would have to leave unencrypted.
+      const key = configuredKey;
+      if (!key) return reply.code(503).send({ error: 'Sync is not configured on this server.' });
+      const user = authenticatedUser(request);
 
-    const ops = request.body.ops;
-    if (!Array.isArray(ops) || ops.length === 0) {
-      return reply.code(400).send({ error: 'ops must be a non-empty array' });
-    }
-    if (ops.length > MAX_BATCH_SIZE) {
-      return reply.code(400).send({ error: `ops batch too large (max ${MAX_BATCH_SIZE})` });
-    }
-    if (!ops.every(isValidOpInput)) {
-      return reply.code(400).send({ error: 'Each op needs hlc, deviceId, opVersion and payload' });
-    }
-
-    const now = Date.now();
-    for (const op of ops) {
-      if (decodeHlc(op.hlc).millis - now > MAX_CLOCK_SKEW_MS) {
-        return reply.code(400).send({ error: 'clock-skew', message: "This device's clock looks wrong." });
+      const ops = request.body.ops;
+      if (!Array.isArray(ops) || ops.length === 0) {
+        return reply.code(400).send({ error: 'ops must be a non-empty array' });
       }
-    }
-
-    const insert = db.prepare(
-      'INSERT INTO ops (user_id, hlc, device_id, op_version, payload, key_version, iv, received_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    );
-    const findExisting = db.prepare('SELECT seq FROM ops WHERE user_id = ? AND hlc = ?');
-    const receivedAt = new Date(now).toISOString();
-
-    const seqs = ops.map((op) => {
-      const aheadByMs = decodeHlc(op.hlc).millis - now;
-      if (aheadByMs > SKEW_WARN_THRESHOLD_MS) {
-        app.log.warn(`Accepted op from device ${op.deviceId} with clock ${aheadByMs}ms ahead of server time.`);
+      if (ops.length > MAX_BATCH_SIZE) {
+        return reply.code(400).send({ error: `ops batch too large (max ${MAX_BATCH_SIZE})` });
       }
-      const { ciphertext, iv } = encryptPayload(Buffer.from(op.payload, 'base64'), key);
-      try {
-        const result = insert.run(
-          user.id,
-          op.hlc,
-          op.deviceId,
-          op.opVersion,
-          ciphertext,
-          CURRENT_KEY_VERSION,
-          iv,
-          receivedAt,
+      if (!ops.every(isValidOpInput)) {
+        return reply.code(400).send({ error: 'Each op needs hlc, deviceId, opVersion and payload' });
+      }
+
+      // An op this far ahead of the server's own clock is never stored — the client's clock
+      // was wrong when it wrote the op, and retrying will not change that op's timestamp.
+      // Unlike the checks above, this is not a client bug: the rest of the batch is still
+      // good, so only the skewed ops are set aside (#105, #312) rather than failing the
+      // whole request — the client is expected to quarantine exactly the HLCs named in
+      // `skipped` and keep pushing everything else.
+      const now = Date.now();
+      const skipped: string[] = [];
+      const accepted = ops.filter((op) => {
+        if (decodeHlc(op.hlc).millis - now > MAX_CLOCK_SKEW_MS) {
+          skipped.push(op.hlc);
+          return false;
+        }
+        return true;
+      });
+      if (skipped.length > 0) {
+        app.log.warn(
+          `Rejected ${String(skipped.length)} op(s) more than ${String(MAX_CLOCK_SKEW_MS)}ms ahead of server time.`,
         );
-        return Number(result.lastInsertRowid);
-      } catch {
-        // ops_user_hlc is UNIQUE: this (user, hlc) pair was already stored, so a
-        // retried push is a no-op — hand back the seq it already has, rather than
-        // failing the whole batch over a client that retried after a dropped reply.
-        const existing = findExisting.get(user.id, op.hlc) as { seq: number } | undefined;
-        if (!existing) throw new Error(`Insert of hlc=${op.hlc} failed for a reason other than a duplicate.`);
-        return existing.seq;
       }
-    });
 
-    return reply.send({ seqs });
-  });
+      const insert = db.prepare(
+        'INSERT INTO ops (user_id, hlc, device_id, op_version, payload, key_version, iv, received_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      );
+      const findExisting = db.prepare('SELECT seq FROM ops WHERE user_id = ? AND hlc = ?');
+      const receivedAt = new Date(now).toISOString();
 
-  app.get<{ Querystring: { since?: string } }>('/api/ops', { preHandler: requireUser(db) }, async (request, reply) => {
-    const key = configuredKey;
-    if (!key) return reply.code(503).send({ error: 'Sync is not configured on this server.' });
-    const user = authenticatedUser(request);
+      const seqs = accepted.map((op) => {
+        const aheadByMs = decodeHlc(op.hlc).millis - now;
+        if (aheadByMs > SKEW_WARN_THRESHOLD_MS) {
+          app.log.warn(`Accepted op from device ${op.deviceId} with clock ${aheadByMs}ms ahead of server time.`);
+        }
+        const { ciphertext, iv } = encryptPayload(Buffer.from(op.payload, 'base64'), key);
+        try {
+          const result = insert.run(
+            user.id,
+            op.hlc,
+            op.deviceId,
+            op.opVersion,
+            ciphertext,
+            CURRENT_KEY_VERSION,
+            iv,
+            receivedAt,
+          );
+          return Number(result.lastInsertRowid);
+        } catch {
+          // ops_user_hlc is UNIQUE: this (user, hlc) pair was already stored, so a
+          // retried push is a no-op — hand back the seq it already has, rather than
+          // failing the whole batch over a client that retried after a dropped reply.
+          const existing = findExisting.get(user.id, op.hlc) as { seq: number } | undefined;
+          if (!existing) throw new Error(`Insert of hlc=${op.hlc} failed for a reason other than a duplicate.`);
+          return existing.seq;
+        }
+      });
 
-    const since = Number(request.query.since ?? '0');
-    if (!Number.isInteger(since) || since < 0) {
-      return reply.code(400).send({ error: 'since must be a non-negative integer' });
-    }
+      return reply.send({ seqs, skipped });
+    },
+  );
 
-    const rows = db
-      .prepare(
-        'SELECT seq, hlc, device_id, op_version, payload, iv, received_at FROM ops WHERE user_id = ? AND seq > ? ORDER BY seq LIMIT ?',
-      )
-      .all(user.id, since, MAX_PAGE_SIZE) as unknown as OpRow[];
+  app.get<{ Querystring: { since?: string } }>(
+    '/api/ops',
+    { preHandler: requireUser(db), config: { rateLimit: { max: 120, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const key = configuredKey;
+      if (!key) return reply.code(503).send({ error: 'Sync is not configured on this server.' });
+      const user = authenticatedUser(request);
 
-    const results = rows.map((row) => {
-      // Every row this relay ever writes has an iv (see the insert above); a null
-      // one would mean a row written some other way, which is a bug, not data.
-      if (!row.iv) throw new Error(`ops row seq=${row.seq} has no iv; the relay never writes unencrypted rows.`);
-      return {
-        seq: row.seq,
-        hlc: row.hlc,
-        deviceId: row.device_id,
-        opVersion: row.op_version,
-        payload: decryptPayload(row.payload, row.iv, key).toString('base64'),
-        receivedAt: row.received_at,
-      };
-    });
+      const since = Number(request.query.since ?? '0');
+      if (!Number.isInteger(since) || since < 0) {
+        return reply.code(400).send({ error: 'since must be a non-negative integer' });
+      }
 
-    return reply.send({ ops: results });
-  });
+      const rows = db
+        .prepare(
+          'SELECT seq, hlc, device_id, op_version, payload, iv, received_at FROM ops WHERE user_id = ? AND seq > ? ORDER BY seq LIMIT ?',
+        )
+        .all(user.id, since, MAX_PAGE_SIZE) as unknown as OpRow[];
+
+      const results = rows.map((row) => {
+        // Every row this relay ever writes has an iv (see the insert above); a null
+        // one would mean a row written some other way, which is a bug, not data.
+        if (!row.iv) throw new Error(`ops row seq=${row.seq} has no iv; the relay never writes unencrypted rows.`);
+        return {
+          seq: row.seq,
+          hlc: row.hlc,
+          deviceId: row.device_id,
+          opVersion: row.op_version,
+          payload: decryptPayload(row.payload, row.iv, key).toString('base64'),
+          receivedAt: row.received_at,
+        };
+      });
+
+      return reply.send({ ops: results });
+    },
+  );
 }

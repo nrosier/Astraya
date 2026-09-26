@@ -32,6 +32,8 @@ export interface SyncEngine {
   readonly status: SyncState;
   /** Local records the server has not yet acknowledged. */
   pending(): number;
+  /** Local records the server has permanently refused as clock-skewed (#312) and will not retry. */
+  quarantined(): number;
   /** Manual "sync now" — safe to call while a run is already in flight (queues a rerun instead of overlapping it). */
   syncNow(): void;
   subscribe(listener: () => void): () => void;
@@ -53,8 +55,6 @@ export type SyncErrorKind =
   | 'offline'
   /** The session is no longer valid; retrying it will not help. */
   | 'unauthorized'
-  /** The server rejected an operation's HLC as clock-skewed (#105) — retrying won't change that op's timestamp. */
-  | 'clock-skew'
   /** 5xx: the server's problem, plausibly transient. */
   | 'server'
   /** 2xx but the body wasn't the shape expected — a protocol mismatch, not a network condition. */
@@ -137,10 +137,6 @@ async function classifyErrorResponse(response: Response): Promise<SyncError> {
     return new SyncError('malformed', `Request failed with status ${String(response.status)} and no readable error.`);
   }
   const error = typeof body === 'object' && body !== null ? (body as Record<string, unknown>).error : undefined;
-  const message = typeof body === 'object' && body !== null ? (body as Record<string, unknown>).message : undefined;
-  if (error === 'clock-skew') {
-    return new SyncError('clock-skew', typeof message === 'string' ? message : "This device's clock looks wrong.");
-  }
   return new SyncError(
     'rejected',
     typeof error === 'string' ? error : `Request rejected with status ${String(response.status)}.`,
@@ -159,12 +155,30 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   return response;
 }
 
-async function postOps(ops: readonly OpWire[]): Promise<void> {
-  await request('/api/ops', {
+interface PushResult {
+  readonly seqs: readonly number[];
+  /** HLCs the server refused as clock-skewed (#312) — still 2xx, since the rest of the batch went through. */
+  readonly skipped: readonly Hlc[];
+}
+
+async function postOps(ops: readonly OpWire[]): Promise<PushResult> {
+  const response = await request('/api/ops', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ops }),
   });
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new SyncError('malformed', 'The server response could not be read.');
+  }
+  const seqs = typeof body === 'object' && body !== null ? (body as Record<string, unknown>).seqs : undefined;
+  const skipped = typeof body === 'object' && body !== null ? (body as Record<string, unknown>).skipped : undefined;
+  if (!Array.isArray(seqs) || !Array.isArray(skipped) || !skipped.every(isHlc)) {
+    throw new SyncError('malformed', 'The server response was missing its results.');
+  }
+  return { seqs, skipped };
 }
 
 async function getOps(since: number): Promise<readonly PullRow[]> {
@@ -271,15 +285,28 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
 
   async function push(): Promise<void> {
     for (;;) {
-      const outgoing = store.outgoing(cursor.pushed);
+      // Quarantined HLCs are already behind `cursor.pushed` once their batch is handled
+      // below, since a batch advances the cursor past its own last record regardless of
+      // what got skipped inside it — this filter is a second, belt-and-suspenders guard
+      // against ever resending one, not the only thing preventing it (#312).
+      const quarantined = new Set(cursor.quarantined ?? []);
+      const outgoing = store
+        .outgoing(cursor.pushed)
+        .map(toWire)
+        .filter((op) => !quarantined.has(op.hlc));
       if (outgoing.length === 0) return;
-      const chunk = outgoing.slice(0, MAX_PAGE_SIZE).map(toWire);
-      await postOps(chunk);
+      const chunk = outgoing.slice(0, MAX_PAGE_SIZE);
+      const { skipped } = await postOps(chunk);
       // The chunk's own last record, not `store.head()`: a local edit could land mid-push and
       // move the head past what this chunk actually sent.
       const lastWire = chunk[chunk.length - 1];
       if (lastWire === undefined) return;
-      cursor = { ...cursor, pushed: lastWire.hlc };
+      for (const hlc of skipped) quarantined.add(hlc);
+      cursor = {
+        ...cursor,
+        pushed: lastWire.hlc,
+        ...(quarantined.size > 0 ? { quarantined: [...quarantined] } : {}),
+      };
       await store.setSyncCursor(cursor);
       if (chunk.length < MAX_PAGE_SIZE) return;
     }
@@ -351,6 +378,7 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
       return status;
     },
     pending: () => store.outgoing(cursor.pushed).length,
+    quarantined: () => cursor.quarantined?.length ?? 0,
     syncNow: trigger,
     subscribe(listener) {
       listeners.add(listener);

@@ -184,6 +184,17 @@ Which of the four build modes (`development`/`production`/`test`/`demo`) a
 build uses, and which npm script selects each, is also documented in
 [`.env.example`](.env.example).
 
+### Optional: behind a reverse proxy
+
+By default the server trusts none of `X-Forwarded-For`/`X-Forwarded-Proto` —
+correct when it's reachable directly, but it means every request looks like it
+came from the proxy's own IP, and a cookie never gets marked `Secure` even over
+HTTPS. If you do run one in front of Astraya, set `ASTRAYA_TRUST_PROXY` to a
+list of the proxy's own IPs/CIDRs (e.g. `127.0.0.1` for one on the same host)
+— see [`.env.example`](.env.example). Leave it unset otherwise: trusting those
+headers from a client that isn't actually behind your proxy lets it spoof its
+own IP and dodge per-route rate limiting.
+
 ## Licence
 
 **AGPL-3.0-or-later.** Astraya links the Swiss Ephemeris, which Astrodienst AG
