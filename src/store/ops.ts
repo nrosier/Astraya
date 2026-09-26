@@ -106,8 +106,31 @@ export interface OpBody {
   readonly value: JsonValue;
 }
 
-const BODY_KEYS: readonly string[] = ['entity', 'entityId', 'field', 'value'];
-const SPINE_KEYS: readonly string[] = ['opVersion', 'hlc', 'deviceId'];
+/**
+ * The body's keys at `OP_VERSION`, and the spine's for all time.
+ *
+ * Exported so the release gate in `test/store-ops.test.ts` can pin them against
+ * `OP_VERSION`: adding a body field without bumping the version would classify every
+ * operation carrying it as `corrupt` on an older client (#343), which is precisely the
+ * mistake `readBody`'s unexpected-key rule turns from a warning into data loss.
+ */
+export const BODY_KEYS: readonly string[] = ['entity', 'entityId', 'field', 'value'];
+export const SPINE_KEYS: readonly string[] = ['opVersion', 'hlc', 'deviceId'];
+
+/**
+ * Names refused for `entity`, `entityId` and `field` — the three body values the fold uses
+ * as object keys.
+ *
+ * Registers live in plain objects, so assigning one of these names does not create an own
+ * property: it walks into `Object.prototype`'s setter and replaces an object's prototype
+ * instead. That is worse than a wrong value. The register is not own-enumerable, so
+ * `JSON.stringify` drops it from the snapshot, and the same log then folds to different
+ * state before and after a reload — exactly the byte-identical guarantee two devices
+ * depend on (#331). This is not the closed vocabulary the module comment above rules out:
+ * it refuses three names no legitimate record can carry (`domain/id.ts` generates none of
+ * them), so a newer client inventing an entity kind is unaffected.
+ */
+const RESERVED_NAMES: readonly string[] = ['__proto__', 'constructor', 'prototype'];
 
 /** A verdict on a stored record. Never a reason to discard it. */
 export type Decoded =
@@ -200,6 +223,13 @@ function readBody(record: OpRecord): OpBody | string {
   if (typeof entity !== 'string' || entity === '') return `entity is not a name: ${JSON.stringify(entity)}`;
   if (typeof entityId !== 'string' || entityId === '') return `entityId is not an id: ${JSON.stringify(entityId)}`;
   if (typeof field !== 'string' || field === '') return `field is not a name: ${JSON.stringify(field)}`;
+  for (const [name, value] of [
+    ['entity', entity],
+    ['entityId', entityId],
+    ['field', field],
+  ] as const) {
+    if (RESERVED_NAMES.includes(value)) return `${name} is a reserved name: ${JSON.stringify(value)}`;
+  }
   if (!isJsonValue(value)) return `value does not survive a JSON round trip (${describeType(value)})`;
   return { entity, entityId, field, value };
 }

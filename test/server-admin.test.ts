@@ -354,7 +354,7 @@ describe('the last-admin guard', () => {
   });
 });
 
-describe('GET /api/admin/users/:id/deletion-impact', () => {
+describe('POST /api/admin/users/:id/deletion-impact', () => {
   it('returns counted, distinct-entity counts that match hand-pushed ops', async () => {
     const adminCookie = await setupAdmin(app);
     const bobCookie = await createAndLoginUser(app, 'bob', 'correct-horse-battery');
@@ -372,7 +372,7 @@ describe('GET /api/admin/users/:id/deletion-impact', () => {
     await pushOp(app, bobCookie, clockRef, { entity: 'chart', entityId: 'chart-1', field: 'title', value: 'Natal' });
 
     const impact = await app.inject({
-      method: 'GET',
+      method: 'POST',
       url: `/api/admin/users/${bob.id}/deletion-impact`,
       cookies: { [SESSION_COOKIE]: adminCookie },
     });
@@ -399,7 +399,7 @@ describe('GET /api/admin/users/:id/deletion-impact', () => {
       if (!bob) throw new Error('bob not found');
 
       const impact = await unconfigured.inject({
-        method: 'GET',
+        method: 'POST',
         url: `/api/admin/users/${bob.id}/deletion-impact`,
         cookies: { [SESSION_COOKIE]: adminCookie },
       });

@@ -141,10 +141,9 @@ declare module 'fastify' {
 }
 
 /**
- * A `preHandler` for routes that require a signed-in user. Not applied to any
- * route yet — anonymous mode means the app itself never needs it, and the sync
- * relay it will guard doesn't exist until the next phase. Landing it now means
- * that phase adds zero auth scaffolding of its own.
+ * A `preHandler` for routes that require a signed-in user — both operation-relay
+ * routes (`server/ops/routes.ts`) and nothing else, because anonymous use of the
+ * app itself must never need a session.
  */
 export function requireUser(db: Database) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {

@@ -77,16 +77,37 @@ export function spawnEphemerisWorker(): EphemerisTransport {
 interface Pending {
   resolve(value: unknown): void;
   reject(error: Error): void;
+  readonly timer: ReturnType<typeof setTimeout>;
+}
+
+/**
+ * How long a single worker call may take before it is failed.
+ *
+ * Sized against `initialize`, which fetches the WASM engine and the ephemeris data files
+ * over the network on a cold cache and is by far the slowest legitimate call — every
+ * calculation after it is milliseconds. The bound exists for the case `#fail` cannot
+ * cover: `nextSunCrossing`/`nextMoonCrossing` search iteratively, and a non-converging
+ * search leaves the worker neither replying nor erroring, so without a timeout the
+ * promise never settles and the UI shows the spinner-forever state this class exists to
+ * prevent (#332).
+ */
+const DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
+
+export interface WorkerEphemerisOptions {
+  /** Overridable so a test can assert the timeout without waiting a minute for it. */
+  readonly requestTimeoutMs?: number;
 }
 
 export class WorkerEphemerisProvider implements EphemerisProvider {
   readonly #transport: EphemerisTransport;
   readonly #pending = new Map<number, Pending>();
+  readonly #requestTimeoutMs: number;
   #nextId = 1;
   #fatal: Error | undefined;
 
-  constructor(transport: EphemerisTransport = spawnEphemerisWorker()) {
+  constructor(transport: EphemerisTransport = spawnEphemerisWorker(), options: WorkerEphemerisOptions = {}) {
     this.#transport = transport;
+    this.#requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     transport.onMessage((response) => {
       this.#settle(response);
     });
@@ -101,6 +122,7 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
     // duplicate response. Dropping it is correct; throwing would be unhandled.
     if (pending === undefined) return;
     this.#pending.delete(response.id);
+    clearTimeout(pending.timer);
     if (response.ok) pending.resolve(response.value);
     else pending.reject(deserializeError(response.error));
   }
@@ -113,19 +135,39 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
    */
   #fail(error: Error): void {
     this.#fatal ??= error;
-    for (const pending of this.#pending.values()) pending.reject(error);
+    for (const pending of this.#pending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(error);
+    }
     this.#pending.clear();
+  }
+
+  /**
+   * A timed-out call fails only itself, unlike `#fail`: the worker is unresponsive for
+   * this request, which is not the same as dead, and latching the whole provider fatal
+   * would turn one stuck search into a permanently broken ephemeris. A real transport
+   * failure still latches, via `onError`.
+   */
+  #expire(id: number, method: EphemerisMethod): void {
+    const pending = this.#pending.get(id);
+    if (pending === undefined) return;
+    this.#pending.delete(id);
+    pending.reject(new Error(`Ephemeris worker did not answer ${method} within ${String(this.#requestTimeoutMs)}ms.`));
   }
 
   #call<M extends EphemerisMethod>(method: M, args: Parameters<EphemerisProvider[M]>): Promise<EphemerisResult<M>> {
     if (this.#fatal !== undefined) return Promise.reject(this.#fatal);
     const id = this.#nextId++;
     return new Promise<EphemerisResult<M>>((resolve, reject) => {
-      this.#pending.set(id, { resolve, reject });
+      const timer = setTimeout(() => {
+        this.#expire(id, method);
+      }, this.#requestTimeoutMs);
+      this.#pending.set(id, { resolve, reject, timer });
       try {
         this.#transport.send({ id, method, args } as EphemerisRequest);
       } catch (error) {
         this.#pending.delete(id);
+        clearTimeout(timer);
         reject(error instanceof Error ? error : new Error(String(error)));
       }
     });

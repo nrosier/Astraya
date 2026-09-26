@@ -136,8 +136,16 @@ export function registerOpsRoutes(app: FastifyInstance, db: Database): void {
     if (!key) return reply.code(503).send({ error: 'Sync is not configured on this server.' });
     const user = authenticatedUser(request);
 
-    const since = Number(request.query.since ?? '0');
-    if (!Number.isInteger(since) || since < 0) {
+    // Matched against digits rather than handed straight to `Number`, which maps `''` and
+    // `' '` to 0 (#336). Everywhere else that would be harmless; here 0 means "send the
+    // whole log from the beginning", so a client that built a blank `?since=` by mistake
+    // would silently re-download every operation it already has instead of being told.
+    const raw = request.query.since ?? '0';
+    if (!/^\d+$/.test(raw)) {
+      return reply.code(400).send({ error: 'since must be a non-negative integer' });
+    }
+    const since = Number(raw);
+    if (!Number.isSafeInteger(since)) {
       return reply.code(400).send({ error: 'since must be a non-negative integer' });
     }
 

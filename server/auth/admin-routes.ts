@@ -192,7 +192,12 @@ export function registerAdminRoutes(app: FastifyInstance, db: Database): void {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  // `POST`, though it reads rather than writes (#329). `SameSite=Lax` sends the session
+  // cookie on a cross-site top-level *navigation*, which is exactly what a `GET` here
+  // would be — so an admin who followed a link could be made to run this route's
+  // decrypt-and-count loop over another user's whole operation log. A write method is not
+  // reachable that way at all.
+  app.post<{ Params: { id: string } }>(
     '/api/admin/users/:id/deletion-impact',
     { preHandler: requireAdmin(db) },
     async (request, reply) => {

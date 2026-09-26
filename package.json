@@ -22,6 +22,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc -b --noEmit",
+    "ops:rotate-key": "node server/ops/rotate-key.ts",
     "ephe:sync": "node scripts/sync-ephemeris.mjs",
     "corpus:split": "node scripts/split-corpus.mjs",
     "check:bundle-size": "node scripts/check-bundle-size.mjs",

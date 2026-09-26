@@ -117,9 +117,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
       // separate path. A failed/stale exchange (e.g. a reloaded callback URL,
       // whose one-time code `consumeOidcCallback` already discarded) falls
       // through to the ordinary `me()` check below rather than failing boot.
-      const oidcParams = consumeOidcCallback();
-      if (oidcParams !== undefined) {
-        try {
+      //
+      // `consumeOidcCallback` is inside the `try`, not before it (#334): anything it
+      // throws — unreadable `sessionStorage`, a corrupt pending entry — would otherwise
+      // reject this effect before any `setStatus`, leaving the app on `{ kind: 'opening' }`
+      // permanently. A callback that cannot be read is a failed sign-in, not a dead app.
+      try {
+        const oidcParams = consumeOidcCallback();
+        if (oidcParams !== undefined) {
           const oidcUser = await exchangeOidcCode(oidcParams);
           if (isCancelled()) return;
           const anonymous = await openStore();
@@ -131,9 +136,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
           setStatus({ kind: 'ready', store: anonymous });
           await completeSignIn(oidcUser);
           return;
-        } catch {
-          /* fall through to the normal signed-in/signed-out check below */
         }
+      } catch {
+        /* fall through to the normal signed-in/signed-out check below */
       }
 
       let authUser: AuthUser | undefined;
@@ -323,7 +328,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   }
 
   async function signOut(): Promise<void> {
-    const { endSessionUrl } = await logout();
+    // Signing out locally must not depend on the network (#335). `logout()` throws when
+    // offline, and aborting here on that would leave the account signed in with its store
+    // open — the opposite of what someone who just asked to sign out expects, and the one
+    // outcome that can't be retried from the UI. The server-side session is left to expire
+    // on its own instead, which it does regardless of whether it was told.
+    let endSessionUrl: string | undefined;
+    try {
+      ({ endSessionUrl } = await logout());
+    } catch {
+      /* fall through to the local sign-out below */
+    }
     localStorage.removeItem(LAST_USER_KEY);
     const anonymous = await openStore();
     engineRef.current?.close();
