@@ -82,6 +82,35 @@ function insert(records: readonly OpRecord[], record: OpRecord): readonly OpReco
   return [...records.slice(0, index), record, ...records.slice(index)];
 }
 
+/**
+ * Merges a batch of newly-accepted records into an already-sorted log in one pass,
+ * rather than the `insert` above's O(n) splice done once per record (#325) — the
+ * cost that matters when a fresh device's first sync pulls its whole history in
+ * pages against a log that has already grown large. `added` is sorted here because
+ * `receiveRecords` builds it in arrival order, not timestamp order; `records` is
+ * already sorted, by this module's own invariant.
+ */
+function mergeSorted(records: readonly OpRecord[], added: readonly OpRecord[]): readonly OpRecord[] {
+  if (added.length === 0) return records;
+  const sortedAdded = [...added].sort((a, b) => compareHlc(String(a.hlc), String(b.hlc)));
+  const merged: OpRecord[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < records.length && j < sortedAdded.length) {
+    const fromLog = records[i];
+    const fromBatch = sortedAdded[j];
+    if (fromLog === undefined || fromBatch === undefined) break;
+    if (compareHlc(String(fromLog.hlc), String(fromBatch.hlc)) < 0) {
+      merged.push(fromLog);
+      i += 1;
+    } else {
+      merged.push(fromBatch);
+      j += 1;
+    }
+  }
+  return [...merged, ...records.slice(i), ...sortedAdded.slice(j)];
+}
+
 export interface Appended {
   readonly log: Log;
   readonly record: OpRecord;
@@ -131,8 +160,12 @@ export interface Received {
  */
 export function receiveRecords(log: Log, incoming: readonly unknown[], physicalMillis: number): Received {
   let clock = log.clock;
-  let records = log.records;
+  const records = log.records;
   const added: OpRecord[] = [];
+  // Same-batch duplicate/collision detection (below): `records` never changes during the
+  // loop (#325), so a later candidate sharing an earlier one's timestamp *this batch* has
+  // nowhere to be found except here.
+  const addedByHlc = new Map<Hlc, OpRecord>();
   const rejected: Rejection[] = [];
   const drift: Drift[] = [];
   let duplicates = 0;
@@ -145,7 +178,7 @@ export function receiveRecords(log: Log, incoming: readonly unknown[], physicalM
     }
 
     const { hlc } = decoded.spine;
-    const existing = findByHlc(records, hlc);
+    const existing = findByHlc(records, hlc) ?? addedByHlc.get(hlc);
     if (existing !== undefined) {
       if (canonical(existing) === canonical(candidate)) {
         duplicates += 1;
@@ -167,11 +200,11 @@ export function receiveRecords(log: Log, incoming: readonly unknown[], physicalM
     if (stamped.drift !== undefined) drift.push(stamped.drift);
 
     const record = candidate as OpRecord;
-    records = insert(records, record);
+    addedByHlc.set(hlc, record);
     added.push(record);
   }
 
-  return { log: { clock, records }, added, duplicates, rejected, drift };
+  return { log: { clock, records: mergeSorted(records, added) }, added, duplicates, rejected, drift };
 }
 
 /**

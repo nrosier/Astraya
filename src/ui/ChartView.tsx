@@ -47,7 +47,7 @@ import {
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import { encodeChartShareLink } from '../domain/chart-share.js';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { momentKey } from '../time/encode.js';
 import { renderChartSheetSvg } from '../chart/chart-sheet.js';
 import {
   DEFAULT_EXTENDED_SETTINGS,
@@ -63,6 +63,7 @@ import { aspectDisplayName, bodyDisplayName, signDisplayName } from './astro-nam
 import { chartViewMessages } from './ChartView.messages.js';
 import { svgToPngBlob } from './chart-raster.js';
 import { downloadBlob, downloadText } from './download.js';
+import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { ExtendedSettingsPanel } from './ExtendedSettingsPanel.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
@@ -632,47 +633,21 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
   const [locale] = useLocale();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [settings, setSettings] = useState<ExtendedSettings>(DEFAULT_EXTENDED_SETTINGS);
-  // A separate provider dedicated to the "Extended settings" panel's own house-system/
-  // ayanamsa name lookups (#52): created once for the component's lifetime, unlike the
-  // provider below, which used to be torn down and recreated on every recompute — reusing
-  // that one here would dispose it out from under the panel on every redraw.
-  const [settingsProvider, setSettingsProvider] = useState<EphemerisProvider | undefined>(undefined);
-  // The main computation provider (#71): also created once, not per recompute. Spawning a
-  // worker means recompiling the WASM module and reloading every ephemeris data file from
-  // scratch (`SwissEphemerisEngine#doInitialize`) — real, fixed overhead that a settings
-  // tweak has no business re-paying. Reuse is safe because every call already carries its
-  // own zodiac/observer options rather than relying on state a prior call left behind
-  // (`#applyZodiac`/`#flagsFor` in `engine.ts` set sidereal mode and the topocentric
-  // observer fresh from each request's own options), and the worker serializes requests
-  // through one promise chain, so out-of-order settings changes still resolve in order.
-  const [chartProvider, setChartProvider] = useState<EphemerisProvider | undefined>(undefined);
+  // The "Extended settings" panel's house-system/ayanamsa name lookups and the main
+  // chart computation below used to hold two separate `WorkerEphemerisProvider`
+  // instances — kept apart so that recreating the computation provider on a settings
+  // tweak would never dispose the panel's provider out from under it. Both now come
+  // from the app-wide shared instance (#315), which is never recreated mid-session, so
+  // that concern no longer applies. Reuse is otherwise safe because every call already
+  // carries its own zodiac/observer options rather than relying on state a prior call
+  // left behind (`#applyZodiac`/`#flagsFor` in `engine.ts` set sidereal mode and the
+  // topocentric observer fresh from each request's own options), and the worker
+  // serializes requests through one promise chain, so out-of-order settings changes
+  // still resolve in order.
+  const { provider } = useEphemerisProvider();
 
   useEffect(() => {
-    const provider = new WorkerEphemerisProvider();
-    const effect = { cancelled: false };
-    void provider.initialize().then(() => {
-      if (!effect.cancelled) setSettingsProvider(provider);
-    });
-    return () => {
-      effect.cancelled = true;
-      void provider.dispose();
-    };
-  }, []);
-
-  useEffect(() => {
-    const provider = new WorkerEphemerisProvider();
-    const effect = { cancelled: false };
-    void provider.initialize().then(() => {
-      if (!effect.cancelled) setChartProvider(provider);
-    });
-    return () => {
-      effect.cancelled = true;
-      void provider.dispose();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (person?.moment === undefined || chartProvider === undefined) return undefined;
+    if (person?.moment === undefined || provider === undefined) return undefined;
     const moment = person.moment;
     // A mutable holder rather than a `let`, matching `App.tsx`'s own effect below.
     const effect = { cancelled: false };
@@ -680,7 +655,7 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
 
     void (async () => {
       try {
-        const data = await computeChartData(moment, chartProvider, toChartCalculationOptions(settings));
+        const data = await computeChartData(moment, provider, toChartCalculationOptions(settings));
         if (!effect.cancelled) setLoad({ kind: 'ready', data });
       } catch (error) {
         if (!effect.cancelled)
@@ -691,7 +666,7 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
     return () => {
       effect.cancelled = true;
     };
-  }, [personId, person, settings, chartProvider]);
+  }, [personId, momentKey(person?.moment), settings, provider]);
 
   if (person === undefined) {
     return <PersonNotFound />;
@@ -728,7 +703,7 @@ export function ChartView({ personId }: { personId: string }): React.JSX.Element
         metaLines={chartSheetMetaLines(person.displayName || t.chartFallback, person.moment, locale)}
         extendedSettings={settings}
         onExtendedSettingsChange={setSettings}
-        settingsProvider={settingsProvider}
+        settingsProvider={provider}
       />
     </main>
   );

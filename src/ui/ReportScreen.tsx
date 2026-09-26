@@ -7,14 +7,14 @@
  * chart reading, and belongs on a page of its own.
  */
 import { useEffect, useState } from 'react';
+import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { momentKey } from '../time/encode.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { reportScreenMessages } from './ReportScreen.messages.js';
 import { ReportView } from './ReportView.js';
 import { useMessages } from './messages.js';
 import { useStoreState } from './store-context.js';
-import type { EphemerisProvider } from '../ephemeris/types.js';
 
 type Load =
   | { readonly kind: 'loading' }
@@ -25,20 +25,8 @@ export function ReportScreen({ personId }: { personId: string }): React.JSX.Elem
   const state = useStoreState();
   const person = state.people.get(personId);
   const t = useMessages(reportScreenMessages);
-  const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
+  const { provider } = useEphemerisProvider();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
-
-  useEffect(() => {
-    const worker = new WorkerEphemerisProvider();
-    const effect = { cancelled: false };
-    void worker.initialize().then(() => {
-      if (!effect.cancelled) setProvider(worker);
-    });
-    return () => {
-      effect.cancelled = true;
-      void worker.dispose();
-    };
-  }, []);
 
   useEffect(() => {
     if (person?.moment === undefined || provider === undefined) return undefined;
@@ -59,7 +47,7 @@ export function ReportScreen({ personId }: { personId: string }): React.JSX.Elem
     return () => {
       effect.cancelled = true;
     };
-  }, [person, provider]);
+  }, [momentKey(person?.moment), provider]);
 
   if (person === undefined) {
     return <PersonNotFound />;

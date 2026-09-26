@@ -12,16 +12,16 @@
  * does) rather than calling the multi-wheel renderer directly.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { computeComposite, type CompositeData } from '../domain/composite.js';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { ChartDataView } from './ChartView.js';
 import { compositeViewMessages } from './CompositeView.messages.js';
 import { useMessages } from './messages.js';
 import { ordered } from './people-list.js';
+import { momentKey } from '../time/encode.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { useStoreState } from './store-context.js';
 import type { ChartData } from '../domain/chart-compute.js';
-import type { EphemerisProvider } from '../ephemeris/types.js';
 
 type Load =
   | { readonly kind: 'idle' }
@@ -45,20 +45,8 @@ export function CompositeView({ personId }: { personId: string }): React.JSX.Ele
   const [partnerId, setPartnerId] = useState<string>('');
   const partner = partnerId === '' ? undefined : state.people.get(partnerId);
 
-  const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
+  const { provider } = useEphemerisProvider();
   const [load, setLoad] = useState<Load>({ kind: 'idle' });
-
-  useEffect(() => {
-    const worker = new WorkerEphemerisProvider();
-    const effect = { cancelled: false };
-    void worker.initialize().then(() => {
-      if (!effect.cancelled) setProvider(worker);
-    });
-    return () => {
-      effect.cancelled = true;
-      void worker.dispose();
-    };
-  }, []);
 
   useEffect(() => {
     if (person?.moment === undefined || partner?.moment === undefined || provider === undefined) {
@@ -83,7 +71,7 @@ export function CompositeView({ personId }: { personId: string }): React.JSX.Ele
     return () => {
       effect.cancelled = true;
     };
-  }, [person, partner, provider]);
+  }, [momentKey(person?.moment), momentKey(partner?.moment), provider]);
 
   if (person === undefined) {
     return <PersonNotFound />;

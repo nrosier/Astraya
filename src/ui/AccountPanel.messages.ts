@@ -23,6 +23,12 @@ const en = {
   manageUsersLink: 'Manage users',
   signOutFailed: (message: string) => `That did not go through, so you are still signed in. ${message}`,
 
+  removeDataPrompt: 'Signed out. This device still has a local copy of that account’s data.',
+  removeDataButton: 'Remove it from this device',
+  removeDataConfirm:
+    'This deletes this account’s data from this device only. It stays in your account and comes back the next time you sign in here. Continue?',
+  removeDataFailed: (message: string) => `That did not go through, so nothing was removed. ${message}`,
+
   demoModeBadge: 'Demo — no sign-in or sync here',
 };
 
@@ -47,6 +53,12 @@ const nl: typeof en = {
   signOutButton: 'Uitloggen',
   manageUsersLink: 'Gebruikers beheren',
   signOutFailed: (message: string) => `Dat is niet gelukt, je bent dus nog steeds ingelogd. ${message}`,
+
+  removeDataPrompt: 'Uitgelogd. Dit apparaat heeft nog een lokale kopie van de gegevens van dat account.',
+  removeDataButton: 'Verwijderen van dit apparaat',
+  removeDataConfirm:
+    'Dit verwijdert de gegevens van dit account alleen van dit apparaat. Ze blijven in je account en komen terug de volgende keer dat je hier inlogt. Doorgaan?',
+  removeDataFailed: (message: string) => `Dat is niet gelukt, er is dus niets verwijderd. ${message}`,
 
   demoModeBadge: 'Demo — geen inloggen of synchronisatie hier',
 };

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { registerServiceWorker } from '../pwa/register.js';
 import { startWarming } from '../pwa/warm-status.js';
 import { About } from './About.js';
@@ -10,6 +9,7 @@ import { AstrocartographyView } from './AstrocartographyView.js';
 import { Changelog } from './Changelog.js';
 import { ChartView } from './ChartView.js';
 import { CompositeView } from './CompositeView.js';
+import { EphemerisProviderProvider, useEphemerisProvider } from './EphemerisProviderContext.js';
 import { HarmonicView } from './HarmonicView.js';
 import { LanguageToggle } from './LanguageToggle.js';
 import { useMessages } from './messages.js';
@@ -81,10 +81,20 @@ function Stored({ children }: { children: React.ReactNode }): React.JSX.Element 
  * handful of screens, and a hash keeps every URL shareable as a plain static file.
  */
 export function App(): React.JSX.Element {
+  return (
+    <EphemerisProviderProvider>
+      <AppShell />
+    </EphemerisProviderProvider>
+  );
+}
+
+function AppShell(): React.JSX.Element {
   const t = useMessages(appMessages);
   const [route, setRoute] = useState(() => window.location.hash);
-  const [engineStatus, setEngineStatus] = useState<string>(t.loadingEphemeris);
+  const { provider, error: engineError } = useEphemerisProvider();
   const [seVersion, setSeVersion] = useState<string>();
+  const [versionError, setVersionError] = useState<string>();
+  const engineStatus = engineError ?? versionError ?? (seVersion === undefined ? t.loadingEphemeris : 'ready');
   const isFirstRoute = useRef(true);
 
   useEffect(() => {
@@ -117,31 +127,26 @@ export function App(): React.JSX.Element {
   }, [route]);
 
   useEffect(() => {
-    const engine = new WorkerEphemerisProvider();
+    if (provider === undefined) return undefined;
     // A mutable holder rather than a `let`: TypeScript narrows a closed-over
     // boolean to its initial literal, which makes the guards below look dead.
     const effect = { cancelled: false };
 
-    void (async () => {
-      try {
-        await engine.initialize();
-        const version = await engine.version();
-        if (!effect.cancelled) {
-          setSeVersion(version);
-          setEngineStatus('ready');
-        }
-      } catch (error) {
+    void provider
+      .version()
+      .then((version) => {
+        if (!effect.cancelled) setSeVersion(version);
+      })
+      .catch((error: unknown) => {
         // Shown rather than logged. A silent ephemeris failure is precisely the
         // bug class this project is built to avoid.
-        if (!effect.cancelled) setEngineStatus(error instanceof Error ? error.message : String(error));
-      }
-    })();
+        if (!effect.cancelled) setVersionError(error instanceof Error ? error.message : String(error));
+      });
 
     return () => {
       effect.cancelled = true;
-      void engine.dispose();
     };
-  }, []);
+  }, [provider]);
 
   useEffect(() => {
     // Dev mode only, never registered: a service worker caching `npm run dev`'s

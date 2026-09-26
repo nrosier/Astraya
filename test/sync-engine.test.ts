@@ -19,6 +19,7 @@ import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
 import { createSyncEngine } from '../src/sync/engine.ts';
 import { openStore } from '../src/store/store.ts';
+import { createClock, randomNodeId, tick } from '../src/store/hlc.ts';
 
 const BOOTSTRAP_TOKEN = 'test-bootstrap-token';
 const WAIT = { timeout: 5000 };
@@ -169,6 +170,92 @@ describe('resuming', () => {
     } finally {
       engine2.close();
       second.close();
+    }
+  });
+});
+
+describe('device-local outgoing filtering (#324)', () => {
+  it('does not re-push a record pulled from a peer', async () => {
+    globalThis.fetch = await loginAs('alice', 'correct-horse-battery');
+
+    const deviceA = await openStore({ name: freshDbName() });
+    await deviceA.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
+    const engineA = await createSyncEngine({ store: deviceA });
+    await vi.waitFor(() => {
+      expect(engineA.status.kind).toBe('synced');
+    }, WAIT);
+    engineA.close();
+    deviceA.close();
+
+    const deviceBFetchCalls: { method: string; url: string }[] = [];
+    const baseFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : String(input), baseUrl);
+      deviceBFetchCalls.push({ method: init?.method ?? 'GET', url: url.pathname + url.search });
+      return baseFetch(input, init);
+    };
+
+    const deviceB = await openStore({ name: freshDbName() });
+    const engineB = await createSyncEngine({ store: deviceB });
+    try {
+      await vi.waitFor(() => {
+        expect(deviceB.state.people.get('p1')?.displayName).toBe('Ada');
+      }, WAIT);
+      await vi.waitFor(() => {
+        expect(engineB.status.kind).toBe('synced');
+      }, WAIT);
+      expect(engineB.pending()).toBe(0);
+      // Without the device-id filter, `store.outgoing()` would also return the record just
+      // folded in by `receive()` (its hlc is past `cursor.pushed`), and this device would
+      // re-POST a peer's own op straight back to the server.
+      expect(deviceBFetchCalls.some((call) => call.method === 'POST')).toBe(false);
+    } finally {
+      engineB.close();
+      deviceB.close();
+    }
+  });
+});
+
+describe('pull resilience (#320)', () => {
+  it("a corrupted row in a pulled page doesn't block the rows around it", async () => {
+    const clock = createClock(randomNodeId());
+    const first = tick(clock, Date.now());
+    const second = tick(first.clock, Date.now() + 1);
+    const goodBody = { entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' };
+    const goodRow = {
+      seq: 1,
+      hlc: first.hlc,
+      deviceId: first.clock.nodeId,
+      opVersion: 1,
+      payload: Buffer.from(JSON.stringify(goodBody)).toString('base64'),
+    };
+    const badRow = {
+      seq: 2,
+      hlc: second.hlc,
+      deviceId: second.clock.nodeId,
+      opVersion: 1,
+      // Not valid base64 (`!` isn't in the alphabet) — `fromWire`'s `atob` throws on this row.
+      payload: 'not-valid-base64!!!',
+    };
+
+    globalThis.fetch = async (input) => {
+      const url = new URL(input instanceof Request ? input.url : String(input), 'http://localhost');
+      if (url.pathname === '/api/ops') {
+        return new Response(JSON.stringify({ ops: [badRow, goodRow] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ ops: [] }), { status: 200 });
+    };
+
+    const store = await openStore({ name: freshDbName() });
+    const engine = await createSyncEngine({ store });
+    try {
+      await vi.waitFor(() => {
+        expect(engine.status.kind).toBe('synced');
+      }, WAIT);
+      expect(store.state.people.get('p1')?.displayName).toBe('Ada');
+    } finally {
+      engine.close();
+      store.close();
     }
   });
 });

@@ -44,6 +44,29 @@ function accountDbName(userId: string): string {
   return `astraya-user-${userId}`;
 }
 
+/**
+ * Deletes an account's local database (#327) — signing out never does this on its own
+ * (that would be a data-loss bug for the ordinary "sign out and back in on my own laptop"
+ * case), but leaves the encrypted-at-rest-on-server data sitting unencrypted in this
+ * browser's IndexedDB indefinitely, which is a real privacy gap on a shared device. This
+ * is exposed as a separate, explicit action (`AccountPanel.tsx`) offered only once signed
+ * out of that account, never while its store is the one currently open.
+ */
+export function removeAccountData(userId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(accountDbName(userId));
+    request.onsuccess = () => {
+      resolve();
+    };
+    request.onerror = () => {
+      reject(request.error ?? new Error('Failed to remove this account’s data from this device.'));
+    };
+    request.onblocked = () => {
+      reject(new Error('This account’s data is still open elsewhere and could not be removed.'));
+    };
+  });
+}
+
 async function openAccountStore(
   user: AuthUser,
   createEngine: boolean,
@@ -71,19 +94,31 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   const orphanedUserIdRef = useRef<string | undefined>(undefined);
 
   /**
-   * The server no longer honours this device's session (#106) — forget the account locally,
-   * without touching its store: the data stays exactly where it is, so signing back in as the
-   * same user reopens this same database and resumes syncing it, rather than the account
-   * looking like it never existed on this device. `userId` is bound at the call site rather
-   * than read from the `user` state closure, since the callback is handed to a sync engine at
-   * creation time and outlives whatever render created it.
+   * The server no longer honours this device's session (#106) — forget the account locally.
+   * The store is closed, not just orphaned from `user`/`engine` state (#314): leaving it open
+   * and writable with no user signed in would mean every screen under this provider keeps
+   * reading and writing that account's database, which is exactly the cross-account data-bleed
+   * ADR 0002 calls out as this app's worst failure mode (e.g. a session expiring server-side
+   * on a shared device left open, or a later re-authentication as a *different* account
+   * resuming into a store someone else touched while it was ownerless). The data itself is
+   * untouched on disk, so signing back in as the same user (the `orphanedUserIdRef` branch in
+   * `completeSignIn`, below) reopens this same database and resumes syncing it, rather than
+   * the account looking like it never existed on this device. `userId` is bound at the call
+   * site rather than read from the `user` state closure, since the callback is handed to a
+   * sync engine at creation time and outlives whatever render created it.
    */
   function handleUnauthorized(userId: string): void {
     orphanedUserIdRef.current = userId;
     engineRef.current?.close();
     engineRef.current = undefined;
+    storeRef.current?.close();
+    storeRef.current = undefined;
     setEngine(undefined);
     setUser(undefined);
+    // Not `{ kind: 'failed' }`: this is recoverable by signing back in, and `'opening'` is
+    // the state every screen already renders as "no writable store yet" — reusing it means
+    // this doesn't need its own UI.
+    setStatus({ kind: 'opening' });
   }
 
   useEffect(() => {
@@ -228,17 +263,30 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   }, [user]);
 
   async function switchTo(authUser: AuthUser, createEngine: boolean, adopted: readonly OpRecord[]): Promise<void> {
-    const opened = await openAccountStore(authUser, createEngine, () => {
+    // The engine is created only after `receive` resolves (#321), not folded into a single
+    // `openAccountStore(..., true, ...)` call: created any earlier, it could start its own
+    // first push/pull tick against a store that hasn't yet folded in the adopted anonymous
+    // records, racing the adoption merge — mirrors the two-step shape `completeSignIn`'s
+    // orphaned-account branch already uses.
+    const opened = await openAccountStore(authUser, false, () => {
       handleUnauthorized(authUser.id);
     });
     if (adopted.length > 0) await opened.store.receive(adopted);
+    const engine = createEngine
+      ? await createSyncEngine({
+          store: opened.store,
+          onUnauthorized: () => {
+            handleUnauthorized(authUser.id);
+          },
+        })
+      : undefined;
     engineRef.current?.close();
     storeRef.current?.close();
     storeRef.current = opened.store;
-    engineRef.current = opened.engine;
+    engineRef.current = engine;
     setStatus({ kind: 'ready', store: opened.store });
     setUser(authUser);
-    setEngine(opened.engine);
+    setEngine(engine);
   }
 
   /**
@@ -250,29 +298,30 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   async function completeSignIn(authUser: AuthUser): Promise<void> {
     localStorage.setItem(LAST_USER_KEY, authUser.id);
 
-    // A prior sync rejection (#106) can leave this exact account's store open, unattended,
-    // with `user` cleared — resume it directly rather than running the anonymous-data
-    // adoption flow below against an authenticated account's own store.
+    // A prior sync rejection (#106) leaves this exact account signed out with its store
+    // already closed (`handleUnauthorized`, #314) — reopen the same database and resume
+    // syncing it, rather than running the anonymous-data adoption flow below against an
+    // authenticated account's own data.
     if (orphanedUserIdRef.current !== undefined) {
       const orphanedId = orphanedUserIdRef.current;
       orphanedUserIdRef.current = undefined;
-      if (orphanedId === authUser.id && storeRef.current !== undefined) {
-        const store = storeRef.current;
+      if (orphanedId === authUser.id) {
+        const store = await openStore({ name: accountDbName(orphanedId) });
         const syncEngine = await createSyncEngine({
           store,
           onUnauthorized: () => {
             handleUnauthorized(authUser.id);
           },
         });
+        storeRef.current = store;
         engineRef.current = syncEngine;
+        setStatus({ kind: 'ready', store });
         setEngine(syncEngine);
         setUser(authUser);
         return;
       }
-      // A different account signing in: the orphaned store is neither anonymous data nor
-      // this account's — close it and fall through to a normal switch, with nothing to adopt.
-      storeRef.current?.close();
-      storeRef.current = undefined;
+      // A different account signing in: `handleUnauthorized` already closed the orphaned
+      // store, so there is nothing to adopt from it — fall through to a normal switch.
       await switchTo(authUser, true, []);
       return;
     }
@@ -308,15 +357,23 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
   async function resolveAdoption(accept: boolean): Promise<void> {
     const pending = pendingAdoptionRef.current;
     if (pending === undefined) return;
-    pendingAdoptionRef.current = undefined;
-    setAdoption(undefined);
 
     const outgoing = pending.anonymousStore.outgoing();
     if (accept) {
+      // The prompt is only cleared once the push actually lands (#321): clearing it first
+      // and then having `pushRecords` throw (a network failure mid-adoption) would leave
+      // the user with no record anything was ever pending and no way to retry — the
+      // records are still sitting in the anonymous store, but nothing in the UI points
+      // back at this flow. Leaving `pendingAdoptionRef`/`adoption` set lets the same
+      // "accept" action be retried, and the caller sees the thrown error.
       await pushRecords(outgoing);
       await pending.anonymousStore.setAdoptionDecision(`user:${pending.user.id}`);
+      pendingAdoptionRef.current = undefined;
+      setAdoption(undefined);
       await switchTo(pending.user, true, outgoing);
     } else {
+      pendingAdoptionRef.current = undefined;
+      setAdoption(undefined);
       await pending.anonymousStore.setAdoptionDecision('declined');
       await switchTo(pending.user, true, []);
     }

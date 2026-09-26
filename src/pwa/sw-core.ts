@@ -126,7 +126,15 @@ export function installServiceWorker(scope: ServiceWorkerScope, config: ServiceW
     } else if (strategy === 'shell-asset') {
       event.respondWith(cacheFirst(scope.caches, shellCacheName(version), event.request, fetchImpl));
     } else if (strategy === 'shell-navigate') {
-      event.respondWith(staleWhileRevalidate(scope.caches, shellCacheName(version), event.request, fetchImpl));
+      // Every shell-navigate URL serves byte-identical content (the server's SPA fallback
+      // returns the same shell HTML regardless of path), so the request used for both the
+      // cache key and the fetch is rebuilt as the canonical shell URL rather than passed
+      // through as `event.request` (#323): that bounds the shell cache to one entry instead
+      // of growing one per distinct URL ever visited, and as a side effect means a query
+      // string — e.g. the OIDC callback's `?code=...&state=...` (#313a) — is never part of
+      // what gets written into Cache Storage.
+      const canonical = new Request(new URL(basePath, scope.location.origin).toString());
+      event.respondWith(staleWhileRevalidate(scope.caches, shellCacheName(version), canonical, fetchImpl));
     }
     // 'bypass': no respondWith call at all, which is exactly "handle this as if
     // there were no service worker" — the required behaviour for /api/ and any

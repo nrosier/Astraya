@@ -27,6 +27,13 @@ function isSecureRequest(request: { protocol: string }): boolean {
   return request.protocol === 'https';
 }
 
+/**
+ * Generous for any real username, but a firm bound: with no cap, an attacker
+ * cycling through huge usernames grows `login-throttle.ts`'s per-username map
+ * with a small number of huge keys instead of many small ones (#317).
+ */
+const MAX_USERNAME_LENGTH = 64;
+
 interface LoginBody {
   readonly username?: unknown;
   readonly password?: unknown;
@@ -59,6 +66,9 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
       const { username, password } = request.body;
       if (typeof username !== 'string' || typeof password !== 'string' || username === '' || password === '') {
         return reply.code(400).send({ error: 'username and password are required' });
+      }
+      if (username.length > MAX_USERNAME_LENGTH) {
+        return reply.code(400).send({ error: `username must be at most ${String(MAX_USERNAME_LENGTH)} characters` });
       }
 
       if (isLoginThrottled(username)) {
@@ -129,7 +139,11 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
     let authorizationEndpoint: string;
     try {
       authorizationEndpoint = (await getDiscovery(oidcConfig.issuer)).authorization_endpoint;
-    } catch {
+    } catch (error) {
+      // Silently reporting disabled here would hide a real misconfiguration
+      // (issuer unreachable, malformed discovery document) from anyone watching
+      // logs (#319) — log it, then still degrade to "disabled" for the caller.
+      app.log.error({ error }, 'OIDC discovery failed');
       return reply.send({ enabled: false });
     }
     return reply.send({
@@ -205,6 +219,9 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
     if (tokenError) return reply.code(401).send({ error: tokenError });
 
     if (username === '') return reply.code(400).send({ error: 'username is required' });
+    if (username.length > MAX_USERNAME_LENGTH) {
+      return reply.code(400).send({ error: `username must be at most ${String(MAX_USERNAME_LENGTH)} characters` });
+    }
     if (getUserByUsername(db, username)) return reply.code(409).send({ error: 'Username already taken' });
     if (passwordIsTooWeak(password, username)) return reply.code(400).send({ error: 'Password is too weak' });
 
