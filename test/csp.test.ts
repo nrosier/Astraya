@@ -27,17 +27,13 @@ describe('content security policy', () => {
     expect(normalize(metaPolicy())).toBe(normalize(CSP_META));
   });
 
-  it('forbids any external connection but the default OSM tile and Nominatim hosts, which is what keeps model providers unreachable', () => {
+  it('forbids any external connection but the default Nominatim host, which is what keeps model providers unreachable', () => {
     // The interpretation corpus is generated at build time and shipped as data. If
-    // connect-src ever gains a host beyond the tile host (#267) and the Nominatim
-    // reverse-geocoding host (#291) it already trusts, that guarantee is gone — so
-    // assert the exact value rather than merely that the directive exists.
-    expect(CSP_DIRECTIVES).toContain(
-      "connect-src 'self' https://tile.openstreetmap.org https://nominatim.openstreetmap.org",
-    );
-    expect(normalize(metaPolicy())).toContain(
-      "connect-src 'self' https://tile.openstreetmap.org https://nominatim.openstreetmap.org",
-    );
+    // connect-src ever gains a host beyond the Nominatim geocoding host (#290, #291)
+    // it already trusts, that guarantee is gone — so assert the exact value rather
+    // than merely that the directive exists.
+    expect(CSP_DIRECTIVES).toContain("connect-src 'self' https://nominatim.openstreetmap.org");
+    expect(normalize(metaPolicy())).toContain("connect-src 'self' https://nominatim.openstreetmap.org");
   });
 
   it('allows WASM compilation without allowing eval of JavaScript', () => {
@@ -67,43 +63,20 @@ describe('content security policy', () => {
       const changed = built.directives.filter((directive, index) => directive !== CSP_DIRECTIVES[index]);
       expect(changed).toEqual(['form-action https://auth.example.com']);
       // Every other directive, including the header-only one, is untouched. In
-      // particular connect-src keeps its two host exceptions and nothing more:
-      // the browser never fetches the issuer directly, so it needs no grant there.
-      expect(built.header).toContain(
-        "connect-src 'self' https://tile.openstreetmap.org https://nominatim.openstreetmap.org",
-      );
+      // particular connect-src keeps its host exception and nothing more: the
+      // browser never fetches the issuer directly, so it needs no grant there.
+      expect(built.header).toContain("connect-src 'self' https://nominatim.openstreetmap.org");
       expect(built.header).toContain("script-src 'self' 'wasm-unsafe-eval'");
       expect(built.header).toContain("frame-ancestors 'none'");
     });
 
-    it('with a tile origin, replaces the default OSM host in img-src and connect-src rather than appending to them, and leaves the Nominatim host alone', () => {
-      const built = buildCsp({ tileOrigin: 'https://tiles.example.com' });
-      const changed = built.directives.filter((directive, index) => directive !== CSP_DIRECTIVES[index]);
-      expect(changed).toEqual([
-        "img-src 'self' data: blob: https://tiles.example.com",
-        "connect-src 'self' https://tiles.example.com https://nominatim.openstreetmap.org",
-      ]);
-      expect(built.header).not.toContain('tile.openstreetmap.org');
-      expect(built.header).toContain('nominatim.openstreetmap.org');
-      // Every other directive stays untouched, same as the issuer-only case above.
-      expect(built.header).toContain("form-action 'none'");
-    });
-
-    it('with a geocode origin, replaces the default Nominatim host in connect-src only, independently of the tile host', () => {
+    it('with a geocode origin, replaces the default Nominatim host in connect-src rather than appending to it', () => {
       const built = buildCsp({ geocodeOrigin: 'https://geocode.example.com' });
       const changed = built.directives.filter((directive, index) => directive !== CSP_DIRECTIVES[index]);
-      expect(changed).toEqual(["connect-src 'self' https://tile.openstreetmap.org https://geocode.example.com"]);
+      expect(changed).toEqual(["connect-src 'self' https://geocode.example.com"]);
       expect(built.header).not.toContain('nominatim.openstreetmap.org');
-      expect(built.header).toContain('tile.openstreetmap.org');
-    });
-
-    it('with both a tile origin and a geocode origin, replaces each independently', () => {
-      const built = buildCsp({ tileOrigin: 'https://tiles.example.com', geocodeOrigin: 'https://geocode.example.com' });
-      const changed = built.directives.filter((directive, index) => directive !== CSP_DIRECTIVES[index]);
-      expect(changed).toEqual([
-        "img-src 'self' data: blob: https://tiles.example.com",
-        "connect-src 'self' https://tiles.example.com https://geocode.example.com",
-      ]);
+      // Every other directive stays untouched, same as the issuer-only case above.
+      expect(built.header).toContain("form-action 'none'");
     });
   });
 

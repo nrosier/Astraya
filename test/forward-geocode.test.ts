@@ -1,8 +1,7 @@
 /**
  * `src/ui/forward-geocode.ts` (#290): a plain `fetch()` wrapper around Nominatim or MapTiler,
- * mocked here rather than hit for real — the same reasoning `test/reverse-geocode.test.ts` gives
- * applies equally here: real calls in a test suite would be flaky (rate-limited) and a policy
- * violation in CI.
+ * mocked here rather than hit for real — real calls in a test suite would be flaky
+ * (rate-limited) and a policy violation in CI.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forwardGeocode } from '../src/ui/forward-geocode.ts';
