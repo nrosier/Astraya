@@ -44,6 +44,11 @@ const en = {
   copyShareLink: 'Copy share link',
   shareLinkHint:
     'The link holds the whole birth record and settings — nothing is sent to us to create it, and opening it needs no account.',
+  // The other side of the same fact (#341): because the data is in the link and not on a
+  // server, there is nothing to revoke. Worth saying at the moment of copying rather than
+  // in a settings screen nobody opens.
+  shareLinkWarning:
+    'Anyone who has the link can read that birth data, and it cannot be revoked — sharing it is permanent wherever it is pasted.',
 
   housesUnknownHint: (name: string) =>
     `The birth time for ${name} is unknown, so houses, angles and the Ascendant-based derived points cannot be calculated — they are not shown below. Positions, aspects and dignities are still meaningful, though the Moon’s sign may be uncertain.`,
@@ -117,6 +122,8 @@ const nl: typeof en = {
   copyShareLink: 'Deellink kopiëren',
   shareLinkHint:
     'De link bevat het hele geboorterecord en de instellingen — er wordt niets naar ons verzonden om hem te maken, en het openen ervan vereist geen account.',
+  shareLinkWarning:
+    'Iedereen met de link kan die geboortegegevens lezen, en de link kan niet worden ingetrokken — delen is definitief, waar de link ook geplakt wordt.',
 
   housesUnknownHint: (name: string) =>
     `De geboortetijd van ${name} is onbekend, dus huizen, hoeken en de op de Ascendant gebaseerde afgeleide punten kunnen niet worden berekend — ze worden hieronder niet getoond. Posities, aspecten en waardigheden blijven zinvol, al kan het teken van de Maan onzeker zijn.`,

@@ -18,24 +18,66 @@ export interface ForwardGeocodeResult {
   readonly displayName: string;
 }
 
+/**
+ * Both providers' response shapes, declared as the *claims* they are rather than as facts.
+ *
+ * These describe JSON from a third-party server, reached through an `as` cast that checks
+ * nothing. Declaring a coordinate as `[number, number]` and then indexing it makes a
+ * malformed response an unhandled `TypeError` in the caller's render, instead of the "no
+ * results" outcome the caller already knows how to show (#336) — so every field a result
+ * is built from is optional here and checked by `candidate` below.
+ */
 interface MaptilerFeature {
-  readonly place_name?: string;
-  readonly geometry: { readonly coordinates: [number, number] };
+  readonly place_name?: unknown;
+  readonly geometry?: { readonly coordinates?: readonly unknown[] };
 }
 
 interface MaptilerFeatureCollection {
-  readonly features: MaptilerFeature[];
+  readonly features?: readonly MaptilerFeature[];
 }
 
 interface NominatimSearchResult {
-  readonly lat: string;
-  readonly lon: string;
-  readonly display_name?: string;
+  readonly lat?: unknown;
+  readonly lon?: unknown;
+  readonly display_name?: unknown;
 }
 
 // How many candidates to offer — a birth-place search rarely needs more than a handful, and the
 // result list (click-to-confirm, never auto-picked) stays easy to scan at this size.
 const RESULT_LIMIT = 5;
+
+/**
+ * A degree value from either provider — MapTiler sends numbers, Nominatim sends strings.
+ *
+ * Not a bare `Number()`: it maps `null` and `''` to 0, which would place a birth chart on
+ * the Gulf of Guinea rather than reporting that the coordinate was missing.
+ */
+function coordinate(value: unknown): number | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value !== 'string' || value.trim() === '') return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/**
+ * One validated candidate, or nothing — `flatMap`'s empty array drops a result this can't
+ * read while keeping the others in the same response, which is the useful behaviour: one
+ * unparseable entry is not a reason to fail a search that also found three good towns.
+ */
+function candidate(latitude: unknown, longitude: unknown, displayName: unknown): ForwardGeocodeResult[] {
+  const lat = coordinate(latitude);
+  const lon = coordinate(longitude);
+  if (typeof displayName !== 'string' || lat === undefined || lon === undefined) return [];
+  return [{ latitude: lat, longitude: lon, displayName }];
+}
+
+/**
+ * A response body that should have been a list but might not be — either provider's
+ * results, since `candidate` reads both through `unknown` anyway.
+ */
+function asArray(value: unknown): readonly (MaptilerFeature & NominatimSearchResult)[] {
+  return Array.isArray(value) ? (value as readonly (MaptilerFeature & NominatimSearchResult)[]) : [];
+}
 
 async function forwardGeocodeViaMaptiler(query: string): Promise<ForwardGeocodeResult[]> {
   const url = maptilerGeocodeUrl(encodeURIComponent(query));
@@ -45,14 +87,10 @@ async function forwardGeocodeViaMaptiler(query: string): Promise<ForwardGeocodeR
   if (!response.ok) throw new Error(`place search request failed: ${String(response.status)}`);
 
   const data = (await response.json()) as MaptilerFeatureCollection;
-  return data.features
-    .filter((feature) => feature.place_name !== undefined)
-    .map((feature) => ({
-      latitude: feature.geometry.coordinates[1],
-      longitude: feature.geometry.coordinates[0],
-      // The filter above guarantees this, but TypeScript can't see through it.
-      displayName: feature.place_name ?? '',
-    }));
+  // GeoJSON orders a coordinate pair longitude-first.
+  return asArray(data.features).flatMap((feature) =>
+    candidate(feature.geometry?.coordinates?.[1], feature.geometry?.coordinates?.[0], feature.place_name),
+  );
 }
 
 async function forwardGeocodeViaNominatim(query: string): Promise<ForwardGeocodeResult[]> {
@@ -73,14 +111,8 @@ async function forwardGeocodeViaNominatim(query: string): Promise<ForwardGeocode
     throw new Error(`place search request failed: ${String(response.status)}`);
   }
 
-  const data = (await response.json()) as NominatimSearchResult[];
-  return data
-    .filter((result) => result.display_name !== undefined)
-    .map((result) => ({
-      latitude: Number(result.lat),
-      longitude: Number(result.lon),
-      displayName: result.display_name ?? '',
-    }));
+  const data: unknown = await response.json();
+  return asArray(data).flatMap((result) => candidate(result.lat, result.lon, result.display_name));
 }
 
 /**

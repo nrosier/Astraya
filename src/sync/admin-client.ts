@@ -86,8 +86,9 @@ export async function demoteUser(id: string): Promise<AdminUser> {
   return user;
 }
 
+/** `POST` for a read, matching the route — see its comment in `server/auth/admin-routes.ts`. */
 export async function getDeletionImpact(id: string): Promise<DeletionImpact> {
-  return call(`/api/admin/users/${id}/deletion-impact`);
+  return call(`/api/admin/users/${id}/deletion-impact`, { method: 'POST' });
 }
 
 export async function deleteUser(id: string): Promise<void> {

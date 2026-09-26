@@ -92,7 +92,11 @@ export function installServiceWorker(scope: ServiceWorkerScope, config: ServiceW
       (async () => {
         const paths = await readManifest(fetchImpl, manifestPath, basePath);
         const cache = await scope.caches.open(shellCacheName(version));
-        await Promise.all(
+        // `allSettled`, not `all` (#336): one asset that fails to fetch would otherwise
+        // reject `install` entirely and leave nothing precached, where the honest outcome
+        // is a partial cache — the same "a worse precache is a worse offline experience,
+        // not a broken one" rule `readManifest` above already follows.
+        await Promise.allSettled(
           paths.map(async (path) => {
             const response = await fetchImpl(path);
             if (response.ok) await cache.put(path, response);

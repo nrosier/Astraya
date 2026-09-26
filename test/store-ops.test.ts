@@ -10,10 +10,12 @@
 import { describe, expect, it } from 'vitest';
 import fixture from './fixtures/oplog-v1.json' with { type: 'json' };
 import {
+  BODY_KEYS,
   decode,
   isJsonValue,
   newRecord,
   OP_VERSION,
+  SPINE_KEYS,
   upcastBody,
   type OpRecord,
   type Upcast,
@@ -89,6 +91,17 @@ describe('decoding an operation', () => {
     expect(decode(record({ entity: '' })).kind).toBe('corrupt');
     expect(decode(record({ entityId: '' })).kind).toBe('corrupt');
     expect(decode(record({ field: '' })).kind).toBe('corrupt');
+  });
+
+  it('rejects a prototype-sensitive name where the fold would use it as an object key (#331)', () => {
+    for (const name of ['__proto__', 'constructor', 'prototype']) {
+      for (const key of ['entity', 'entityId', 'field'] as const) {
+        const decoded = decode(record({ [key]: name }));
+        expect(decoded.kind).toBe('corrupt');
+        if (decoded.kind !== 'corrupt') continue;
+        expect(decoded.reason).toMatch(/reserved name/);
+      }
+    }
   });
 
   it('rejects an unexpected field rather than ignoring it', () => {
@@ -258,5 +271,55 @@ describe('the committed v1 log', () => {
     expect(fields).toContain('civil');
     expect(fields).toContain('coordinates');
     expect(fields).toContain('offsetOverrideMinutes');
+  });
+});
+
+/**
+ * The release gate #343 asks for.
+ *
+ * `readBody` refuses a record carrying a key it does not expect, which is the right call —
+ * a newer client that adds a field is required to bump `opVersion`. The consequence is that
+ * the *mistake* is expensive in a way the rule is not: ship one release that adds a body
+ * field without bumping the version, and every operation carrying it decodes as `corrupt`
+ * on every older client, permanently, on devices nobody is watching.
+ *
+ * So the key sets are pinned per version here rather than read out of the code. An
+ * assertion derived from `BODY_KEYS` would pass the moment someone added a field, which is
+ * exactly the change this exists to stop.
+ */
+describe('the operation schema is pinned to its version', () => {
+  /** Keyed by `OP_VERSION`. A new version adds a row; it never edits one. */
+  const PINNED_BODY_KEYS = new Map<number, readonly string[]>([[1, ['entity', 'entityId', 'field', 'value']]]);
+
+  it('carries exactly the body fields pinned for the current version', () => {
+    const pinned = PINNED_BODY_KEYS.get(OP_VERSION);
+    expect(
+      pinned,
+      `OP_VERSION is ${String(OP_VERSION)} but no body-key set is pinned for it. Add one, alongside the ` +
+        'UPCASTS entry from the previous version and a fixture log at that version.',
+    ).toBeDefined();
+    expect([...BODY_KEYS].sort()).toEqual([...(pinned ?? [])].sort());
+  });
+
+  it('never changes the spine, at any version', () => {
+    // The spine is what an older client reads to order and forward an operation whose body
+    // it cannot interpret. It is frozen for all time rather than per version, so this
+    // assertion has no version to look up: a change here is never the correct fix.
+    expect([...SPINE_KEYS]).toEqual(['opVersion', 'hlc', 'deviceId']);
+  });
+
+  it('writes exactly the keys it validates, and no others', () => {
+    // The other half of the same gate. A field added to the writer but left out of
+    // `BODY_KEYS` makes every operation this build writes unreadable to itself; a field
+    // added to both without a version bump is what the first assertion catches.
+    const written = newRecord({
+      hlc: STAMP,
+      deviceId: DEVICE,
+      entity: 'person',
+      entityId: 'p-1',
+      field: 'name',
+      value: 'Ada',
+    });
+    expect(Object.keys(written).sort()).toEqual([...SPINE_KEYS, ...BODY_KEYS].sort());
   });
 });
