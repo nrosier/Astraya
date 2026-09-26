@@ -113,6 +113,35 @@ const MIGRATIONS: readonly ((db: DatabaseSync) => void)[] = [
       CREATE UNIQUE INDEX users_password_set_token ON users(password_set_token);
     `);
   },
+  // 5: admin corrections to a committed interpretation-corpus entry's displayed
+  // text/tier/tags (#292). Deliberate, narrow exception to this file's own
+  // "never the domain model" rule above: this is admin-curated, shared
+  // interpretation content, not a person's private data — the same kind of
+  // exception `users`/`sessions` already are for credentials. The committed
+  // JSON under src/interpretation/corpus/ never changes; this table is the
+  // only thing that does. `persona` defaults to '' rather than staying
+  // nullable so the unique index below treats "no persona" as one shared
+  // value across rows — a NULL/NULL pair never collides in a UNIQUE index
+  // (see users_oidc_identity above), which would let two "neutral" overrides
+  // for the same (key, locale) coexist. `tags` is JSON-encoded text:
+  // node:sqlite has no array column type.
+  (db) => {
+    db.exec(`
+      CREATE TABLE corpus_overrides (
+        id TEXT PRIMARY KEY,
+        key TEXT NOT NULL,
+        locale TEXT NOT NULL,
+        persona TEXT NOT NULL DEFAULT '',
+        text TEXT NOT NULL,
+        tier TEXT NOT NULL,
+        tags TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        updated_by TEXT NOT NULL REFERENCES users(id)
+      );
+      CREATE UNIQUE INDEX corpus_overrides_identity ON corpus_overrides(key, locale, persona);
+    `);
+  },
 ];
 
 /** Migration steps whose table rebuild would otherwise break `REFERENCES` clauses pointing at the table being rebuilt. */

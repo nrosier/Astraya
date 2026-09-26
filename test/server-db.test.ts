@@ -24,19 +24,20 @@ function schemaOf(db: DatabaseSync): SchemaRow[] {
 }
 
 describe('server/db.ts', () => {
-  it('creates the users, sessions and ops tables', () => {
+  it('creates the users, sessions, ops and corpus_overrides tables', () => {
     const db = openDatabase(':memory:');
     const names = schemaOf(db).map((row) => row.name);
     expect(names).toContain('users');
     expect(names).toContain('sessions');
     expect(names).toContain('ops');
+    expect(names).toContain('corpus_overrides');
     db.close();
   });
 
   it('sets PRAGMA user_version to the number of migrations applied', () => {
     const db = openDatabase(':memory:');
     const row = db.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-    expect(row.user_version).toBe(4);
+    expect(row.user_version).toBe(5);
     db.close();
   });
 
@@ -54,7 +55,7 @@ describe('server/db.ts', () => {
       const second = openDatabase(path);
       expect(schemaOf(second)).toEqual(before);
       const row = second.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-      expect(row.user_version).toBe(4);
+      expect(row.user_version).toBe(5);
       second.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -141,7 +142,7 @@ describe('server/db.ts', () => {
 
       const db = openDatabase(path);
       const row = db.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-      expect(row.user_version).toBe(4);
+      expect(row.user_version).toBe(5);
 
       // The pre-existing row survived the users rebuild intact.
       const legacyUser = db.prepare('SELECT * FROM users WHERE id = ?').get('legacy-user') as
