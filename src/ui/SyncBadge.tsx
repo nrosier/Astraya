@@ -105,6 +105,7 @@ export function SyncBadge(): React.JSX.Element {
       online,
       persistence: store?.persistence ?? UNKNOWN_PERSISTENCE,
       pending: engine?.pending() ?? store?.outgoing().length ?? 0,
+      quarantined: engine?.quarantined() ?? 0,
       sync,
       now,
     },

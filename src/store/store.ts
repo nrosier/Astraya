@@ -33,6 +33,7 @@ import { EMPTY_REGISTERS, DELETED_FIELD, applyRecords, materialise, resume, snap
 import { append, emptyLog, latest, purgeEntity, receiveRecords, since } from './oplog.js';
 import { createClock, isNodeId, randomNodeId, receive } from './hlc.js';
 import { requestPersistence } from './persist.js';
+import { acquireWriteLock } from './tab-lock.js';
 import type { Registers, State } from './fold.js';
 import type { Log, Mutation, Rejection } from './oplog.js';
 import type { Drift, Hlc, NodeId } from './hlc.js';
@@ -52,6 +53,10 @@ const SNAPSHOT_EVERY = 50;
 /** The meta key holding how far the sync engine (M8) has pushed and pulled. Opaque to this file. */
 const SYNC_CURSOR_KEY = 'syncCursor';
 
+/** Shown when a read-only tab (#311) attempts a write. */
+const NOT_WRITABLE_MESSAGE =
+  'Astraya is already open in another browser tab. Close this tab or the other one before making changes.';
+
 /**
  * The meta key guarding whether this device's anonymous data has already been claimed by
  * an account, or its adoption declined (#109). Read once per sign-in, on the *anonymous*
@@ -66,6 +71,14 @@ export interface SyncCursor {
   readonly pushed?: Hlc;
   /** The peer's own sequence number of the newest record already pulled. */
   readonly pulled?: number;
+  /**
+   * HLCs the server has permanently refused as clock-skewed (#312), rather than retried
+   * forever. `pushed` already advances past these once their batch is handled, so this list
+   * exists only so the engine can still report *that* something did not sync — otherwise the
+   * fact would be lost the moment the cursor moves on, and a device would silently stop
+   * syncing some of its own history with nothing to show for it.
+   */
+  readonly quarantined?: readonly Hlc[];
 }
 
 /** The result of merging records from a peer: what changed, and what could not be used. */
@@ -81,6 +94,12 @@ function isSyncCursor(value: unknown): value is SyncCursor {
   const cursor = value as Record<string, unknown>;
   if (cursor.pushed !== undefined && typeof cursor.pushed !== 'string') return false;
   if (cursor.pulled !== undefined && typeof cursor.pulled !== 'number') return false;
+  if (
+    cursor.quarantined !== undefined &&
+    !(Array.isArray(cursor.quarantined) && cursor.quarantined.every((hlc) => typeof hlc === 'string'))
+  ) {
+    return false;
+  }
   return true;
 }
 
@@ -91,6 +110,12 @@ export interface Store {
   readonly persistence: Persistence;
   /** This device's identity, present in every timestamp it writes. */
   readonly deviceId: NodeId;
+  /**
+   * False when another tab already holds this store's write lock (#311). Reads still
+   * work; `mutate`/`remove`/`restore`/`purge`/`receive` all reject rather than mint a
+   * clock tick that could collide with the writer tab's.
+   */
+  readonly writable: boolean;
   /**
    * Whether the stored snapshot was usable at startup.
    *
@@ -160,6 +185,9 @@ async function deviceIdFor(db: IDBDatabase): Promise<NodeId> {
 export async function openStore(options: StoreOptions = {}): Promise<Store> {
   const now = options.now ?? ((): number => Date.now());
   const db = await openDatabase(options.name);
+  // Scoped to this database's own name, not a single global lock: two different accounts'
+  // stores (an anonymous one and a signed-in one, say) never contend with each other.
+  const tabLock = await acquireWriteLock(`astraya-writer:${db.name}`);
   const deviceId = await deviceIdFor(db);
   const records = await allRecords(db);
 
@@ -248,6 +276,7 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
   function write(mutations: readonly Mutation[]): Promise<void> {
     return serialise(async () => {
       if (mutations.length === 0) return;
+      if (!tabLock.writable) throw new Error(NOT_WRITABLE_MESSAGE);
       let next = log;
       const written: OpRecord[] = [];
       for (const mutation of mutations) {
@@ -261,6 +290,11 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
 
   function receiveIncoming(records: readonly unknown[]): Promise<ReceivedSummary> {
     return serialise(async () => {
+      // A read-only tab must not fold a peer's record in either: doing so still advances
+      // this tab's own in-memory clock (`receiveRecords` calls `receive` internally),
+      // moving it independently of the writer tab's — exactly the collision #311 exists
+      // to prevent.
+      if (!tabLock.writable) throw new Error(NOT_WRITABLE_MESSAGE);
       const result = receiveRecords(log, records, now());
       // The clock may have advanced even with nothing new to store — a future record's
       // timestamp still has to be respected — so `log` is always replaced, but the database
@@ -280,12 +314,16 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
       return persistence;
     },
     deviceId,
+    get writable() {
+      return tabLock.writable;
+    },
     resumedFromSnapshot,
     mutate: write,
     remove: (entity, entityId) => write([{ entity, entityId, field: DELETED_FIELD, value: true }]),
     restore: (entity, entityId) => write([{ entity, entityId, field: DELETED_FIELD, value: false }]),
     purge: (entity, entityId) =>
       serialise(async () => {
+        if (!tabLock.writable) throw new Error(NOT_WRITABLE_MESSAGE);
         const { log: purgedLog, removed } = purgeEntity(log, entity, entityId);
         if (removed.length === 0) return;
 
@@ -338,6 +376,7 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
     },
     close() {
       listeners.clear();
+      tabLock.release();
       db.close();
     },
   };

@@ -32,6 +32,30 @@ const HOST = process.env.HOST ?? '0.0.0.0';
 const DB_PATH = process.env.ASTRAYA_DB_PATH ?? resolve(here, '..', 'data', 'astraya.db');
 
 /**
+ * `trustProxy` controls whether Fastify honours `X-Forwarded-For`/`X-Forwarded-Proto`
+ * at all. Read from `ASTRAYA_TRUST_PROXY` rather than hardcoded `true`: trusting those
+ * headers unconditionally means any client, not just a real reverse proxy, can spoof
+ * them — defeating `@fastify/rate-limit`'s per-IP keying, and letting a request claim
+ * `X-Forwarded-Proto: http` to get a session cookie minted without `Secure`
+ * (`isSecureRequest` in `auth/routes.ts` trusts `request.protocol`, which is exactly
+ * what this setting governs). Unset means no reverse proxy is trusted, which is the
+ * safe default for a deployment with no reverse proxy in front of it.
+ *
+ * Deliberately no hop-count (bare integer) support: Fastify treats a numeric
+ * `trustProxy` as untrustworthy and fails closed (trusts nothing), because a hop count
+ * alone cannot validate the immediate peer — a direct client could just send enough
+ * hops' worth of `X-Forwarded-For` entries to make itself look like it arrived through
+ * that many proxies. A list of the actual trusted proxy IPs/CIDRs is the only form that
+ * can be validated against who is actually connecting, so that's the only list form
+ * this accepts.
+ */
+function parseTrustProxy(value: string | undefined): boolean | string[] {
+  if (value === undefined || value === '') return false;
+  return value.split(',').map((entry) => entry.trim());
+}
+const TRUST_PROXY = parseTrustProxy(process.env.ASTRAYA_TRUST_PROXY);
+
+/**
  * Hashed build assets and the ephemeris data files are immutable for the life of a
  * release, so they are cached hard. `index.html` must not be, or a browser would
  * keep loading an old app against new assets after a deploy.
@@ -47,8 +71,7 @@ export interface BuildOptions {
 export async function build(options: BuildOptions = {}) {
   const app = Fastify({
     logger: { level: process.env.LOG_LEVEL ?? 'info' },
-    // Behind a reverse proxy on the user's own box, so trust its forwarding headers.
-    trustProxy: true,
+    trustProxy: TRUST_PROXY,
   });
 
   const db = openDatabase(options.dbPath ?? DB_PATH);

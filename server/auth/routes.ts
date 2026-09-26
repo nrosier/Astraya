@@ -191,67 +191,75 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
     },
   );
 
-  app.post<{ Body: SetupBody }>('/api/setup', async (request, reply) => {
-    // 404, not 403: a 403 would confirm the route exists as an ongoing attack
-    // surface after the instance is already bootstrapped.
-    if (adminExists(db)) return reply.code(404).send({ error: 'Not found' });
+  app.post<{ Body: SetupBody }>(
+    '/api/setup',
+    { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      // 404, not 403: a 403 would confirm the route exists as an ongoing attack
+      // surface after the instance is already bootstrapped.
+      if (adminExists(db)) return reply.code(404).send({ error: 'Not found' });
 
-    const { token, username, password } = request.body;
-    if (typeof token !== 'string' || typeof username !== 'string' || typeof password !== 'string') {
-      return reply.code(400).send({ error: 'token, username and password are required' });
-    }
+      const { token, username, password } = request.body;
+      if (typeof token !== 'string' || typeof username !== 'string' || typeof password !== 'string') {
+        return reply.code(400).send({ error: 'token, username and password are required' });
+      }
 
-    const tokenError = checkBootstrapToken(token);
-    if (tokenError) return reply.code(401).send({ error: tokenError });
+      const tokenError = checkBootstrapToken(token);
+      if (tokenError) return reply.code(401).send({ error: tokenError });
 
-    if (username === '') return reply.code(400).send({ error: 'username is required' });
-    if (getUserByUsername(db, username)) return reply.code(409).send({ error: 'Username already taken' });
-    if (passwordIsTooWeak(password, username)) return reply.code(400).send({ error: 'Password is too weak' });
+      if (username === '') return reply.code(400).send({ error: 'username is required' });
+      if (getUserByUsername(db, username)) return reply.code(409).send({ error: 'Username already taken' });
+      if (passwordIsTooWeak(password, username)) return reply.code(400).send({ error: 'Password is too weak' });
 
-    const passwordHash = await hashPassword(password);
-    const id = randomUUID();
-    const now = new Date().toISOString();
-    db.prepare('INSERT INTO users (id, username, password_hash, is_admin, created_at) VALUES (?, ?, ?, 1, ?)').run(
-      id,
-      username,
-      passwordHash,
-      now,
-    );
-    // Re-announce: an admin now exists, so this clears the in-memory token and the
-    // bootstrap flow is done for this process's lifetime (a restart is needed to
-    // bootstrap again, which can't happen while an admin row already exists).
-    announceBootstrap(db, app.log);
+      const passwordHash = await hashPassword(password);
+      const id = randomUUID();
+      const now = new Date().toISOString();
+      db.prepare('INSERT INTO users (id, username, password_hash, is_admin, created_at) VALUES (?, ?, ?, 1, ?)').run(
+        id,
+        username,
+        passwordHash,
+        now,
+      );
+      // Re-announce: an admin now exists, so this clears the in-memory token and the
+      // bootstrap flow is done for this process's lifetime (a restart is needed to
+      // bootstrap again, which can't happen while an admin row already exists).
+      announceBootstrap(db, app.log);
 
-    const session = createSession(db, id);
-    reply.setCookie(SESSION_COOKIE, session.id, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: isSecureRequest(request),
-      path: '/',
-      expires: new Date(session.expiresAt),
-    });
-    return reply.code(201).send({ user: { id, username, isAdmin: true, createdAt: now, disabledAt: null } });
-  });
+      const session = createSession(db, id);
+      reply.setCookie(SESSION_COOKIE, session.id, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: isSecureRequest(request),
+        path: '/',
+        expires: new Date(session.expiresAt),
+      });
+      return reply.code(201).send({ user: { id, username, isAdmin: true, createdAt: now, disabledAt: null } });
+    },
+  );
 
   // Public and unauthenticated (#135): the caller has no session yet — they're
   // either a brand-new account created by an admin, or resetting a forgotten
   // password. No session is created here; the person signs in normally afterward.
-  app.post<{ Body: SetPasswordBody }>('/api/auth/set-password', async (request, reply) => {
-    const { token, password } = request.body;
-    if (typeof token !== 'string' || typeof password !== 'string' || token === '' || password === '') {
-      return reply.code(400).send({ error: 'token and password are required' });
-    }
+  app.post<{ Body: SetPasswordBody }>(
+    '/api/auth/set-password',
+    { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const { token, password } = request.body;
+      if (typeof token !== 'string' || typeof password !== 'string' || token === '' || password === '') {
+        return reply.code(400).send({ error: 'token and password are required' });
+      }
 
-    const found = getUserByPasswordSetToken(db, token);
-    if (!found || (found.expiresAt !== null && new Date(found.expiresAt).getTime() < Date.now())) {
-      return reply.code(401).send({ error: 'This link is invalid or has expired' });
-    }
-    if (passwordIsTooWeak(password, found.user.username)) {
-      return reply.code(400).send({ error: 'Password is too weak' });
-    }
+      const found = getUserByPasswordSetToken(db, token);
+      if (!found || (found.expiresAt !== null && new Date(found.expiresAt).getTime() < Date.now())) {
+        return reply.code(401).send({ error: 'This link is invalid or has expired' });
+      }
+      if (passwordIsTooWeak(password, found.user.username)) {
+        return reply.code(400).send({ error: 'Password is too weak' });
+      }
 
-    const passwordHash = await hashPassword(password);
-    consumePasswordSetToken(db, found.user.id, passwordHash);
-    return reply.send({ ok: true });
-  });
+      const passwordHash = await hashPassword(password);
+      consumePasswordSetToken(db, found.user.id, passwordHash);
+      return reply.send({ ok: true });
+    },
+  );
 }
