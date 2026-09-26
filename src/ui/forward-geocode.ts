@@ -1,9 +1,8 @@
 /**
- * Forward geocoding for `BirthPlaceMap.tsx`'s "search by name" field (#290): turns a free-text
+ * Forward geocoding for `BirthPlaceSearch.tsx`'s "search by name" field (#290): turns a free-text
  * place name into one or more candidate coordinates + display names, so a birth place can be
  * found without knowing its Latitude/Longitude up front. Provider selection (self-hosted
- * Nominatim / MapTiler / public Nominatim default) lives in `geocode-provider.ts`, shared with
- * `reverse-geocode.ts` (#291, #294).
+ * Nominatim / MapTiler / public Nominatim default) lives in `geocode-provider.ts` (#291, #294).
  */
 import {
   maptilerGeocodeUrl,

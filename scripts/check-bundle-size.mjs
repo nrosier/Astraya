@@ -9,11 +9,10 @@
  * chunk while changing nothing a visitor experiences.
  *
  * Alongside the budget, each thing that is supposed to be lazy is asserted to be *reachable
- * only* dynamically: the Swiss Ephemeris WASM engine (~570 KiB), Leaflet (~145 KiB, #159),
- * the per-screen chart modules and the admin panel (#338). Those assertions are what
- * actually verify "lazy-loaded" — replace a dynamic `import()` with a static one and the
- * chunk lands in the eager graph, which fails here with a message that names the cause
- * rather than just a number that grew.
+ * only* dynamically: the Swiss Ephemeris WASM engine (~570 KiB), the per-screen chart modules
+ * and the admin panel (#338). Those assertions are what actually verify "lazy-loaded" —
+ * replace a dynamic `import()` with a static one and the chunk lands in the eager graph,
+ * which fails here with a message that names the cause rather than just a number that grew.
  *
  *   node scripts/check-bundle-size.mjs
  *
@@ -87,14 +86,6 @@ const mustStayLazy = [
     pattern: /^swisseph-.*\.(js|wasm)$/,
     what: 'the Swiss Ephemeris WASM engine',
     cost: 'the ~570 KiB WASM engine, whether or not they ever view a chart',
-  },
-  {
-    // Leaflet has no `exports`/`module` field, so Vite resolves the dynamic `import('leaflet')`
-    // in BirthPlaceMap.tsx to its `main` entry, dist/leaflet-src.js — hence the chunk name
-    // below rather than a plain `leaflet-*`.
-    pattern: /^leaflet-src-.*\.js$/,
-    what: "Leaflet, behind BirthPlaceMap.tsx's dynamic import()",
-    cost: 'the ~145 KiB map library, whether or not they ever open the birth-place picker',
   },
   {
     pattern: /^person-screens-.*\.js$/,

@@ -21,9 +21,8 @@
 
       `img-src`'s `blob:` is for PNG chart export: `chart-raster.ts` rasterizes a
       chart's SVG by loading it into an `<img>` from a `blob:` URL before drawing
-      it to a canvas. `https://tile.openstreetmap.org` is the default OpenStreetMap
-      tile host the birth-place map (#159) requests raster tiles from as plain
-      `<img>`s.
+      it to a canvas. `https://nominatim.openstreetmap.org` in `connect-src` is
+      the default Nominatim host the birth-place search (#290) queries.
 
       The server sends this as a real header too, which additionally covers
       frame-ancestors; a meta tag cannot express that directive.
@@ -33,9 +32,9 @@
       content="default-src 'self';
                script-src 'self' 'wasm-unsafe-eval';
                style-src 'self' 'unsafe-inline';
-               img-src 'self' data: blob: https://tile.openstreetmap.org;
+               img-src 'self' data: blob:;
                font-src 'self';
-               connect-src 'self' https://tile.openstreetmap.org https://nominatim.openstreetmap.org;
+               connect-src 'self' https://nominatim.openstreetmap.org;
                worker-src 'self' blob:;
                object-src 'none';
                base-uri 'none';
