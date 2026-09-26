@@ -48,8 +48,8 @@ import type { ChartData } from '../domain/chart-compute.js';
 const PERSONA_KEY = 'astraya:reportPersona';
 
 // Off by default: unset, empty, or anything other than 'true' disables the picker. Not the
-// string-presence pattern BirthPlaceMap.tsx's tile-server env vars use — those are "which
-// value", this is "on or off", so it's a literal truthy-string check instead.
+// string-presence pattern `geocode-provider.ts`'s env vars use — those are "which value", this
+// is "on or off", so it's a literal truthy-string check instead.
 // Read inside a function rather than hoisted to a module-level constant, the same reason
 // `!import.meta.env.PROD` below is checked inline rather than hoisted: it keeps this test-visible
 // per render/mount rather than frozen at whatever value happened to hold at first import.

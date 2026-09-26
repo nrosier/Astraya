@@ -210,6 +210,36 @@ describe('installServiceWorker: fetch', () => {
 
     expect(await response?.text()).toBe('cached-shell');
   });
+
+  it('caches every navigation URL under the same canonical shell entry (#323, #313a)', async () => {
+    const fetchImpl = fetchServing({ '/': 'fresh-shell' });
+    const fake = fakeScope(ORIGIN);
+    installServiceWorker(fake.scope, { version: VERSION, fetch: fetchImpl });
+
+    function navigationRequest(url: string): Request {
+      const request = new Request(url);
+      Object.defineProperty(request, 'mode', { value: 'navigate' });
+      return request;
+    }
+
+    await fake.fireFetch(navigationRequest(`${ORIGIN}/`));
+    // A different path/query on the same navigable app (a deep link, or an OIDC callback
+    // carrying a one-time `code`/`state`) must not become its own cache entry — every
+    // shell-navigate URL serves the same shell HTML, and a query string must never be
+    // durably written into Cache Storage.
+    await fake.fireFetch(navigationRequest(`${ORIGIN}/auth/oidc/callback?code=abc&state=xyz`));
+
+    // Both requests were served/refreshed against the one canonical URL — the fetch
+    // mock never saw the callback's query string, and the cache holds it under the
+    // canonical key rather than a second, separate entry for that URL.
+    const fetchedUrls = vi
+      .mocked(fetchImpl)
+      .mock.calls.map(([input]) => (typeof input === 'string' ? input : input instanceof URL ? input.href : input.url));
+    expect(fetchedUrls.every((url) => url === `${ORIGIN}/`)).toBe(true);
+    const cache = await fake.caches.open(shellCacheName(VERSION));
+    expect(await (await cache.match(`${ORIGIN}/auth/oidc/callback?code=abc&state=xyz`))?.text()).toBeUndefined();
+    expect(await (await cache.match(`${ORIGIN}/`))?.text()).toBe('fresh-shell');
+  });
 });
 
 describe('installServiceWorker: basePath', () => {

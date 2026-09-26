@@ -12,6 +12,7 @@
  * data it just computed, never user-supplied).
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { renderAcgMapSvg, type AcgMapInput } from '../chart/acg-map.js';
 import { standaloneSvg } from '../chart/standalone-svg.js';
 import { bodyById } from '../astrology/bodies.js';
@@ -23,14 +24,14 @@ import {
   type AstrocartographyData,
 } from '../domain/astrocartography.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { momentKey } from '../time/encode.js';
 import { astrocartographyViewMessages } from './AstrocartographyView.messages.js';
 import { svgToPngBlob } from './chart-raster.js';
 import { downloadBlob, downloadText } from './download.js';
 import { useMessages } from './messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { useStoreState } from './store-context.js';
-import type { BodyId, EphemerisProvider, GeoPosition } from '../ephemeris/types.js';
+import type { BodyId, GeoPosition } from '../ephemeris/types.js';
 
 type LineType = 'MC' | 'IC' | 'AC' | 'DC';
 const ALL_LINE_TYPES: readonly LineType[] = ['MC', 'IC', 'AC', 'DC'];
@@ -76,7 +77,7 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
   const state = useStoreState();
   const person = state.people.get(personId);
   const t = useMessages(astrocartographyViewMessages);
-  const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
+  const { provider } = useEphemerisProvider();
   const [lineTypes, setLineTypes] = useState<readonly LineType[]>(ALL_LINE_TYPES);
   const [bodies, setBodies] = useState<readonly BodyId[]>(TRADITIONAL_ACG_BODY_IDS);
   const [localSpace, setLocalSpace] = useState(false);
@@ -87,18 +88,6 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
   const [pngError, setPngError] = useState<string | undefined>(undefined);
   const [pngBusy, setPngBusy] = useState(false);
   const sizes = pngSizes(t);
-
-  useEffect(() => {
-    const worker = new WorkerEphemerisProvider();
-    const effect = { cancelled: false };
-    void worker.initialize().then(() => {
-      if (!effect.cancelled) setProvider(worker);
-    });
-    return () => {
-      effect.cancelled = true;
-      void worker.dispose();
-    };
-  }, []);
 
   const relocationPlace: GeoPosition | undefined = useMemo(() => {
     const latitude = parseCoordinate(relocationLat, -90, 90);
@@ -130,7 +119,7 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
     return () => {
       effect.cancelled = true;
     };
-  }, [person, provider, bodies, lineTypes, localSpace, relocationPlace]);
+  }, [momentKey(person?.moment), provider, bodies, lineTypes, localSpace, relocationPlace]);
 
   const toggleLineType = (lineType: LineType, checked: boolean): void => {
     setLineTypes((current) =>

@@ -19,6 +19,21 @@ const SKEW_WARN_THRESHOLD_MS = 5 * 60 * 1000;
 const MAX_BATCH_SIZE = 500;
 const MAX_PAGE_SIZE = 500;
 
+/**
+ * Row-count cap on one account's whole op log (#322). Generous for this app's
+ * actual per-person/per-chart field-write volume — retention (deleting old
+ * ops) is out of scope, since the op log is the only copy of history for
+ * local-first sync.
+ */
+const MAX_OPS_PER_USER = 200_000;
+
+/** Base64's own alphabet/padding, not a decode-and-hope: a malformed payload is rejected here as the 400 it is, rather than aborting the whole insert batch later (#320). */
+const BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})?$/;
+
+function isValidBase64(value: string): boolean {
+  return BASE64_PATTERN.test(value);
+}
+
 interface OpInput {
   readonly hlc: string;
   readonly deviceId: string;
@@ -49,7 +64,8 @@ function isValidOpInput(value: unknown): value is OpInput {
     op.deviceId !== '' &&
     typeof op.opVersion === 'number' &&
     Number.isInteger(op.opVersion) &&
-    typeof op.payload === 'string'
+    typeof op.payload === 'string' &&
+    isValidBase64(op.payload)
   );
 }
 
@@ -94,39 +110,57 @@ export function registerOpsRoutes(app: FastifyInstance, db: Database): void {
       }
     }
 
+    const { count: existingCount } = db.prepare('SELECT COUNT(*) AS count FROM ops WHERE user_id = ?').get(user.id) as {
+      count: number;
+    };
+    if (existingCount + ops.length > MAX_OPS_PER_USER) {
+      return reply.code(409).send({ error: `Storage quota exceeded (${String(MAX_OPS_PER_USER)} ops).` });
+    }
+
     const insert = db.prepare(
       'INSERT INTO ops (user_id, hlc, device_id, op_version, payload, key_version, iv, received_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     );
     const findExisting = db.prepare('SELECT seq FROM ops WHERE user_id = ? AND hlc = ?');
     const receivedAt = new Date(now).toISOString();
 
-    const seqs = ops.map((op) => {
-      const aheadByMs = decodeHlc(op.hlc).millis - now;
-      if (aheadByMs > SKEW_WARN_THRESHOLD_MS) {
-        app.log.warn(`Accepted op from device ${op.deviceId} with clock ${aheadByMs}ms ahead of server time.`);
-      }
-      const { ciphertext, iv } = encryptPayload(Buffer.from(op.payload, 'base64'), key);
-      try {
-        const result = insert.run(
-          user.id,
-          op.hlc,
-          op.deviceId,
-          op.opVersion,
-          ciphertext,
-          CURRENT_KEY_VERSION,
-          iv,
-          receivedAt,
-        );
-        return Number(result.lastInsertRowid);
-      } catch {
-        // ops_user_hlc is UNIQUE: this (user, hlc) pair was already stored, so a
-        // retried push is a no-op — hand back the seq it already has, rather than
-        // failing the whole batch over a client that retried after a dropped reply.
-        const existing = findExisting.get(user.id, op.hlc) as { seq: number } | undefined;
-        if (!existing) throw new Error(`Insert of hlc=${op.hlc} failed for a reason other than a duplicate.`);
-        return existing.seq;
-      }
-    });
+    // Transactional (#320/#337): a mid-batch throw (a bad payload slipping past
+    // validation, an unexpected constraint failure) must leave no partial batch
+    // committed — every op in this request is stored, or none are.
+    db.exec('BEGIN');
+    let seqs: number[];
+    try {
+      seqs = ops.map((op) => {
+        const aheadByMs = decodeHlc(op.hlc).millis - now;
+        if (aheadByMs > SKEW_WARN_THRESHOLD_MS) {
+          app.log.warn(`Accepted op from device ${op.deviceId} with clock ${aheadByMs}ms ahead of server time.`);
+        }
+        const { ciphertext, iv } = encryptPayload(Buffer.from(op.payload, 'base64'), key);
+        try {
+          const result = insert.run(
+            user.id,
+            op.hlc,
+            op.deviceId,
+            op.opVersion,
+            ciphertext,
+            CURRENT_KEY_VERSION,
+            iv,
+            receivedAt,
+          );
+          return Number(result.lastInsertRowid);
+        } catch {
+          // ops_user_hlc is UNIQUE: this (user, hlc) pair was already stored, so a
+          // retried push is a no-op — hand back the seq it already has, rather than
+          // failing the whole batch over a client that retried after a dropped reply.
+          const existing = findExisting.get(user.id, op.hlc) as { seq: number } | undefined;
+          if (!existing) throw new Error(`Insert of hlc=${op.hlc} failed for a reason other than a duplicate.`);
+          return existing.seq;
+        }
+      });
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
 
     return reply.send({ seqs });
   });

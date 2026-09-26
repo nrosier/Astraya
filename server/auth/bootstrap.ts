@@ -26,8 +26,17 @@ interface BootstrapToken {
 /** Held in memory only, for exactly this process's lifetime. A restart invalidates it on purpose. */
 let current: BootstrapToken | null = null;
 
+/**
+ * Excludes disabled admins (#318): an instance whose only admin row is disabled has no
+ * *usable* admin, and must be treated the same as having none at all, so a restart
+ * re-arms the bootstrap flow (and `/api/setup`'s "already bootstrapped" guard in
+ * `server/auth/routes.ts` re-opens) instead of leaving the instance permanently
+ * unrecoverable through the UI.
+ */
 export function adminExists(db: Database): boolean {
-  const row = db.prepare('SELECT COUNT(*) AS count FROM users WHERE is_admin = 1').get() as { count: number };
+  const row = db.prepare('SELECT COUNT(*) AS count FROM users WHERE is_admin = 1 AND disabled_at IS NULL').get() as {
+    count: number;
+  };
   return row.count > 0;
 }
 

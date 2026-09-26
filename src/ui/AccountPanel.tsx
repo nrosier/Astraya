@@ -12,7 +12,7 @@
  * `signIn` puts this panel into instead of completing the switch on its own.
  */
 import { useEffect, useRef, useState } from 'react';
-import { useSession } from './session-context.js';
+import { removeAccountData, useSession } from './session-context.js';
 import { getOidcConfig } from '../sync/auth-client.js';
 import { accountPanelMessages } from './AccountPanel.messages.js';
 import { useMessages } from './messages.js';
@@ -297,7 +297,15 @@ function SignInForm({
  * No "signed in as" text here — `SyncBadge`'s "(logged in as: {username})" already
  * says that, right next to this in `topbar-right` (#230).
  */
-function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<void> }): React.JSX.Element {
+function SignedIn({
+  user,
+  signOut,
+  onSignedOut,
+}: {
+  user: AuthUser;
+  signOut: () => Promise<void>;
+  onSignedOut: (userId: string) => void;
+}): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const t = useMessages(accountPanelMessages);
@@ -305,10 +313,17 @@ function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<vo
   const doSignOut = (): void => {
     setBusy(true);
     setError(undefined);
-    void signOut().catch((cause: unknown) => {
-      setError(cause instanceof Error ? cause.message : String(cause));
-      setBusy(false);
-    });
+    // Captured before `signOut()` resolves: the `user` prop is gone once this component
+    // unmounts along with it, so there's no reading `user.id` back afterwards.
+    const userId = user.id;
+    void signOut()
+      .then(() => {
+        onSignedOut(userId);
+      })
+      .catch((cause: unknown) => {
+        setError(cause instanceof Error ? cause.message : String(cause));
+        setBusy(false);
+      });
   };
 
   return (
@@ -326,9 +341,55 @@ function SignedIn({ user, signOut }: { user: AuthUser; signOut: () => Promise<vo
   );
 }
 
+/**
+ * Offered only once signed out of `userId`'s account (#327) — never while its store is
+ * the one currently open, since deleting that database out from under a live `Store`
+ * instance is exactly the kind of write-after-close bug `store.ts` closing on sign-out
+ * already exists to avoid. Uses `window.confirm`, matching `People.tsx`'s convention for
+ * a destructive, no-undo local action: the data is still safe in the account itself (the
+ * next sign-in re-syncs it), but there's no in-app undo for the local copy once it's gone.
+ */
+function RemoveAccountData({ userId, onRemoved }: { userId: string; onRemoved: () => void }): React.JSX.Element {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  const t = useMessages(accountPanelMessages);
+
+  const remove = (): void => {
+    if (!window.confirm(t.removeDataConfirm)) return;
+    setBusy(true);
+    setError(undefined);
+    void removeAccountData(userId)
+      .then(onRemoved)
+      .catch((cause: unknown) => {
+        setError(cause instanceof Error ? cause.message : String(cause));
+        setBusy(false);
+      });
+  };
+
+  return (
+    <div className="accountpanel-popover">
+      <p>{t.removeDataPrompt}</p>
+      {error !== undefined && (
+        <p className="warning" role="alert">
+          {t.removeDataFailed(error)}
+        </p>
+      )}
+      <p className="actions">
+        <button className="quiet" disabled={busy} onClick={remove}>
+          {t.removeDataButton}
+        </button>
+      </p>
+    </div>
+  );
+}
+
 export function AccountPanel(): React.JSX.Element {
   const { user, adoption, signIn, signOut, resolveAdoption } = useSession();
   const [oidcConfig, setOidcConfig] = useState<OidcConfig>();
+  // Which account's local data can still be removed from this device (#327) — set once
+  // `SignedIn` reports a completed sign-out, cleared either by removal succeeding or by
+  // signing back in (whichever happens first makes the prompt moot).
+  const [removableAccount, setRemovableAccount] = useState<string>();
   const t = useMessages(accountPanelMessages);
 
   useEffect(() => {
@@ -342,6 +403,14 @@ export function AccountPanel(): React.JSX.Element {
       .catch(() => undefined);
   }, []);
 
+  useEffect(() => {
+    // A sign-in makes the prompt moot either way: signing back into the same account
+    // reopens its store (nothing to remove), and signing into a different one leaves
+    // the removable account's data exactly as it was, with the prompt just no longer
+    // relevant to what's on screen.
+    if (user !== undefined) setRemovableAccount(undefined);
+  }, [user]);
+
   // Positioned so the popover/warning below — absolutely positioned, `left`/`right: 0`
   // — anchors to this trigger's own box rather than to `.topbar-right`'s (#230: this now
   // shares that fixed corner with `SyncBadge` and the toggles, so anchoring to the
@@ -353,9 +422,19 @@ export function AccountPanel(): React.JSX.Element {
       ) : adoption !== undefined ? (
         <AdoptionPanel recordCount={adoption.recordCount} resolveAdoption={resolveAdoption} />
       ) : user === undefined ? (
-        <SignInForm signIn={signIn} oidcConfig={oidcConfig} />
+        <>
+          <SignInForm signIn={signIn} oidcConfig={oidcConfig} />
+          {removableAccount !== undefined && (
+            <RemoveAccountData
+              userId={removableAccount}
+              onRemoved={() => {
+                setRemovableAccount(undefined);
+              }}
+            />
+          )}
+        </>
       ) : (
-        <SignedIn user={user} signOut={signOut} />
+        <SignedIn user={user} signOut={signOut} onSignedOut={setRemovableAccount} />
       )}
     </div>
   );

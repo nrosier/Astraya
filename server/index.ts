@@ -46,7 +46,18 @@ export interface BuildOptions {
 
 export async function build(options: BuildOptions = {}) {
   const app = Fastify({
-    logger: { level: process.env.LOG_LEVEL ?? 'info' },
+    logger: {
+      level: process.env.LOG_LEVEL ?? 'info',
+      // The default `req` serializer logs the full URL, including a query string —
+      // e.g. `/auth/oidc/callback?code=…&state=…` (#313b). Never needed for this
+      // log's purpose (request-rate/error diagnostics), so drop it entirely rather
+      // than try to redact specific known-sensitive parameter names.
+      serializers: {
+        req(request) {
+          return { method: request.method, url: request.url.split('?')[0] ?? request.url };
+        },
+      },
+    },
     // Behind a reverse proxy on the user's own box, so trust its forwarding headers.
     trustProxy: true,
   });

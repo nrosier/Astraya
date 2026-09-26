@@ -16,21 +16,21 @@
  * inner/outer convention rooted in the astrology here, only in the SVG's ring order.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { chartWheelRing, crossAspectRows, type AspectRow } from '../domain/chart-tables.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeSynastry, type SynastryData } from '../domain/synastry.js';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderMultiWheelSvg, type CrossRingAspects } from '../chart/multi-wheel.js';
 import { aspectDisplayName, bodyDisplayName } from './astro-names.messages.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { ordered } from './people-list.js';
+import { momentKey } from '../time/encode.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import { synastryViewMessages } from './SynastryView.messages.js';
 import type { TableColumn } from './table-sort.js';
-import type { EphemerisProvider } from '../ephemeris/types.js';
 import type { Locale } from '../interpretation/schema.js';
 
 type Load =
@@ -86,20 +86,8 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
   const [partnerId, setPartnerId] = useState<string>('');
   const partner = partnerId === '' ? undefined : state.people.get(partnerId);
 
-  const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
+  const { provider } = useEphemerisProvider();
   const [load, setLoad] = useState<Load>({ kind: 'idle' });
-
-  useEffect(() => {
-    const worker = new WorkerEphemerisProvider();
-    const effect = { cancelled: false };
-    void worker.initialize().then(() => {
-      if (!effect.cancelled) setProvider(worker);
-    });
-    return () => {
-      effect.cancelled = true;
-      void worker.dispose();
-    };
-  }, []);
 
   useEffect(() => {
     if (person?.moment === undefined || partner?.moment === undefined || provider === undefined) {
@@ -124,7 +112,7 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
     return () => {
       effect.cancelled = true;
     };
-  }, [person, partner, provider]);
+  }, [momentKey(person?.moment), momentKey(partner?.moment), provider]);
 
   const wheelMarkup = useMemo(() => {
     if (load.kind !== 'ready') return undefined;

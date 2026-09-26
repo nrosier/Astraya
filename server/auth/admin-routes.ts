@@ -19,6 +19,9 @@ import { previewDeletionImpact } from '../ops/deletion-impact.ts';
 
 const PASSWORD_SET_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** Mirrors `auth/routes.ts`'s own cap — see that file for the reasoning (#317). */
+const MAX_USERNAME_LENGTH = 64;
+
 interface AdminUserRow {
   readonly id: string;
   readonly username: string;
@@ -61,11 +64,20 @@ function getAdminUser(db: Database, id: string): AdminUser | null {
   return row ? toAdminUser(row) : null;
 }
 
-/** True iff `userId` is an admin and the sole remaining one — disabling/demoting/deleting them would leave the instance unrecoverable through the UI. */
+/**
+ * True iff `userId` is an admin and the sole remaining *usable* one —
+ * disabling/demoting/deleting them would leave the instance unrecoverable
+ * through the UI. Counts only enabled admins (#318): otherwise disabling
+ * admin A while admin B still exists is allowed (B isn't disabled), and then
+ * disabling/demoting B later leaves the only *enabled* admin already
+ * disabled, with no admin able to act and no in-UI recovery path.
+ */
 function isOnlyRemainingAdmin(db: Database, userId: string): boolean {
   const row = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(userId) as { is_admin: number } | undefined;
   if (!row || row.is_admin === 0) return false;
-  const count = db.prepare('SELECT COUNT(*) AS count FROM users WHERE is_admin = 1').get() as { count: number };
+  const count = db.prepare('SELECT COUNT(*) AS count FROM users WHERE is_admin = 1 AND disabled_at IS NULL').get() as {
+    count: number;
+  };
   return count.count <= 1;
 }
 
@@ -111,6 +123,9 @@ export function registerAdminRoutes(app: FastifyInstance, db: Database): void {
     const { username, isAdmin } = request.body;
     if (typeof username !== 'string' || username === '') {
       return reply.code(400).send({ error: 'username is required' });
+    }
+    if (username.length > MAX_USERNAME_LENGTH) {
+      return reply.code(400).send({ error: `username must be at most ${String(MAX_USERNAME_LENGTH)} characters` });
     }
     if (isAdmin !== undefined && typeof isAdmin !== 'boolean') {
       return reply.code(400).send({ error: 'isAdmin must be a boolean' });

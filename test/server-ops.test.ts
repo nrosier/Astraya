@@ -182,6 +182,41 @@ describe('POST /api/ops and GET /api/ops', () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it('rejects a payload that is not valid base64 with 400 rather than failing mid-batch (#320)', async () => {
+    const sessionId = await setupAdmin(app);
+    const good = makeOp();
+    const bad = makeOp(0, { payload: 'not-valid-base64!!!' });
+    const response = await appendOps(app, sessionId, [good, bad]);
+    expect(response.statusCode).toBe(400);
+
+    // Rejected up front, alongside the type/shape validation — nothing from
+    // this batch (including the otherwise-valid op) was stored.
+    const pull = await pullOps(app, sessionId);
+    expect(pull.json<{ ops: unknown[] }>().ops).toHaveLength(0);
+  });
+
+  it('rejects a batch that would push a user over its op-log quota (#322)', async () => {
+    const sessionId = await setupAdmin(app);
+    // Directly seed the ops table to just under the quota, rather than actually
+    // inserting 200,000 rows through the HTTP layer in a test.
+    const raw = new DatabaseSync(dbPath);
+    const me = raw.prepare('SELECT id FROM users WHERE username = ?').get('alice') as { id: string };
+    const insert = raw.prepare(
+      'INSERT INTO ops (user_id, hlc, device_id, op_version, payload, key_version, iv, received_at) VALUES (?, ?, ?, 1, ?, 1, ?, ?)',
+    );
+    const now = new Date().toISOString();
+    raw.exec('BEGIN');
+    for (let i = 0; i < 200_000; i++) {
+      insert.run(me.id, `seed-${String(i)}`, 'seed-device', Buffer.from('x'), Buffer.from('y'), now);
+    }
+    raw.exec('COMMIT');
+    raw.close();
+
+    const response = await appendOps(app, sessionId, [makeOp()]);
+    expect(response.statusCode).toBe(409);
+    expect(response.json<{ error: string }>().error).toMatch(/quota/i);
+  });
+
   it('a tampered stored payload fails decryption loudly rather than returning wrong or empty data', async () => {
     const sessionId = await setupAdmin(app);
     const append = await appendOps(app, sessionId, [makeOp()]);
