@@ -18,6 +18,13 @@
  * (src/ephemeris/assets.ts) and `fetchImpl` is injectable for the same
  * reason `warmEphemerisCache` (src/pwa/warm.ts) takes one: testability
  * without a real network.
+ *
+ * On top of the static chunks, this also fetches any admin corrections
+ * (#292) from `GET /api/corpus-overrides/:locale` and layers them in by
+ * `(key, persona)` identity, replacing the matching static entry. That
+ * fetch soft-fails to `[]` on any error — no server (a static, `demo`-mode
+ * deploy has none at all), the server unreachable, or any other failure —
+ * so a correction is a bonus, never a requirement for the report to render.
  */
 import type { CorpusEntry, Locale, PersonaId } from './schema.js';
 
@@ -34,20 +41,46 @@ async function fetchChunk(locale: Locale, scope: string, fetchImpl: typeof fetch
   return (await response.json()) as readonly CorpusEntry[];
 }
 
+async function fetchOverrides(locale: Locale, fetchImpl: typeof fetch): Promise<readonly CorpusEntry[]> {
+  try {
+    const response = await fetchImpl(`/api/corpus-overrides/${locale}`);
+    if (!response.ok) return [];
+    const { entries } = (await response.json()) as { entries: readonly CorpusEntry[] };
+    return entries;
+  } catch {
+    return [];
+  }
+}
+
+function identityKey(entry: CorpusEntry): string {
+  return `${entry.key}::${entry.persona ?? ''}`;
+}
+
 /**
  * The corpus slice a report for `locale`/`persona` needs: the neutral chunk
  * every placement can fall back to, plus (when given) that persona's chunk
  * layered on top — matching `findCorpusEntry`'s own persona-then-neutral
- * preference, so the concatenation order here doesn't matter to it.
+ * preference, so the concatenation order here doesn't matter to it. Any
+ * admin overrides for `locale` (across all personas — cheap to filter
+ * client-side, and reused across persona switches without a re-fetch of the
+ * override feed) replace their matching static entry.
  */
 export async function loadRuntimeCorpus(
   locale: Locale,
   persona?: PersonaId,
   fetchImpl: typeof fetch = fetch,
 ): Promise<readonly CorpusEntry[]> {
-  const chunks = await Promise.all([
-    fetchChunk(locale, 'neutral', fetchImpl),
-    ...(persona !== undefined ? [fetchChunk(locale, persona, fetchImpl)] : []),
+  const [chunks, overrides] = await Promise.all([
+    Promise.all([
+      fetchChunk(locale, 'neutral', fetchImpl),
+      ...(persona !== undefined ? [fetchChunk(locale, persona, fetchImpl)] : []),
+    ]),
+    fetchOverrides(locale, fetchImpl),
   ]);
-  return chunks.flat();
+  const base = chunks.flat();
+  if (overrides.length === 0) return base;
+
+  const overriddenKeys = new Set(overrides.map(identityKey));
+  const relevantOverrides = overrides.filter((entry) => entry.persona === undefined || entry.persona === persona);
+  return [...base.filter((entry) => !overriddenKeys.has(identityKey(entry))), ...relevantOverrides];
 }
