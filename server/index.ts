@@ -18,6 +18,7 @@ import fastifyStatic from '@fastify/static';
 import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { buildCsp, stripCspMeta } from './csp.ts';
+import { isCrossOriginWrite } from './csrf.ts';
 import { openDatabase } from './db.ts';
 import { registerAuthRoutes } from './auth/routes.ts';
 import { registerAdminRoutes } from './auth/admin-routes.ts';
@@ -38,6 +39,14 @@ const DB_PATH = process.env.ASTRAYA_DB_PATH ?? resolve(here, '..', 'data', 'astr
  */
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const NO_CACHE = 'no-cache';
+
+/**
+ * 180 days, subdomains included — long enough to be worth setting, short enough that a
+ * deployer who later moves off TLS is not locked out for two years. Deliberately no
+ * `preload`: that is a one-way submission to a browser-vendor list on behalf of someone
+ * else's domain, which is not this server's decision to make.
+ */
+const HSTS = 'max-age=15552000; includeSubDomains';
 
 export interface BuildOptions {
   /** Overrides `ASTRAYA_DB_PATH`. Tests pass `:memory:` so nothing touches disk. */
@@ -73,13 +82,33 @@ export async function build(options: BuildOptions = {}) {
     ...(geocodeOrigin ? { geocodeOrigin } : {}),
   });
 
+  // HSTS is only correct once the deployment is actually served over TLS, and
+  // `ASTRAYA_PUBLIC_URL` is the one place a deployer already states that (#339). Sending it
+  // unconditionally would make a plain-HTTP instance — the local-network case this app is
+  // built for — unreachable in any browser that had ever seen the header. `URL.parse`
+  // rather than `new URL`: a malformed value here must not become a boot failure for a
+  // server that has no other reason to need it.
+  const publicOrigin = process.env.ASTRAYA_PUBLIC_URL ? URL.parse(process.env.ASTRAYA_PUBLIC_URL) : null;
+  const hsts = publicOrigin?.protocol === 'https:';
+
   await app.register(fastifyCookie);
   await app.register(fastifyRateLimit, { global: false });
+
+  // Registered before every route, including the static handler, so no write can be added
+  // that forgets it — see `server/csrf.ts` for why this is an origin check rather than a
+  // token.
+  app.addHook('onRequest', async (request, reply) => {
+    const allowedHosts = publicOrigin === null ? [request.host] : [request.host, publicOrigin.host];
+    if (isCrossOriginWrite({ method: request.method, origin: request.headers.origin, allowedHosts })) {
+      await reply.code(403).send({ error: 'Cross-origin request rejected' });
+    }
+  });
 
   app.addHook('onSend', async (request, reply) => {
     reply.header('Content-Security-Policy', csp.header);
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('Referrer-Policy', 'no-referrer');
+    if (hsts) reply.header('Strict-Transport-Security', HSTS);
     // Birth data never leaves the browser, and the app has no use for camera/microphone,
     // so those stay denied. Geolocation is allowed for this origin only (#248's opt-in
     // "Use my location" map control) — it never leaves the browser either, and the

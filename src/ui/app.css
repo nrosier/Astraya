@@ -729,6 +729,12 @@ footer {
   margin-top: 0.5rem;
 }
 
+/* Sits directly under the "copy share link" button, so it reads as that button's
+   consequence rather than as a standalone banner (#341). */
+.share-warning {
+  max-width: 42rem;
+}
+
 .warnings {
   margin: 0;
   padding: 0;

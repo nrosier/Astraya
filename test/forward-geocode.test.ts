@@ -66,6 +66,27 @@ describe('forwardGeocode', () => {
     await forwardGeocode('Paris');
     expect(lastRequestInit?.referrerPolicy).toBe('origin');
   });
+
+  it('drops a malformed result instead of throwing, keeping the usable ones (#336)', async () => {
+    // The response shape is an `as` cast over third-party JSON, so it is a claim, not a
+    // fact. A `TypeError` escaping into the caller's render is a worse answer than
+    // "fewer results" — and `Number(null)` being 0 would be worse still: a silent 0°N/0°E.
+    mockFetch([
+      { lat: '48.8566', lon: '2.3522', display_name: 'Paris, Île-de-France, France' },
+      { lat: null, lon: null, display_name: 'Nowhere' },
+      { lat: '1.0', lon: '2.0' },
+      { display_name: 'No coordinates at all' },
+      'not an object at all',
+    ]);
+    expect(await forwardGeocode('Paris')).toEqual([
+      { latitude: 48.8566, longitude: 2.3522, displayName: 'Paris, Île-de-France, France' },
+    ]);
+  });
+
+  it('resolves to an empty array when the body is not a list at all', async () => {
+    mockFetch({ error: 'Unable to geocode' });
+    expect(await forwardGeocode('Paris')).toEqual([]);
+  });
 });
 
 describe('forwardGeocode, with a MapTiler API key configured (#294)', () => {
@@ -98,5 +119,31 @@ describe('forwardGeocode, with a MapTiler API key configured (#294)', () => {
     const { forwardGeocode: forwardGeocodeWithMaptiler } = await import('../src/ui/forward-geocode.ts');
     mockFetch({}, { ok: false, status: 403 });
     await expect(forwardGeocodeWithMaptiler('Paris')).rejects.toThrow('403');
+  });
+
+  it('drops a feature with an unreadable geometry instead of throwing (#336)', async () => {
+    vi.stubEnv('VITE_MAPTILER_API_KEY', 'test-key');
+    vi.resetModules();
+    const { forwardGeocode: forwardGeocodeWithMaptiler } = await import('../src/ui/forward-geocode.ts');
+    mockFetch({
+      features: [
+        { place_name: 'Paris, Île-de-France, France', geometry: { coordinates: [2.3522, 48.8566] } },
+        { place_name: 'No geometry' },
+        { place_name: 'Empty coordinates', geometry: { coordinates: [] } },
+        { place_name: 'One coordinate', geometry: { coordinates: [2.3522] } },
+        { geometry: { coordinates: [2.3522, 48.8566] } },
+      ],
+    });
+    expect(await forwardGeocodeWithMaptiler('Paris')).toEqual([
+      { latitude: 48.8566, longitude: 2.3522, displayName: 'Paris, Île-de-France, France' },
+    ]);
+  });
+
+  it('resolves to an empty array when the collection has no features key', async () => {
+    vi.stubEnv('VITE_MAPTILER_API_KEY', 'test-key');
+    vi.resetModules();
+    const { forwardGeocode: forwardGeocodeWithMaptiler } = await import('../src/ui/forward-geocode.ts');
+    mockFetch({ message: 'Forbidden' });
+    expect(await forwardGeocodeWithMaptiler('Paris')).toEqual([]);
   });
 });

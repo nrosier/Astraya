@@ -109,12 +109,13 @@ export interface Store {
   /**
    * Permanently erase every record naming this entity. Unlike `remove`, there is no undo —
    * this is the only way a person's data actually leaves the device rather than being
-   * hidden. Local only: with no sync engine yet (M8), it cannot reach a copy already on
-   * another device, and a purge that must do that is a problem for that engine's own
-   * design, not this one's.
+   * hidden. Local only, deliberately: it takes rows out of *this* device's log and says
+   * nothing to the relay, so a copy already pulled by another device stays there. Erasing
+   * across devices needs an operation the fold can replay, which a removal by definition
+   * is not — that remains the sync engine's problem to design, not this one's.
    */
   purge(entity: string, entityId: string): Promise<void>;
-  /** Records a peer has not seen, for the sync engine in M8. */
+  /** Records a peer has not seen — what `src/sync/engine.ts` pushes. */
   outgoing(cursor?: Hlc): readonly OpRecord[];
   /**
    * Merge records pulled from a peer (M8). Validated but not interpreted — see

@@ -63,6 +63,26 @@ describe('server/auth/bootstrap.ts', () => {
     expect(checkBootstrapToken('not-the-token')).toBe('invalid');
   });
 
+  it('compares the token without short-circuiting on length or first byte (#330)', () => {
+    // `timingSafeEqual` throws on unequal lengths, and the expected token's length is
+    // itself a secret when it comes from `ASTRAYA_BOOTSTRAP_TOKEN` — so both sides are
+    // hashed to a fixed width first. These cases are the ones a naive implementation of
+    // that would throw on rather than reject.
+    const log = fakeLogger();
+    announceBootstrap(db, log as unknown as FastifyBaseLogger);
+    const token = extractToken(log.messages);
+
+    expect(checkBootstrapToken('')).toBe('invalid');
+    expect(checkBootstrapToken('x')).toBe('invalid');
+    expect(checkBootstrapToken(`${token}x`)).toBe('invalid');
+    expect(checkBootstrapToken(token.slice(0, -1))).toBe('invalid');
+    // Differing in the first byte and in the last must both be refused, and neither may
+    // throw — the whole token is still compared either way.
+    expect(checkBootstrapToken(`Z${token.slice(1)}`)).toBe('invalid');
+    expect(checkBootstrapToken(`${token.slice(0, -1)}Z`)).toBe('invalid');
+    expect(checkBootstrapToken(token)).toBeNull();
+  });
+
   it('logs again on every call while still un-bootstrapped, not just the first', () => {
     const log = fakeLogger();
     announceBootstrap(db, log as unknown as FastifyBaseLogger);

@@ -10,7 +10,7 @@
  * the same access as running the container — which is the property that makes it
  * safe to be unauthenticated over the network.
  */
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Database } from '../db.ts';
 
@@ -57,10 +57,24 @@ export function announceBootstrap(db: Database, log: FastifyBaseLogger): void {
 
 export type BootstrapTokenError = 'no-token-issued' | 'invalid' | 'expired';
 
+/**
+ * Constant-time token comparison.
+ *
+ * `timingSafeEqual` throws on unequal lengths, and the lengths are themselves a secret
+ * here (an operator-supplied `ASTRAYA_BOOTSTRAP_TOKEN` can be any length), so both sides
+ * are hashed to a fixed 32 bytes first rather than length-checked. This is the one
+ * credential comparison in the codebase that does not go through Argon2's own
+ * constant-time verify (#330).
+ */
+function tokensMatch(submitted: string, expected: string): boolean {
+  const digest = (value: string): Buffer => createHash('sha256').update(value, 'utf8').digest();
+  return timingSafeEqual(digest(submitted), digest(expected));
+}
+
 /** Checked by the `/setup` route before it looks at the submitted password at all. */
 export function checkBootstrapToken(submitted: string): BootstrapTokenError | null {
   if (!current) return 'no-token-issued';
-  if (submitted !== current.token) return 'invalid';
+  if (!tokensMatch(submitted, current.token)) return 'invalid';
   if (current.expiresAt !== null && Date.now() > current.expiresAt) return 'expired';
   return null;
 }

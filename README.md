@@ -95,6 +95,13 @@ works exactly the same.
 optional; the container logs a one-time setup link on first boot if you want
 an account.
 
+If `ASTRAYA_ENCRYPTION_KEY` ever leaks, it can be rotated: stop the server and
+run `npm run ops:rotate-key` with `ASTRAYA_NEW_ENCRYPTION_KEY` set to the
+replacement, which re-encrypts every stored operation in one transaction, then
+start again with `ASTRAYA_ENCRYPTION_KEY` set to the new key. Changing the
+variable without that step leaves the existing rows undecryptable — see
+[`.env.example`](.env.example).
+
 ### Optional: sign-in with Authentik
 
 Astraya's own username/password accounts work with no further setup. To let
@@ -146,6 +153,15 @@ Unlike the server-runtime variables above, `VITE_TILE_URL_TEMPLATE` and
 neither can be changed by setting it on an already-built container — rebuild
 the image with it set instead.
 
+A MapTiler key is therefore **public by construction**: the browser has to send
+it to MapTiler, so it is readable in the shipped JavaScript and in the network
+tab by anyone who loads the app. That is inherent to browser-side tiles and
+geocoding, not a leak — but it does mean the key needs a restriction rather
+than secrecy. Restrict it by referrer/domain in the
+[MapTiler console](https://cloud.maptiler.com/account/keys/) to the origins you
+serve Astraya from, so someone who copies it out of the bundle cannot spend your
+quota from their own site.
+
 ### Optional: a geocoding provider that doesn't need a referrer
 
 The birth-place map's "Fill in place name" button, which turns Latitude/
@@ -161,7 +177,9 @@ default map tiles above, for the same reason — see the section above.
 If you've already set `VITE_MAPTILER_API_KEY` for tiles, it's reused
 automatically here too, for both directions: MapTiler's Geocoding API
 authenticates by that key, not by `Referer`, so no referrer is ever sent and
-the usage-policy risk doesn't apply. Nothing further to set.
+the usage-policy risk doesn't apply. Nothing further to set — including the
+referrer/domain restriction recommended above, which covers geocoding as well
+because it is the same public key.
 
 To serve lookups from your own Nominatim-compatible server instead, set
 `VITE_NOMINATIM_URL` and `ASTRAYA_GEOCODE_ORIGIN` to matching values (see

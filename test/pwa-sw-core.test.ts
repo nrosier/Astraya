@@ -153,6 +153,32 @@ describe('installServiceWorker: install', () => {
     const cache = await fake.caches.open(shellCacheName(VERSION));
     expect(await (await cache.match('/'))?.text()).toBe('<html>shell</html>');
   });
+
+  it('caches what it can when one asset fails outright (#336)', async () => {
+    // A rejected fetch — the network dropping mid-install, not a 404 — used to fail the
+    // whole `install` through `Promise.all`, leaving nothing precached at all. A partial
+    // shell cache is the honest outcome: it is a worse offline experience, not a broken
+    // one, which is the rule `readManifest` already follows for its own failures.
+    const serving = fetchServing({
+      '/precache-manifest.json': JSON.stringify(['/', '/assets/index.js', '/assets/late.css']),
+      '/': '<html>shell</html>',
+      '/assets/late.css': 'body{}',
+    });
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (new URL(url, ORIGIN).pathname === '/assets/index.js') throw new Error('network dropped');
+      return serving(input, init);
+    };
+    const fake = fakeScope(ORIGIN);
+    installServiceWorker(fake.scope, { version: VERSION, fetch: fetchImpl });
+
+    await expect(fake.fireInstall()).resolves.toBeUndefined();
+
+    const cache = await fake.caches.open(shellCacheName(VERSION));
+    expect(await (await cache.match('/'))?.text()).toBe('<html>shell</html>');
+    expect(await (await cache.match('/assets/late.css'))?.text()).toBe('body{}');
+    expect(await cache.match('/assets/index.js')).toBeUndefined();
+  });
 });
 
 describe('installServiceWorker: activate', () => {

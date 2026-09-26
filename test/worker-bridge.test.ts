@@ -190,6 +190,29 @@ describe('worker bridge', () => {
     await expect(client.position(JD_2024, SE.SE_MOON)).rejects.toThrow('worker exploded');
   });
 
+  it('rejects a call the worker never answers, rather than hanging on it forever (#332)', async () => {
+    // A worker that neither replies nor errors is the case `onError` cannot cover: the
+    // iterative crossing searches can fail to converge inside the WASM engine, and then
+    // the promise would never settle and the UI would show a spinner with no way out.
+    const client = new WorkerEphemerisProvider(
+      { send: () => {}, onMessage: () => {}, onError: () => {}, close: () => {} },
+      { requestTimeoutMs: 10 },
+    );
+
+    await expect(client.nextSunCrossing(JD_2024, 0)).rejects.toThrow(/did not answer nextSunCrossing within 10ms/);
+    // One stuck search is not a dead worker, so the provider is not latched fatal: the
+    // next call gets its own chance (and its own timeout) rather than inheriting the
+    // failure.
+    await expect(client.position(JD_2024, SE.SE_SUN)).rejects.toThrow(/did not answer position/);
+  });
+
+  it('does not time out a call that answers in time', async () => {
+    // The other half of the timeout: a short bound must not start failing ordinary calls.
+    const { transport } = loopback(await getEngine());
+    const client = new WorkerEphemerisProvider(transport, { requestTimeoutMs: 10_000 });
+    await expect(client.position(JD_2024, SE.SE_SUN)).resolves.toBeDefined();
+  });
+
   it('closes the worker scope on dispose and refuses further calls', async () => {
     // A private engine, so disposing does not tear down the shared one.
     const { transport, closed } = loopback(

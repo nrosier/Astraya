@@ -55,8 +55,24 @@ export function text(
   return `<text x="${fmt(x)}" y="${fmt(y)}" text-anchor="${anchor}"${size} class="${className}">${content}</text>`;
 }
 
+/**
+ * Escape a string for either position in the generated markup — text content *or* a
+ * double-quoted attribute value.
+ *
+ * Every builder above interpolates into double-quoted attributes, and the generated SVG
+ * reaches the DOM through `dangerouslySetInnerHTML`. The quotes therefore matter as much
+ * as the angle brackets: escaping only `&<>` is correct for a text node and an XSS the
+ * first time a caller passes user-controlled text as a class name or a `<title>`
+ * attribute (#328). One escaper that is safe in both positions removes the chance of
+ * picking the wrong one.
+ */
 export function escapeXml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /**

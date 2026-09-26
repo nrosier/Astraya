@@ -17,7 +17,11 @@ const KEY_BYTES = 32;
 const IV_BYTES = 12;
 const AUTH_TAG_BYTES = 16;
 
-/** Bumped only if the encryption scheme itself changes. #92's re-encryption/rotation command is future work — this column is populated now so that work needs no migration. */
+/**
+ * Bumped only if the encryption *scheme* changes — not when the key material does.
+ * Rotating a leaked key is `rotate-key.ts`, which re-encrypts every row under AES-256-GCM
+ * exactly as before and so leaves this number alone (#340).
+ */
 export const CURRENT_KEY_VERSION = 1;
 
 export interface EncryptedPayload {

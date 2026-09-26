@@ -374,6 +374,45 @@ describe('a rejected session during sync (#106)', () => {
   });
 });
 
+describe('signing out while offline (#335)', () => {
+  it('signs out locally even though the server cannot be told', async () => {
+    const { container, root } = mount();
+    try {
+      await vi.waitFor(() => {
+        expect(latest?.status.kind).toBe('ready');
+      }, WAIT);
+      await act(async () => {
+        await latest?.signIn('alice', 'correct-horse-battery');
+      });
+      await vi.waitFor(() => {
+        expect(latest?.user?.username).toBe('alice');
+      }, WAIT);
+      const accountStore = latest?.status.kind === 'ready' ? latest.status.store : undefined;
+      await act(async () => {
+        await accountStore?.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
+      });
+
+      // The network goes away between deciding to sign out and doing it. `logout()` throws,
+      // and the old code aborted the whole flow on that — leaving the user signed in with
+      // their account store open, which is the one outcome they cannot retry their way out of.
+      globalThis.fetch = () => Promise.reject(new Error('network unreachable'));
+      await act(async () => {
+        await latest?.signOut();
+      });
+
+      await vi.waitFor(() => {
+        expect(latest?.user).toBeUndefined();
+      }, WAIT);
+      expect(latest?.engine).toBeUndefined();
+      expect(localStorage.getItem(LAST_USER_KEY)).toBeNull();
+      // The anonymous store is open, not the account's — the account's data is not on screen.
+      expect(latest?.status.kind === 'ready' && latest.status.store.state.people.get('p1')).toBeUndefined();
+    } finally {
+      unmount(root, container);
+    }
+  });
+});
+
 describe('offline at boot', () => {
   it('falls back to the cached last-known account instead of the anonymous store', async () => {
     const account = await openStore({ name: 'astraya-user-user-xyz' });
@@ -516,6 +555,30 @@ describe('the OIDC callback path (#75)', () => {
       expect(window.location.pathname).toBe('/');
     } finally {
       unmount(root, container);
+    }
+  });
+
+  it('boots normally on a corrupt pending entry rather than white-screening (#334)', async () => {
+    // `sessionStorage` is shared with the whole origin and survives a reload, so this value
+    // can be truncated or another build's. An unguarded `JSON.parse` of it rejected the mount
+    // effect before any `setStatus`, leaving `{ kind: 'opening' }` — a permanently blank
+    // screen — rather than a failed sign-in.
+    for (const raw of ['{not json', 'null', '"a string"', '{}', '{"state":1,"codeVerifier":2,"nonce":3}', '[]']) {
+      sessionStorage.setItem('astraya:oidcPending', raw);
+      window.history.pushState(null, '', `${OIDC_CALLBACK_PATH}?code=code-3&state=state-3`);
+
+      const { container, root } = mount();
+      try {
+        await vi.waitFor(() => {
+          expect(latest?.status.kind, raw).toBe('ready');
+        }, WAIT);
+        expect(latest?.user).toBeUndefined();
+        // Consumed either way, so a reload can never resubmit the one-time code.
+        expect(sessionStorage.getItem('astraya:oidcPending')).toBeNull();
+        expect(window.location.pathname).toBe('/');
+      } finally {
+        unmount(root, container);
+      }
     }
   });
 });

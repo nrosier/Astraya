@@ -1,38 +1,52 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { registerServiceWorker } from '../pwa/register.js';
 import { startWarming } from '../pwa/warm-status.js';
 import { About } from './About.js';
 import { AccountPanel } from './AccountPanel.js';
-import { AdminPanel } from './AdminPanel.js';
 import { appMessages } from './App.messages.js';
-import { AstrocartographyView } from './AstrocartographyView.js';
 import { Changelog } from './Changelog.js';
-import { ChartView } from './ChartView.js';
-import { CompositeView } from './CompositeView.js';
-import { HarmonicView } from './HarmonicView.js';
 import { LanguageToggle } from './LanguageToggle.js';
 import { useMessages } from './messages.js';
 import { People } from './People.js';
-import { PeriodicTransitView } from './PeriodicTransitView.js';
-import { PersonForm } from './PersonForm.js';
 import { PersonNav } from './PersonNav.js';
-import { ProfectionsView } from './ProfectionsView.js';
 import { PwaStatus } from './PwaStatus.js';
-import { ReportScreen } from './ReportScreen.js';
 import { parseRoute } from './route.js';
 import { SessionProvider, useStoreStatus } from './session-context.js';
 import { SetPasswordForm } from './SetPasswordForm.js';
 import { SetupForm } from './SetupForm.js';
-import { SharedChartView } from './SharedChartView.js';
 import { sharedMessages } from './shared.messages.js';
 import { StoreProvider } from './store-context.js';
 import { SyncBadge } from './SyncBadge.js';
-import { SynastryView } from './SynastryView.js';
 import { ThemeToggle } from './ThemeToggle.js';
-import { TransitView } from './TransitView.js';
 import { APP_VERSION } from '../version.js';
 import type { Route } from './route.js';
+
+/**
+ * The screens that are not on the path to first paint, behind dynamic `import()`s (#338).
+ *
+ * Everything the landing route (`#/people`) needs stays statically imported above. The ten
+ * person-scoped screens between them reach most of `src/chart/**` and `src/domain/**`, and
+ * `AdminPanel` is a screen almost nobody has a route to — none of which a first-time visitor
+ * should download before anything renders. Same pattern as the ephemeris engine and the
+ * interpretation corpus, which are already fetched at runtime rather than inlined.
+ *
+ * The ten share one `personScreens()` call on purpose, so Vite emits one chunk they all
+ * reuse rather than ten overlapping ones — see `person-screens.ts`.
+ */
+const personScreens = () => import('./person-screens.js');
+const AstrocartographyView = lazy(async () => ({ default: (await personScreens()).AstrocartographyView }));
+const ChartView = lazy(async () => ({ default: (await personScreens()).ChartView }));
+const CompositeView = lazy(async () => ({ default: (await personScreens()).CompositeView }));
+const HarmonicView = lazy(async () => ({ default: (await personScreens()).HarmonicView }));
+const PeriodicTransitView = lazy(async () => ({ default: (await personScreens()).PeriodicTransitView }));
+const PersonForm = lazy(async () => ({ default: (await personScreens()).PersonForm }));
+const ProfectionsView = lazy(async () => ({ default: (await personScreens()).ProfectionsView }));
+const ReportScreen = lazy(async () => ({ default: (await personScreens()).ReportScreen }));
+const SynastryView = lazy(async () => ({ default: (await personScreens()).SynastryView }));
+const TransitView = lazy(async () => ({ default: (await personScreens()).TransitView }));
+const AdminPanel = lazy(async () => ({ default: (await import('./AdminPanel.js')).AdminPanel }));
+const SharedChartView = lazy(async () => ({ default: (await import('./SharedChartView.js')).SharedChartView }));
 
 /**
  * The routes that need the local store, wrapped in the one place that opens it.
@@ -73,6 +87,16 @@ function Stored({ children }: { children: React.ReactNode }): React.JSX.Element 
   return <StoreProvider store={status.store}>{children}</StoreProvider>;
 }
 
+/** Shown while a lazily-loaded screen's chunk is in flight (#338) — the same line and shape `Stored` uses while opening the database, so a slow network and slow storage look the same rather than inventing a second idiom. */
+function LoadingScreen(): React.JSX.Element {
+  const t = useMessages(appMessages);
+  return (
+    <main className="shell">
+      <p className="status">{t.loadingScreen}</p>
+    </main>
+  );
+}
+
 /**
  * Application shell.
  *
@@ -110,10 +134,25 @@ export function App(): React.JSX.Element {
       isFirstRoute.current = false;
       return;
     }
-    const heading = document.querySelector<HTMLElement>('main.shell h1');
-    if (heading === null) return;
-    if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
-    heading.focus();
+    function focusHeading(): boolean {
+      const heading = document.querySelector<HTMLElement>('main.shell h1');
+      if (heading === null) return false;
+      if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+      heading.focus();
+      return true;
+    }
+    if (focusHeading()) return;
+    // No heading yet means a lazily-loaded screen whose chunk is still in flight (#338) —
+    // this effect runs against the Suspense fallback, not the screen. Reading the DOM once
+    // would silently drop the announcement for exactly the navigations that took long
+    // enough to need one, so watch until the real heading lands instead.
+    const observer = new MutationObserver(() => {
+      if (focusHeading()) observer.disconnect();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+    };
   }, [route]);
 
   useEffect(() => {
@@ -182,7 +221,10 @@ export function App(): React.JSX.Element {
         <LanguageToggle />
         <ThemeToggle />
       </div>
-      {screen}
+      {/* One boundary around the whole screen slot rather than one per lazy route (#338):
+          every lazy screen wants the same fallback, and keeping the boundary outside
+          `Stored` means a chunk still in flight does not also restart the store. */}
+      <Suspense fallback={<LoadingScreen />}>{screen}</Suspense>
       <footer>
         {/* The version itself is the changelog link: clicking a version to see what changed
             in it is the behaviour people expect. Promoted here from the old landing page
