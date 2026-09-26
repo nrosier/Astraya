@@ -21,39 +21,23 @@
  *
  * `img-src`'s `blob:` is for PNG chart export: `chart-raster.ts` rasterizes a
  * chart's SVG by loading it into an `<img>` from a `blob:` URL before drawing
- * it to a canvas. `https://tile.openstreetmap.org` is the default OpenStreetMap
- * tile host the birth-place map (#159) requests raster tiles from as plain
- * `<img>`s, which needs no `connect-src` grant on its own.
+ * it to a canvas.
  *
- * `connect-src` carries that same single tile host as one exception to
- * `'self'` (#267): OpenStreetMap's anti-abuse system can return `200 OK` with a
- * small, valid "blocked" placeholder tile instead of an error, which Leaflet's
- * own `tileload` event cannot tell apart from a real tile. `BirthPlaceMap.tsx`
- * detects that case with a `fetch()` probe reading the response's `x-blocked`
- * header directly — something an `<img>` load can never expose. The grant is
- * exactly the origin already trusted for `img-src`, never broadened beyond it,
- * so `test/no-runtime-llm-access.test.ts`'s guarantee holds: this is the tile
- * host the map already loads images from, not a new external destination.
- *
- * The second `connect-src` exception is Nominatim's reverse-geocoding host
- * (#291): `BirthPlaceMap.tsx`'s "Fill in place name" button turns coordinates
- * into a town/city label via a `fetch()` to `nominatim.openstreetmap.org`, the
- * same zero-config OSM default the tile host mirrors. It is additive rather
- * than a replacement for the tile grant — the two are unrelated destinations —
- * and kept as its own `geocodeOrigin` config field rather than reusing
- * `tileOrigin`, so a self-hoster can point either one independently (or not at
- * all) without the other silently following it.
+ * `connect-src`'s one exception to `'self'` is Nominatim's geocoding host
+ * (#290, #291): `BirthPlaceSearch.tsx`'s "Search for a place by name" field
+ * turns a typed place name into coordinates via a `fetch()` to
+ * `nominatim.openstreetmap.org` by default. Kept as its own `geocodeOrigin`
+ * config field so a self-hoster can point it at their own server instead.
  */
-const DEFAULT_TILE_ORIGIN = 'https://tile.openstreetmap.org';
 const DEFAULT_GEOCODE_ORIGIN = 'https://nominatim.openstreetmap.org';
 
 export const CSP_DIRECTIVES: readonly string[] = [
   "default-src 'self'",
   "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${DEFAULT_TILE_ORIGIN}`,
+  "img-src 'self' data: blob:",
   "font-src 'self'",
-  `connect-src 'self' ${DEFAULT_TILE_ORIGIN} ${DEFAULT_GEOCODE_ORIGIN}`,
+  `connect-src 'self' ${DEFAULT_GEOCODE_ORIGIN}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'none'",
@@ -71,15 +55,10 @@ export interface CspConfig {
   /** Scheme + host of the Authentik issuer, no path — the exact grant #136 calls for. */
   readonly issuerOrigin?: string;
   /**
-   * Scheme + host of a self-hosted tile server, replacing the default public OSM
-   * host in `img-src` (#159) — not appended, since a deployer pointing at their
-   * own tiles has usually chosen to make zero calls to the public OSM host.
-   */
-  readonly tileOrigin?: string;
-  /**
    * Scheme + host of a self-hosted Nominatim instance, replacing the default
-   * public `nominatim.openstreetmap.org` in `connect-src` (#291) — not
-   * appended, for the same reason as `tileOrigin` above.
+   * public `nominatim.openstreetmap.org` in `connect-src` (#290, #291) — not
+   * appended, since a deployer pointing at their own server has usually chosen
+   * to make zero calls to the public one.
    */
   readonly geocodeOrigin?: string;
 }
@@ -103,24 +82,16 @@ export interface BuiltCsp {
  * appending to `'none'`, since `'none'` alongside another source is a contradiction,
  * not a grant — and nothing else in this app ever submits a form.
  *
- * `tileOrigin` similarly only ever rewrites `img-src` and the tile-host half
- * of `connect-src`, replacing the default public OSM host rather than adding
- * to it (#159, #267) — a self-hosted or MapTiler tile server gets exactly the
- * same pair of grants the default OSM host has, never both at once.
- *
- * `geocodeOrigin` independently rewrites just the Nominatim-host half of
- * `connect-src` (#291), the same way — the two origins are unrelated
- * destinations, so overriding one never touches the other.
+ * `geocodeOrigin` rewrites the Nominatim-host half of `connect-src` (#290,
+ * #291), replacing the default public host rather than adding to it.
  */
 export function buildCsp(config: CspConfig = {}): BuiltCsp {
-  const { issuerOrigin, tileOrigin, geocodeOrigin } = config;
-  const effectiveTileOrigin = tileOrigin ?? DEFAULT_TILE_ORIGIN;
+  const { issuerOrigin, geocodeOrigin } = config;
   const effectiveGeocodeOrigin = geocodeOrigin ?? DEFAULT_GEOCODE_ORIGIN;
   const directives = CSP_DIRECTIVES.map((directive) => {
     if (issuerOrigin !== undefined && directive === "form-action 'none'") return `form-action ${issuerOrigin}`;
-    if (directive.startsWith('img-src')) return `img-src 'self' data: blob: ${effectiveTileOrigin}`;
     if (directive.startsWith('connect-src')) {
-      return `connect-src 'self' ${effectiveTileOrigin} ${effectiveGeocodeOrigin}`;
+      return `connect-src 'self' ${effectiveGeocodeOrigin}`;
     }
     return directive;
   });

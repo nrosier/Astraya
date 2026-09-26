@@ -118,58 +118,33 @@ Authentik side after the initial sign-in exchange, so Authentik-derived
 sessions use a shorter TTL (24h, vs. 30 days for local accounts) to bound how
 long that gap can last.
 
-### Optional: a map tile provider that doesn't need a referrer
-
-The birth-place picker's map needs no setup either: by default it requests
-OpenStreetMap's public tiles, no API key required. That default is meant for
-trying Astraya out, not for a production deployment — OSM's
-[tile usage policy](https://operations.osmfoundation.org/policies/tiles/)
-blocks clients that don't identify themselves or that exceed its limits, and
-a real deployment's traffic is expected to eventually trip that — see issues
-261 and 267. Without either option below, Astraya falls back to a
-referrer-policy override on tile requests only, which helps but doesn't
-eliminate the risk.
-
-The lower-effort fix is a free [MapTiler](https://cloud.maptiler.com/account/keys/)
-API key: set `VITE_MAPTILER_API_KEY` and `ASTRAYA_TILE_ORIGIN=https://api.maptiler.com`
-(see [`.env.example`](.env.example)). MapTiler authenticates by the key, not by
-the browser's `Referer` header, so it works unaffected by this server's
-`Referrer-Policy: no-referrer`.
-
-To serve tiles from your own server instead, set `VITE_TILE_URL_TEMPLATE`
-and `ASTRAYA_TILE_ORIGIN` to matching values, which takes priority over a
-MapTiler key if both are set. The two must describe the same origin: a mismatch
-fails closed, blocking tiles rather than allowing the wrong host through.
-
-Unlike the server-runtime variables above, `VITE_TILE_URL_TEMPLATE` and
-`VITE_MAPTILER_API_KEY` are baked into the client bundle at build time, so
-neither can be changed by setting it on an already-built container — rebuild
-the image with it set instead.
-
 ### Optional: a geocoding provider that doesn't need a referrer
 
-The birth-place map's "Fill in place name" button, which turns Latitude/
-Longitude into a nearest town/city label, and its "Search for a place by
-name" field, which does the reverse, both need no setup either: by default
-they query Nominatim's public reverse/forward-geocoding endpoints, no API
-key required. Nominatim only grants CORS to requests carrying a `Referer`,
-so these requests override this server's blanket `Referrer-Policy:
-no-referrer` for themselves, disclosing this site's origin to Nominatim
-(nothing more). They're also subject to the same usage-policy risk as the
-default map tiles above, for the same reason — see the section above.
+The birth-place picker's "Search for a place by name" field needs no setup
+either: by default it queries Nominatim's public forward-geocoding endpoint,
+no API key required. Nominatim only grants CORS to requests carrying a
+`Referer`, so this request overrides this server's blanket
+`Referrer-Policy: no-referrer` for itself, disclosing this site's origin to
+Nominatim (nothing more). It's also subject to
+[Nominatim's usage policy](https://operations.osmfoundation.org/policies/nominatim/),
+which blocks clients that don't identify themselves or that exceed its
+limits — a real deployment's traffic is expected to eventually trip that.
 
-If you've already set `VITE_MAPTILER_API_KEY` for tiles, it's reused
-automatically here too, for both directions: MapTiler's Geocoding API
-authenticates by that key, not by `Referer`, so no referrer is ever sent and
-the usage-policy risk doesn't apply. Nothing further to set.
+The lower-effort fix is a free [MapTiler](https://cloud.maptiler.com/account/keys/)
+API key: set `VITE_MAPTILER_API_KEY` (see [`.env.example`](.env.example)).
+MapTiler's Geocoding API authenticates by that key, not by `Referer`, so no
+referrer is ever sent and the usage-policy risk doesn't apply.
 
 To serve lookups from your own Nominatim-compatible server instead, set
 `VITE_NOMINATIM_URL` and `ASTRAYA_GEOCODE_ORIGIN` to matching values (see
 [`.env.example`](.env.example)) — this takes priority over a MapTiler key if
-both are set, and covers both directions: the search field's `/search`
-request is derived from the same origin as the reverse-lookup `/reverse` URL.
-As with the tile variables, a mismatch fails closed, and `VITE_NOMINATIM_URL`
-is baked in at build time.
+both are set. The two must describe the same origin: a mismatch fails
+closed, blocking the lookup rather than allowing the wrong host through.
+
+Unlike the server-runtime variables above, `VITE_NOMINATIM_URL` and
+`VITE_MAPTILER_API_KEY` are baked into the client bundle at build time, so
+neither can be changed by setting it on an already-built container — rebuild
+the image with it set instead.
 
 ### Optional: serving from a subpath
 

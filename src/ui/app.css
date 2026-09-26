@@ -646,40 +646,22 @@ footer {
 }
 
 /*
- * The birth-place map (#159) sits below the Coordinates fieldset's box fields, not
+ * The birth-place search (#290) sits below the Coordinates fieldset's box fields, not
  * inside the field-grid — it isn't one more field, it's a second way to fill the
  * two that are already there.
  */
-.birth-place-map {
+.birth-place-search {
   margin-top: 1rem;
 }
 
-.birth-place-map-canvas {
-  /* Leaflet renders nothing until its container has a real height. */
-  height: 300px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-}
-
-/* Only shown while there are no coordinates yet (#248) — sits above the canvas, in the same
-   spot the "map unavailable" fallback occupies below it, so the two never compete for space. */
-.birth-place-map-geo {
-  margin-bottom: 0.5rem;
-  display: grid;
-  gap: 0.5rem;
-  justify-content: start;
-}
-
-/* "Search for a place by name" (#290) — always shown, above the "Use my location"/"Fill in
-   place name" slot those apply to. */
-.birth-place-map-search {
+.birth-place-search-form {
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
-.birth-place-map-search label {
+.birth-place-search-form label {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -690,7 +672,7 @@ footer {
   letter-spacing: 0.02em;
 }
 
-.birth-place-map-search input {
+.birth-place-search-form input {
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -700,19 +682,19 @@ footer {
   font-size: 1rem;
 }
 
-.birth-place-map-search input:hover {
+.birth-place-search-form input:hover {
   background: var(--surface-hover);
 }
 
-.birth-place-map-search input:focus-visible {
+.birth-place-search-form input:focus-visible {
   border-color: var(--accent);
   outline: 2px solid color-mix(in oklab, var(--accent) 55%, transparent);
   outline-offset: 0;
 }
 
 /* Click-to-confirm results (#290) — always a list, even for a single match, so a search never
-   silently moves the pin on its own. */
-.birth-place-map-search-results {
+   silently sets the fields on its own. */
+.birth-place-search-results {
   margin: 0 0 0.5rem;
   padding: 0;
   list-style: none;
@@ -720,12 +702,12 @@ footer {
   gap: 0.35rem;
 }
 
-.birth-place-map-search-results button {
+.birth-place-search-results button {
   width: 100%;
   text-align: left;
 }
 
-.birth-place-map .warning {
+.birth-place-search .warning {
   margin-top: 0.5rem;
 }
 
@@ -1854,7 +1836,7 @@ label.stacked textarea:focus-visible {
   .report-controls,
   .pwastatus,
   .topbar-right,
-  .birth-place-map,
+  .birth-place-search,
   .hint {
     display: none !important;
   }

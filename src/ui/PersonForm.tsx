@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { draftFrom, draftToMutations, validateDraft, type Draft } from '../domain/person-form.js';
 import { personFormValidationMessages } from '../domain/person-form.messages.js';
 import { formatOffset, resolveMoment } from '../time/resolve.js';
-import { BirthPlaceMap } from './BirthPlaceMap.js';
+import { BirthPlaceSearch } from './BirthPlaceSearch.js';
 import { useMessages } from './messages.js';
 import { NEEDS_A_DECISION, PROVENANCE } from './moment-labels.js';
 import { personFormMessages } from './PersonForm.messages.js';
@@ -155,9 +155,9 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
               }}
             />
             {/* A label, not a lookup: the coordinates below are what the calculation uses, and
-                this text is only for the reader. "Fill in place name" below can reverse-geocode
-                it from those coordinates, but the result is still just typed text afterward —
-                never re-derived or locked (#291). */}
+                this text is only for the reader. "Search for a place by name" below can fill it
+                in from a search result, but the result is still just typed text afterward —
+                never re-derived or locked (#290). */}
           </label>
         </div>
       </fieldset>
@@ -245,18 +245,13 @@ export function PersonForm({ personId }: { personId: string }): React.JSX.Elemen
             <Error_ name="longitude" />
           </label>
         </div>
-        <BirthPlaceMap
-          latitude={moment?.coordinates.latitude}
-          longitude={moment?.coordinates.longitude}
+        <BirthPlaceSearch
           onPick={(lat, lng, placeLabel) => {
             setFields({
               latitude: String(lat),
               longitude: String(lng),
               ...(placeLabel === undefined ? {} : { placeLabel }),
             });
-          }}
-          onFillPlaceLabel={(label) => {
-            set('placeLabel', label);
           }}
         />
       </fieldset>
