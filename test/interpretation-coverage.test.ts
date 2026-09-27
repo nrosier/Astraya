@@ -85,6 +85,19 @@ describe('coverage: no placement resolves to empty (#59)', () => {
     expectFullCoverage(placements, CORPUS);
   });
 
+  it('covers the full aspect x bodyA x bodyB cross-product for synastry-aspect (#359)', () => {
+    // Like transit-aspect, bodyA/bodyB roles are not interchangeable, so this is the full
+    // product (including bodyA === bodyB, e.g. both charts' Venus conjunct each other).
+    const keys = BODIES.map((body) => body.key);
+    const placements: CorpusPlacement[] = ASPECTS.flatMap((aspect) =>
+      keys.flatMap((bodyA) =>
+        keys.map((bodyB) => ({ category: 'synastry-aspect' as const, aspect: aspect.key, bodyA, bodyB })),
+      ),
+    );
+    expect(placements).toHaveLength(ASPECTS.length * keys.length * keys.length);
+    expectFullCoverage(placements, CORPUS);
+  });
+
   it('covers the full body x dignity-state cross-product', () => {
     const placements: CorpusPlacement[] = BODIES.flatMap((body) =>
       DIGNITY_STATES.map((state) => ({ category: 'dignity-state' as const, body: body.key, state })),
@@ -107,6 +120,19 @@ describe('composeFallbackText (#59)', () => {
   it('produces different text per locale', () => {
     const placement: CorpusPlacement = { category: 'dignity-state', body: 'sun', state: 'ruler' };
     expect(composeFallbackText(placement, 'en')).not.toBe(composeFallbackText(placement, 'nl'));
+  });
+
+  it('composes a synastry-aspect sentence naming "your" and "their" bodies (#359)', () => {
+    const placement: CorpusPlacement = { category: 'synastry-aspect', aspect: 'trine', bodyA: 'venus', bodyB: 'mars' };
+    expect(composeFallbackText(placement, 'en')).toMatch(/your Venus.*their Mars/i);
+    expect(composeFallbackText(placement, 'nl')).toMatch(/jouw Venus.*hun Mars/i);
+  });
+
+  it('drops the definite article before a possessive in synastry-aspect, for bodies like the Sun/Moon that normally carry one (#359)', () => {
+    const placement: CorpusPlacement = { category: 'synastry-aspect', aspect: 'square', bodyA: 'sun', bodyB: 'moon' };
+    expect(composeFallbackText(placement, 'en')).toMatch(/your Sun and their Moon/i);
+    expect(composeFallbackText(placement, 'en')).not.toMatch(/the Sun|the Moon/i);
+    expect(composeFallbackText(placement, 'nl')).toMatch(/jouw Zon en hun Maan/i);
   });
 
   it('refuses categories out of scope rather than silently returning something wrong', () => {

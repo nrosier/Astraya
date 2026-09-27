@@ -28,6 +28,7 @@ export const CORPUS_CATEGORIES = [
   'sign-on-cusp',
   'aspect-pair',
   'transit-aspect',
+  'synastry-aspect',
   'dignity-state',
   'nakshatra',
   'pattern',
@@ -94,6 +95,11 @@ export function dignityState(dignities: EssentialDignities): DignityState | unde
  * chart, and swapping them would describe a different event. `transiting`
  * and `natal` may even be the same body key (e.g. transiting Saturn aspecting
  * natal Saturn, a Saturn return) — nothing here alphabetizes or forbids that.
+ *
+ * `synastry-aspect` is `transit-aspect`'s cross-chart sibling, for the same reason: `bodyA` is
+ * always the "this chart" side and `bodyB` the other person's chart, so swapping them describes
+ * a different comparison even though the aspect itself is symmetric — unlike `aspect-pair`,
+ * nothing here alphabetizes the two.
  */
 export type CorpusPlacement =
   | { readonly category: 'planet-in-sign'; readonly body: string; readonly sign: number }
@@ -105,6 +111,12 @@ export type CorpusPlacement =
       readonly aspect: string;
       readonly transiting: string;
       readonly natal: string;
+    }
+  | {
+      readonly category: 'synastry-aspect';
+      readonly aspect: string;
+      readonly bodyA: string;
+      readonly bodyB: string;
     }
   | { readonly category: 'dignity-state'; readonly body: string; readonly state: DignityState }
   | { readonly category: 'nakshatra'; readonly body: string; readonly nakshatra: number }
@@ -127,6 +139,8 @@ export function placementKey(placement: CorpusPlacement): string {
     }
     case 'transit-aspect':
       return `transit-aspect:${placement.aspect}:${placement.transiting}:${placement.natal}`;
+    case 'synastry-aspect':
+      return `synastry-aspect:${placement.aspect}:${placement.bodyA}:${placement.bodyB}`;
     case 'dignity-state':
       return `dignity-state:${placement.body}:${placement.state}`;
     case 'nakshatra':
@@ -176,6 +190,11 @@ export function parsePlacementKey(key: string): CorpusPlacement | undefined {
       const [aspect, transiting, natal] = rest;
       if (aspect === undefined || transiting === undefined || natal === undefined) return undefined;
       return { category, aspect, transiting, natal };
+    }
+    case 'synastry-aspect': {
+      const [aspect, bodyA, bodyB] = rest;
+      if (aspect === undefined || bodyA === undefined || bodyB === undefined) return undefined;
+      return { category, aspect, bodyA, bodyB };
     }
     case 'dignity-state': {
       const [body, state] = rest;
@@ -307,6 +326,11 @@ function validatePlacementFields(placement: CorpusPlacement): string[] {
       if (aspectByKey(placement.aspect) === undefined) errors.push(`unknown aspect key "${placement.aspect}"`);
       checkBody(placement.transiting, 'transiting');
       checkBody(placement.natal, 'natal');
+      break;
+    case 'synastry-aspect':
+      if (aspectByKey(placement.aspect) === undefined) errors.push(`unknown aspect key "${placement.aspect}"`);
+      checkBody(placement.bodyA, 'bodyA');
+      checkBody(placement.bodyB, 'bodyB');
       break;
     case 'dignity-state':
       checkBody(placement.body, 'body');

@@ -13,6 +13,7 @@ import { VARGA_PRESETS } from '../astrology/harmonics.js';
 import { computeHarmonic, type HarmonicData } from '../domain/harmonic.js';
 import { momentKey } from '../time/encode.js';
 import { ChartDataView } from './ChartView.js';
+import { ReportView } from './ReportView.js';
 import { harmonicViewMessages } from './HarmonicView.messages.js';
 import { useMessages } from './messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
@@ -138,6 +139,8 @@ export function HarmonicView({ personId }: { personId: string }): React.JSX.Elem
       {nValid && load.kind !== 'idle' && (
         <ChartDataView load={load} displayName={displayName} showHouses metaLines={[label]} />
       )}
+
+      {nValid && load.kind === 'ready' && <ReportView chart={load.data} />}
     </main>
   );
 }

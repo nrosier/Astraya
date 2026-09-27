@@ -60,6 +60,11 @@ test('two people with known birth times get a Composite screen with a wheel and 
 
   await expect(page.locator('div.chart-wheel')).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Positions' })).toBeVisible();
+
+  // #359: the composite chart now also renders real interpretive text via `ReportView`,
+  // reusing `report.ts`'s `assembleReport` the same way the natal Report tab already does.
+  await expect(page.locator('.report-section').first()).toBeVisible();
+  await expect(page.locator('.report-paragraph p').first()).not.toBeEmpty();
 });
 
 test('a person with an unknown birth time is told a composite needs one', async ({ page }) => {
