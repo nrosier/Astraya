@@ -366,7 +366,7 @@ export function CorpusOverridesPanel(): React.JSX.Element {
 
       {saveError !== undefined && (
         <p className="warning" role="alert">
-          {saveError}
+          {t.saveFailed(saveError)}
         </p>
       )}
 
@@ -438,13 +438,18 @@ export function CorpusOverridesPanel(): React.JSX.Element {
           </label>
           <p className="actions">
             <button type="submit" disabled={busyKey === identityKeyOf(editing.key, editing.persona)}>
-              {t.saveButton}
+              {busyKey === identityKeyOf(editing.key, editing.persona) ? t.savingLabel : t.saveButton}
             </button>
             <button type="button" className="quiet" onClick={cancelEdit}>
               {t.cancelButton}
             </button>
             {overrideMap.has(identityKeyOf(editing.key, editing.persona)) && (
-              <button type="button" className="danger" onClick={requestReset}>
+              <button
+                type="button"
+                className="danger"
+                disabled={busyKey === identityKeyOf(editing.key, editing.persona)}
+                onClick={requestReset}
+              >
                 {t.resetButton}
               </button>
             )}
@@ -494,7 +499,7 @@ export function CorpusOverridesPanel(): React.JSX.Element {
                                 startEdit(entry);
                               }}
                             >
-                              {t.editButton}
+                              {busyKey === identity ? t.savingLabel : t.editButton}
                             </button>
                           </td>
                         </tr>
@@ -506,7 +511,9 @@ export function CorpusOverridesPanel(): React.JSX.Element {
             </div>
           )}
 
-          <p className="hint">{t.resultCount(String(visible.length), String(filtered.length))}</p>
+          <p className="hint" role="status" aria-live="polite">
+            {t.resultCount(String(visible.length), String(filtered.length))}
+          </p>
           {visible.length < filtered.length && (
             <p className="actions">
               <button

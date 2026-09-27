@@ -14,7 +14,11 @@ import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
-import { createPerson, gotoAndSettle } from './support.ts';
+import { createPerson, gotoAndSettle, signIn } from './support.ts';
+
+const BOOTSTRAP_TOKEN = 'e2e-a11y-bootstrap-token';
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'correct-horse-battery-e2e';
 
 let dir: string;
 let app: FastifyInstance;
@@ -23,17 +27,28 @@ let baseUrl: string;
 test.beforeAll(async () => {
   dir = mkdtempSync(join(tmpdir(), 'astraya-e2e-'));
   process.env.LOG_LEVEL = 'silent';
+  process.env.ASTRAYA_BOOTSTRAP_TOKEN = BOOTSTRAP_TOKEN;
 
   app = await build({ dbPath: join(dir, 'astraya.db') });
   await app.listen({ port: 0, host: '127.0.0.1' });
   const address = app.server.address();
   if (address === null || typeof address === 'string') throw new Error('server did not bind to a port');
   baseUrl = `http://127.0.0.1:${String(address.port)}`;
+
+  // The bootstrap route mints the first account as an admin, which #357's admin-area
+  // tests below need to sign in as.
+  const response = await fetch(new URL('/api/setup', baseUrl), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: BOOTSTRAP_TOKEN, username: ADMIN_USERNAME, password: ADMIN_PASSWORD }),
+  });
+  if (!response.ok) throw new Error(`bootstrap failed with status ${String(response.status)}`);
 });
 
 test.afterAll(async () => {
   await app.close();
   rmSync(dir, { recursive: true, force: true });
+  delete process.env.ASTRAYA_BOOTSTRAP_TOKEN;
 });
 
 test('the bare landing page redirects to the people list with no automatically detectable accessibility violations', async ({
@@ -251,6 +266,29 @@ test('the astrocartography screen (#171) has no automatically detectable accessi
   });
   await page.getByRole('link', { name: 'Astrocartography', exact: true }).click();
   await expect(page.locator('div.acg-map svg')).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test('the admin screen has no automatically detectable accessibility violations (#357)', async ({ page }) => {
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await signIn(page, ADMIN_USERNAME, ADMIN_PASSWORD);
+  await page.getByRole('link', { name: 'Manage users', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Admin' })).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test('the corpus-overrides admin screen has no automatically detectable accessibility violations (#357)', async ({
+  page,
+}) => {
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await signIn(page, ADMIN_USERNAME, ADMIN_PASSWORD);
+  await page.getByRole('link', { name: 'Manage users', exact: true }).click();
+  await page.getByRole('link', { name: 'Corpus corrections', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Corpus corrections' })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(results.violations).toEqual([]);

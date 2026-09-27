@@ -41,12 +41,13 @@ const en = {
   tierFieldLabel: 'Tier',
   tagsFieldLabel: 'Tags (comma-separated)',
   saveButton: 'Save',
+  savingLabel: 'Saving…',
   cancelButton: 'Cancel',
   resetButton: 'Reset to corpus default',
   resetWarning: (key: string) => `Reset "${key}" back to its corpus default? This cannot be undone.`,
   resetPermanentlyButton: 'Reset',
 
-  saveFailed: 'Could not save this correction.',
+  saveFailed: (message: string) => `Could not save this correction. ${message}`,
 };
 
 const nl: typeof en = {
@@ -89,12 +90,13 @@ const nl: typeof en = {
   tierFieldLabel: 'Niveau',
   tagsFieldLabel: 'Labels (kommagescheiden)',
   saveButton: 'Opslaan',
+  savingLabel: 'Opslaan…',
   cancelButton: 'Annuleren',
   resetButton: 'Terugzetten naar corpusstandaard',
   resetWarning: (key: string) => `"${key}" terugzetten naar de corpusstandaard? Dit kan niet ongedaan worden gemaakt.`,
   resetPermanentlyButton: 'Terugzetten',
 
-  saveFailed: 'Deze correctie kon niet worden opgeslagen.',
+  saveFailed: (message: string) => `Deze correctie kon niet worden opgeslagen. ${message}`,
 };
 
 export const corpusOverridesPanelMessages = { en, nl };

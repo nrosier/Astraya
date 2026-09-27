@@ -281,6 +281,26 @@ describe('POST /api/auth/oidc/callback', () => {
     expect(response.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(false);
   });
 
+  /**
+   * #358 regression: `admin-promotion.ts`'s own docstring says group matching is
+   * deliberately case-sensitive, unlike the username allowlist (`COLLATE NOCASE`) — every
+   * other case above proves non-matching with a wholly different group string, which would
+   * stay green even if a future edit made the comparison case-insensitive by mistake.
+   */
+  it('does not promote when the only matching group differs from the configured name by case', async () => {
+    process.env.ASTRAYA_OIDC_ADMIN_GROUPS = 'astraya-admins';
+    const idToken = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-admin-case',
+      nonce: 'n',
+      preferred_username: 'karen',
+      groups: ['Astraya-Admins'],
+    });
+    fakeAuthentik.registerCode('code-admin-case', { idToken });
+
+    const response = await callback({ code: 'code-admin-case', codeVerifier: 'v', nonce: 'n' });
+    expect(response.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(false);
+  });
+
   it('promotes on a later sign-in after group membership changes on the IdP side', async () => {
     process.env.ASTRAYA_OIDC_ADMIN_GROUPS = 'astraya-admins';
     const first = await fakeAuthentik.mintIdToken({
