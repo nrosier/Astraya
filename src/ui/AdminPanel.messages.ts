@@ -3,6 +3,7 @@
  */
 const en = {
   heading: 'Admin',
+  corpusOverridesLink: 'Corpus corrections',
 
   oidcHint:
     'Local accounts cannot be created while sign-in through Authentik is configured — new accounts are provisioned there instead.',
@@ -45,6 +46,7 @@ const en = {
 
 const nl: typeof en = {
   heading: 'Beheer',
+  corpusOverridesLink: 'Corpuscorrecties',
 
   oidcHint:
     'Lokale accounts kunnen niet worden aangemaakt terwijl inloggen via Authentik is geconfigureerd — nieuwe accounts worden daar aangemaakt.',
