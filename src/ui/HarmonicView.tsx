@@ -8,16 +8,16 @@
  * preset (`VARGA_PRESETS`) or any positive integer, per the issue's "N selectable" ask.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { VARGA_PRESETS } from '../astrology/harmonics.js';
 import { computeHarmonic, type HarmonicData } from '../domain/harmonic.js';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { momentKey } from '../time/encode.js';
 import { ChartDataView } from './ChartView.js';
 import { harmonicViewMessages } from './HarmonicView.messages.js';
 import { useMessages } from './messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { useStoreState } from './store-context.js';
 import type { ChartData } from '../domain/chart-compute.js';
-import type { EphemerisProvider } from '../ephemeris/types.js';
 
 type Load =
   | { readonly kind: 'idle' }
@@ -38,20 +38,8 @@ export function HarmonicView({ personId }: { personId: string }): React.JSX.Elem
   const n = preset !== undefined ? preset.n : Number.parseInt(customN, 10);
   const nValid = Number.isInteger(n) && n >= 1;
 
-  const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
+  const { provider } = useEphemerisProvider();
   const [load, setLoad] = useState<Load>({ kind: 'idle' });
-
-  useEffect(() => {
-    const worker = new WorkerEphemerisProvider();
-    const effect = { cancelled: false };
-    void worker.initialize().then(() => {
-      if (!effect.cancelled) setProvider(worker);
-    });
-    return () => {
-      effect.cancelled = true;
-      void worker.dispose();
-    };
-  }, []);
 
   useEffect(() => {
     if (person?.moment === undefined || provider === undefined || !nValid) {
@@ -75,7 +63,7 @@ export function HarmonicView({ personId }: { personId: string }): React.JSX.Elem
     return () => {
       effect.cancelled = true;
     };
-  }, [person, provider, n, nValid]);
+  }, [momentKey(person?.moment), provider, n, nValid]);
 
   if (person === undefined) {
     return <PersonNotFound />;

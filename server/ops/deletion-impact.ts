@@ -23,15 +23,27 @@ interface PayloadRow {
 const KNOWN_ENTITIES = ['person', 'chart'] as const;
 
 /**
+ * Caps how many rows a single preview will scan and decrypt (#326) — comfortably above
+ * any real account's log today, so this only ever bites a runaway one. Hitting the cap
+ * means the scan was partial, so the count below must say "approximate" rather than
+ * "counted": an undercounted people/chart total that looks precise would understate an
+ * irreversible delete's real impact.
+ */
+const SCAN_LIMIT = 50_000;
+
+/**
  * `key` is whatever `loadEncryptionKey()` returns *right now* — if the relay isn't
  * configured on this deployment (or was unconfigured after these rows were written),
  * there is nothing to decrypt, so this falls back to an approximate row count rather
  * than crashing or lying with a `0`.
  */
 export function previewDeletionImpact(db: Database, userId: string, key: Buffer | null): DeletionImpact {
-  const rows = db.prepare('SELECT payload, iv FROM ops WHERE user_id = ?').all(userId) as unknown as PayloadRow[];
+  const rows = db
+    .prepare('SELECT payload, iv FROM ops WHERE user_id = ? LIMIT ?')
+    .all(userId, SCAN_LIMIT) as unknown as PayloadRow[];
+  const truncated = rows.length === SCAN_LIMIT;
 
-  if (!key) return { kind: 'approximate', opRows: rows.length };
+  if (!key || truncated) return { kind: 'approximate', opRows: rows.length };
 
   const seen = new Map<string, Set<string>>(KNOWN_ENTITIES.map((entity) => [entity, new Set<string>()]));
   for (const row of rows) {

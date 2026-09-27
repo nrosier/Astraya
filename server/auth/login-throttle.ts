@@ -22,6 +22,24 @@ function key(username: string): string {
   return username.toLowerCase();
 }
 
+/**
+ * Without this, an attacker cycling through never-real usernames grows this map
+ * forever — each one is only ever cleared lazily, on a later read of that *same*
+ * username, which an attacker never makes twice (#317). Sweeping on a timer bounds
+ * the map to roughly one window's worth of real attempts, without changing what
+ * `isLoginThrottled`/`recordFailedLogin` do on the read/write path.
+ */
+function sweepExpiredAttempts(): void {
+  const now = Date.now();
+  for (const [k, entry] of attemptsByUsername) {
+    if (now - entry.windowStart > WINDOW_MS) attemptsByUsername.delete(k);
+  }
+}
+
+// unref: a periodic cleanup timer must not be a reason the process (or a test runner
+// importing this module) stays alive.
+setInterval(sweepExpiredAttempts, WINDOW_MS).unref();
+
 export function isLoginThrottled(username: string): boolean {
   const entry = attemptsByUsername.get(key(username));
   if (!entry) return false;

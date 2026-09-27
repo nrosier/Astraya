@@ -21,6 +21,7 @@
  * the sentence for sorting and CSV export, the same as `TransitView.tsx`'s contacts table.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import type { Aspect } from '../astrology/aspects.js';
 import { bodyById } from '../astrology/bodies.js';
 import { SIGNS } from '../astrology/signs.js';
@@ -33,16 +34,16 @@ import {
 import { composeFallbackText } from '../interpretation/compose.js';
 import type { StationEvent } from '../astrology/stations.js';
 import type { TransitAspectEvent } from '../astrology/transit-events.js';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { civilFromJulianDay } from '../time/julian.js';
 import { todayInputValue } from './format.js';
 import { useMessages } from './messages.js';
+import { momentKey } from '../time/encode.js';
 import { periodicTransitViewMessages } from './PeriodicTransitView.messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
-import type { BodyId, EphemerisProvider, JulianDayUT } from '../ephemeris/types.js';
+import type { BodyId, JulianDayUT } from '../ephemeris/types.js';
 import type { CorpusPlacement } from '../interpretation/schema.js';
 
 type Load =
@@ -180,20 +181,8 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
   const person = state.people.get(personId);
   const t = useMessages(periodicTransitViewMessages);
   const [asOf, setAsOf] = useState(todayInputValue);
-  const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
+  const { provider } = useEphemerisProvider();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
-
-  useEffect(() => {
-    const worker = new WorkerEphemerisProvider();
-    const effect = { cancelled: false };
-    void worker.initialize().then(() => {
-      if (!effect.cancelled) setProvider(worker);
-    });
-    return () => {
-      effect.cancelled = true;
-      void worker.dispose();
-    };
-  }, []);
 
   const targetDate = useMemo(() => {
     const [year, month, day] = asOf.split('-').map(Number);
@@ -230,7 +219,7 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
     return () => {
       effect.cancelled = true;
     };
-  }, [person, provider, targetDate]);
+  }, [momentKey(person?.moment), provider, targetDate]);
 
   if (person === undefined) {
     return <PersonNotFound />;

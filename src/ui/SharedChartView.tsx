@@ -9,7 +9,7 @@ import { ChartDataView } from './ChartView.js';
 import { chartSheetMetaLines } from '../domain/chart-tables.js';
 import { computeChartData, type ChartData } from '../domain/chart-compute.js';
 import { decodeChartShareLink, type ChartShareData } from '../domain/chart-share.js';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
+import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { sharedChartViewMessages } from './SharedChartView.messages.js';
@@ -37,16 +37,15 @@ export function SharedChartView(): React.JSX.Element {
   const [locale] = useLocale();
   const initial = useMemo(fromLocation, []);
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
+  const { provider } = useEphemerisProvider();
 
   useEffect(() => {
-    if (initial.data === undefined) return undefined;
+    if (initial.data === undefined || provider === undefined) return undefined;
     const { moment } = initial.data;
-    const provider = new WorkerEphemerisProvider();
     const effect = { cancelled: false };
 
     void (async () => {
       try {
-        await provider.initialize();
         const data = await computeChartData(moment, provider);
         if (!effect.cancelled) setLoad({ kind: 'ready', data });
       } catch (error) {
@@ -57,9 +56,8 @@ export function SharedChartView(): React.JSX.Element {
 
     return () => {
       effect.cancelled = true;
-      void provider.dispose();
     };
-  }, [initial.data]);
+  }, [initial.data, provider]);
 
   return (
     <main className="shell">

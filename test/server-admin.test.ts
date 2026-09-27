@@ -188,6 +188,17 @@ describe('POST /api/admin/users', () => {
     expect(response.statusCode).toBe(409);
   });
 
+  it('rejects a username over the length cap (#317)', async () => {
+    const adminCookie = await setupAdmin(app);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/admin/users',
+      cookies: { [SESSION_COOKIE]: adminCookie },
+      payload: { username: 'a'.repeat(65) },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
   it('is rejected with 409 while OIDC is configured', async () => {
     process.env.ASTRAYA_OIDC_ISSUER = 'http://localhost:1';
     process.env.ASTRAYA_OIDC_CLIENT_ID = 'client';
@@ -351,6 +362,61 @@ describe('the last-admin guard', () => {
       cookies: { [SESSION_COOKIE]: adminCookie },
     });
     expect(disable.statusCode).toBe(200);
+  });
+
+  it('treats a disabled admin as no longer counting toward "more than one admin" (#318)', async () => {
+    // Reproduces the exact sequence the audit finding describes: disable admin
+    // A while admin B still exists (allowed, since B isn't disabled), then try
+    // to act on B — the *unfiltered* admin count would still see A's row and
+    // wrongly think B isn't the last one, even though A is unusable.
+    const adminCookie = await setupAdmin(app);
+    await createAndLoginUser(app, 'bob', 'correct-horse-battery');
+    const bob = (
+      await app.inject({ method: 'GET', url: '/api/admin/users', cookies: { [SESSION_COOKIE]: adminCookie } })
+    )
+      .json<{ users: { id: string; username: string }[] }>()
+      .users.find((u) => u.username === 'bob');
+    if (!bob) throw new Error('bob not found');
+    await app.inject({
+      method: 'POST',
+      url: `/api/admin/users/${bob.id}/promote`,
+      cookies: { [SESSION_COOKIE]: adminCookie },
+    });
+
+    // Disabling bob while alice is still enabled is allowed under both the old
+    // and new logic.
+    const disableBob = await app.inject({
+      method: 'POST',
+      url: `/api/admin/users/${bob.id}/disable`,
+      cookies: { [SESSION_COOKIE]: adminCookie },
+    });
+    expect(disableBob.statusCode).toBe(200);
+
+    const alice = (
+      await app.inject({ method: 'GET', url: '/api/auth/me', cookies: { [SESSION_COOKIE]: adminCookie } })
+    ).json<{ user: { id: string } }>().user;
+
+    // Alice is now the only *enabled* admin — bob's disabled row must not count.
+    const disableAlice = await app.inject({
+      method: 'POST',
+      url: `/api/admin/users/${alice.id}/disable`,
+      cookies: { [SESSION_COOKIE]: adminCookie },
+    });
+    expect(disableAlice.statusCode).toBe(409);
+
+    const demoteAlice = await app.inject({
+      method: 'POST',
+      url: `/api/admin/users/${alice.id}/demote`,
+      cookies: { [SESSION_COOKIE]: adminCookie },
+    });
+    expect(demoteAlice.statusCode).toBe(409);
+
+    const deleteAlice = await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/users/${alice.id}`,
+      cookies: { [SESSION_COOKIE]: adminCookie },
+    });
+    expect(deleteAlice.statusCode).toBe(409);
   });
 });
 

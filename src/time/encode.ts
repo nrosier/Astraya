@@ -45,6 +45,16 @@ export function encodeBirthMoment(input: BirthMomentInput): URLSearchParams {
   return params;
 }
 
+/**
+ * A stable, content-based key for a birth moment — safe to put in a React dependency
+ * array. `person.moment` itself is a fresh object on every store fold (#316) regardless
+ * of whether this person's own data changed, so depending on it directly means every
+ * chart-compute effect across the app re-runs on any unrelated sync pull.
+ */
+export function momentKey(input: BirthMomentInput | undefined): string | undefined {
+  return input === undefined ? undefined : encodeBirthMoment(input).toString();
+}
+
 /** Thrown when a link cannot be read, naming the parameter at fault. */
 export class BirthMomentLinkError extends Error {
   constructor(message: string) {

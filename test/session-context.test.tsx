@@ -326,8 +326,8 @@ describe('the cross-account-bleed guard', () => {
   });
 });
 
-describe('a rejected session during sync (#106)', () => {
-  it('forgets the account locally without touching its store, so signing back in resumes it', async () => {
+describe('a rejected session during sync (#106, #314)', () => {
+  it('closes the store rather than leaving it open and writable with no user signed in', async () => {
     const { container, root } = mount();
     try {
       await vi.waitFor(() => {
@@ -355,10 +355,15 @@ describe('a rejected session during sync (#106)', () => {
         expect(latest?.user).toBeUndefined();
       }, WAIT);
       expect(latest?.engine).toBeUndefined();
-      // Still the same store, with the write intact — not reset to a fresh anonymous one.
-      expect(latest?.status.kind === 'ready' && latest.status.store.state.people.get('p1')?.displayName).toBe('Ada');
+      // The store itself is closed, not just orphaned from `user`/`engine` state (#314):
+      // leaving it open and writable would mean every screen still reads and writes
+      // alice's account with no one signed in — exactly the cross-account data-bleed
+      // ADR 0002 calls out as this app's worst failure mode. `'opening'` is the same
+      // "no writable store yet" state every screen already renders at boot.
+      expect(latest?.status.kind).toBe('opening');
 
-      // Signing back in as the same account reopens that same database rather than an empty one.
+      // Signing back in as the same account reopens that same database (the write
+      // persisted to disk before the session died) rather than an empty one.
       installFetch();
       await act(async () => {
         await latest?.signIn('alice', 'correct-horse-battery');

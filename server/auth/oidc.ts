@@ -75,7 +75,17 @@ async function fetchDiscovery(issuer: string): Promise<DiscoveryDocument> {
 
 export function getDiscovery(issuer: string): Promise<DiscoveryDocument> {
   if (cachedDiscovery?.issuer !== issuer) {
-    cachedDiscovery = { issuer, promise: fetchDiscovery(issuer) };
+    const promise = fetchDiscovery(issuer);
+    const entry = { issuer, promise };
+    cachedDiscovery = entry;
+    // A rejected discovery fetch (a transient DNS blip, the issuer briefly unreachable at
+    // boot) must not stay cached for the rest of the process's life (#319) — the issuer
+    // string never changes, so nothing else would ever invalidate it. Only clear the cache
+    // if it's still *this* attempt: a concurrent call may have already replaced it with a
+    // newer one, which must not be discarded because an older attempt finally rejected.
+    promise.catch(() => {
+      if (cachedDiscovery === entry) cachedDiscovery = undefined;
+    });
   }
   return cachedDiscovery.promise;
 }

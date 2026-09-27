@@ -87,6 +87,15 @@ describe('POST /api/setup', () => {
     });
     expect(response.statusCode).toBe(400);
   });
+
+  it('rejects a username over the length cap (#317)', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/setup',
+      payload: { token: BOOTSTRAP_TOKEN, username: 'a'.repeat(65), password: 'correct-horse-battery' },
+    });
+    expect(response.statusCode).toBe(400);
+  });
 });
 
 describe('POST /api/auth/login and GET /api/auth/me', () => {
@@ -113,6 +122,15 @@ describe('POST /api/auth/login and GET /api/auth/me', () => {
   it('returns 401 with no session cookie', async () => {
     const me = await app.inject({ method: 'GET', url: '/api/auth/me' });
     expect(me.statusCode).toBe(401);
+  });
+
+  it('rejects a username over the length cap before ever touching the throttle map (#317)', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { username: 'a'.repeat(65), password: 'whatever-12345' },
+    });
+    expect(response.statusCode).toBe(400);
   });
 
   it('rejects a wrong password and a nonexistent username with the identical response', async () => {

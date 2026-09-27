@@ -267,11 +267,36 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
     retryTimer = setTimeout(trigger, jittered);
   }
 
+  /**
+   * Only this device's own outgoing records (#324): `store.outgoing()` filters by HLC order
+   * alone, so it also returns peer records this device just pulled and folded into its own
+   * log via `receive()`. Re-POSTing those back is a harmless no-op server-side (the same
+   * `(user, hlc)` pair already exists), but it's still wasted bandwidth that grows with
+   * account age and peer count, so it's filtered out before ever reaching the network.
+   */
+  function ownOutgoing(): readonly OpRecord[] {
+    return store.outgoing(cursor.pushed).filter((op) => op.deviceId === store.deviceId);
+  }
+
   async function pull(): Promise<void> {
     for (;;) {
       const rows = await getOps(cursor.pulled ?? 0);
       if (rows.length === 0) return;
-      await store.receive(rows.map(fromWire));
+      // Decoded one row at a time (#320): a single corrupted stored row throwing out of a
+      // bulk `.map(fromWire)` would throw out of `pull()` entirely, which never advances
+      // `cursor.pulled` — the same bad row would be re-fetched and re-thrown on every retry,
+      // permanently wedging pull for every *other* row behind it, in this page or any later
+      // one. A row that fails to decode is unrecoverable either way; skipping it just keeps
+      // it from blocking its neighbours.
+      const decoded: unknown[] = [];
+      for (const row of rows) {
+        try {
+          decoded.push(fromWire(row));
+        } catch (error) {
+          console.warn('sync: dropping a pulled row that failed to decode', row.seq, error);
+        }
+      }
+      await store.receive(decoded);
       // Persisted only once `receive` has resolved — itself durable-before-return — so a
       // crash here just re-pulls the same page next time, which `receive`'s HLC dedupe makes
       // a harmless no-op rather than a duplicate.
@@ -290,8 +315,7 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
       // what got skipped inside it — this filter is a second, belt-and-suspenders guard
       // against ever resending one, not the only thing preventing it (#312).
       const quarantined = new Set(cursor.quarantined ?? []);
-      const outgoing = store
-        .outgoing(cursor.pushed)
+      const outgoing = ownOutgoing()
         .map(toWire)
         .filter((op) => !quarantined.has(op.hlc));
       if (outgoing.length === 0) return;
@@ -325,7 +349,7 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
         consecutiveFailures = 0;
         unauthorizedNotified = false;
         clearScheduledRetry();
-        const stillPending = store.outgoing(cursor.pushed).length > 0;
+        const stillPending = ownOutgoing().length > 0;
         setStatus(stillPending ? { kind: 'syncing' } : { kind: 'synced', at: Date.now() });
       }
     } catch (error) {
@@ -377,7 +401,7 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
     get status() {
       return status;
     },
-    pending: () => store.outgoing(cursor.pushed).length,
+    pending: () => ownOutgoing().length,
     quarantined: () => cursor.quarantined?.length ?? 0,
     syncNow: trigger,
     subscribe(listener) {

@@ -17,21 +17,21 @@
  * entirely app-generated from just-computed data, never user-supplied.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { chartWheelRing, crossAspectRows, type AspectRow } from '../domain/chart-tables.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeTransit, type TransitData } from '../domain/transit.js';
-import { WorkerEphemerisProvider } from '../ephemeris/client.js';
 import { renderMultiWheelSvg, type CrossRingAspects } from '../chart/multi-wheel.js';
 import { aspectDisplayName, bodyDisplayName } from './astro-names.messages.js';
 import { todayInputValue } from './format.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
+import { momentKey } from '../time/encode.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import { transitViewMessages } from './TransitView.messages.js';
 import type { TableColumn } from './table-sort.js';
-import type { EphemerisProvider } from '../ephemeris/types.js';
 import type { Locale } from '../interpretation/schema.js';
 
 type Load =
@@ -75,20 +75,8 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
   const t = useMessages(transitViewMessages);
   const [locale] = useLocale();
   const [asOf, setAsOf] = useState(todayInputValue);
-  const [provider, setProvider] = useState<EphemerisProvider | undefined>(undefined);
+  const { provider } = useEphemerisProvider();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
-
-  useEffect(() => {
-    const worker = new WorkerEphemerisProvider();
-    const effect = { cancelled: false };
-    void worker.initialize().then(() => {
-      if (!effect.cancelled) setProvider(worker);
-    });
-    return () => {
-      effect.cancelled = true;
-      void worker.dispose();
-    };
-  }, []);
 
   const targetDate = useMemo(() => {
     const [year, month, day] = asOf.split('-').map(Number);
@@ -118,7 +106,7 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
     return () => {
       effect.cancelled = true;
     };
-  }, [person, provider, targetDate]);
+  }, [momentKey(person?.moment), provider, targetDate]);
 
   const wheelMarkup = useMemo(() => {
     if (load.kind !== 'ready') return undefined;
