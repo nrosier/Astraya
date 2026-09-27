@@ -47,8 +47,10 @@ export async function login(username: string, password: string): Promise<AuthUse
 }
 
 /**
- * `POST /api/auth/logout`. Always succeeds — there is no session left to reject the
- * request. Returns `endSessionUrl` when the ended session was OIDC-derived and
+ * `POST /api/auth/logout`. The server never rejects it — there is no session left to
+ * reject it with — but the `fetch` itself still throws when offline, which the caller must
+ * treat as "the server wasn't told", not as "sign-out failed" (#335). Returns
+ * `endSessionUrl` when the ended session was OIDC-derived and
  * Authentik advertises RP-initiated logout (#77) — the caller must navigate there
  * (a `fetch` can't end Authentik's own browser session), never treat it as optional.
  */

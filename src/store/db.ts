@@ -92,11 +92,22 @@ function committed(transaction: IDBTransaction): Promise<void> {
 export function openDatabase(name = DB_NAME, version = DB_VERSION): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(name, version);
+    // `blocked` does not cancel the open request: the other tab may release its connection
+    // a moment later and `success` then fires on a promise this already rejected. Resolving
+    // it again is a silent no-op, so the caller never learns about the connection and
+    // nothing ever closes it — one leaked connection per blocked open, each of which will
+    // itself block the next upgrade (#336). Tracked explicitly so the late `success` can
+    // close the database it was handed instead.
+    let settled = false;
+    const fail = (error: Error): void => {
+      settled = true;
+      reject(error);
+    };
     request.onupgradeneeded = (event): void => {
       const db = request.result;
       const transaction = request.transaction;
       if (transaction === null) {
-        reject(new Error('Upgrade with no transaction'));
+        fail(new Error('Upgrade with no transaction'));
         return;
       }
       // `event.oldVersion` is 0 for a fresh database, so a new install runs every
@@ -105,7 +116,7 @@ export function openDatabase(name = DB_NAME, version = DB_VERSION): Promise<IDBD
       for (let target = event.oldVersion + 1; target <= version; target += 1) {
         const migration = MIGRATIONS[target - 1];
         if (migration === undefined) {
-          reject(new Error(`No migration to database version ${String(target)}`));
+          fail(new Error(`No migration to database version ${String(target)}`));
           return;
         }
         migration(db, transaction);
@@ -113,6 +124,11 @@ export function openDatabase(name = DB_NAME, version = DB_VERSION): Promise<IDBD
     };
     request.onsuccess = (): void => {
       const db = request.result;
+      if (settled) {
+        db.close();
+        return;
+      }
+      settled = true;
       // A newer tab may upgrade the schema underneath this one. Holding the old
       // connection open would block it forever, so close and let the caller reload —
       // continuing to write through a stale schema is the worse option.
@@ -122,10 +138,10 @@ export function openDatabase(name = DB_NAME, version = DB_VERSION): Promise<IDBD
       resolve(db);
     };
     request.onerror = (): void => {
-      reject(request.error ?? new Error('IndexedDB open failed'));
+      fail(request.error ?? new Error('IndexedDB open failed'));
     };
     request.onblocked = (): void => {
-      reject(new Error('Another tab is holding an older version of the database open.'));
+      fail(new Error('Another tab is holding an older version of the database open.'));
     };
   });
 }

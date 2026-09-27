@@ -38,16 +38,14 @@ function relative(file: string): string {
 }
 
 describe('no runtime LLM access in src/ (#64)', () => {
-  it('carries no connect-src exception beyond the tile host and the Nominatim host the map already uses', () => {
-    // The first exception (#267) is the same origin `img-src` already grants the
-    // birth-place map's tiles — a fetch() probe reading that host's `x-blocked`
-    // response header, not a new external destination. The second (#291) is
-    // Nominatim's reverse-geocoding host the "Fill in place name" button queries.
-    // Anything wider than these two origins would be a model-provider-reachable
+  it('carries no connect-src exception beyond the Nominatim host the birth-place search already uses', () => {
+    // The one exception (#290, #291) is Nominatim's geocoding host
+    // `BirthPlaceSearch.tsx`'s "Search for a place by name" field queries.
+    // Anything wider than this origin would be a model-provider-reachable
     // regression, so this asserts the exact value rather than merely that the
     // directive exists.
     const connectSrc = CSP_DIRECTIVES.find((directive) => directive.startsWith('connect-src'));
-    expect(connectSrc).toBe("connect-src 'self' https://tile.openstreetmap.org https://nominatim.openstreetmap.org");
+    expect(connectSrc).toBe("connect-src 'self' https://nominatim.openstreetmap.org");
   });
 
   it('holds no API key identifier', () => {
@@ -55,14 +53,13 @@ describe('no runtime LLM access in src/ (#64)', () => {
     // (`GEMINI_API_KEY`, `VITE_GEMINI_API_KEY`), and `_` counts as a word character,
     // so `\bAPI_KEY\b` would silently pass over exactly the names that matter.
     const pattern = /API_KEY|apiKey/;
-    // MapTiler's key (#267, and #294/#290 for geocoding) is a deliberate exception,
-    // not a loophole: it authenticates requests to a map provider, not a model
-    // provider, and — like any browser-side map API key (Mapbox, Google Maps) — is
-    // meant to ship in the client bundle rather than stay secret. It only ever
-    // reaches an `<img>` src via Leaflet's tile layer, the tile-probe `fetch()`
-    // above, or MapTiler's Geocoding API, none of which is a model-provider
-    // destination, so the connect-src invariant above still holds.
-    const ALLOWED_FILES = new Set(['ui/BirthPlaceMap.tsx', 'ui/geocode-provider.ts']);
+    // MapTiler's key (#294, #290) is a deliberate exception, not a loophole: it
+    // authenticates requests to a geocoding provider, not a model provider, and —
+    // like any browser-side map/geocoding API key (Mapbox, Google Maps) — is meant
+    // to ship in the client bundle rather than stay secret. It only ever reaches
+    // MapTiler's Geocoding API, which is not a model-provider destination, so the
+    // connect-src invariant above still holds.
+    const ALLOWED_FILES = new Set(['ui/geocode-provider.ts']);
     const offenders = FILES.filter((file) => pattern.test(readFileSync(file, 'utf8')))
       .map(relative)
       .filter((file) => !ALLOWED_FILES.has(file));

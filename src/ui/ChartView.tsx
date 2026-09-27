@@ -337,12 +337,18 @@ function ShareLink({
   };
 
   return (
-    <p>
-      <button type="button" className="quiet" onClick={copy}>
-        {copied ? t.linkCopied : t.copyShareLink}
-      </button>{' '}
-      <span className="hint">{t.shareLinkHint}</span>
-    </p>
+    <>
+      <p>
+        <button type="button" className="quiet" onClick={copy}>
+          {copied ? t.linkCopied : t.copyShareLink}
+        </button>{' '}
+        <span className="hint">{t.shareLinkHint}</span>
+      </p>
+      {/* `.warning`, not the `.hint` above it (#341). There is no server-side state behind
+          a share link, so there is nothing to revoke — the only place that can be said is
+          before the link exists, and grey small print is how it would be missed. */}
+      <p className="warning share-warning">{t.shareLinkWarning}</p>
+    </>
   );
 }
 

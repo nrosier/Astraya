@@ -51,7 +51,12 @@ function insertionIndex(records: readonly OpRecord[], hlc: Hlc): number {
   while (low < high) {
     const middle = (low + high) >>> 1;
     const at = records[middle];
-    if (at === undefined) break;
+    // `middle` is always below `high`, which is at most `records.length`, so this is
+    // unreachable — it exists for `noUncheckedIndexedAccess`. Throwing rather than
+    // breaking out of the search matters: a `break` would return the current `low`, a
+    // plausible-looking index that would silently insert a record out of order and
+    // break the total ordering the fold's determinism rests on (#333).
+    if (at === undefined) throw new Error(`Operation log has a hole at index ${String(middle)}.`);
     if (compareHlc(String(at.hlc), hlc) < 0) low = middle + 1;
     else high = middle;
   }
@@ -74,7 +79,10 @@ function canonical(value: unknown): string {
 
 function findByHlc(records: readonly OpRecord[], hlc: Hlc): OpRecord | undefined {
   const at = records[insertionIndex(records, hlc)];
-  return at?.hlc === hlc ? at : undefined;
+  // `String(at.hlc)`, matching every other read of a record's timestamp in this file: a
+  // record is `Record<string, unknown>`, so a bare `===` against an `Hlc` compares a
+  // possibly-non-string value and would miss a record this device does hold (#333).
+  return at !== undefined && String(at.hlc) === hlc ? at : undefined;
 }
 
 function insert(records: readonly OpRecord[], record: OpRecord): readonly OpRecord[] {
@@ -166,6 +174,10 @@ export function receiveRecords(log: Log, incoming: readonly unknown[], physicalM
     clock = stamped.clock;
     if (stamped.drift !== undefined) drift.push(stamped.drift);
 
+    // The only unchecked cast in the durable path, and safe for one reason worth stating
+    // because the line reads like an ordinary convenience: `decode` above already
+    // established that `candidate` is a plain object with a readable spine, and returned
+    // `corrupt` otherwise. Nothing between there and here widens what may pass.
     const record = candidate as OpRecord;
     records = insert(records, record);
     added.push(record);
@@ -185,7 +197,7 @@ export function since(log: Log, cursor?: Hlc): readonly OpRecord[] {
   if (cursor === undefined) return log.records;
   const index = insertionIndex(log.records, cursor);
   const at = log.records[index];
-  return log.records.slice(at?.hlc === cursor ? index + 1 : index);
+  return log.records.slice(at !== undefined && String(at.hlc) === cursor ? index + 1 : index);
 }
 
 /** The newest timestamp held, or nothing for an empty log. A peer's sync cursor. */
