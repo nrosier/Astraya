@@ -15,7 +15,7 @@ export const APP_VERSION: string = __APP_VERSION__;
 export const APP_COMMIT: string = __APP_COMMIT__;
 export const APP_BUILT_AT: string = __APP_BUILT_AT__;
 
-export const SOURCE_URL = 'https://github.com/nrosier/Astraya';
+export const SOURCE_URL = 'https://github.com/nrosier/astraya';
 
 /** Source for *this* build, which is what the AGPL requires us to offer. */
 export const SOURCE_URL_FOR_BUILD: string = APP_COMMIT === 'unknown' ? SOURCE_URL : `${SOURCE_URL}/tree/${APP_COMMIT}`;

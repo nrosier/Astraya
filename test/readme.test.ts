@@ -26,7 +26,7 @@ describe('README badges', () => {
   });
 
   it('points its CI and licence badges at this repository', () => {
-    expect(readme).toContain('nrosier/Astraya/actions/workflows/ci.yml/badge.svg');
+    expect(readme).toContain('nrosier/astraya/actions/workflows/ci.yml/badge.svg');
     // The licence badge is not decorative: AGPL is a condition of using the Swiss
     // Ephemeris, so a badge that drifted to MIT would advertise a licence we cannot
     // grant.
