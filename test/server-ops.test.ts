@@ -163,12 +163,30 @@ describe('POST /api/ops and GET /api/ops', () => {
     expect(response.statusCode).toBe(200);
   });
 
-  it('rejects an op more than 24h ahead of server time with a distinct clock-skew error (#105)', async () => {
+  it('quarantines an op more than 24h ahead of server time instead of rejecting the whole batch (#105, #312)', async () => {
     const sessionId = await setupAdmin(app);
-    const op = makeOp(25 * 60 * 60 * 1000);
-    const response = await appendOps(app, sessionId, [op]);
-    expect(response.statusCode).toBe(400);
-    expect(response.json<{ error: string }>().error).toBe('clock-skew');
+    const good = makeOp();
+    const skewed = makeOp(25 * 60 * 60 * 1000);
+    const response = await appendOps(app, sessionId, [good, skewed]);
+    expect(response.statusCode).toBe(200);
+    const { seqs, skipped } = response.json<{ seqs: number[]; skipped: string[] }>();
+    expect(seqs).toHaveLength(1);
+    expect(skipped).toEqual([skewed.hlc]);
+
+    const pull = await pullOps(app, sessionId);
+    const { ops } = pull.json<{ ops: { hlc: string }[] }>();
+    expect(ops).toHaveLength(1);
+    expect(ops[0]?.hlc).toBe(good.hlc);
+  });
+
+  it('quarantines every op in an all-skewed batch, still with a 200', async () => {
+    const sessionId = await setupAdmin(app);
+    const skewed = makeOp(25 * 60 * 60 * 1000);
+    const response = await appendOps(app, sessionId, [skewed]);
+    expect(response.statusCode).toBe(200);
+    const { seqs, skipped } = response.json<{ seqs: number[]; skipped: string[] }>();
+    expect(seqs).toEqual([]);
+    expect(skipped).toEqual([skewed.hlc]);
 
     const pull = await pullOps(app, sessionId);
     expect(pull.json<{ ops: unknown[] }>().ops).toHaveLength(0);

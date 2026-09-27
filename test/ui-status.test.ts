@@ -20,7 +20,10 @@ const EVICTABLE: Persistence = { state: 'evictable' };
 
 function status(overrides: Partial<StatusInput> = {}): ReturnType<typeof describeStatus> {
   const sync: SyncState = { kind: 'synced', at: NOW - MINUTE };
-  return describeStatus({ online: true, persistence: PERSISTED, pending: 0, sync, now: NOW, ...overrides }, T);
+  return describeStatus(
+    { online: true, persistence: PERSISTED, pending: 0, quarantined: 0, sync, now: NOW, ...overrides },
+    T,
+  );
 }
 
 describe('signed out', () => {
@@ -116,6 +119,24 @@ describe('failing sync', () => {
     const shown = status({ sync });
     expect(shown.detail).toContain('Nothing has been lost');
     expect(shown.detail).toContain('Certificate expired.');
+  });
+});
+
+describe('quarantined ops (#312)', () => {
+  it('warns even though nothing is pending and the last sync succeeded', () => {
+    // The one moment this is true is exactly the moment `pending` reads 0 — the branch below
+    // would otherwise call this "Synced" and the permanent gap would vanish from view.
+    const shown = status({ quarantined: 2, pending: 0 });
+    expect(shown.tone).toBe('warn');
+    expect(shown.label).toContain('2');
+    expect(shown.detail).toContain('clock');
+  });
+
+  it('outranks a failing sync too, since that failure is transient and this is not', () => {
+    const sync: SyncState = { kind: 'failing', since: NOW - 90 * MINUTE, message: 'Network error.' };
+    const shown = status({ sync, quarantined: 1 });
+    expect(shown.label).not.toBe('Sync failing');
+    expect(shown.tone).toBe('warn');
   });
 });
 

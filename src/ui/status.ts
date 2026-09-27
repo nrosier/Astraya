@@ -33,6 +33,8 @@ export interface StatusInput {
   readonly persistence: Persistence;
   /** Local operations no server has acknowledged. Every operation, when sync is off. */
   readonly pending: number;
+  /** Local operations the server has permanently refused as clock-skewed (#312) — will not retry. */
+  readonly quarantined: number;
   readonly sync: SyncState;
   readonly now: number;
 }
@@ -80,7 +82,19 @@ function changes(pending: number, t: typeof statusMessages.en): string {
 }
 
 export function describeStatus(input: StatusInput, t: typeof statusMessages.en): Status {
-  const { sync, persistence, pending, online, now } = input;
+  const { sync, persistence, pending, quarantined, online, now } = input;
+
+  if (quarantined > 0) {
+    // Permanent, not transient — the server will never retry these — so this outranks every
+    // state below, including a healthy "synced" tick. Otherwise the one moment this is true
+    // is exactly the moment `pending` reads 0 and the branches below would call it clean.
+    return {
+      tone: 'warn',
+      label: t.quarantinedLabel(String(quarantined)),
+      detail: t.quarantinedDetail(changes(quarantined, t)),
+      action: { href: '#/about', text: t.exportACopy },
+    };
+  }
 
   if (sync.kind === 'failing') {
     // Escalates with age rather than on the first failure, and always says the data is still

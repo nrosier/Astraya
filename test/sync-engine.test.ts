@@ -288,13 +288,11 @@ describe('error classification (#106)', () => {
     }
   });
 
-  it('surfaces the server’s own message for a clock-skew rejection on push', async () => {
+  it('quarantines a clock-skewed op instead of retrying it forever (#312)', async () => {
     globalThis.fetch = async (_input, init) => {
       if (init?.method === 'POST') {
-        return new Response(
-          JSON.stringify({ error: 'clock-skew', message: "This device's clock is more than a day ahead." }),
-          { status: 400 },
-        );
+        const body = JSON.parse(init.body as string) as { ops: { hlc: string }[] };
+        return new Response(JSON.stringify({ seqs: [], skipped: body.ops.map((op) => op.hlc) }), { status: 200 });
       }
       return new Response(JSON.stringify({ ops: [] }), { status: 200 });
     };
@@ -302,12 +300,12 @@ describe('error classification (#106)', () => {
     await store.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
     const engine = await createSyncEngine({ store });
     try {
+      // No error, no retry loop: a quarantined op is still a completed push.
       await vi.waitFor(() => {
-        expect(engine.status.kind).toBe('failing');
+        expect(engine.status.kind).toBe('synced');
       }, WAIT);
-      expect(engine.status.kind === 'failing' && engine.status.message).toBe(
-        "This device's clock is more than a day ahead.",
-      );
+      expect(engine.quarantined()).toBe(1);
+      expect(engine.pending()).toBe(0);
     } finally {
       engine.close();
       store.close();
