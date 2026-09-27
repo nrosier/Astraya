@@ -41,7 +41,7 @@ interface ListResponseJson {
 interface PublicEntriesResponseJson {
   readonly entries: readonly {
     readonly key: string;
-    readonly provenance: { readonly source: string; readonly reviewedBy: string };
+    readonly provenance: { readonly source: string; readonly reviewedBy?: string };
   }[];
 }
 
@@ -160,11 +160,17 @@ describe('PUT /api/admin/corpus-overrides', () => {
       method: 'PUT',
       url: '/api/admin/corpus-overrides',
       cookies: { [SESSION_COOKIE]: adminCookie },
-      payload: { key: 'dignity-state:sun:ruler', locale: 'en', text: 'First version', tier: 'core', tags: ['sun'] },
+      payload: {
+        key: 'dignity-state:sun:ruler',
+        locale: 'en',
+        text: 'First version of the correction text, well past the forty-character minimum.',
+        tier: 'core',
+        tags: ['sun'],
+      },
     });
     expect(first.statusCode).toBe(200);
     const firstOverride = first.json<UpsertResponseJson>().override;
-    expect(firstOverride.text).toBe('First version');
+    expect(firstOverride.text).toBe('First version of the correction text, well past the forty-character minimum.');
 
     const second = await app.inject({
       method: 'PUT',
@@ -173,7 +179,7 @@ describe('PUT /api/admin/corpus-overrides', () => {
       payload: {
         key: 'dignity-state:sun:ruler',
         locale: 'en',
-        text: 'Second version',
+        text: 'Second version of the correction text, well past the forty-character minimum.',
         tier: 'notable',
         tags: ['sun', 'fire'],
       },
@@ -181,7 +187,7 @@ describe('PUT /api/admin/corpus-overrides', () => {
     expect(second.statusCode).toBe(200);
     const secondOverride = second.json<UpsertResponseJson>().override;
     expect(secondOverride.id).toBe(firstOverride.id);
-    expect(secondOverride.text).toBe('Second version');
+    expect(secondOverride.text).toBe('Second version of the correction text, well past the forty-character minimum.');
     expect(secondOverride.tier).toBe('notable');
     expect(secondOverride.tags).toEqual(['sun', 'fire']);
 
@@ -199,7 +205,13 @@ describe('PUT /api/admin/corpus-overrides', () => {
       method: 'PUT',
       url: '/api/admin/corpus-overrides',
       cookies: { [SESSION_COOKIE]: adminCookie },
-      payload: { key: 'dignity-state:sun:ruler', locale: 'en', text: 'Neutral', tier: 'core', tags: [] },
+      payload: {
+        key: 'dignity-state:sun:ruler',
+        locale: 'en',
+        text: 'A neutral, persona-agnostic version of the correction text, past the length minimum.',
+        tier: 'core',
+        tags: [],
+      },
     });
     await app.inject({
       method: 'PUT',
@@ -209,7 +221,7 @@ describe('PUT /api/admin/corpus-overrides', () => {
         key: 'dignity-state:sun:ruler',
         locale: 'en',
         persona: 'cynic',
-        text: 'Cynic version',
+        text: 'A cynic-persona version of the correction text, also past the length minimum.',
         tier: 'core',
         tags: [],
       },
@@ -233,6 +245,97 @@ describe('PUT /api/admin/corpus-overrides', () => {
     });
     expect(response.statusCode).toBe(400);
   });
+
+  /**
+   * #354 regression: an admin's hand-typed correction bypassed `lintEntry`
+   * entirely, unlike a machine-generated entry from `tools/corpus-gen`, which
+   * always runs through it first. Each case below is something the generator
+   * pipeline would already have rejected.
+   */
+  describe('content-quality lint (#354)', () => {
+    it('rejects text below the 40-character minimum', async () => {
+      const adminCookie = await setupAdmin(app);
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/admin/corpus-overrides',
+        cookies: { [SESSION_COOKIE]: adminCookie },
+        payload: { key: 'dignity-state:sun:ruler', locale: 'en', text: 'Too short', tier: 'core', tags: [] },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json<{ error: string }>().error).toMatch(/40-character minimum/);
+    });
+
+    it('rejects fatalistic phrasing', async () => {
+      const adminCookie = await setupAdmin(app);
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/admin/corpus-overrides',
+        cookies: { [SESSION_COOKIE]: adminCookie },
+        payload: {
+          key: 'dignity-state:sun:ruler',
+          locale: 'en',
+          text: 'With this placement, you will never succeed at anything you attempt in your career.',
+          tier: 'core',
+          tags: [],
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json<{ error: string }>().error).toMatch(/fatalistic phrasing/);
+    });
+
+    it('rejects a gendered pronoun', async () => {
+      const adminCookie = await setupAdmin(app);
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/admin/corpus-overrides',
+        cookies: { [SESSION_COOKIE]: adminCookie },
+        payload: {
+          key: 'dignity-state:sun:ruler',
+          locale: 'en',
+          text: 'This placement means he will often take the lead in group settings without hesitation.',
+          tier: 'core',
+          tags: [],
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json<{ error: string }>().error).toMatch(/gendered pronoun/);
+    });
+
+    it('rejects a medical/legal/financial claim', async () => {
+      const adminCookie = await setupAdmin(app);
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/admin/corpus-overrides',
+        cookies: { [SESSION_COOKIE]: adminCookie },
+        payload: {
+          key: 'dignity-state:sun:ruler',
+          locale: 'en',
+          text: 'This placement offers a guaranteed return on any investment you choose to make this year.',
+          tier: 'core',
+          tags: [],
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json<{ error: string }>().error).toMatch(/medical\/legal\/financial term/);
+    });
+
+    it('accepts text that passes every lint rule', async () => {
+      const adminCookie = await setupAdmin(app);
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/admin/corpus-overrides',
+        cookies: { [SESSION_COOKIE]: adminCookie },
+        payload: {
+          key: 'dignity-state:sun:ruler',
+          locale: 'en',
+          text: 'This placement favors a steady, deliberate approach that grows more confident with practice.',
+          tier: 'core',
+          tags: [],
+        },
+      });
+      expect(response.statusCode).toBe(200);
+    });
+  });
 });
 
 describe('GET /api/corpus-overrides/:locale (public)', () => {
@@ -242,7 +345,13 @@ describe('GET /api/corpus-overrides/:locale (public)', () => {
       method: 'PUT',
       url: '/api/admin/corpus-overrides',
       cookies: { [SESSION_COOKIE]: adminCookie },
-      payload: { key: 'dignity-state:sun:ruler', locale: 'en', text: 'Corrected', tier: 'core', tags: ['sun'] },
+      payload: {
+        key: 'dignity-state:sun:ruler',
+        locale: 'en',
+        text: 'Corrected text, well past the forty-character minimum required by the lint check.',
+        tier: 'core',
+        tags: ['sun'],
+      },
     });
 
     const anonymous = await app.inject({ method: 'GET', url: '/api/corpus-overrides/en' });
@@ -253,11 +362,42 @@ describe('GET /api/corpus-overrides/:locale (public)', () => {
     expect(entry).toMatchObject({
       key: 'dignity-state:sun:ruler',
       locale: 'en',
-      text: 'Corrected',
+      text: 'Corrected text, well past the forty-character minimum required by the lint check.',
       tier: 'core',
       tags: ['sun'],
     });
-    expect(entry?.provenance).toMatchObject({ source: 'hand-written', reviewedBy: 'alice' });
+    // #353: the public, unauthenticated route never discloses the admin username that
+    // made the correction — only the requireAdmin-gated export does.
+    expect(entry?.provenance.source).toBe('hand-written');
+    expect(entry?.provenance).not.toHaveProperty('reviewedBy');
+  });
+
+  it('omits reviewedBy on the public route but includes it on the admin export (#353)', async () => {
+    const adminCookie = await setupAdmin(app);
+    await app.inject({
+      method: 'PUT',
+      url: '/api/admin/corpus-overrides',
+      cookies: { [SESSION_COOKIE]: adminCookie },
+      payload: {
+        key: 'dignity-state:sun:ruler',
+        locale: 'en',
+        text: 'Corrected text, well past the forty-character minimum required by the lint check.',
+        tier: 'core',
+        tags: ['sun'],
+      },
+    });
+
+    const anonymous = await app.inject({ method: 'GET', url: '/api/corpus-overrides/en' });
+    const [publicEntry] = anonymous.json<PublicEntriesResponseJson>().entries;
+    expect(publicEntry?.provenance).not.toHaveProperty('reviewedBy');
+
+    const exported = await app.inject({
+      method: 'GET',
+      url: '/api/admin/corpus-overrides/export?locale=en',
+      cookies: { [SESSION_COOKIE]: adminCookie },
+    });
+    const [exportedEntry] = JSON.parse(exported.body) as PublicEntriesResponseJson['entries'];
+    expect(exportedEntry?.provenance).toMatchObject({ reviewedBy: 'alice' });
   });
 
   it('reflects a delete', async () => {
@@ -266,7 +406,13 @@ describe('GET /api/corpus-overrides/:locale (public)', () => {
       method: 'PUT',
       url: '/api/admin/corpus-overrides',
       cookies: { [SESSION_COOKIE]: adminCookie },
-      payload: { key: 'dignity-state:sun:ruler', locale: 'en', text: 'Corrected', tier: 'core', tags: [] },
+      payload: {
+        key: 'dignity-state:sun:ruler',
+        locale: 'en',
+        text: 'Corrected text, well past the forty-character minimum required by the lint check.',
+        tier: 'core',
+        tags: [],
+      },
     });
     const { id } = put.json<UpsertResponseJson>().override;
 
@@ -304,7 +450,13 @@ describe('GET /api/admin/corpus-overrides/export', () => {
       method: 'PUT',
       url: '/api/admin/corpus-overrides',
       cookies: { [SESSION_COOKIE]: adminCookie },
-      payload: { key: 'dignity-state:sun:ruler', locale: 'en', text: 'Corrected', tier: 'core', tags: ['sun'] },
+      payload: {
+        key: 'dignity-state:sun:ruler',
+        locale: 'en',
+        text: 'Corrected text, well past the forty-character minimum required by the lint check.',
+        tier: 'core',
+        tags: ['sun'],
+      },
     });
 
     const response = await app.inject({
@@ -363,7 +515,13 @@ describe('deleting a user who authored an override (#352)', () => {
       method: 'PUT',
       url: '/api/admin/corpus-overrides',
       cookies: { [SESSION_COOKIE]: bobCookie },
-      payload: { key: 'dignity-state:sun:ruler', locale: 'en', text: 'Bob wrote this', tier: 'core', tags: [] },
+      payload: {
+        key: 'dignity-state:sun:ruler',
+        locale: 'en',
+        text: 'Bob wrote this correction, and it is well past the forty-character minimum length.',
+        tier: 'core',
+        tags: [],
+      },
     });
     expect(upsert.statusCode).toBe(200);
     const overrideId = upsert.json<UpsertResponseJson>().override.id;

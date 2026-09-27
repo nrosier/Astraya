@@ -26,6 +26,8 @@ import {
   type CorpusTier,
 } from './corpus-overrides.ts';
 import { requireAdmin } from './auth/identity.ts';
+import { lintEntry } from '../src/interpretation/lint.ts';
+import type { CorpusEntry } from '../src/interpretation/schema.ts';
 
 function isLocale(value: unknown): value is Locale {
   return typeof value === 'string' && (LOCALES as readonly string[]).includes(value);
@@ -63,7 +65,7 @@ export function registerCorpusOverrideRoutes(app: FastifyInstance, db: Database)
         return reply.code(400).send({ error: `locale must be one of ${LOCALES.join(', ')}` });
       }
       const overrides = listCorpusOverrides(db, request.params.locale);
-      return reply.send({ entries: overrides.map(toCorpusEntry) });
+      return reply.send({ entries: overrides.map((override) => toCorpusEntry(override, { includeReviewer: false })) });
     },
   );
 
@@ -94,6 +96,27 @@ export function registerCorpusOverrideRoutes(app: FastifyInstance, db: Database)
       if (!isTier(tier)) return reply.code(400).send({ error: `tier must be one of ${TIERS.join(', ')}` });
       if (!Array.isArray(tags) || !tags.every((tag) => typeof tag === 'string')) {
         return reply.code(400).send({ error: 'tags must be an array of strings' });
+      }
+
+      // `lintEntry` (#354) is the same content-quality gate `tools/corpus-gen` already runs
+      // on every machine-produced entry before it ships — length bounds, fatalistic phrasing,
+      // medical/legal/financial claims, gendered pronouns. An admin's hand-typed correction
+      // got none of that until now; `provenance`/`persona` don't affect any of those rules,
+      // so a minimal stand-in entry is enough to lint against before it's ever stored.
+      const candidate: CorpusEntry = {
+        key,
+        locale,
+        text,
+        tier,
+        tags,
+        provenance: { source: 'hand-written' },
+        ...(persona !== undefined ? { persona } : {}),
+      };
+      const lintIssues = lintEntry(candidate);
+      if (lintIssues.length > 0) {
+        return reply
+          .code(400)
+          .send({ error: `Content-quality check failed: ${lintIssues.map((issue) => issue.message).join('; ')}` });
       }
 
       const override = upsertCorpusOverride(db, {
@@ -127,7 +150,7 @@ export function registerCorpusOverrideRoutes(app: FastifyInstance, db: Database)
       if (locale !== undefined && !isLocale(locale)) {
         return reply.code(400).send({ error: `locale must be one of ${LOCALES.join(', ')}` });
       }
-      const entries = listCorpusOverrides(db, locale).map(toCorpusEntry);
+      const entries = listCorpusOverrides(db, locale).map((override) => toCorpusEntry(override));
       const filename = `astraya-corpus-overrides-${locale ?? 'all'}-${new Date().toISOString().slice(0, 10)}.json`;
       return reply
         .header('Content-Type', 'application/json')
