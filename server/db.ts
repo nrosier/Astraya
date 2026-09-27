@@ -158,6 +158,36 @@ const MIGRATIONS: readonly ((db: DatabaseSync) => void)[] = [
       );
     `);
   },
+  // 7: `corpus_overrides.updated_by` gains `ON DELETE CASCADE` (#352) — every
+  // other user-referencing table (`sessions.user_id`, `ops.user_id`) already
+  // has it; this one was missed when the table shipped in step 5, so
+  // deleting a user who ever edited a correction threw a live foreign-key
+  // violation instead of taking their overrides with them. SQLite has no
+  // ALTER COLUMN and can't change an existing REFERENCES clause in place, so
+  // this rebuilds the table under a temporary name, same pattern as step 3's
+  // `users` rebuild. Unlike step 3, nothing else references corpus_overrides,
+  // so this rebuild doesn't need foreign keys off.
+  (db) => {
+    db.exec(`
+      CREATE TABLE corpus_overrides_new (
+        id TEXT PRIMARY KEY,
+        key TEXT NOT NULL,
+        locale TEXT NOT NULL,
+        persona TEXT NOT NULL DEFAULT '',
+        text TEXT NOT NULL,
+        tier TEXT NOT NULL,
+        tags TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        updated_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE
+      );
+      INSERT INTO corpus_overrides_new (id, key, locale, persona, text, tier, tags, created_at, updated_at, updated_by)
+        SELECT id, key, locale, persona, text, tier, tags, created_at, updated_at, updated_by FROM corpus_overrides;
+      DROP TABLE corpus_overrides;
+      ALTER TABLE corpus_overrides_new RENAME TO corpus_overrides;
+      CREATE UNIQUE INDEX corpus_overrides_identity ON corpus_overrides(key, locale, persona);
+    `);
+  },
 ];
 
 /** Migration steps whose table rebuild would otherwise break `REFERENCES` clauses pointing at the table being rebuilt. */

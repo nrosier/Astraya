@@ -55,17 +55,21 @@ interface UpsertBody {
 }
 
 export function registerCorpusOverrideRoutes(app: FastifyInstance, db: Database): void {
-  app.get<{ Params: { locale: string } }>('/api/corpus-overrides/:locale', async (request, reply) => {
-    if (!isLocale(request.params.locale)) {
-      return reply.code(400).send({ error: `locale must be one of ${LOCALES.join(', ')}` });
-    }
-    const overrides = listCorpusOverrides(db, request.params.locale);
-    return reply.send({ entries: overrides.map(toCorpusEntry) });
-  });
+  app.get<{ Params: { locale: string } }>(
+    '/api/corpus-overrides/:locale',
+    { config: { rateLimit: { max: 120, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      if (!isLocale(request.params.locale)) {
+        return reply.code(400).send({ error: `locale must be one of ${LOCALES.join(', ')}` });
+      }
+      const overrides = listCorpusOverrides(db, request.params.locale);
+      return reply.send({ entries: overrides.map(toCorpusEntry) });
+    },
+  );
 
   app.get<{ Querystring: { locale?: string } }>(
     '/api/admin/corpus-overrides',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const { locale } = request.query;
       if (locale !== undefined && !isLocale(locale)) {
@@ -78,7 +82,7 @@ export function registerCorpusOverrideRoutes(app: FastifyInstance, db: Database)
 
   app.put<{ Body: UpsertBody }>(
     '/api/admin/corpus-overrides',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const { key, locale, persona, text, tier, tags } = request.body;
       if (typeof key !== 'string' || key === '') return reply.code(400).send({ error: 'key is required' });
@@ -107,7 +111,7 @@ export function registerCorpusOverrideRoutes(app: FastifyInstance, db: Database)
 
   app.delete<{ Params: { id: string } }>(
     '/api/admin/corpus-overrides/:id',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const deleted = deleteCorpusOverride(db, request.params.id);
       if (!deleted) return reply.code(404).send({ error: 'No such override' });
@@ -117,7 +121,7 @@ export function registerCorpusOverrideRoutes(app: FastifyInstance, db: Database)
 
   app.get<{ Querystring: { locale?: string } }>(
     '/api/admin/corpus-overrides/export',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const { locale } = request.query;
       if (locale !== undefined && !isLocale(locale)) {
