@@ -491,6 +491,7 @@ describe('DELETE /api/admin/users/:id', () => {
 
     const clockRef: ClockRef = { current: createClock(randomNodeId()) };
     await pushOp(app, bobCookie, clockRef, { entity: 'person', entityId: 'person-1', field: 'name', value: 'Ada' });
+    await pushOp(app, bobCookie, clockRef, { entity: 'person', entityId: 'person-1', field: 'purged', value: true });
 
     const deleteResponse = await app.inject({
       method: 'DELETE',
@@ -504,9 +505,15 @@ describe('DELETE /api/admin/users/:id', () => {
       count: number;
     };
     const ops = raw.prepare('SELECT COUNT(*) AS count FROM ops WHERE user_id = ?').get(bob.id) as { count: number };
+    // The purge above (#308) already left `purged_entities` holding a row for bob; the
+    // user delete's cascade must take that with it too, not just sessions/ops.
+    const purged = raw.prepare('SELECT COUNT(*) AS count FROM purged_entities WHERE user_id = ?').get(bob.id) as {
+      count: number;
+    };
     raw.close();
     expect(sessions.count).toBe(0);
     expect(ops.count).toBe(0);
+    expect(purged.count).toBe(0);
   });
 
   it('returns 404 for an unknown user id', async () => {

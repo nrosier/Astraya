@@ -9,6 +9,7 @@ import type { Database } from '../db.ts';
 import { requireUser, type User } from '../auth/identity.ts';
 import { decodeHlc, isHlc } from '../../src/store/hlc.ts';
 import { CURRENT_KEY_VERSION, decryptPayload, encryptPayload, loadEncryptionKey } from './crypto.ts';
+import { isEntityPurged, isPurgeMarker, parseOpBody, recordPurgeAndErase } from './purge.ts';
 
 /** An HLC this far ahead of the server's own clock is quarantined (#105, #312). */
 const MAX_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000;
@@ -145,15 +146,39 @@ export function registerOpsRoutes(app: FastifyInstance, db: Database): void {
       // Transactional (#320/#337): a mid-batch throw (a bad payload slipping past
       // validation, an unexpected constraint failure) must leave no partial batch
       // committed — every op in this request is stored, or none are.
+      //
+      // A sequential loop, not `accepted.map(...)`: a purge marker (#308) has to take
+      // effect — via `recordPurgeAndErase` — before a later op in the *same* batch for
+      // the same entity is checked against the deny-list, and a plain `.map` gives no
+      // place to run that side effect between iterations.
       db.exec('BEGIN');
-      let seqs: number[];
+      const seqs: number[] = [];
       try {
-        seqs = accepted.map((op) => {
+        for (const op of accepted) {
           const aheadByMs = decodeHlc(op.hlc).millis - now;
           if (aheadByMs > SKEW_WARN_THRESHOLD_MS) {
             app.log.warn(`Accepted op from device ${op.deviceId} with clock ${aheadByMs}ms ahead of server time.`);
           }
-          const { ciphertext, iv } = encryptPayload(Buffer.from(op.payload, 'base64'), key);
+
+          const plaintext = Buffer.from(op.payload, 'base64');
+          // Parsed, not decrypted — the server already holds this plaintext transiently
+          // (it is about to encrypt it below), so reading `entity`/`entityId`/`field`/
+          // `value` here needs no new capability, only this narrow, documented exception
+          // to "the relay never interprets a payload" (see `server/ops/purge.ts`).
+          const body = parseOpBody(plaintext);
+          const marker = body !== undefined && isPurgeMarker(body);
+
+          if (body !== undefined && !marker && isEntityPurged(db, user.id, body.entity, body.entityId)) {
+            // A stale edit for an entity this user already purged elsewhere: refused
+            // rather than stored, and reported the same way a clock-skewed op already is
+            // — the client quarantines any hlc named in `skipped` and never retries it
+            // (`src/sync/engine.ts`), which is exactly right here too.
+            skipped.push(op.hlc);
+            continue;
+          }
+
+          const { ciphertext, iv } = encryptPayload(plaintext, key);
+          let seq: number;
           try {
             const result = insert.run(
               user.id,
@@ -165,16 +190,25 @@ export function registerOpsRoutes(app: FastifyInstance, db: Database): void {
               iv,
               receivedAt,
             );
-            return Number(result.lastInsertRowid);
+            seq = Number(result.lastInsertRowid);
           } catch {
             // ops_user_hlc is UNIQUE: this (user, hlc) pair was already stored, so a
             // retried push is a no-op — hand back the seq it already has, rather than
             // failing the whole batch over a client that retried after a dropped reply.
             const existing = findExisting.get(user.id, op.hlc) as { seq: number } | undefined;
             if (!existing) throw new Error(`Insert of hlc=${op.hlc} failed for a reason other than a duplicate.`);
-            return existing.seq;
+            seq = existing.seq;
           }
-        });
+          seqs.push(seq);
+
+          // Erased immediately, in the same transaction, rather than after commit: an
+          // earlier op in this same batch for the same entity must already be gone by
+          // the time this request returns, and the deny-list check above must already
+          // see this entity as purged for anything still left in the loop.
+          if (marker) {
+            recordPurgeAndErase(db, user.id, body.entity, body.entityId, receivedAt, op.hlc, key);
+          }
+        }
         db.exec('COMMIT');
       } catch (error) {
         db.exec('ROLLBACK');

@@ -24,20 +24,21 @@ function schemaOf(db: DatabaseSync): SchemaRow[] {
 }
 
 describe('server/db.ts', () => {
-  it('creates the users, sessions, ops and corpus_overrides tables', () => {
+  it('creates the users, sessions, ops, corpus_overrides and purged_entities tables', () => {
     const db = openDatabase(':memory:');
     const names = schemaOf(db).map((row) => row.name);
     expect(names).toContain('users');
     expect(names).toContain('sessions');
     expect(names).toContain('ops');
     expect(names).toContain('corpus_overrides');
+    expect(names).toContain('purged_entities');
     db.close();
   });
 
   it('sets PRAGMA user_version to the number of migrations applied', () => {
     const db = openDatabase(':memory:');
     const row = db.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-    expect(row.user_version).toBe(5);
+    expect(row.user_version).toBe(6);
     db.close();
   });
 
@@ -55,7 +56,7 @@ describe('server/db.ts', () => {
       const second = openDatabase(path);
       expect(schemaOf(second)).toEqual(before);
       const row = second.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-      expect(row.user_version).toBe(5);
+      expect(row.user_version).toBe(6);
       second.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -142,7 +143,7 @@ describe('server/db.ts', () => {
 
       const db = openDatabase(path);
       const row = db.prepare('PRAGMA user_version').get() as unknown as { user_version: number };
-      expect(row.user_version).toBe(5);
+      expect(row.user_version).toBe(6);
 
       // The pre-existing row survived the users rebuild intact.
       const legacyUser = db.prepare('SELECT * FROM users WHERE id = ?').get('legacy-user') as
@@ -177,7 +178,7 @@ describe('server/db.ts', () => {
     }
   });
 
-  it('enforces foreign keys with cascading delete from users to sessions and ops', () => {
+  it('enforces foreign keys with cascading delete from users to sessions, ops and purged_entities (#308)', () => {
     const db = openDatabase(':memory:');
     db.prepare('INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)').run(
       'u1',
@@ -195,13 +196,38 @@ describe('server/db.ts', () => {
     db.prepare(
       'INSERT INTO ops (user_id, hlc, device_id, op_version, payload, received_at) VALUES (?, ?, ?, ?, ?, ?)',
     ).run('u1', 'hlc-1', 'device-1', 1, Buffer.from('payload'), new Date().toISOString());
+    db.prepare('INSERT INTO purged_entities (user_id, entity, entity_id, purged_at) VALUES (?, ?, ?, ?)').run(
+      'u1',
+      'person',
+      'p-1',
+      new Date().toISOString(),
+    );
 
     db.prepare('DELETE FROM users WHERE id = ?').run('u1');
 
     const sessions = db.prepare('SELECT COUNT(*) AS count FROM sessions').get() as { count: number };
     const ops = db.prepare('SELECT COUNT(*) AS count FROM ops').get() as { count: number };
+    const purged = db.prepare('SELECT COUNT(*) AS count FROM purged_entities').get() as { count: number };
     expect(sessions.count).toBe(0);
     expect(ops.count).toBe(0);
+    expect(purged.count).toBe(0);
+    db.close();
+  });
+
+  it('rejects a second purged_entities row for the same (user_id, entity, entity_id)', () => {
+    const db = openDatabase(':memory:');
+    db.prepare('INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)').run(
+      'u1',
+      'alice',
+      'hash',
+      new Date().toISOString(),
+    );
+    const insertPurge = () =>
+      db
+        .prepare('INSERT INTO purged_entities (user_id, entity, entity_id, purged_at) VALUES (?, ?, ?, ?)')
+        .run('u1', 'person', 'p-1', new Date().toISOString());
+    insertPurge();
+    expect(insertPurge).toThrow();
     db.close();
   });
 

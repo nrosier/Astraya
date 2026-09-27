@@ -84,6 +84,13 @@ function makeOp(aheadByMs = 0, overrides: Partial<{ deviceId: string; opVersion:
   };
 }
 
+/** A field-write op, for tests that need the server to actually parse the op body (#308). */
+function makeFieldOp(entity: string, entityId: string, field: string, value: unknown, aheadByMs = 0) {
+  return makeOp(aheadByMs, {
+    payload: Buffer.from(JSON.stringify({ entity, entityId, field, value })).toString('base64'),
+  });
+}
+
 function appendOps(target: FastifyInstance, sessionId: string, ops: unknown) {
   return target.inject({
     method: 'POST',
@@ -302,5 +309,79 @@ describe('POST /api/ops and GET /api/ops', () => {
     // mistake, and is the one case where the default is what the client meant.
     expect((await pullOps(app, sessionId)).json<{ ops: unknown[] }>().ops).toHaveLength(1);
     expect((await pullOps(app, sessionId, 0)).json<{ ops: unknown[] }>().ops).toHaveLength(1);
+  });
+});
+
+describe('purge propagation and server-side erasure (#308)', () => {
+  it('erases an entity’s already-stored rows the moment its purge marker lands, keeping only the marker', async () => {
+    const sessionId = await setupAdmin(app);
+    const create = makeFieldOp('person', 'p-1', 'displayName', 'Ada');
+    const other = makeFieldOp('person', 'p-1', 'civil', { year: 1960, month: 6, day: 15 }, 1);
+    await appendOps(app, sessionId, [create, other]);
+
+    const marker = makeFieldOp('person', 'p-1', 'purged', true, 2);
+    const response = await appendOps(app, sessionId, [marker]);
+    expect(response.statusCode).toBe(200);
+
+    const pull = await pullOps(app, sessionId);
+    const { ops } = pull.json<{ ops: { hlc: string }[] }>();
+    expect(ops.map((op) => op.hlc)).toEqual([marker.hlc]);
+  });
+
+  it('quarantines a later push naming an already-purged entity, rather than storing it', async () => {
+    const sessionId = await setupAdmin(app);
+    const marker = makeFieldOp('person', 'p-1', 'purged', true);
+    await appendOps(app, sessionId, [marker]);
+
+    const stale = makeFieldOp('person', 'p-1', 'displayName', 'Resurrected', 1);
+    const response = await appendOps(app, sessionId, [stale]);
+    expect(response.statusCode).toBe(200);
+    const { seqs, skipped } = response.json<{ seqs: number[]; skipped: string[] }>();
+    expect(seqs).toEqual([]);
+    expect(skipped).toEqual([stale.hlc]);
+
+    const pull = await pullOps(app, sessionId);
+    const { ops } = pull.json<{ ops: { hlc: string }[] }>();
+    expect(ops.map((op) => op.hlc)).toEqual([marker.hlc]);
+  });
+
+  it('erases and quarantines within the same batch, in order, when the marker arrives before a stale edit', async () => {
+    const sessionId = await setupAdmin(app);
+    const create = makeFieldOp('person', 'p-1', 'displayName', 'Ada');
+    await appendOps(app, sessionId, [create]);
+
+    const marker = makeFieldOp('person', 'p-1', 'purged', true, 1);
+    const stale = makeFieldOp('person', 'p-1', 'displayName', 'Resurrected', 2);
+    const response = await appendOps(app, sessionId, [marker, stale]);
+    const { seqs, skipped } = response.json<{ seqs: number[]; skipped: string[] }>();
+    expect(seqs).toHaveLength(1);
+    expect(skipped).toEqual([stale.hlc]);
+
+    const pull = await pullOps(app, sessionId);
+    const { ops } = pull.json<{ ops: { hlc: string }[] }>();
+    expect(ops.map((op) => op.hlc)).toEqual([marker.hlc]);
+  });
+
+  it('scopes the deny-list and the erasure per-user: another user’s same-shaped entityId is unaffected', async () => {
+    const aliceSession = await setupAdmin(app, 'alice', 'correct-horse-battery');
+    const bobSession = await createAndLoginUser(app, 'bob', 'another-horse-battery');
+
+    const bobCreate = makeFieldOp('person', 'p-1', 'displayName', 'Grace');
+    await appendOps(app, bobSession, [bobCreate]);
+
+    const aliceMarker = makeFieldOp('person', 'p-1', 'purged', true);
+    await appendOps(app, aliceSession, [aliceMarker]);
+
+    const bobPull = await pullOps(app, bobSession);
+    const { ops } = bobPull.json<{ ops: { hlc: string }[] }>();
+    expect(ops.map((op) => op.hlc)).toEqual([bobCreate.hlc]);
+
+    // Bob's own edit to the same-shaped id, after Alice's purge, is still his to make —
+    // the deny-list is per-user, not a global name collision.
+    const bobEdit = makeFieldOp('person', 'p-1', 'displayName', 'Grace Hopper', 1);
+    const response = await appendOps(app, bobSession, [bobEdit]);
+    const { seqs, skipped } = response.json<{ seqs: number[]; skipped: string[] }>();
+    expect(seqs).toHaveLength(1);
+    expect(skipped).toEqual([]);
   });
 });
