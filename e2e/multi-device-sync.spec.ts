@@ -18,7 +18,7 @@ import { expect, test } from '@playwright/test';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
-import { createPerson, gotoAndSettle } from './support.ts';
+import { createPerson, gotoAndSettle, signIn } from './support.ts';
 
 const BOOTSTRAP_TOKEN = 'e2e-bootstrap-token';
 const USERNAME = 'alice';
@@ -69,28 +69,6 @@ async function newDevice(browser: Browser): Promise<Device> {
 
 async function closeDevices(...devices: readonly Device[]): Promise<void> {
   await Promise.all(devices.map((device) => device.context.close()));
-}
-
-/**
- * If this device holds local changes from before sign-in, `AccountPanel` swaps in the
- * adoption prompt (#109) instead of completing the switch — accept it, since these tests
- * want the pre-sign-in data to end up on the account.
- *
- * Signed-in confirmation comes from `SyncBadge`'s "(logged in as: {username})" rather
- * than from `AccountPanel` itself, which no longer repeats it (#230).
- */
-async function signIn(page: Page, username: string, password: string): Promise<void> {
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.getByLabel('Username', { exact: true }).fill(username);
-  await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  const adopt = page.getByRole('button', { name: 'Add it to my account', exact: true });
-  const signedIn = page.getByText(`(logged in as: ${username})`, { exact: true });
-  await expect(adopt.or(signedIn)).toBeVisible();
-  if (await adopt.isVisible()) {
-    await adopt.click();
-  }
-  await expect(signedIn).toBeVisible();
 }
 
 async function waitSynced(page: Page): Promise<void> {

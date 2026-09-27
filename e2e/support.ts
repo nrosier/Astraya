@@ -56,3 +56,25 @@ export async function createPerson(page: Page, input: PersonInput): Promise<void
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByText('Saved on this device.')).toBeVisible();
 }
+
+/**
+ * If this device holds local changes from before sign-in, `AccountPanel` swaps in the
+ * adoption prompt (#109) instead of completing the switch — accept it, since callers
+ * that pre-populate local data want it to end up on the account.
+ *
+ * Signed-in confirmation comes from `SyncBadge`'s "(logged in as: {username})" rather
+ * than from `AccountPanel` itself, which no longer repeats it (#230).
+ */
+export async function signIn(page: Page, username: string, password: string): Promise<void> {
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByLabel('Username', { exact: true }).fill(username);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  const adopt = page.getByRole('button', { name: 'Add it to my account', exact: true });
+  const signedIn = page.getByText(`(logged in as: ${username})`, { exact: true });
+  await expect(adopt.or(signedIn)).toBeVisible();
+  if (await adopt.isVisible()) {
+    await adopt.click();
+  }
+  await expect(signedIn).toBeVisible();
+}
