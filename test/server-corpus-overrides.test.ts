@@ -332,3 +332,56 @@ describe('GET /api/admin/corpus-overrides/export', () => {
     expect(response.headers['content-disposition']).toMatch(/^attachment; filename="astraya-corpus-overrides-all-/);
   });
 });
+
+/**
+ * #352 regression: `corpus_overrides.updated_by` used to have no `ON DELETE`
+ * clause, so deleting a user who had ever edited a correction threw a live
+ * foreign-key-constraint error (`server/auth/admin-routes.ts`'s
+ * `DELETE FROM users`) instead of taking their overrides with them, the way
+ * `sessions`/`ops` already do via `ON DELETE CASCADE`.
+ */
+describe('deleting a user who authored an override (#352)', () => {
+  it('cascades away the override instead of throwing a foreign-key error', async () => {
+    const adminCookie = await setupAdmin(app, 'alice', 'correct-horse-battery');
+
+    const bobPasswordHash = await hashPassword('correct-horse-battery');
+    const bobId = randomUUID();
+    const raw = new DatabaseSync(dbPath);
+    raw
+      .prepare('INSERT INTO users (id, username, password_hash, is_admin, created_at) VALUES (?, ?, ?, 1, ?)')
+      .run(bobId, 'bob', bobPasswordHash, new Date().toISOString());
+    raw.close();
+    const bobLogin = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { username: 'bob', password: 'correct-horse-battery' },
+    });
+    const bobCookie = bobLogin.cookies.find((c) => c.name === SESSION_COOKIE)?.value;
+    if (!bobCookie) throw new Error('bob login did not set a session cookie');
+
+    const upsert = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/corpus-overrides',
+      cookies: { [SESSION_COOKIE]: bobCookie },
+      payload: { key: 'dignity-state:sun:ruler', locale: 'en', text: 'Bob wrote this', tier: 'core', tags: [] },
+    });
+    expect(upsert.statusCode).toBe(200);
+    const overrideId = upsert.json<UpsertResponseJson>().override.id;
+
+    const deleteResponse = await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/users/${bobId}`,
+      cookies: { [SESSION_COOKIE]: adminCookie },
+    });
+    expect(deleteResponse.statusCode).toBe(200);
+
+    const rawAfter = new DatabaseSync(dbPath);
+    const remaining = rawAfter
+      .prepare('SELECT COUNT(*) AS count FROM corpus_overrides WHERE id = ?')
+      .get(overrideId) as {
+      count: number;
+    };
+    rawAfter.close();
+    expect(remaining.count).toBe(0);
+  });
+});
