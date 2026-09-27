@@ -43,7 +43,7 @@ M9 (Polish & launch) progress, not a finished milestone — the human review of 
 
 ### Added
 
-- **A static, no-accounts demo build, published to GitHub Pages (#73).** `npm run build:demo` produces a build with sign-in and sync disabled entirely — there's no server for it to talk to — and a new `VITE_BASE_PATH` variable makes the app (including the service worker and its precache manifest) work correctly from a subpath. Live at [nrosier.github.io/Astraya](https://nrosier.github.io/Astraya/), deployed by `.github/workflows/pages.yml` on tagged releases. `.env.example` now documents Vite's mode-selection mechanism (`development`/`production`/`test`/the new `demo`), which was in use but undocumented.
+- **A static, no-accounts demo build, published to GitHub Pages (#73).** `npm run build:demo` produces a build with sign-in and sync disabled entirely — there's no server for it to talk to — and a new `VITE_BASE_PATH` variable makes the app (including the service worker and its precache manifest) work correctly from a subpath. Live at [nrosier.github.io/astraya](https://nrosier.github.io/astraya/), deployed by `.github/workflows/pages.yml` on tagged releases. `.env.example` now documents Vite's mode-selection mechanism (`development`/`production`/`test`/the new `demo`), which was in use but undocumented.
 
 ## [0.16.1] — 2026-09-15
 
@@ -745,7 +745,7 @@ computed.
 - **Export a chart as SVG, PNG or PDF.** The saved file carries its own
   styling, so it stays legible somewhere that has never loaded Astraya's
   stylesheet; PNG is rasterised at a size you pick.
-- **A light/dark override** ([#70](https://github.com/nrosier/Astraya/issues/70)),
+- **A light/dark override** ([#70](https://github.com/nrosier/astraya/issues/70)),
   for disagreeing with the OS setting. The stored choice is applied before the
   first render, so it never flashes the other palette first.
 - **Sortable chart tables**, by any column.
@@ -829,7 +829,7 @@ chart in front of it rather than templated.
   computed.
 - Human review of the corpus's highest-salience entries (~250 of them) is
   tracked separately and deliberately not a release gate for this version —
-  see [#63](https://github.com/nrosier/Astraya/issues/63).
+  see [#63](https://github.com/nrosier/astraya/issues/63).
 
 ## [0.7.0] — 2026-09-09
 
@@ -1134,9 +1134,9 @@ Astraya is **AGPL-3.0-or-later**. This is required, not chosen: Swiss Ephemeris 
 offered under either the AGPL or a commercial licence, and the AGPL cannot be
 combined with MIT in this direction.
 
-[0.8.1]: https://github.com/nrosier/Astraya/releases/tag/v0.8.1
-[0.8.0]: https://github.com/nrosier/Astraya/releases/tag/v0.8.0
-[0.4.0]: https://github.com/nrosier/Astraya/releases/tag/v0.4.0
-[0.3.0]: https://github.com/nrosier/Astraya/releases/tag/v0.3.0
-[0.2.0]: https://github.com/nrosier/Astraya/releases/tag/v0.2.0
-[0.1.0]: https://github.com/nrosier/Astraya/releases/tag/v0.1.0
+[0.8.1]: https://github.com/nrosier/astraya/releases/tag/v0.8.1
+[0.8.0]: https://github.com/nrosier/astraya/releases/tag/v0.8.0
+[0.4.0]: https://github.com/nrosier/astraya/releases/tag/v0.4.0
+[0.3.0]: https://github.com/nrosier/astraya/releases/tag/v0.3.0
+[0.2.0]: https://github.com/nrosier/astraya/releases/tag/v0.2.0
+[0.1.0]: https://github.com/nrosier/astraya/releases/tag/v0.1.0

@@ -1,8 +1,8 @@
 # Astraya
 
 <p align="center">
-  <a href="https://github.com/nrosier/Astraya/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/nrosier/Astraya/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/nrosier/Astraya/releases"><img alt="Release" src="https://img.shields.io/badge/release-v0.18.1-blue"></a>
+  <a href="https://github.com/nrosier/astraya/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/nrosier/astraya/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/nrosier/astraya/releases"><img alt="Release" src="https://img.shields.io/badge/release-v0.18.1-blue"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue"></a>
 </p>
 
@@ -19,7 +19,7 @@ plausible-looking number.
 ## Status
 
 Early. Milestone M4 (calculation core) is in progress; see the
-[issues and milestones](https://github.com/nrosier/Astraya/issues) for what is
+[issues and milestones](https://github.com/nrosier/astraya/issues) for what is
 planned and what is done.
 
 ## What it does
@@ -67,7 +67,7 @@ corpus. Re-run it whenever those source files change.
 ## Try it
 
 A static, no-server demo build runs at
-<https://nrosier.github.io/Astraya/>. It's the same client — calculation,
+<https://nrosier.github.io/astraya/>. It's the same client — calculation,
 charting and the report all run in your browser exactly as below — but built in
 a `demo` mode with sign-in and sync disabled entirely, since GitHub Pages has no
 server to have an account on. Nothing you enter there ever leaves your device.
