@@ -17,14 +17,18 @@ import { login } from '../src/sync/auth-client.ts';
 import {
   AdminError,
   createUser,
+  deleteCorpusOverride,
   deleteUser,
   demoteUser,
   disableUser,
   enableUser,
+  exportCorpusOverrides,
   getDeletionImpact,
+  listCorpusOverrides,
   listUsers,
   promoteUser,
   resetPassword,
+  upsertCorpusOverride,
 } from '../src/sync/admin-client.ts';
 
 const BOOTSTRAP_TOKEN = 'test-bootstrap-token';
@@ -155,5 +159,51 @@ describe('getDeletionImpact / deleteUser', () => {
     await setupAdmin();
     await login('alice', 'correct-horse-battery');
     await expect(deleteUser('does-not-exist')).rejects.toBeInstanceOf(AdminError);
+  });
+});
+
+describe('listCorpusOverrides / upsertCorpusOverride / deleteCorpusOverride / exportCorpusOverrides (#292)', () => {
+  it('upserts, lists, exports and then reverts an override', async () => {
+    await setupAdmin();
+    await login('alice', 'correct-horse-battery');
+
+    expect(await listCorpusOverrides('en')).toEqual([]);
+
+    const override = await upsertCorpusOverride({
+      key: 'dignity-state:sun:ruler',
+      locale: 'en',
+      text: 'Corrected text.',
+      tier: 'core',
+      tags: ['sun'],
+    });
+    expect(override).toMatchObject({ key: 'dignity-state:sun:ruler', text: 'Corrected text.' });
+    expect(override.persona).toBeUndefined();
+
+    expect((await listCorpusOverrides('en')).map((o) => o.id)).toEqual([override.id]);
+    expect(await listCorpusOverrides('nl')).toEqual([]);
+
+    const exported = await exportCorpusOverrides('en');
+    const entries = JSON.parse(await exported.text()) as readonly { key: string; text: string }[];
+    expect(entries).toEqual([expect.objectContaining({ key: 'dignity-state:sun:ruler', text: 'Corrected text.' })]);
+
+    await deleteCorpusOverride(override.id);
+    expect(await listCorpusOverrides('en')).toEqual([]);
+  });
+
+  it('throws AdminError for a non-admin caller', async () => {
+    await setupAdmin();
+    await login('alice', 'correct-horse-battery');
+    const { setPasswordUrl } = await createUser('bob');
+    const token = new URL(setPasswordUrl.replace('/#', ''), baseUrl).searchParams.get('token');
+    const setPasswordResponse = await fetch(new URL('/api/auth/set-password', baseUrl), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password: 'a-fresh-password' }),
+    });
+    if (!setPasswordResponse.ok) throw new Error('set-password failed');
+    await login('bob', 'a-fresh-password');
+
+    await expect(listCorpusOverrides()).rejects.toMatchObject({ name: 'AdminError', status: 403 });
+    await expect(exportCorpusOverrides()).rejects.toBeInstanceOf(AdminError);
   });
 });

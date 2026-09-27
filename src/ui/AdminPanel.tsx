@@ -25,6 +25,7 @@ import {
 import { getOidcConfig } from '../sync/auth-client.js';
 import { adminPanelMessages } from './AdminPanel.messages.js';
 import { useMessages } from './messages.js';
+import { useSession } from './session-context.js';
 import { sharedMessages } from './shared.messages.js';
 import type { AdminUser, DeletionImpact } from '../sync/admin-client.js';
 import type { OidcConfig } from '../sync/auth-client.js';
@@ -168,6 +169,7 @@ function UserRow({
 }
 
 export function AdminPanel(): React.JSX.Element {
+  const { user } = useSession();
   const [users, setUsers] = useState<readonly AdminUser[]>();
   const [oidcConfig, setOidcConfig] = useState<OidcConfig>();
   const [error, setError] = useState<string>();
@@ -255,6 +257,11 @@ export function AdminPanel(): React.JSX.Element {
         <a href="#/">&larr; {shared.back}</a>
       </p>
       <h1>{t.heading}</h1>
+      {user?.isAdmin === true && (
+        <p>
+          <a href="#/admin/corpus-overrides">{t.corpusOverridesLink}</a>
+        </p>
+      )}
 
       {error !== undefined && (
         <p className="warning" role="alert">

@@ -46,6 +46,9 @@ const ReportScreen = lazy(async () => ({ default: (await personScreens()).Report
 const SynastryView = lazy(async () => ({ default: (await personScreens()).SynastryView }));
 const TransitView = lazy(async () => ({ default: (await personScreens()).TransitView }));
 const AdminPanel = lazy(async () => ({ default: (await import('./AdminPanel.js')).AdminPanel }));
+const CorpusOverridesPanel = lazy(async () => ({
+  default: (await import('./CorpusOverridesPanel.js')).CorpusOverridesPanel,
+}));
 const SharedChartView = lazy(async () => ({ default: (await import('./SharedChartView.js')).SharedChartView }));
 
 /**
@@ -264,6 +267,13 @@ function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.E
     return (
       <Stored>
         <AdminPanel />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'corpus-overrides') {
+    return (
+      <Stored>
+        <CorpusOverridesPanel />
       </Stored>
     );
   }

@@ -46,6 +46,8 @@ afterEach(async () => {
   delete process.env.ASTRAYA_OIDC_ISSUER;
   delete process.env.ASTRAYA_OIDC_CLIENT_ID;
   delete process.env.ASTRAYA_PUBLIC_URL;
+  delete process.env.ASTRAYA_OIDC_ADMIN_GROUPS;
+  delete process.env.ASTRAYA_OIDC_ADMIN_GROUP_CLAIM;
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -249,6 +251,99 @@ describe('POST /api/auth/oidc/callback', () => {
       cookies: { [SESSION_COOKIE]: String(cookie?.value) },
     });
     expect(me.statusCode).toBe(401);
+  });
+
+  it('promotes on JIT provisioning when a group matches ASTRAYA_OIDC_ADMIN_GROUPS', async () => {
+    process.env.ASTRAYA_OIDC_ADMIN_GROUPS = 'astraya-admins';
+    const idToken = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-admin-1',
+      nonce: 'n',
+      preferred_username: 'frank',
+      groups: ['everyone', 'astraya-admins'],
+    });
+    fakeAuthentik.registerCode('code-admin-1', { idToken });
+
+    const response = await callback({ code: 'code-admin-1', codeVerifier: 'v', nonce: 'n' });
+    expect(response.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(true);
+  });
+
+  it('does not promote when ASTRAYA_OIDC_ADMIN_GROUPS is set but no group matches', async () => {
+    process.env.ASTRAYA_OIDC_ADMIN_GROUPS = 'astraya-admins';
+    const idToken = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-admin-2',
+      nonce: 'n',
+      preferred_username: 'grace',
+      groups: ['everyone'],
+    });
+    fakeAuthentik.registerCode('code-admin-2', { idToken });
+
+    const response = await callback({ code: 'code-admin-2', codeVerifier: 'v', nonce: 'n' });
+    expect(response.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(false);
+  });
+
+  it('promotes on a later sign-in after group membership changes on the IdP side', async () => {
+    process.env.ASTRAYA_OIDC_ADMIN_GROUPS = 'astraya-admins';
+    const first = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-admin-3',
+      nonce: 'n1',
+      preferred_username: 'heidi',
+      groups: ['everyone'],
+    });
+    fakeAuthentik.registerCode('code-admin-3a', { idToken: first });
+    const firstResponse = await callback({ code: 'code-admin-3a', codeVerifier: 'v', nonce: 'n1' });
+    expect(firstResponse.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(false);
+
+    const second = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-admin-3',
+      nonce: 'n2',
+      preferred_username: 'heidi',
+      groups: ['everyone', 'astraya-admins'],
+    });
+    fakeAuthentik.registerCode('code-admin-3b', { idToken: second });
+    const secondResponse = await callback({ code: 'code-admin-3b', codeVerifier: 'v', nonce: 'n2' });
+    expect(secondResponse.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(true);
+  });
+
+  it('reads a custom claim name when ASTRAYA_OIDC_ADMIN_GROUP_CLAIM is set', async () => {
+    process.env.ASTRAYA_OIDC_ADMIN_GROUPS = 'astraya-admins';
+    process.env.ASTRAYA_OIDC_ADMIN_GROUP_CLAIM = 'roles';
+    // fake-authentik.ts's mintIdToken only knows about `groups` in its claims shape —
+    // mint directly against a raw JWT-shaped claim set is unnecessary here: the point
+    // is the *default* claim name (`groups`) must NOT grant admin once a custom claim
+    // name is configured, since `roles` was never populated.
+    const idToken = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-admin-4',
+      nonce: 'n',
+      preferred_username: 'ivan',
+      groups: ['astraya-admins'],
+    });
+    fakeAuthentik.registerCode('code-admin-4', { idToken });
+
+    const response = await callback({ code: 'code-admin-4', codeVerifier: 'v', nonce: 'n' });
+    expect(response.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(false);
+  });
+
+  it('never demotes an existing admin whose groups no longer match', async () => {
+    process.env.ASTRAYA_OIDC_ADMIN_GROUPS = 'astraya-admins';
+    const first = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-admin-5',
+      nonce: 'n1',
+      preferred_username: 'judy',
+      groups: ['astraya-admins'],
+    });
+    fakeAuthentik.registerCode('code-admin-5a', { idToken: first });
+    const firstResponse = await callback({ code: 'code-admin-5a', codeVerifier: 'v', nonce: 'n1' });
+    expect(firstResponse.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(true);
+
+    const second = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-admin-5',
+      nonce: 'n2',
+      preferred_username: 'judy',
+      groups: ['everyone'],
+    });
+    fakeAuthentik.registerCode('code-admin-5b', { idToken: second });
+    const secondResponse = await callback({ code: 'code-admin-5b', codeVerifier: 'v', nonce: 'n2' });
+    expect(secondResponse.json<{ user: { isAdmin: boolean } }>().user.isAdmin).toBe(true);
   });
 
   it('returns 404 when OIDC is not configured', async () => {

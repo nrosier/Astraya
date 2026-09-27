@@ -37,7 +37,8 @@ describe('loadRuntimeCorpus (#212)', () => {
     const result = await loadRuntimeCorpus('en', undefined, fetchImpl);
 
     expect(result).toEqual([NEUTRAL_ENTRY]);
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    // Plus one call for the (soft-failing) admin-overrides fetch, #292.
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
   it('fetches the neutral chunk and the persona chunk, concatenated', async () => {
@@ -65,5 +66,41 @@ describe('loadRuntimeCorpus (#212)', () => {
     const fetchImpl = fakeFetch(new Map([[`${CORPUS_BASE_URL}en/neutral.json`, [NEUTRAL_ENTRY]]]));
 
     await expect(loadRuntimeCorpus('en', 'mystic', fetchImpl)).rejects.toThrow(/en\/mystic\.json/);
+  });
+
+  it('replaces a static entry with a matching admin override (#292)', async () => {
+    const overridden: CorpusEntry = { ...NEUTRAL_ENTRY, text: 'Corrected text.' };
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url === `${CORPUS_BASE_URL}en/neutral.json`) return new Response(JSON.stringify([NEUTRAL_ENTRY]));
+      if (url === '/api/corpus-overrides/en') return new Response(JSON.stringify({ entries: [overridden] }));
+      return new Response('not found', { status: 404 });
+    });
+
+    const result = await loadRuntimeCorpus('en', undefined, fetchImpl);
+
+    expect(result).toEqual([overridden]);
+  });
+
+  it('still returns static entries when the override fetch fails (e.g. a static, serverless deploy)', async () => {
+    const fetchImpl = fakeFetch(new Map([[`${CORPUS_BASE_URL}en/neutral.json`, [NEUTRAL_ENTRY]]]));
+
+    const result = await loadRuntimeCorpus('en', undefined, fetchImpl);
+
+    expect(result).toEqual([NEUTRAL_ENTRY]);
+  });
+
+  it('only applies a persona-specific override when that persona is requested', async () => {
+    const mysticOverride: CorpusEntry = { ...MYSTIC_ENTRY, text: 'Corrected mystic text.' };
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url === `${CORPUS_BASE_URL}en/neutral.json`) return new Response(JSON.stringify([NEUTRAL_ENTRY]));
+      if (url === '/api/corpus-overrides/en') return new Response(JSON.stringify({ entries: [mysticOverride] }));
+      return new Response('not found', { status: 404 });
+    });
+
+    const result = await loadRuntimeCorpus('en', undefined, fetchImpl);
+
+    expect(result).toEqual([NEUTRAL_ENTRY]);
   });
 });

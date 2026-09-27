@@ -43,6 +43,7 @@ export type Route =
   | { readonly kind: 'astrocartography'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'admin' }
+  | { readonly kind: 'corpus-overrides' }
   | { readonly kind: 'set-password' }
   | { readonly kind: 'setup' };
 
@@ -75,6 +76,8 @@ export function parseRoute(hash: string): Route {
       return { kind: 'shared' };
     case '#/admin':
       return { kind: 'admin' };
+    case '#/admin/corpus-overrides':
+      return { kind: 'corpus-overrides' };
     // The one-time token lives in the query (#135) — read directly off `location.hash`
     // by the screen itself, rather than here.
     case '#/set-password':

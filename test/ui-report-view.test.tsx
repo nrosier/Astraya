@@ -142,9 +142,14 @@ describe('ReportView advisor picker (locale comes from the shared locale.ts stor
     // localStorage per test — reset it explicitly rather than relying on
     // `localStorage.clear()`, which only affects a future page load.
     setLocale('en');
-    fetchMock = vi.fn(
-      () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }) as unknown as ReturnType<typeof fetch>,
-    );
+    fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      // The corpus-overrides fetch (#292) returns a differently-shaped body
+      // (`{ entries }`) than a static chunk (a bare array) — this describe
+      // block isn't about overrides, so it soft-fails via a 404 either way.
+      const body = url.startsWith('/api/corpus-overrides/') ? { entries: [] } : [];
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(body) }) as unknown as ReturnType<typeof fetch>;
+    });
     vi.stubGlobal('fetch', fetchMock);
     // This describe block is entirely about the picker itself, so it opts into the
     // feature explicitly rather than relying on its off-by-default value (#62).
@@ -171,7 +176,8 @@ describe('ReportView advisor picker (locale comes from the shared locale.ts stor
       'The Pragmatic No-Nonsense Coach',
     ]);
     expect(fetchMock).toHaveBeenCalledWith('/corpus/en/neutral.json');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // Plus one call for the (soft-failing) admin-overrides fetch, #292.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     act(() => {
       root.unmount();
@@ -242,9 +248,11 @@ describe('report personas, off by default (VITE_ENABLE_REPORT_PERSONAS)', () => 
     setLocale('en');
     vi.stubGlobal(
       'fetch',
-      vi.fn(
-        () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }) as unknown as ReturnType<typeof fetch>,
-      ),
+      vi.fn((input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        const body = url.startsWith('/api/corpus-overrides/') ? { entries: [] } : [];
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(body) }) as unknown as ReturnType<typeof fetch>;
+      }),
     );
   });
 

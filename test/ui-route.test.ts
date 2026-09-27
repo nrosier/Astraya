@@ -164,6 +164,11 @@ describe('parseRoute', () => {
     expect(parseRoute('#/set-password?token=abc123')).toEqual({ kind: 'set-password' });
   });
 
+  it('routes the corpus-overrides screen (#292)', () => {
+    expect(parseRoute('#/admin/corpus-overrides')).toEqual({ kind: 'corpus-overrides' });
+    expect(parseRoute('#/admin/corpus-overrides/')).toEqual({ kind: 'corpus-overrides' });
+  });
+
   it('routes the admin-bootstrap screen', () => {
     expect(parseRoute('#/setup')).toEqual({ kind: 'setup' });
     expect(parseRoute('#/setup?token=abc123')).toEqual({ kind: 'setup' });

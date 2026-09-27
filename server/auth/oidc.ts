@@ -15,6 +15,8 @@ export interface OidcConfig {
   readonly clientId: string;
   readonly redirectUri: string;
   readonly publicUrl: string;
+  /** Which ID-token claim carries the group list (#292's admin auto-promotion). Defaults to `groups`. */
+  readonly adminGroupClaim: string;
 }
 
 interface DiscoveryDocument {
@@ -56,7 +58,9 @@ export function loadOidcConfig(): OidcConfig | null {
   }
   const redirectUri = new URL('/auth/oidc/callback', publicUrl).toString();
 
-  return { issuer: issuer.replace(/\/+$/, ''), clientId, redirectUri, publicUrl };
+  const adminGroupClaim = process.env.ASTRAYA_OIDC_ADMIN_GROUP_CLAIM ?? 'groups';
+
+  return { issuer: issuer.replace(/\/+$/, ''), clientId, redirectUri, publicUrl, adminGroupClaim };
 }
 
 // Cached per issuer so the exchange and the logout redirect never re-fetch discovery
@@ -135,6 +139,8 @@ export interface VerifiedIdToken {
   readonly subject: string;
   readonly preferredUsername: string | undefined;
   readonly nonce: string | undefined;
+  /** From `config.adminGroupClaim` (#292). `[]` if the claim is absent or not an array of strings. */
+  readonly groups: readonly string[];
 }
 
 /**
@@ -167,10 +173,13 @@ export async function verifyIdToken(config: OidcConfig, idToken: string): Promis
       : typeof payload.name === 'string'
         ? payload.name
         : undefined;
+  const rawGroups = payload[config.adminGroupClaim];
+  const groups = Array.isArray(rawGroups) && rawGroups.every((g) => typeof g === 'string') ? rawGroups : [];
   return {
     subject: payload.sub,
     preferredUsername,
     nonce: typeof payload.nonce === 'string' ? payload.nonce : undefined,
+    groups,
   };
 }
 
