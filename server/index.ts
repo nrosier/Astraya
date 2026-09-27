@@ -18,6 +18,7 @@ import fastifyStatic from '@fastify/static';
 import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { buildCsp, stripCspMeta } from './csp.ts';
+import { isCrossOriginWrite } from './csrf.ts';
 import { openDatabase } from './db.ts';
 import { registerAuthRoutes } from './auth/routes.ts';
 import { registerAdminRoutes } from './auth/admin-routes.ts';
@@ -32,12 +33,44 @@ const HOST = process.env.HOST ?? '0.0.0.0';
 const DB_PATH = process.env.ASTRAYA_DB_PATH ?? resolve(here, '..', 'data', 'astraya.db');
 
 /**
+ * `trustProxy` controls whether Fastify honours `X-Forwarded-For`/`X-Forwarded-Proto`
+ * at all. Read from `ASTRAYA_TRUST_PROXY` rather than hardcoded `true`: trusting those
+ * headers unconditionally means any client, not just a real reverse proxy, can spoof
+ * them — defeating `@fastify/rate-limit`'s per-IP keying, and letting a request claim
+ * `X-Forwarded-Proto: http` to get a session cookie minted without `Secure`
+ * (`isSecureRequest` in `auth/routes.ts` trusts `request.protocol`, which is exactly
+ * what this setting governs). Unset means no reverse proxy is trusted, which is the
+ * safe default for a deployment with no reverse proxy in front of it.
+ *
+ * Deliberately no hop-count (bare integer) support: Fastify treats a numeric
+ * `trustProxy` as untrustworthy and fails closed (trusts nothing), because a hop count
+ * alone cannot validate the immediate peer — a direct client could just send enough
+ * hops' worth of `X-Forwarded-For` entries to make itself look like it arrived through
+ * that many proxies. A list of the actual trusted proxy IPs/CIDRs is the only form that
+ * can be validated against who is actually connecting, so that's the only list form
+ * this accepts.
+ */
+function parseTrustProxy(value: string | undefined): boolean | string[] {
+  if (value === undefined || value === '') return false;
+  return value.split(',').map((entry) => entry.trim());
+}
+const TRUST_PROXY = parseTrustProxy(process.env.ASTRAYA_TRUST_PROXY);
+
+/**
  * Hashed build assets and the ephemeris data files are immutable for the life of a
  * release, so they are cached hard. `index.html` must not be, or a browser would
  * keep loading an old app against new assets after a deploy.
  */
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const NO_CACHE = 'no-cache';
+
+/**
+ * 180 days, subdomains included — long enough to be worth setting, short enough that a
+ * deployer who later moves off TLS is not locked out for two years. Deliberately no
+ * `preload`: that is a one-way submission to a browser-vendor list on behalf of someone
+ * else's domain, which is not this server's decision to make.
+ */
+const HSTS = 'max-age=15552000; includeSubDomains';
 
 export interface BuildOptions {
   /** Overrides `ASTRAYA_DB_PATH`. Tests pass `:memory:` so nothing touches disk. */
@@ -58,8 +91,7 @@ export async function build(options: BuildOptions = {}) {
         },
       },
     },
-    // Behind a reverse proxy on the user's own box, so trust its forwarding headers.
-    trustProxy: true,
+    trustProxy: TRUST_PROXY,
   });
 
   const db = openDatabase(options.dbPath ?? DB_PATH);
@@ -70,27 +102,42 @@ export async function build(options: BuildOptions = {}) {
   // `loadOidcConfig` throws on a present-but-malformed issuer — deliberately, so
   // a deployment mistake fails the boot rather than silently serving OIDC-less.
   const oidcConfig = loadOidcConfig();
-  // A self-hosted tile server (#159): its origin replaces the default public OSM
-  // host in `img-src`. Must match the scheme+host `VITE_TILE_URL_TEMPLATE` was
-  // built against, or the browser's own CSP blocks tiles from the mismatched host.
-  const tileOrigin = process.env.ASTRAYA_TILE_ORIGIN;
-  // A self-hosted Nominatim instance (#291): its origin replaces the default
+  // A self-hosted Nominatim instance (#290, #291): its origin replaces the default
   // public Nominatim host in `connect-src`. Must match the scheme+host
   // `VITE_NOMINATIM_URL` was built against, or the CSP blocks the lookup.
   const geocodeOrigin = process.env.ASTRAYA_GEOCODE_ORIGIN;
   const csp = buildCsp({
     ...(oidcConfig ? { issuerOrigin: new URL(oidcConfig.issuer).origin } : {}),
-    ...(tileOrigin ? { tileOrigin } : {}),
     ...(geocodeOrigin ? { geocodeOrigin } : {}),
   });
 
+  // HSTS is only correct once the deployment is actually served over TLS, and
+  // `ASTRAYA_PUBLIC_URL` is the one place a deployer already states that (#339). Sending it
+  // unconditionally would make a plain-HTTP instance — the local-network case this app is
+  // built for — unreachable in any browser that had ever seen the header. `URL.parse`
+  // rather than `new URL`: a malformed value here must not become a boot failure for a
+  // server that has no other reason to need it.
+  const publicOrigin = process.env.ASTRAYA_PUBLIC_URL ? URL.parse(process.env.ASTRAYA_PUBLIC_URL) : null;
+  const hsts = publicOrigin?.protocol === 'https:';
+
   await app.register(fastifyCookie);
   await app.register(fastifyRateLimit, { global: false });
+
+  // Registered before every route, including the static handler, so no write can be added
+  // that forgets it — see `server/csrf.ts` for why this is an origin check rather than a
+  // token.
+  app.addHook('onRequest', async (request, reply) => {
+    const allowedHosts = publicOrigin === null ? [request.host] : [request.host, publicOrigin.host];
+    if (isCrossOriginWrite({ method: request.method, origin: request.headers.origin, allowedHosts })) {
+      await reply.code(403).send({ error: 'Cross-origin request rejected' });
+    }
+  });
 
   app.addHook('onSend', async (request, reply) => {
     reply.header('Content-Security-Policy', csp.header);
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('Referrer-Policy', 'no-referrer');
+    if (hsts) reply.header('Strict-Transport-Security', HSTS);
     // Birth data never leaves the browser, and the app has no use for camera/microphone,
     // so those stay denied. Geolocation is allowed for this origin only (#248's opt-in
     // "Use my location" map control) — it never leaves the browser either, and the
@@ -127,11 +174,11 @@ export async function build(options: BuildOptions = {}) {
   // `@fastify/static`'s `wildcard: true` (the default) registers exactly one
   // route, `GET/HEAD /*` — not a literal `/` — so find-my-way's exact-beats-
   // wildcard resolution means this route wins regardless of registration order.
-  // Only registered when an issuer or a custom tile origin is configured: the
-  // static meta tag can't express an issuer-scoped `connect-src`/`form-action`
-  // or a non-default `img-src`, so once either exists the header becomes the
-  // only correct copy of the policy (see `stripCspMeta`'s doc comment).
-  if (oidcConfig || tileOrigin) {
+  // Only registered when an issuer or a self-hosted geocode origin is configured:
+  // the static meta tag can't express an issuer-scoped `connect-src`/`form-action`
+  // or a non-default `connect-src` geocode host, so once either exists the header
+  // becomes the only correct copy of the policy (see `stripCspMeta`'s doc comment).
+  if (oidcConfig || geocodeOrigin) {
     app.get('/', async (_request, reply) => {
       return reply
         .type('text/html; charset=utf-8')

@@ -247,6 +247,26 @@ describe('operations the fold cannot use', () => {
   it('counts a corrupt record, which a stale snapshot can still hand it', () => {
     expect(applyRecords(EMPTY_REGISTERS, [{ opVersion: 1, hlc: 'nope' }]).skips.corrupt).toBe(1);
   });
+
+  it('refuses a prototype-sensitive id rather than losing determinism over it (#331)', () => {
+    // Registers live in plain objects, so `byId['__proto__'] = …` would replace the
+    // register object's prototype instead of creating an own property — a value that reads
+    // back through lookups but that `JSON.stringify` drops, which is the one shape that
+    // makes the same log fold to different state either side of a reload. `decode` refuses
+    // it, so the fold never sees it; both halves are asserted, because the guard being in
+    // the right place is the whole point.
+    const [good, hostile] = write(A, [person('displayName', 'Ada'), person('notes', 'rectified')]);
+    if (good === undefined || hostile === undefined) throw new Error('fixture');
+    for (const entityId of ['__proto__', 'constructor', 'prototype']) {
+      const applied = applyRecords(EMPTY_REGISTERS, [good, { ...hostile, entityId }]);
+      expect(applied.skips.corrupt).toBe(1);
+      // The legitimate record beside it still applies, and the registers hold exactly one
+      // person — nothing landed off the own-property path where a snapshot would lose it.
+      const people = materialise(applied.registers).people;
+      expect([...people.keys()]).toEqual([PERSON]);
+      expect(JSON.parse(JSON.stringify(applied.registers))).toEqual(applied.registers);
+    }
+  });
 });
 
 describe('convergence', () => {

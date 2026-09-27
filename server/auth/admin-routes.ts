@@ -102,52 +102,60 @@ interface CreateUserBody {
 }
 
 export function registerAdminRoutes(app: FastifyInstance, db: Database): void {
-  app.get('/api/admin/users', { preHandler: requireAdmin(db) }, async (_request, reply) => {
-    const rows = db
-      .prepare(
-        `SELECT users.id, users.username, users.is_admin, users.created_at, users.disabled_at,
-                MAX(sessions.last_seen_at) AS last_seen_at
-         FROM users LEFT JOIN sessions ON sessions.user_id = users.id
-         GROUP BY users.id
-         ORDER BY users.created_at`,
-      )
-      .all() as unknown as AdminUserRow[];
-    return reply.send({ users: rows.map(toAdminUser) });
-  });
+  app.get(
+    '/api/admin/users',
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (_request, reply) => {
+      const rows = db
+        .prepare(
+          `SELECT users.id, users.username, users.is_admin, users.created_at, users.disabled_at,
+                  MAX(sessions.last_seen_at) AS last_seen_at
+           FROM users LEFT JOIN sessions ON sessions.user_id = users.id
+           GROUP BY users.id
+           ORDER BY users.created_at`,
+        )
+        .all() as unknown as AdminUserRow[];
+      return reply.send({ users: rows.map(toAdminUser) });
+    },
+  );
 
-  app.post<{ Body: CreateUserBody }>('/api/admin/users', { preHandler: requireAdmin(db) }, async (request, reply) => {
-    if (loadOidcConfig()) {
-      return reply.code(409).send({ error: 'Local accounts cannot be created while OIDC is configured' });
-    }
+  app.post<{ Body: CreateUserBody }>(
+    '/api/admin/users',
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      if (loadOidcConfig()) {
+        return reply.code(409).send({ error: 'Local accounts cannot be created while OIDC is configured' });
+      }
 
-    const { username, isAdmin } = request.body;
-    if (typeof username !== 'string' || username === '') {
-      return reply.code(400).send({ error: 'username is required' });
-    }
-    if (username.length > MAX_USERNAME_LENGTH) {
-      return reply.code(400).send({ error: `username must be at most ${String(MAX_USERNAME_LENGTH)} characters` });
-    }
-    if (isAdmin !== undefined && typeof isAdmin !== 'boolean') {
-      return reply.code(400).send({ error: 'isAdmin must be a boolean' });
-    }
-    if (getUserByUsername(db, username)) return reply.code(409).send({ error: 'Username already taken' });
+      const { username, isAdmin } = request.body;
+      if (typeof username !== 'string' || username === '') {
+        return reply.code(400).send({ error: 'username is required' });
+      }
+      if (username.length > MAX_USERNAME_LENGTH) {
+        return reply.code(400).send({ error: `username must be at most ${String(MAX_USERNAME_LENGTH)} characters` });
+      }
+      if (isAdmin !== undefined && typeof isAdmin !== 'boolean') {
+        return reply.code(400).send({ error: 'isAdmin must be a boolean' });
+      }
+      if (getUserByUsername(db, username)) return reply.code(409).send({ error: 'Username already taken' });
 
-    const id = randomUUID();
-    const now = new Date().toISOString();
-    db.prepare('INSERT INTO users (id, username, password_hash, is_admin, created_at) VALUES (?, ?, NULL, ?, ?)').run(
-      id,
-      username,
-      isAdmin === true ? 1 : 0,
-      now,
-    );
-    const token = mintPasswordSetToken(db, id);
-    const user = getAdminUser(db, id);
-    return reply.code(201).send({ user, setPasswordUrl: setPasswordUrl(token) });
-  });
+      const id = randomUUID();
+      const now = new Date().toISOString();
+      db.prepare('INSERT INTO users (id, username, password_hash, is_admin, created_at) VALUES (?, ?, NULL, ?, ?)').run(
+        id,
+        username,
+        isAdmin === true ? 1 : 0,
+        now,
+      );
+      const token = mintPasswordSetToken(db, id);
+      const user = getAdminUser(db, id);
+      return reply.code(201).send({ user, setPasswordUrl: setPasswordUrl(token) });
+    },
+  );
 
   app.post<{ Params: { id: string } }>(
     '/api/admin/users/:id/reset-password',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const user = getAdminUser(db, request.params.id);
       if (!user) return reply.code(404).send({ error: 'No such user' });
@@ -158,7 +166,7 @@ export function registerAdminRoutes(app: FastifyInstance, db: Database): void {
 
   app.post<{ Params: { id: string } }>(
     '/api/admin/users/:id/disable',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const user = getAdminUser(db, request.params.id);
       if (!user) return reply.code(404).send({ error: 'No such user' });
@@ -173,7 +181,7 @@ export function registerAdminRoutes(app: FastifyInstance, db: Database): void {
 
   app.post<{ Params: { id: string } }>(
     '/api/admin/users/:id/enable',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const user = getAdminUser(db, request.params.id);
       if (!user) return reply.code(404).send({ error: 'No such user' });
@@ -184,7 +192,7 @@ export function registerAdminRoutes(app: FastifyInstance, db: Database): void {
 
   app.post<{ Params: { id: string } }>(
     '/api/admin/users/:id/promote',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const user = getAdminUser(db, request.params.id);
       if (!user) return reply.code(404).send({ error: 'No such user' });
@@ -195,7 +203,7 @@ export function registerAdminRoutes(app: FastifyInstance, db: Database): void {
 
   app.post<{ Params: { id: string } }>(
     '/api/admin/users/:id/demote',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const user = getAdminUser(db, request.params.id);
       if (!user) return reply.code(404).send({ error: 'No such user' });
@@ -207,9 +215,14 @@ export function registerAdminRoutes(app: FastifyInstance, db: Database): void {
     },
   );
 
-  app.get<{ Params: { id: string } }>(
+  // `POST`, though it reads rather than writes (#329). `SameSite=Lax` sends the session
+  // cookie on a cross-site top-level *navigation*, which is exactly what a `GET` here
+  // would be — so an admin who followed a link could be made to run this route's
+  // decrypt-and-count loop over another user's whole operation log. A write method is not
+  // reachable that way at all.
+  app.post<{ Params: { id: string } }>(
     '/api/admin/users/:id/deletion-impact',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const user = getAdminUser(db, request.params.id);
       if (!user) return reply.code(404).send({ error: 'No such user' });
@@ -220,7 +233,7 @@ export function registerAdminRoutes(app: FastifyInstance, db: Database): void {
 
   app.delete<{ Params: { id: string } }>(
     '/api/admin/users/:id',
-    { preHandler: requireAdmin(db) },
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const user = getAdminUser(db, request.params.id);
       if (!user) return reply.code(404).send({ error: 'No such user' });

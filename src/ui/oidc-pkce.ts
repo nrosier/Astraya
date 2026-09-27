@@ -21,6 +21,27 @@ interface PendingOidc {
   readonly nonce: string;
 }
 
+/**
+ * Reads back what `startOidcHandshake` stashed, or `undefined` for anything else.
+ *
+ * `sessionStorage` is shared with everything else on the origin and survives a reload, so
+ * this value can be absent, truncated, or another build's — and the one caller runs
+ * outside the boot effect's own `try` (`session-context.tsx`), which made an unguarded
+ * `JSON.parse` here a permanent blank screen rather than a failed sign-in (#334).
+ */
+function readPending(raw: string): PendingOidc | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+  if (typeof parsed !== 'object' || parsed === null) return undefined;
+  const { state, codeVerifier, nonce } = parsed as Partial<PendingOidc>;
+  if (typeof state !== 'string' || typeof codeVerifier !== 'string' || typeof nonce !== 'string') return undefined;
+  return { state, codeVerifier, nonce };
+}
+
 function base64Url(buffer: ArrayBuffer): string {
   let binary = '';
   for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte);
@@ -76,10 +97,12 @@ export function consumeOidcCallback():
   const state = params.get('state');
   const raw = sessionStorage.getItem(PENDING_KEY);
   sessionStorage.removeItem(PENDING_KEY);
-  history.replaceState(null, '', '/');
+  // `BASE_URL`, not a hardcoded `/`: under a `VITE_BASE_PATH` deployment the root is not
+  // where the app lives, and replacing the URL with `/` would navigate out of it (#334).
+  history.replaceState(null, '', import.meta.env.BASE_URL);
 
   if (code === null || state === null || raw === null) return undefined;
-  const pending = JSON.parse(raw) as PendingOidc;
-  if (state !== pending.state) return undefined;
+  const pending = readPending(raw);
+  if (pending?.state !== state) return undefined;
   return { code, codeVerifier: pending.codeVerifier, nonce: pending.nonce };
 }

@@ -163,12 +163,30 @@ describe('POST /api/ops and GET /api/ops', () => {
     expect(response.statusCode).toBe(200);
   });
 
-  it('rejects an op more than 24h ahead of server time with a distinct clock-skew error (#105)', async () => {
+  it('quarantines an op more than 24h ahead of server time instead of rejecting the whole batch (#105, #312)', async () => {
     const sessionId = await setupAdmin(app);
-    const op = makeOp(25 * 60 * 60 * 1000);
-    const response = await appendOps(app, sessionId, [op]);
-    expect(response.statusCode).toBe(400);
-    expect(response.json<{ error: string }>().error).toBe('clock-skew');
+    const good = makeOp();
+    const skewed = makeOp(25 * 60 * 60 * 1000);
+    const response = await appendOps(app, sessionId, [good, skewed]);
+    expect(response.statusCode).toBe(200);
+    const { seqs, skipped } = response.json<{ seqs: number[]; skipped: string[] }>();
+    expect(seqs).toHaveLength(1);
+    expect(skipped).toEqual([skewed.hlc]);
+
+    const pull = await pullOps(app, sessionId);
+    const { ops } = pull.json<{ ops: { hlc: string }[] }>();
+    expect(ops).toHaveLength(1);
+    expect(ops[0]?.hlc).toBe(good.hlc);
+  });
+
+  it('quarantines every op in an all-skewed batch, still with a 200', async () => {
+    const sessionId = await setupAdmin(app);
+    const skewed = makeOp(25 * 60 * 60 * 1000);
+    const response = await appendOps(app, sessionId, [skewed]);
+    expect(response.statusCode).toBe(200);
+    const { seqs, skipped } = response.json<{ seqs: number[]; skipped: string[] }>();
+    expect(seqs).toEqual([]);
+    expect(skipped).toEqual([skewed.hlc]);
 
     const pull = await pullOps(app, sessionId);
     expect(pull.json<{ ops: unknown[] }>().ops).toHaveLength(0);
@@ -262,5 +280,27 @@ describe('POST /api/ops and GET /api/ops', () => {
     } finally {
       rmSync(badKeyDir, { recursive: true, force: true });
     }
+  });
+
+  it('refuses a blank or non-numeric `since` rather than reading it as "from the beginning" (#336)', async () => {
+    const sessionId = await setupAdmin(app);
+    await appendOps(app, sessionId, [makeOp()]);
+
+    // `Number('')` and `Number(' ')` are both 0, and 0 is the one value that means "send
+    // the whole log again" — the expensive answer to give a client that meant to send a
+    // cursor and built a blank query string instead.
+    for (const value of ['', '%20', 'abc', '-1', '1.5', '1e3', '0x1']) {
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/ops?since=${value}`,
+        cookies: { [SESSION_COOKIE]: sessionId },
+      });
+      expect(response.statusCode, `?since=${value}`).toBe(400);
+    }
+
+    // An absent `since` still means "from the beginning" — that is a first sync, not a
+    // mistake, and is the one case where the default is what the client meant.
+    expect((await pullOps(app, sessionId)).json<{ ops: unknown[] }>().ops).toHaveLength(1);
+    expect((await pullOps(app, sessionId, 0)).json<{ ops: unknown[] }>().ops).toHaveLength(1);
   });
 });

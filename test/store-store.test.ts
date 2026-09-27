@@ -6,7 +6,7 @@
  * it, that overlapping mutations cannot lose one another, that a reopened store is the
  * same store, and that a device id is generated once and then kept forever.
  */
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { openStore } from '../src/store/store.js';
 import { openDatabase, allRecords, getSnapshot, DEVICE_ID_KEY, putMeta } from '../src/store/db.js';
 import { isNodeId } from '../src/store/hlc.js';
@@ -503,5 +503,72 @@ describe('persistence', () => {
       expect(store.persistence.state).toBe('unsupported');
       await Promise.resolve();
     });
+  });
+});
+
+describe('cross-tab write lock (#311)', () => {
+  // A fake `navigator.locks`, standing in for two real tabs of the same origin: it grants a
+  // name to at most one caller, and — matching the real API's `ifAvailable: true` — refuses
+  // a second request for an already-held name immediately rather than queueing it.
+  function fakeLocks(): { locks: unknown } {
+    const held = new Set<string>();
+    return {
+      locks: {
+        async request(name: string, _options: unknown, callback: (lock: object | null) => Promise<unknown>) {
+          if (held.has(name)) return callback(null);
+          held.add(name);
+          try {
+            return await callback({});
+          } finally {
+            held.delete(name);
+          }
+        },
+      },
+    };
+  }
+
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  afterEach(() => {
+    if (original === undefined) delete (globalThis as { navigator?: unknown }).navigator;
+    else Object.defineProperty(globalThis, 'navigator', original);
+  });
+
+  it('makes a second tab read-only, and its writes reject without changing state', async () => {
+    Object.defineProperty(globalThis, 'navigator', { value: fakeLocks(), configurable: true, writable: true });
+    const name = freshName();
+    const first = await openStore({ name, now: ticking() });
+    const second = await openStore({ name, now: ticking() });
+    try {
+      expect(first.writable).toBe(true);
+      expect(second.writable).toBe(false);
+
+      await expect(second.mutate([named(PERSON, 'Ada')])).rejects.toThrow(/another (browser )?tab/i);
+      await expect(second.remove('person', PERSON)).rejects.toThrow();
+      await expect(second.purge('person', PERSON)).rejects.toThrow();
+      await expect(second.receive([])).rejects.toThrow();
+      expect(second.state.people.size).toBe(0);
+
+      await first.mutate([named(PERSON, 'Ada')]);
+      expect(first.state.people.get(PERSON)?.displayName).toBe('Ada');
+    } finally {
+      first.close();
+      second.close();
+    }
+  });
+
+  it('lets a fresh open become writable once the first tab closes', async () => {
+    Object.defineProperty(globalThis, 'navigator', { value: fakeLocks(), configurable: true, writable: true });
+    const name = freshName();
+    const first = await openStore({ name, now: ticking() });
+    expect(first.writable).toBe(true);
+    first.close();
+    // See the equivalent wait in store-tab-lock.test.ts: releasing only resolves the promise
+    // the fake lock manager is awaiting, and its own bookkeeping runs as a continuation of
+    // that rather than synchronously.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const second = await openStore({ name, now: ticking() });
+    expect(second.writable).toBe(true);
+    second.close();
   });
 });

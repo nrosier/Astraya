@@ -20,6 +20,10 @@ const en = {
     `Syncing has been failing since ${since}. Nothing has been lost — every change is saved on this device and will be sent when syncing recovers. ${message}`,
   exportACopy: 'Export a copy',
 
+  quarantinedLabel: (n: string) => `${n} won't sync`,
+  quarantinedDetail: (changes: string) =>
+    `${changes} could not sync because this device's clock was off when they were made. They are still saved here, but will not be retried — export a copy to keep them.`,
+
   localOnly: 'Local only',
   localOnlyEvictableDetail:
     'This device holds the only copy of your data, and the browser has not promised to keep it. Export a copy, or sign in to sync.',
@@ -59,6 +63,10 @@ const nl: typeof en = {
   syncFailingDetail: (since: string, message: string) =>
     `Synchronisatie mislukt sinds ${since}. Er is niets verloren gegaan — elke wijziging is opgeslagen op dit apparaat en wordt verzonden zodra synchronisatie herstelt. ${message}`,
   exportACopy: 'Kopie exporteren',
+
+  quarantinedLabel: (n: string) => `${n} synchroniseert niet`,
+  quarantinedDetail: (changes: string) =>
+    `${changes} konden niet synchroniseren omdat de klok van dit apparaat verkeerd stond toen ze werden gemaakt. Ze zijn hier nog wel opgeslagen, maar worden niet opnieuw geprobeerd — exporteer een kopie om ze te behouden.`,
 
   localOnly: 'Alleen lokaal',
   localOnlyEvictableDetail:
