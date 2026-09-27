@@ -85,3 +85,24 @@ account) and **sign-in and sync become additive** (M8).
 
 Two earlier plans are superseded outright: `localStorage` as the primary store, and
 a relational server schema whose every domain change needed a migration.
+
+## Amendment (2026-09-27): purge propagation and server-side erasure (#308)
+
+Local purge (`Store.purge`) had no way to reach a peer or the server — data considered
+"erased" by the user stayed on every other already-synced device and in server storage.
+Two additive changes:
+
+- **Propagation is a field convention**, not a wire-format change: a purge is recorded
+  as an ordinary op with `field: 'purged', value: true`, folded as a per-field LWW
+  register exactly like the existing `deleted` field (`src/store/fold.ts`). This needs
+  no exception to "the server is an opaque relay" — the server still never reads this
+  field's meaning, only relays it.
+- **Real server-side erasure is a deliberate, narrow exception**, in the same category
+  already established by `server/ops/deletion-impact.ts`'s pre-delete preview and by
+  `corpus_overrides` (#292): on every push, the server parses (not decrypts — it already
+  holds this plaintext transiently, before encrypting it for storage) each op's `entity`,
+  `entityId`, `field` and `value` to detect a purge marker and to check a per-user
+  deny-list (`purged_entities`). When a purge marker lands, the server decrypts and
+  deletes its _already-stored_ rows for that `(entity, entityId)`, keeping only the
+  marker itself. It still never reads or acts on any field's actual value beyond this
+  narrow purge check, and ciphertext at rest and on ordinary pulls is unaffected.

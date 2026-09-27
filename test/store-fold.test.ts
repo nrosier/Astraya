@@ -16,6 +16,7 @@ import {
   EMPTY_REGISTERS,
   fold,
   materialise,
+  PURGED_FIELD,
   resume,
   snapshotOf,
 } from '../src/store/fold.js';
@@ -162,6 +163,38 @@ describe('deleting', () => {
     // Restoring the person brings its charts back, because nothing was written about them.
     const undone = fold([...records, ...write(A, [person(DELETED_FIELD, false)], T0 + 20_000)]);
     expect(undone.charts.size).toBe(1);
+  });
+});
+
+describe('purging', () => {
+  it('hides a person from both the live and deleted lists', () => {
+    const records = write(A, [...COMPLETE, person(DELETED_FIELD, true), person(PURGED_FIELD, true)]);
+    const state = fold(records);
+    expect(state.people.size).toBe(0);
+    expect(state.deleted.people.size).toBe(0);
+  });
+
+  it('overrides a same-entity field with a later HLC, because purge is checked by field, not by recency', () => {
+    // The register the fold compares by timestamp is `displayName`, and it wins on
+    // recency alone. But `materialise` never lets that matter for visibility: it checks
+    // `purged` first and hides the entity regardless of what any other field's HLC says.
+    const records = [
+      ...write(A, [...COMPLETE, person(PURGED_FIELD, true)], T0),
+      ...write(B, [person('displayName', 'Grace')], T0 + 10_000),
+    ];
+    const state = fold(records);
+    expect(state.people.size).toBe(0);
+    expect(state.deleted.people.size).toBe(0);
+  });
+
+  it('hides a purged person’s charts too', () => {
+    const records = [
+      ...write(A, [...COMPLETE, chart('personId', PERSON), chart('kind', 'natal')]),
+      ...write(A, [person(PURGED_FIELD, true)], T0 + 10_000),
+    ];
+    const state = fold(records);
+    expect(state.charts.size).toBe(0);
+    expect(state.deleted.charts.size).toBe(0);
   });
 });
 

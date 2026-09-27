@@ -142,6 +142,22 @@ const MIGRATIONS: readonly ((db: DatabaseSync) => void)[] = [
       CREATE UNIQUE INDEX corpus_overrides_identity ON corpus_overrides(key, locale, persona);
     `);
   },
+  // 6: the deny-list that makes a purge (#308) a real, permanent, cross-device erasure
+  // rather than a client-side hidden flag. A push naming an `(entity, entity_id)` already
+  // in here is refused rather than stored (`server/ops/purge.ts`), and the row it names
+  // is checked against this table the moment the purge marker itself lands — see that
+  // module for why the marker's own op is still allowed through despite the deny-list.
+  (db) => {
+    db.exec(`
+      CREATE TABLE purged_entities (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        entity TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        purged_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, entity, entity_id)
+      );
+    `);
+  },
 ];
 
 /** Migration steps whose table rebuild would otherwise break `REFERENCES` clauses pointing at the table being rebuilt. */

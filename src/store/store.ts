@@ -29,9 +29,10 @@ import {
   putRecords,
   putSnapshot,
 } from './db.js';
-import { EMPTY_REGISTERS, DELETED_FIELD, applyRecords, materialise, resume, snapshotOf } from './fold.js';
+import { EMPTY_REGISTERS, DELETED_FIELD, PURGED_FIELD, applyRecords, materialise, resume, snapshotOf } from './fold.js';
 import { append, emptyLog, latest, purgeEntity, receiveRecords, since } from './oplog.js';
 import { createClock, isNodeId, randomNodeId, receive } from './hlc.js';
+import { decode } from './ops.js';
 import { requestPersistence } from './persist.js';
 import { acquireWriteLock } from './tab-lock.js';
 import type { Registers, State } from './fold.js';
@@ -134,10 +135,11 @@ export interface Store {
   /**
    * Permanently erase every record naming this entity. Unlike `remove`, there is no undo —
    * this is the only way a person's data actually leaves the device rather than being
-   * hidden. Local only, deliberately: it takes rows out of *this* device's log and says
-   * nothing to the relay, so a copy already pulled by another device stays there. Erasing
-   * across devices needs an operation the fold can replay, which a removal by definition
-   * is not — that remains the sync engine's problem to design, not this one's.
+   * hidden. Propagates (#308): a `PURGED_FIELD` marker is appended and synced like any
+   * other write, so a peer that receives it strips its own copy of this entity's other
+   * records the same way, and the relay erases its own stored rows for it too (see
+   * `server/ops/routes.ts`). The marker itself is kept — never stripped — so every future
+   * puller keeps learning that this entity is gone.
    */
   purge(entity: string, entityId: string): Promise<void>;
   /** Records a peer has not seen — what `src/sync/engine.ts` pushes. */
@@ -274,6 +276,46 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
     for (const listener of listeners) listener();
   }
 
+  /**
+   * Physically strip every record naming this entity out of the log/db except a purge
+   * marker (`purgeEntity` in oplog.ts spares it) — the mechanics `purge` originally ran
+   * inline, now shared with `receiveIncoming` (#308): a peer's purge marker must trigger
+   * the same physical erasure on this device as calling `purge` locally does, not just
+   * hide the entity via `materialise`.
+   */
+  async function stripEntity(entity: string, entityId: string): Promise<void> {
+    const { log: purgedLog, removed } = purgeEntity(log, entity, entityId);
+    if (removed.length === 0) return;
+
+    // Durable removal first, matching `write`'s own rule: the UI must not be told an
+    // erase happened until the rows are actually gone from disk.
+    await deleteRecords(
+      db,
+      removed.map((record) => String(record.hlc)),
+    );
+
+    log = purgedLog;
+    // Rebuilt from scratch rather than patched: registers have no notion of "unwrite
+    // this field", only "here is its latest value", so removing a record's effect
+    // means refolding what is left. Purging is a rare, explicit action, not a hot
+    // path, so the O(records) cost is not one worth avoiding.
+    registers = applyRecords(EMPTY_REGISTERS, log.records).registers;
+    state = materialise(registers);
+
+    // Best effort, like the snapshot write in `write` below: a stale snapshot left on
+    // disk is still safe, because `resume` rebuilds whenever the log holds a different
+    // number of records at-or-below the snapshot's watermark than the snapshot recorded
+    // — which purging guarantees here.
+    try {
+      await putSnapshot(db, snapshotOf(registers, log.records));
+      sinceSnapshot = 0;
+    } catch {
+      /* rebuilt from the log next time instead */
+    }
+
+    for (const listener of listeners) listener();
+  }
+
   function write(mutations: readonly Mutation[]): Promise<void> {
     return serialise(async () => {
       if (mutations.length === 0) return;
@@ -301,8 +343,24 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
       // timestamp still has to be respected — so `log` is always replaced, but the database
       // and listeners are only touched when something actually changed, matching `purge`'s
       // own no-op rule.
-      if (result.added.length > 0) await commitRecords(result.log, result.added);
-      else log = result.log;
+      if (result.added.length > 0) {
+        await commitRecords(result.log, result.added);
+        // A peer's purge marker (#308) must erase this device's own copy of the entity's
+        // other records too, not just hide it via `materialise` — the same physical
+        // cleanup a local `purge()` call runs. Deduped per `(entity, entityId)`: a batch
+        // holding several records for the same purged entity must not run the strip more
+        // than once.
+        const purgedEntities = new Map<string, { readonly entity: string; readonly entityId: string }>();
+        for (const record of result.added) {
+          const decoded = decode(record);
+          if (decoded.kind === 'known' && decoded.body.field === PURGED_FIELD && decoded.body.value === true) {
+            purgedEntities.set(`${decoded.body.entity}\u0000${decoded.body.entityId}`, decoded.body);
+          }
+        }
+        for (const { entity, entityId } of purgedEntities.values()) await stripEntity(entity, entityId);
+      } else {
+        log = result.log;
+      }
       return { added: result.added, duplicates: result.duplicates, rejected: result.rejected, drift: result.drift };
     });
   }
@@ -325,36 +383,13 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
     purge: (entity, entityId) =>
       serialise(async () => {
         if (!tabLock.writable) throw new Error(NOT_WRITABLE_MESSAGE);
-        const { log: purgedLog, removed } = purgeEntity(log, entity, entityId);
-        if (removed.length === 0) return;
-
-        // Durable removal first, matching `write`'s own rule: the UI must not be told an
-        // erase happened until the rows are actually gone from disk.
-        await deleteRecords(
-          db,
-          removed.map((record) => String(record.hlc)),
-        );
-
-        log = purgedLog;
-        // Rebuilt from scratch rather than patched: registers have no notion of "unwrite
-        // this field", only "here is its latest value", so removing a record's effect
-        // means refolding what is left. Purging is a rare, explicit action, not a hot
-        // path, so the O(records) cost is not one worth avoiding.
-        registers = applyRecords(EMPTY_REGISTERS, log.records).registers;
-        state = materialise(registers);
-
-        // Best effort, like the snapshot write in `write` below: a stale snapshot left on
-        // disk is still safe, because `resume` rebuilds whenever the log holds a different
-        // number of records at-or-below the snapshot's watermark than the snapshot recorded
-        // — which purging guarantees here.
-        try {
-          await putSnapshot(db, snapshotOf(registers, log.records));
-          sinceSnapshot = 0;
-        } catch {
-          /* rebuilt from the log next time instead */
-        }
-
-        for (const listener of listeners) listener();
+        // The marker is committed first, through the ordinary incremental-fold path, so it
+        // is a normal record `since`/`outgoing` will pick up for the next push (#308) — and
+        // so `stripEntity`'s own `purgeEntity` call (which spares a `PURGED_FIELD` record)
+        // has something to spare by the time it runs.
+        const { log: nextLog, record } = append(log, { entity, entityId, field: PURGED_FIELD, value: true }, now());
+        await commitRecords(nextLog, [record]);
+        await stripEntity(entity, entityId);
       }),
     outgoing: (cursor) => since(log, cursor),
     receive: receiveIncoming,

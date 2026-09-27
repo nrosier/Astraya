@@ -244,14 +244,17 @@ describe('purging', () => {
     });
   });
 
-  it('removes the rows from the database, not merely from state', async () => {
+  it('removes the rows from the database, not merely from state, but keeps the purge marker itself', async () => {
     await withStore(async (store, name) => {
       await store.mutate([named(PERSON, 'Ada'), named(OTHER, 'Grace')]);
       await store.purge('person', PERSON);
       const observer = await openDatabase(name);
       const remaining = await allRecords(observer);
-      expect(remaining).toHaveLength(1);
-      expect(remaining[0]?.entityId).toBe(OTHER);
+      expect(remaining).toHaveLength(2);
+      const other = remaining.find((record) => record.entityId === OTHER);
+      const marker = remaining.find((record) => record.entityId === PERSON);
+      expect(other).toBeDefined();
+      expect(marker).toMatchObject({ entity: 'person', entityId: PERSON, field: 'purged', value: true });
       observer.close();
     });
   });
@@ -264,14 +267,15 @@ describe('purging', () => {
     });
   });
 
-  it('does nothing, and does not notify subscribers, when there is nothing to purge', async () => {
+  it('still writes and notifies for an entity that never existed, so the marker can propagate', async () => {
     await withStore(async (store) => {
       let calls = 0;
       store.subscribe(() => {
         calls += 1;
       });
       await store.purge('person', PERSON);
-      expect(calls).toBe(0);
+      expect(calls).toBe(1);
+      expect(store.state.people.has(PERSON)).toBe(false);
     });
   });
 
@@ -298,7 +302,7 @@ describe('purging', () => {
 
     const db = await openDatabase(name);
     const snapshot = await getSnapshot(db);
-    expect(snapshot?.applied).toBe(50);
+    expect(snapshot?.applied).toBe(51);
     db.close();
     first.close();
   });
@@ -447,6 +451,36 @@ describe('receiving from a peer', () => {
       await store.receive([peerRecord]);
 
       expect(store.state.people.get(PERSON)?.displayName).toBe('from peer');
+    });
+  });
+
+  it('strips its own copy of an entity’s records when a peer’s purge marker arrives (#308)', async () => {
+    await withStore(async (store, name) => {
+      await store.mutate([named(PERSON, 'Ada'), named(OTHER, 'Grace')]);
+
+      // The peer never actually held anything else about PERSON by the time it purges —
+      // `purge` strips it locally too — so its outgoing log for this entity is the marker
+      // alone, exactly what a real sync would push.
+      const peer = await openStore({ name: freshName(), now: ticking() });
+      await peer.mutate([named(PERSON, 'Ada')]);
+      await peer.purge('person', PERSON);
+      const [markerRecord] = peer.outgoing();
+      peer.close();
+      if (markerRecord === undefined) throw new Error('peer store produced no record');
+
+      const result = await store.receive([markerRecord]);
+      expect(result.added).toHaveLength(1);
+
+      expect(store.state.people.has(PERSON)).toBe(false);
+      expect(store.state.deleted.people.has(PERSON)).toBe(false);
+      expect(store.state.people.get(OTHER)?.displayName).toBe('Grace');
+
+      const observer = await openDatabase(name);
+      const remaining = await allRecords(observer);
+      expect(remaining).toHaveLength(2);
+      expect(remaining.some((record) => record.entityId === PERSON && record.field === 'purged')).toBe(true);
+      expect(remaining.some((record) => record.entityId === OTHER)).toBe(true);
+      observer.close();
     });
   });
 });

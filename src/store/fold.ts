@@ -35,6 +35,15 @@ import { decode, type JsonValue, type OpRecord } from './ops.js';
 /** The field that hides a record. A register like any other, so undo needs no new machinery. */
 export const DELETED_FIELD = 'deleted';
 
+/**
+ * The field that marks an entity permanently erased (#308). Unlike `DELETED_FIELD`,
+ * nothing ever writes this back to `false` — there is no undo for a purge — so a plain
+ * per-field LWW register is enough: once any record sets it, no later write to any
+ * *other* field can un-purge the entity, because doing so would require a write to
+ * this same field, which no code path performs.
+ */
+export const PURGED_FIELD = 'purged';
+
 /** One field's winning value and the timestamp that won it. */
 export interface Register {
   readonly value: JsonValue;
@@ -132,6 +141,10 @@ function isDeleted(fields: Readonly<Record<string, Register>>): boolean {
   return fields[DELETED_FIELD]?.value === true;
 }
 
+function isPurged(fields: Readonly<Record<string, Register>>): boolean {
+  return fields[PURGED_FIELD]?.value === true;
+}
+
 export interface State {
   /** Live people, by id. */
   readonly people: ReadonlyMap<string, Person>;
@@ -159,11 +172,17 @@ export interface State {
  * by writing operations would multiply every delete by the number of charts and, worse,
  * make undo lossy: restoring the person could not tell which charts were already deleted
  * on their own. Cascading at fold time keeps a delete one operation and makes undo exact.
+ *
+ * **Purged is checked before deleted, and hides the entity entirely (#308).** A purge has
+ * no undo, so a purged entity must not appear even on the "restore deleted" list — and
+ * because nothing ever un-sets `PURGED_FIELD`, this overrides every other field's value
+ * for visibility regardless of that field's own HLC.
  */
 export function materialise(registers: Registers): State {
   const people = new Map<string, Person>();
   const deletedPeople = new Map<string, Person>();
   for (const [id, fields] of Object.entries(registers.person ?? {})) {
+    if (isPurged(fields)) continue;
     const person = buildPerson(id, valuesOf(fields));
     if (isDeleted(fields)) deletedPeople.set(id, person);
     else people.set(id, person);
@@ -173,6 +192,7 @@ export function materialise(registers: Registers): State {
   const deletedCharts = new Map<string, Chart>();
   const orphanCharts: string[] = [];
   for (const [id, fields] of Object.entries(registers.chart ?? {})) {
+    if (isPurged(fields)) continue;
     const chart = buildChart(id, valuesOf(fields));
     if (isDeleted(fields)) {
       deletedCharts.set(id, chart);

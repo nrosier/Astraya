@@ -19,6 +19,7 @@ import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
 import { createSyncEngine } from '../src/sync/engine.ts';
 import { openStore } from '../src/store/store.ts';
+import { openDatabase, allRecords } from '../src/store/db.ts';
 import { createClock, randomNodeId, tick } from '../src/store/hlc.ts';
 
 const BOOTSTRAP_TOKEN = 'test-bootstrap-token';
@@ -212,6 +213,74 @@ describe('device-local outgoing filtering (#324)', () => {
     } finally {
       engineB.close();
       deviceB.close();
+    }
+  });
+});
+
+describe('purge propagation (#308)', () => {
+  it('propagates a purge to a peer that already synced the entity, and a fresh device never sees it', async () => {
+    globalThis.fetch = await loginAs('alice', 'correct-horse-battery');
+
+    const nameA = freshDbName();
+    const deviceA = await openStore({ name: nameA });
+    await deviceA.mutate([{ entity: 'person', entityId: 'p1', field: 'displayName', value: 'Ada' }]);
+    const engineA = await createSyncEngine({ store: deviceA });
+    await vi.waitFor(() => {
+      expect(engineA.status.kind).toBe('synced');
+    }, WAIT);
+
+    const nameB = freshDbName();
+    const deviceB = await openStore({ name: nameB });
+    const engineB = await createSyncEngine({ store: deviceB });
+    try {
+      await vi.waitFor(() => {
+        expect(deviceB.state.people.get('p1')?.displayName).toBe('Ada');
+      }, WAIT);
+      await vi.waitFor(() => {
+        expect(engineB.status.kind).toBe('synced');
+      }, WAIT);
+
+      // Device A purges and pushes the marker. `status.kind` is already 'synced' from
+      // the earlier sync, so it can't prove this push happened — `pending()` dropping
+      // back to 0 can, since the purge just put a record on it.
+      await deviceA.purge('person', 'p1');
+      engineA.syncNow();
+      await vi.waitFor(() => {
+        expect(engineA.pending()).toBe(0);
+      }, WAIT);
+
+      // Device B, which already held the person, pulls the marker and both hides
+      // and physically strips its own copy of the person's other records.
+      engineB.syncNow();
+      await vi.waitFor(() => {
+        expect(deviceB.state.people.has('p1')).toBe(false);
+      }, WAIT);
+      expect(deviceB.state.deleted.people.has('p1')).toBe(false);
+
+      const observer = await openDatabase(nameB);
+      const remaining = (await allRecords(observer)).filter((record) => record.entityId === 'p1');
+      observer.close();
+      expect(remaining).toHaveLength(1);
+      expect(remaining[0]).toMatchObject({ entity: 'person', entityId: 'p1', field: 'purged', value: true });
+
+      // A fresh device, signing in for the first time after the purge, never sees the person at all.
+      const deviceC = await openStore({ name: freshDbName() });
+      const engineC = await createSyncEngine({ store: deviceC });
+      try {
+        await vi.waitFor(() => {
+          expect(engineC.status.kind).toBe('synced');
+        }, WAIT);
+        expect(deviceC.state.people.has('p1')).toBe(false);
+        expect(deviceC.state.deleted.people.has('p1')).toBe(false);
+      } finally {
+        engineC.close();
+        deviceC.close();
+      }
+    } finally {
+      engineB.close();
+      deviceB.close();
+      engineA.close();
+      deviceA.close();
     }
   });
 });

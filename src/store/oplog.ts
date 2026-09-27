@@ -25,6 +25,7 @@
  */
 import { compareHlc, receive, tick, type Clock, type Drift, type Hlc } from './hlc.js';
 import { decode, newRecord, type JsonValue, type OpRecord } from './ops.js';
+import { PURGED_FIELD } from './fold.js';
 
 export interface Log {
   readonly clock: Clock;
@@ -246,21 +247,29 @@ export interface Purged {
 }
 
 /**
- * Take every record naming this entity out of the log — an actual removal, not a tombstone.
+ * Take every record naming this entity out of the log — an actual removal, not a tombstone —
+ * except a purge marker (`field: 'purged'`, see `fold.ts`'s `PURGED_FIELD`), which is spared
+ * so it survives being wiped by its own cleanup pass (#308). The marker is what lets a purge
+ * be synced: it is an ordinary record, so it goes out through the same `since`/push path as
+ * anything else, and a peer that folds it hides the entity via `materialise` regardless of
+ * what other fields say.
  *
  * Only records this device can read are matched: a future-versioned record's body is
  * uninterpretable here, so it is kept rather than guessed at, the same conservative rule
  * `decode` applies everywhere else. That means a purge cannot promise to remove an
- * operation written by a newer client — an acceptable gap for a same-version device, and
- * one a future sync design (M8) will need its own answer for, since a peer that still holds
- * the original records has nothing here telling it they were purged.
+ * operation written by a newer client — an acceptable gap for a same-version device.
  */
 export function purgeEntity(log: Log, entity: string, entityId: string): Purged {
   const removed: OpRecord[] = [];
   const kept: OpRecord[] = [];
   for (const record of log.records) {
     const decoded = decode(record);
-    if (decoded.kind === 'known' && decoded.body.entity === entity && decoded.body.entityId === entityId) {
+    if (
+      decoded.kind === 'known' &&
+      decoded.body.entity === entity &&
+      decoded.body.entityId === entityId &&
+      decoded.body.field !== PURGED_FIELD
+    ) {
       removed.push(record);
     } else {
       kept.push(record);
