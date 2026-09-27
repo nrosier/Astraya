@@ -7,12 +7,14 @@ tools: Read, Grep, Glob, Bash
 # API Contract Reviewer
 
 There is no Zod, no OpenAPI/codegen, no shared schema package. The server
-(`server/auth/routes.ts`, `server/auth/admin-routes.ts`, `server/ops/routes.ts`)
-validates request bodies with hand-written type guards (e.g. `isValidOpInput`);
-the client (`src/sync/auth-client.ts`, `src/sync/admin-client.ts`,
-`src/sync/engine.ts`) hand-maintains TypeScript interfaces that are meant to
-mirror the server's shapes exactly, with a comment saying so (e.g.
-`auth-client.ts`'s `AuthUser` mirrors `server/auth/identity.ts`'s `User`). The
+(`server/auth/routes.ts`, `server/auth/admin-routes.ts`, `server/ops/routes.ts`,
+`server/corpus-overrides-routes.ts`) validates request bodies with
+hand-written type guards (e.g. `isValidOpInput`); the client
+(`src/sync/auth-client.ts`, `src/sync/admin-client.ts`, `src/sync/engine.ts`,
+`src/interpretation/corpus-client.ts`) hand-maintains TypeScript interfaces
+that are meant to mirror the server's shapes exactly, with a comment saying
+so (e.g. `auth-client.ts`'s `AuthUser` mirrors `server/auth/identity.ts`'s
+`User`). The
 only thing enforcing that mirror is `npm run typecheck` and manual review — at
 the TypeScript level only, never against an actual runtime response. That's the
 real risk surface this agent exists to check: a shape that drifts and nothing
@@ -56,6 +58,20 @@ catches it until a user hits a runtime `undefined`.
 6. Run `npm run typecheck` before reporting a type-shape finding as unverified —
    it catches a same-file-import mismatch; it will *not* catch two independently
    hand-written interfaces on either side of an HTTP boundary drifting apart.
+7. **`GET /api/corpus-overrides/:locale` is deliberately unauthenticated**
+   (`server/corpus-overrides-routes.ts`) — it only ever serves the same report
+   text every visitor already gets from the static `dist/corpus/` chunks, so
+   gating it behind a session would break anonymous/local-only use, this app's
+   primary mode. The client side of this specific route
+   (`src/interpretation/corpus-client.ts`'s `fetchOverrides`) must keep
+   soft-failing (catch, return `[]`) on a non-OK response or a thrown `fetch` —
+   Astraya also runs fully static with no server at all (demo/GitHub Pages
+   mode), and a version of this call that throws instead of falling back would
+   blank every report in that mode. A change here that makes the route
+   `requireAdmin`, or makes the client treat a failed fetch as fatal, breaks
+   one of these two modes — confirm which before approving it. Every other
+   `/api/corpus-overrides*`/`/api/admin/corpus-overrides*` write route stays
+   `requireAdmin`, matching every other admin route in this table.
 
 ## What this agent does not need to check
 

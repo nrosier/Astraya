@@ -72,6 +72,26 @@ session/auth code, not through a missing `WHERE` clause on a shared table.
   admin-lifecycle mutation reuses this helper rather than a raw
   `COUNT(*) WHERE is_admin = 1` that would double-count a disabled admin as
   "remaining."
+- **Admin auto-promotion is a privilege-escalation surface, deliberately
+  promote-only** (`server/auth/admin-promotion.ts`, #292). `ASTRAYA_ADMIN_USERNAMES`
+  grants admin to a matching local username on every login;
+  `ASTRAYA_OIDC_ADMIN_GROUPS` grants it to any OIDC user whose ID-token group
+  claim matches, on every callback (not just first sign-in — group
+  membership can change on the IdP side after the account already exists).
+  Both are no-ops once a user is already admin, and **neither ever revokes**
+  — removing a name/group elsewhere never demotes; demotion stays the
+  existing manual route (`admin-routes.ts`'s Demote action, #135). A change
+  that adds any code path here which *removes* `is_admin` reintroduces the
+  exact surprise-lockout risk this was deliberately designed against — that
+  belongs in the manual demote flow, not here. Username matching is
+  case-insensitive (mirrors `users.username`'s `COLLATE NOCASE`); OIDC group
+  matching is exact/case-sensitive (IdP group names are identifiers) — check
+  a change doesn't quietly flip either. Since this is unauthenticated-input-
+  adjacent (an OIDC group claim comes from whatever the IdP asserts), verify
+  a new admin-groups feature still requires the claim to already be
+  signature/issuer-verified by `verifyIdToken` before ever reading it for a
+  promotion decision — trusting an unverified claim here is a direct route to
+  account takeover of the admin role.
 - **OIDC** (`server/auth/oidc.ts`) — Authorization Code + PKCE, `jose` for
   signature/issuer/audience/expiry verification with a 60s clock-skew tolerance,
   discovery and JWKS cached per issuer for the process's lifetime. Check a
