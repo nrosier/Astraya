@@ -79,11 +79,21 @@ function toCorpusOverride(row: CorpusOverrideRow): CorpusOverride {
   };
 }
 
-/** Materializes an override as the `CorpusEntry` shape the client merge and the export both need. */
-export function toCorpusEntry(override: CorpusOverride): CorpusEntry {
+/**
+ * Materializes an override as the `CorpusEntry` shape the client merge and the export both
+ * need. `reviewedBy` is a real admin login username — fine to expose to another admin via the
+ * `requireAdmin`-gated export, but the public, unauthenticated route (#353) must not hand out
+ * admin usernames for anyone who has ever corrected a public-facing chart term, so that route
+ * passes `includeReviewer: false`.
+ */
+export function toCorpusEntry(
+  override: CorpusOverride,
+  options: { readonly includeReviewer?: boolean } = {},
+): CorpusEntry {
+  const { includeReviewer = true } = options;
   const provenance: CorpusProvenance = {
     source: 'hand-written',
-    reviewedBy: override.updatedByUsername,
+    ...(includeReviewer ? { reviewedBy: override.updatedByUsername } : {}),
     reviewedAt: override.updatedAt,
   };
   return {

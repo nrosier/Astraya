@@ -172,11 +172,14 @@ describe('listCorpusOverrides / upsertCorpusOverride / deleteCorpusOverride / ex
     const override = await upsertCorpusOverride({
       key: 'dignity-state:sun:ruler',
       locale: 'en',
-      text: 'Corrected text.',
+      text: 'Corrected text, now well past the forty-character minimum length required.',
       tier: 'core',
       tags: ['sun'],
     });
-    expect(override).toMatchObject({ key: 'dignity-state:sun:ruler', text: 'Corrected text.' });
+    expect(override).toMatchObject({
+      key: 'dignity-state:sun:ruler',
+      text: 'Corrected text, now well past the forty-character minimum length required.',
+    });
     expect(override.persona).toBeUndefined();
 
     expect((await listCorpusOverrides('en')).map((o) => o.id)).toEqual([override.id]);
@@ -184,7 +187,12 @@ describe('listCorpusOverrides / upsertCorpusOverride / deleteCorpusOverride / ex
 
     const exported = await exportCorpusOverrides('en');
     const entries = JSON.parse(await exported.text()) as readonly { key: string; text: string }[];
-    expect(entries).toEqual([expect.objectContaining({ key: 'dignity-state:sun:ruler', text: 'Corrected text.' })]);
+    expect(entries).toEqual([
+      expect.objectContaining({
+        key: 'dignity-state:sun:ruler',
+        text: 'Corrected text, now well past the forty-character minimum length required.',
+      }),
+    ]);
 
     await deleteCorpusOverride(override.id);
     expect(await listCorpusOverrides('en')).toEqual([]);
