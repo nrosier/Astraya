@@ -188,6 +188,27 @@ const MIGRATIONS: readonly ((db: DatabaseSync) => void)[] = [
       CREATE UNIQUE INDEX corpus_overrides_identity ON corpus_overrides(key, locale, persona);
     `);
   },
+  // 8: per-call cost accounting for Tier-2 LLM-customized interpretation
+  // (#360). One row per successful `/api/interpretation/generate` call, used
+  // to enforce a real daily spend cap (`server/interpretation-routes.ts`) —
+  // not just a request-count rate limit. Deliberate, narrow exception to
+  // this file's own "never the domain model" rule, same category as
+  // `corpus_overrides` above (migration 5's comment): this is server
+  // operating data (tokens/cost), never the person's chart or the
+  // interpretation text itself.
+  (db) => {
+    db.exec(`
+      CREATE TABLE interpretation_usage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        prompt_tokens INTEGER NOT NULL,
+        output_tokens INTEGER NOT NULL,
+        cost_cents REAL NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX interpretation_usage_user_created ON interpretation_usage(user_id, created_at);
+    `);
+  },
 ];
 
 /** Migration steps whose table rebuild would otherwise break `REFERENCES` clauses pointing at the table being rebuilt. */

@@ -25,6 +25,7 @@ import { registerAdminRoutes } from './auth/admin-routes.ts';
 import { loadOidcConfig } from './auth/oidc.ts';
 import { registerOpsRoutes } from './ops/routes.ts';
 import { registerCorpusOverrideRoutes } from './corpus-overrides-routes.ts';
+import { registerInterpretationRoutes } from './interpretation-routes.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const distRoot = resolve(here, '..', 'dist');
@@ -157,6 +158,7 @@ export async function build(options: BuildOptions = {}) {
   registerAdminRoutes(app, db);
   registerOpsRoutes(app, db);
   registerCorpusOverrideRoutes(app, db);
+  registerInterpretationRoutes(app, db);
 
   await app.register(fastifyStatic, { root: distRoot, index: ['index.html'] });
 

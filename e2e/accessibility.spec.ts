@@ -271,6 +271,74 @@ test('the astrocartography screen (#171) has no automatically detectable accessi
   expect(results.violations).toEqual([]);
 });
 
+test('the interpretation view has no automatically detectable accessibility violations, on either sub-tab (#360)', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+  await page.getByRole('link', { name: 'Interpretation', exact: true }).click();
+  await expect(page.getByRole('tablist', { name: 'Interpretation mode' })).toBeVisible();
+
+  let results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(results.violations).toEqual([]);
+
+  // Signed out: the AI-Customized panel shows only the sign-in prompt, no controls.
+  await page.getByRole('tab', { name: 'AI-Customized' }).click();
+  await expect(page.getByText('Sign in to generate an AI-customized interpretation')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Generate/ })).toHaveCount(0);
+
+  results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test('the AI-Customized Generate button renders as a genuinely disabled control with an accessible reason (#360)', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+
+  // Signs in before creating the person (unlike this file's other tests) so there is no
+  // local-only data at sign-in time: this spec deliberately never sets
+  // `ASTRAYA_ENCRYPTION_KEY`, so the sync relay — and the "adopt local changes" flow that
+  // needs it — is intentionally disabled here.
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await signIn(page, ADMIN_USERNAME, ADMIN_PASSWORD);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+  await page.getByRole('link', { name: 'Interpretation', exact: true }).click();
+  await page.getByRole('tab', { name: 'AI-Customized' }).click();
+
+  // Unchecked consent, empty prompt: disabled, with a name explaining why — not a bare
+  // "Generate" that gives no clue it's inert (mirrors PersonNav's disabled-tab pattern).
+  const generate = page.getByRole('button', { name: /Generate — check the consent box first/ });
+  await expect(generate).toBeDisabled();
+
+  await page.getByRole('checkbox').check();
+  await expect(
+    page.getByRole('button', { name: /Generate — enter style, tone, and focus instructions first/ }),
+  ).toBeDisabled();
+
+  // A clean instruction clears the disabled reason entirely — the button's name reverts to
+  // plain "Generate" rather than keeping a now-stale explanation.
+  await page.getByRole('textbox', { name: 'Style, tone, and focus instructions' }).fill('warm and encouraging');
+  await expect(page.getByRole('button', { name: 'Generate', exact: true })).toBeEnabled();
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(results.violations).toEqual([]);
+});
+
 test('the admin screen has no automatically detectable accessibility violations (#357)', async ({ page }) => {
   await gotoAndSettle(page, `${baseUrl}/#/people`);
   await signIn(page, ADMIN_USERNAME, ADMIN_PASSWORD);

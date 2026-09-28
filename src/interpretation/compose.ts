@@ -34,11 +34,11 @@
  * them as good-faith placeholders worth a native-speaker or #63 review pass,
  * not as verified facts the way the rest of this file's content is.
  */
-import { bodyByKey } from '../astrology/bodies.js';
-import { aspectByKey } from '../astrology/aspects.js';
-import { SIGNS } from '../astrology/signs.js';
+import { bodyByKey } from '../astrology/bodies.ts';
+import { aspectByKey } from '../astrology/aspects.ts';
+import { SIGNS } from '../astrology/signs.ts';
 import type { CorpusEntry, CorpusPlacement, DignityState, Locale, PersonaId } from './schema.js';
-import { placementKey } from './schema.js';
+import { placementKey } from './schema.ts';
 
 type NameTable = Readonly<Record<string, string>>;
 

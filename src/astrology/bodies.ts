@@ -12,7 +12,7 @@
  * against JPL Horizons the way a real body can: there is nothing independent
  * to check against, since the model *is* the definition.
  */
-import { SE } from '../ephemeris/generated-constants.js';
+import { SE } from '../ephemeris/generated-constants.ts';
 import type { BodyId } from '../ephemeris/types.js';
 
 export type BodyCategory = 'luminary' | 'planet' | 'node' | 'lilith' | 'centaur' | 'asteroid';

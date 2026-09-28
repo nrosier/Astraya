@@ -14,11 +14,12 @@ import { DatabaseSync } from 'node:sqlite';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
 import { hashPassword } from '../server/auth/passwords.ts';
-import { LOCALES, TIERS, PERSONA_IDS } from '../server/corpus-overrides.ts';
+import { LOCALES, TIERS, PERSONA_IDS, CORPUS_CATEGORIES } from '../server/corpus-overrides.ts';
 import {
   CORPUS_LOCALES,
   CORPUS_TIERS,
   PERSONA_IDS as SCHEMA_PERSONA_IDS,
+  CORPUS_CATEGORIES as SCHEMA_CORPUS_CATEGORIES,
   validateCorpusEntries,
 } from '../src/interpretation/schema.ts';
 
@@ -107,6 +108,10 @@ describe('literal-array cross-check', () => {
 
   it('PERSONA_IDS matches schema.ts PERSONA_IDS', () => {
     expect(PERSONA_IDS).toEqual(SCHEMA_PERSONA_IDS);
+  });
+
+  it('CORPUS_CATEGORIES matches schema.ts CORPUS_CATEGORIES', () => {
+    expect(CORPUS_CATEGORIES).toEqual(SCHEMA_CORPUS_CATEGORIES);
   });
 });
 

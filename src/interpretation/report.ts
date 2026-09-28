@@ -64,7 +64,14 @@ import type { ChartData } from '../domain/chart-compute.js';
 import type { BodyId, Degrees } from '../ephemeris/types.js';
 import { composeFallbackText, findCorpusEntry } from './compose.js';
 import { derivePlacements, rankPlacements, type SalienceFactor } from './rules.js';
-import { dignityState, type CorpusEntry, type CorpusPlacement, type Locale, type PersonaId } from './schema.js';
+import {
+  dignityState,
+  placementKey,
+  type CorpusEntry,
+  type CorpusPlacement,
+  type Locale,
+  type PersonaId,
+} from './schema.js';
 
 export type ReportSectionId =
   'core-identity' | 'temperament' | 'chart-ruler' | 'houses' | 'aspect-patterns' | 'dignities-sect' | 'nodes-chiron';
@@ -448,4 +455,20 @@ export function assembleReport(
       nodesChironSection(chart, locale, corpus, persona),
     ],
   };
+}
+
+/**
+ * The placement keys an already-assembled report covers, deduplicated —
+ * exactly the de-identified data #360's Tier 2 is allowed to send a model
+ * (never the underlying chart). A `'derived'` paragraph (temperament, sect,
+ * dispositor chain) has no `CorpusPlacement` of its own and is skipped.
+ */
+export function reportPlacementKeys(report: Report): readonly string[] {
+  const keys = new Set<string>();
+  for (const reportSection of report.sections) {
+    for (const paragraph of reportSection.paragraphs) {
+      if (paragraph.placement) keys.add(placementKey(paragraph.placement));
+    }
+  }
+  return [...keys];
 }

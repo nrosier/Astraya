@@ -12,7 +12,7 @@
  * would.
  */
 import type { CorpusEntry, CorpusValidationIssue, Locale } from './schema.js';
-import { CORPUS_LOCALES, validateCorpusEntries } from './schema.js';
+import { CORPUS_LOCALES, validateCorpusEntries } from './schema.ts';
 
 export type CorpusByLocale = Readonly<Record<Locale, readonly unknown[]>>;
 

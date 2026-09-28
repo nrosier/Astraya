@@ -16,10 +16,10 @@
  * arbitrary strings, so a typo'd body or aspect key fails validation instead
  * of silently never matching any chart.
  */
-import { bodyByKey } from '../astrology/bodies.js';
-import { aspectByKey } from '../astrology/aspects.js';
-import { SIGNS } from '../astrology/signs.js';
-import { NAKSHATRAS } from '../astrology/nakshatras.js';
+import { bodyByKey } from '../astrology/bodies.ts';
+import { aspectByKey } from '../astrology/aspects.ts';
+import { SIGNS } from '../astrology/signs.ts';
+import { NAKSHATRAS } from '../astrology/nakshatras.ts';
 import type { EssentialDignities } from '../astrology/dignities.js';
 
 export const CORPUS_CATEGORIES = [
@@ -354,8 +354,17 @@ function validatePlacementFields(placement: CorpusPlacement): string[] {
   return errors;
 }
 
-/** Re-derives the placement encoded by `key` and checks it's actually well-formed. */
-function validateKey(key: string): string[] {
+/**
+ * Re-derives the placement encoded by `key` and checks it's actually
+ * well-formed: not just the right shape (`parsePlacementKey`'s job) but a
+ * `body`/`aspect` that's actually in the closed reference set and a
+ * `sign`/`house`/`pattern` in range — the check a caller needs before
+ * treating `key` as trusted enough to echo into user-facing text or a model
+ * prompt (see `server/interpretation-routes.ts`, which re-resolves each of a
+ * request's `placementKeys` against this server's own corpus and must not
+ * let an attacker-chosen `body`/`aspect` string reach the model unchecked).
+ */
+export function validateKey(key: string): string[] {
   const placement = parsePlacementKey(key);
   if (placement === undefined) return [`key "${key}" does not parse as a known category`];
   const errors = validatePlacementFields(placement);

@@ -38,7 +38,7 @@ export const MAX_LENGTH = 480;
  * that reads as a verdict rather than a tendency is a craft failure independent
  * of whether the sentence is otherwise well written.
  */
-const FATALISTIC_PHRASES = [
+export const FATALISTIC_PHRASES = [
   'you will never',
   'you will always',
   'you can never',
@@ -62,7 +62,7 @@ const FATALISTIC_PHRASES = [
  * never is — so this list stays short and clearly on the wrong side of the
  * line, leaving the rest to #63.
  */
-const MEDICAL_LEGAL_FINANCIAL_TERMS = [
+export const MEDICAL_LEGAL_FINANCIAL_TERMS = [
   // Not "diagnos", "prescri", or "invest in": spot-checked against the shipped
   // corpus, every hit for these was a metaphor astrology text actually needs —
   // "diagnostic instincts", "a knack for diagnosing problems" (Pallas as an
@@ -114,7 +114,7 @@ function containsWholeWord(text: string, word: string): boolean {
  * "cures" doesn't fire on "pursue " or "obscures" — those contain the term as
  * a bare substring but not as its own word or word-start.
  */
-function containsTermFromWordStart(text: string, term: string): boolean {
+export function containsTermFromWordStart(text: string, term: string): boolean {
   return new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(text);
 }
 

@@ -74,4 +74,15 @@ describe('no runtime LLM access in src/ (#64)', () => {
     const offenders = FILES.filter((file) => pattern.test(readFileSync(file, 'utf8'))).map(relative);
     expect(offenders).toEqual([]);
   });
+
+  it('never imports from server/interpretation/ (#360)', () => {
+    // Tier 2's real provider credential and model call live in
+    // `server/interpretation/llm-client.ts`, never in the browser bundle.
+    // `src/interpretation/tier2-client.ts` only ever calls Astraya's own
+    // same-origin `/api/interpretation/generate` route — an import of the
+    // server module itself would mean the credential path leaked into src/.
+    const pattern = /(?:from\s+|require\()\s*['"][^'"]*\bserver\/interpretation\//;
+    const offenders = FILES.filter((file) => pattern.test(readFileSync(file, 'utf8'))).map(relative);
+    expect(offenders).toEqual([]);
+  });
 });

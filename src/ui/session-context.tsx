@@ -440,3 +440,18 @@ export function useSession(): {
   const { user, adoption, signIn, setup, signOut, resolveAdoption } = useSessionContext();
   return { user, adoption, signIn, setup, signOut, resolveAdoption };
 }
+
+/**
+ * Like `useSession().user`, but `undefined` (rather than a thrown error) when
+ * mounted with no `SessionProvider` at all — for a display-only leaf
+ * component (`Tier2Section` in `ReportView.tsx`, #360) that only needs to
+ * know "is anyone signed in right now", and would otherwise force every
+ * `ReportView` render — including every existing Composite/Harmonic/report
+ * test that renders it in isolation, with no reason to know about auth — to
+ * pull in the full `SessionProvider` (a real server connection and
+ * IndexedDB). "No provider mounted" and "signed out" get the same, correct
+ * treatment here: no signed-in user to show Tier 2 for.
+ */
+export function useSessionUserOrUndefined(): AuthUser | undefined {
+  return useContext(SessionContext)?.user;
+}

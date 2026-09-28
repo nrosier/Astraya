@@ -12,13 +12,13 @@
  * running server at startup. A type-only import is erased entirely and never
  * hits runtime module resolution, so it's safe.
  *
- * The three literal unions below mirror `schema.ts`'s real
- * `CORPUS_LOCALES`/`CORPUS_TIERS`/`PERSONA_IDS` exports and are duplicated
- * rather than imported, for the same reason — this is the same shape
- * `schema.ts` itself already uses for `PERSONA_IDS` (duplicated there from
- * `tools/corpus-gen/personas.json` rather than read from it, to keep that
- * module synchronous with no filesystem access).
- * `test/server-corpus-overrides.test.ts` asserts these three arrays stay in
+ * The literal unions below mirror `schema.ts`'s real
+ * `CORPUS_LOCALES`/`CORPUS_TIERS`/`PERSONA_IDS`/`CORPUS_CATEGORIES` exports
+ * and are duplicated rather than imported, for the same reason — this is the
+ * same shape `schema.ts` itself already uses for `PERSONA_IDS` (duplicated
+ * there from `tools/corpus-gen/personas.json` rather than read from it, to
+ * keep that module synchronous with no filesystem access).
+ * `test/server-corpus-overrides.test.ts` asserts these arrays stay in
  * sync with `schema.ts`'s real exports.
  */
 import { randomUUID } from 'node:crypto';
@@ -33,6 +33,19 @@ export type CorpusTier = (typeof TIERS)[number];
 
 export const PERSONA_IDS = ['traditionalist', 'big_sister', 'cynic', 'mystic', 'pragmatist'] as const;
 export type PersonaId = (typeof PERSONA_IDS)[number];
+
+export const CORPUS_CATEGORIES = [
+  'planet-in-sign',
+  'planet-in-house',
+  'sign-on-cusp',
+  'aspect-pair',
+  'transit-aspect',
+  'synastry-aspect',
+  'dignity-state',
+  'nakshatra',
+  'pattern',
+] as const;
+export type CorpusCategory = (typeof CORPUS_CATEGORIES)[number];
 
 export interface CorpusOverride {
   readonly id: string;

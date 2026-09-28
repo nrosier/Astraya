@@ -6,9 +6,9 @@
  */
 import en from './corpus/en.json' with { type: 'json' };
 import nl from './corpus/nl.json' with { type: 'json' };
-import { loadCorpus } from './loader.js';
+import { loadCorpus } from './loader.ts';
 
 export const CORPUS = loadCorpus({ en, nl });
 
-export * from './schema.js';
-export { loadCorpus } from './loader.js';
+export * from './schema.ts';
+export { loadCorpus } from './loader.ts';

@@ -36,14 +36,40 @@
  * See corpus-client.ts for why.
  */
 import { useEffect, useState } from 'react';
-import { assembleReport, type Report, type ReportParagraph } from '../interpretation/report.js';
+import { assembleReport, reportPlacementKeys, type Report, type ReportParagraph } from '../interpretation/report.js';
 import { loadRuntimeCorpus } from '../interpretation/corpus-client.js';
 import { PERSONA_IDS, type CorpusEntry, type Locale, type PersonaId } from '../interpretation/schema.js';
+import { checkCustomPrompt, type GuardrailIssue } from '../interpretation/prompt-guardrail.js';
 import { describeParagraphProvenance } from './report-provenance.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
+import { useSessionUserOrUndefined } from './session-context.js';
 import { reportViewMessages } from './ReportView.messages.js';
+import { generateTier2Interpretation, Tier2Error } from '../interpretation/tier2-client.js';
 import type { ChartData } from '../domain/chart-compute.js';
+
+type InterpretationTabKey = 'standard' | 'ai';
+const TAB_ORDER: readonly InterpretationTabKey[] = ['standard', 'ai'];
+
+function tabLabels(t: typeof reportViewMessages.en): Record<InterpretationTabKey, string> {
+  return { standard: t.standardTabLabel, ai: t.aiTabLabel };
+}
+
+/** One localized sentence per guardrail rule — never `issue.message` itself, which is English-only diagnostic text shared with the server's 400 response, not a user-facing string. */
+function guardrailIssueMessage(t: typeof reportViewMessages.en, issue: GuardrailIssue): string {
+  switch (issue.rule) {
+    case 'length':
+      return t.guardrailIssueLength;
+    case 'prompt-injection':
+      return t.guardrailIssuePromptInjection;
+    case 'fatalistic-phrasing':
+      return t.guardrailIssueFatalisticPhrasing;
+    case 'medical-legal-financial-claim':
+      return t.guardrailIssueMedicalLegalFinancialClaim;
+    case 'pii-shape':
+      return t.guardrailIssuePiiShape;
+  }
+}
 
 const PERSONA_KEY = 'astraya:reportPersona';
 
@@ -106,8 +132,120 @@ function Paragraph({
   );
 }
 
+/**
+ * Tier 2 (#360): opt-in, authenticated, per-request-consented LLM-customized
+ * interpretation — the "AI-Customized" sub-tab alongside the Tier-1
+ * "Standard" one below. Consent is a plain checkbox, unchecked every
+ * render — never persisted — since it authorizes one specific request, not
+ * a standing preference.
+ *
+ * The one free-text field (style/tone/focus instructions) is run through
+ * `checkCustomPrompt` on every keystroke so a rejected prompt is visible
+ * before Generate is even clickable — a UX nicety only. The server runs the
+ * same check authoritatively and does not trust this client-side pass.
+ */
+function AiCustomizedPanel({
+  report,
+  locale,
+}: {
+  readonly report: Report;
+  readonly locale: Locale;
+}): React.JSX.Element {
+  const t = useMessages(reportViewMessages);
+  const user = useSessionUserOrUndefined();
+  const [consent, setConsent] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [result, setResult] = useState<string | undefined>(undefined);
+  const [error, setError] = useState<string | undefined>(undefined);
+
+  if (user === undefined) {
+    return (
+      <section className="report-section ai-customized-panel">
+        <h3>{t.tier2Heading}</h3>
+        <p className="hint">{t.tier2SignInPrompt}</p>
+      </section>
+    );
+  }
+
+  const placementKeys = reportPlacementKeys(report);
+  const guardrailIssues = checkCustomPrompt(customPrompt);
+  // Only shown once the user has typed something — otherwise the empty-prompt "length"
+  // issue would announce itself on mount and re-announce on every keystroke, before the
+  // user has had a chance to write anything.
+  const visibleGuardrailIssues = customPrompt === '' ? [] : guardrailIssues;
+  const disabledReason = !consent
+    ? t.tier2GenerateDisabledConsent
+    : customPrompt === ''
+      ? t.tier2GenerateDisabledEmpty
+      : guardrailIssues.length > 0
+        ? t.tier2GenerateDisabledGuardrail
+        : undefined;
+
+  function handleGenerate(): void {
+    setGenerating(true);
+    setError(undefined);
+    generateTier2Interpretation(placementKeys, customPrompt, locale)
+      .then((text) => {
+        setResult(text);
+      })
+      .catch((caught: unknown) => {
+        setError(caught instanceof Tier2Error ? caught.message : String(caught));
+      })
+      .finally(() => {
+        setGenerating(false);
+      });
+  }
+
+  return (
+    <section className="report-section ai-customized-panel">
+      <h3>{t.tier2Heading}</h3>
+      <label>
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(event) => {
+            setConsent(event.target.checked);
+          }}
+        />{' '}
+        {t.tier2ConsentLabel}
+      </label>
+      <label>
+        {t.customPromptLabel}
+        <textarea
+          value={customPrompt}
+          placeholder={t.customPromptPlaceholder}
+          onChange={(event) => {
+            setCustomPrompt(event.target.value);
+          }}
+        />
+      </label>
+      {visibleGuardrailIssues.length > 0 && (
+        <div className="ai-customized-guardrail-issues warning" aria-live="polite">
+          <ul>
+            {visibleGuardrailIssues.map((issue) => (
+              <li key={issue.rule}>{guardrailIssueMessage(t, issue)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <button
+        type="button"
+        disabled={!consent || customPrompt === '' || guardrailIssues.length > 0 || generating}
+        aria-label={disabledReason === undefined ? undefined : `${t.tier2Generate} — ${disabledReason}`}
+        onClick={handleGenerate}
+      >
+        {generating ? t.tier2Generating : t.tier2Generate}
+      </button>
+      {error !== undefined && <p role="alert">{t.tier2Error(error)}</p>}
+      {result !== undefined && <p className="tier2-result">{result}</p>}
+    </section>
+  );
+}
+
 export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.Element {
   const t = useMessages(reportViewMessages);
+  const [activeTab, setActiveTab] = useState<InterpretationTabKey>('standard');
   const [showProvenance, setShowProvenance] = useState(false);
   const [locale] = useLocale();
   const [persona, setPersona] = useState<PersonaId | undefined>(initialPersona);
@@ -129,6 +267,38 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
       cancelled = true;
     };
   }, [locale, persona]);
+
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab);
+    let nextIndex: number | undefined;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % TAB_ORDER.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + TAB_ORDER.length) % TAB_ORDER.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = TAB_ORDER.length - 1;
+    if (nextIndex === undefined) return;
+    event.preventDefault();
+    const next = TAB_ORDER[nextIndex];
+    if (next === undefined) return;
+    setActiveTab(next);
+    document.getElementById(`interpretation-tab-${next}`)?.focus();
+  };
+
+  if (loadError !== undefined) {
+    return (
+      <div className="report">
+        <p role="alert">{t.couldNotLoad(loadError)}</p>
+      </div>
+    );
+  }
+  if (corpus === undefined) {
+    return (
+      <div className="report">
+        <p>{t.loadingInterpretation}</p>
+      </div>
+    );
+  }
+
+  const report: Report = assembleReport(chart, locale, corpus, persona);
 
   const controls = (
     <div className="report-controls">
@@ -173,38 +343,66 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
     </div>
   );
 
-  if (loadError !== undefined) {
-    return (
-      <div className="report">
-        {controls}
-        <p role="alert">{t.couldNotLoad(loadError)}</p>
-      </div>
-    );
-  }
-  if (corpus === undefined) {
-    return (
-      <div className="report">
-        {controls}
-        <p>{t.loadingReport}</p>
-      </div>
-    );
-  }
-
-  const report: Report = assembleReport(chart, locale, corpus, persona);
-
   return (
     <div className="report">
-      {controls}
-      {report.sections.map((section) => (
-        <section key={section.id} className="report-section">
-          <h3>{section.title}</h3>
-          <ul>
-            {section.paragraphs.map((paragraph, index) => (
-              <Paragraph key={`${section.id}-${String(index)}`} paragraph={paragraph} showProvenance={showProvenance} />
+      <div className="tabs" role="tablist" aria-label={t.interpretationTablist} onKeyDown={onTabKeyDown}>
+        {TAB_ORDER.map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            id={`interpretation-tab-${tab}`}
+            role="tab"
+            aria-selected={activeTab === tab}
+            aria-controls={`interpretation-tabpanel-${tab}`}
+            tabIndex={activeTab === tab ? 0 : -1}
+            className={activeTab === tab ? 'tab active' : 'tab'}
+            onClick={() => {
+              setActiveTab(tab);
+            }}
+          >
+            {tabLabels(t)[tab]}
+          </button>
+        ))}
+      </div>
+
+      <div
+        role="tabpanel"
+        id={`interpretation-tabpanel-${activeTab}`}
+        aria-labelledby={`interpretation-tab-${activeTab}`}
+        tabIndex={0}
+      >
+        {activeTab === 'standard' ? (
+          <>
+            {controls}
+            <nav className="report-toc" aria-label={t.tocAriaLabel}>
+              <h3>{t.tocHeading}</h3>
+              <ul>
+                {report.sections.map((section) => (
+                  <li key={section.id}>
+                    <a href={`#report-section-${section.id}`}>{section.title}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            {report.sections.map((section) => (
+              <section key={section.id} id={`report-section-${section.id}`} className="report-section" tabIndex={-1}>
+                <h3>{section.title}</h3>
+                <ul>
+                  {section.paragraphs.map((paragraph, index) => (
+                    <Paragraph
+                      key={`${section.id}-${String(index)}`}
+                      paragraph={paragraph}
+                      showProvenance={showProvenance}
+                    />
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
-        </section>
-      ))}
+          </>
+        ) : (
+          <AiCustomizedPanel report={report} locale={locale} />
+        )}
+      </div>
     </div>
   );
 }

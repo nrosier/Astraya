@@ -18,6 +18,14 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "erasableSyntaxOnly": true,
+    // A small closure of src/interpretation and src/astrology files (#360's
+    // server/interpretation-routes.ts) is also loaded directly by Node's own
+    // type stripping, which — unlike this project's `bundler` resolution —
+    // never maps a `.js` specifier onto a sibling `.ts` file. Those files'
+    // own internal imports of each other use explicit `.ts` extensions for
+    // that reason (mirrors tsconfig.server.json's own use of this flag);
+    // every other src/ import stays on the usual `.js` convention.
+    "allowImportingTsExtensions": true,
 
     "skipLibCheck": true,
     "noEmit": true,

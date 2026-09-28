@@ -86,6 +86,28 @@ COPY --from=build /app/src/store/hlc.ts ./src/store/hlc.ts
 # machine-produced entry, so it needs this one file from src/ at runtime too.
 COPY --from=build /app/src/interpretation/lint.ts ./src/interpretation/lint.ts
 
+# Tier 2 (#360, server/interpretation-routes.ts) re-resolves each request's
+# placementKeys against this server's own copy of the corpus, and runs the
+# same customPrompt guardrail the client already ran — authoritatively, not
+# just as a UX nicety. This is the full value-import closure that route
+# actually reaches at runtime (traced by hand from its own imports down);
+# files only ever reached through a TypeScript `import type` — which Node's
+# type stripping erases before resolution is attempted, so they're never
+# read from disk — are deliberately left out (e.g. src/astrology/dignities.ts,
+# src/ephemeris/types.ts).
+COPY --from=build /app/src/interpretation/schema.ts ./src/interpretation/schema.ts
+COPY --from=build /app/src/interpretation/compose.ts ./src/interpretation/compose.ts
+COPY --from=build /app/src/interpretation/index.ts ./src/interpretation/index.ts
+COPY --from=build /app/src/interpretation/loader.ts ./src/interpretation/loader.ts
+COPY --from=build /app/src/interpretation/prompt-guardrail.ts ./src/interpretation/prompt-guardrail.ts
+COPY --from=build /app/src/interpretation/corpus/en.json ./src/interpretation/corpus/en.json
+COPY --from=build /app/src/interpretation/corpus/nl.json ./src/interpretation/corpus/nl.json
+COPY --from=build /app/src/astrology/bodies.ts ./src/astrology/bodies.ts
+COPY --from=build /app/src/astrology/aspects.ts ./src/astrology/aspects.ts
+COPY --from=build /app/src/astrology/signs.ts ./src/astrology/signs.ts
+COPY --from=build /app/src/astrology/nakshatras.ts ./src/astrology/nakshatras.ts
+COPY --from=build /app/src/ephemeris/generated-constants.ts ./src/ephemeris/generated-constants.ts
+
 # `data/` is the one writable path in the tree — it holds the SQLite file plus
 # its WAL/SHM siblings (server/db.ts). Owned by UID:GID 1000, not Chainguard's
 # own nonroot account (65532): existing deployments' `-v astraya-data:/app/data`

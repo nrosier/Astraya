@@ -13,7 +13,7 @@ const en = {
   tabLabels: {
     'birth-record': 'Birth record',
     chart: 'Natal chart',
-    report: 'Report',
+    report: 'Interpretation',
     profections: 'Profections',
     transit: 'Transits',
     synastry: 'Synastry',
@@ -32,7 +32,7 @@ const nl: typeof en = {
   tabLabels: {
     'birth-record': 'Geboortegegevens',
     chart: 'Horoscoop',
-    report: 'Rapport',
+    report: 'Interpretatie',
     profections: 'Profecties',
     transit: 'Transits',
     synastry: 'Synastrie',
