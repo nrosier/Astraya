@@ -168,7 +168,45 @@ if (personaIdFlag && !persona) {
 const scopeLabel = persona?.id ?? 'neutral';
 
 const corpusPath = join(root, 'src', 'interpretation', 'corpus', `${locale}.json`);
-const corpus = JSON.parse(await readFile(corpusPath, 'utf8'));
+let corpus;
+try {
+  corpus = JSON.parse(await readFile(corpusPath, 'utf8'));
+} catch (error) {
+  // No corpus file for this locale yet: start from scratch rather than crashing — writeCorpus()
+  // (called via persist(), below) bootstraps the same way once the first entry is generated.
+  if (error.code !== 'ENOENT') throw error;
+  corpus = [];
+}
+// buildAnchorsBlock() (lib/prompt.mjs) requires at least one hand-written `anchor: true` entry
+// for this locale to few-shot every prompt against — #56's "3 gold-standard fragments". A
+// from-scratch corpus has none, and there's no way to conjure a hand-written example
+// mechanically (schema.ts requires anchor entries to be hand-written or human-reviewed), so
+// this has to come from somewhere real: either the corpus already has them, or a caller points
+// at a backup/git-restored file that does.
+if (corpus.filter((e) => e.anchor === true && e.locale === locale).length === 0) {
+  const seedAnchorsFrom = flag('seed-anchors-from');
+  if (!seedAnchorsFrom) {
+    throw new Error(
+      `no anchor entries (anchor: true) found for locale "${locale}" — 3 hand-written gold-standard examples ` +
+        `are required to prompt the model, and a from-scratch corpus has none.\n` +
+        `Point --seed-anchors-from=<path> at a corpus file that still has them (a backup, or a git-restored ` +
+        `copy), e.g.:\n` +
+        `  git show HEAD:src/interpretation/corpus/${locale}.json > /tmp/${locale}-anchors-source.json\n` +
+        `  npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=${locale} --provider=${provider} --seed-anchors-from=/tmp/${locale}-anchors-source.json`,
+    );
+  }
+  const seedCorpus = JSON.parse(await readFile(resolve(seedAnchorsFrom), 'utf8'));
+  const seedAnchors = seedCorpus.filter((e) => e.anchor === true && e.locale === locale);
+  if (seedAnchors.length === 0) {
+    throw new Error(`--seed-anchors-from=${seedAnchorsFrom} has no anchor entries for locale "${locale}" either`);
+  }
+  corpus.push(...seedAnchors);
+  await writeCorpus(corpusPath, corpus);
+  console.log(
+    `[${locale}/${scopeLabel}] seeded ${String(seedAnchors.length)} anchor entr${seedAnchors.length === 1 ? 'y' : 'ies'} from ${seedAnchorsFrom}`,
+  );
+}
+
 const existingKeys = new Set(corpus.filter((e) => e.persona === persona?.id).map((e) => e.key));
 
 const allPlacements = buildPlacements();
@@ -191,6 +229,25 @@ let done = 0;
 let failed = 0;
 const lock = { writing: Promise.resolve() };
 
+// A redrawing bar only makes sense against a real terminal — piped to a file or CI log, `\r`
+// just produces one giant unreadable line, so fall back to the old periodic plain-line logging.
+const useProgressBar = process.stdout.isTTY === true;
+const BAR_WIDTH = 30;
+function renderProgress() {
+  const finished = done + failed;
+  const pct = pending.length > 0 ? finished / pending.length : 1;
+  const filled = Math.round(pct * BAR_WIDTH);
+  const bar = '#'.repeat(filled) + '-'.repeat(BAR_WIDTH - filled);
+  const elapsedMin = (Date.now() - startedAt) / 60000;
+  const etaMin = finished > 0 ? (elapsedMin / finished) * (pending.length - finished) : 0;
+  const rate = finished > 0 ? finished / elapsedMin : 0;
+  const line =
+    `[${locale}/${scopeLabel}] [${bar}] ${String(finished)}/${String(pending.length)} (${(pct * 100).toFixed(1)}%)` +
+    ` — ${String(done)} ok, ${String(failed)} failed — ${elapsedMin.toFixed(1)}min elapsed, ~${etaMin.toFixed(1)}min left` +
+    ` — ${rate.toFixed(1)}/min`;
+  process.stdout.write(`\r${line.padEnd(process.stdout.columns ?? line.length)}`);
+}
+
 async function persist() {
   lock.writing = lock.writing.then(() => writeCorpus(corpusPath, corpus));
   await lock.writing;
@@ -205,7 +262,7 @@ await withConcurrency(pending, concurrency, async ({ placement, key }) => {
     symbolismContext: buildSymbolismContext(locale),
     locale,
   });
-  const userContent = buildUserContent({ placementDescription: description, corpusEntries: corpus, locale });
+  const userContent = buildUserContent({ placementDescription: description, corpusEntries: corpus, locale, persona });
 
   try {
     const result = await generateStructured({
@@ -239,15 +296,20 @@ await withConcurrency(pending, concurrency, async ({ placement, key }) => {
     corpus.push(entry);
     await persist();
     done += 1;
-    if (done % 10 === 0 || done === pending.length) {
-      const elapsedMin = ((Date.now() - startedAt) / 60000).toFixed(1);
+    if (useProgressBar) {
+      renderProgress();
+    } else if (done % 10 === 0 || done === pending.length) {
+      const elapsedMin = (Date.now() - startedAt) / 60000;
+      const rate = done / elapsedMin;
       console.log(
-        `[${locale}/${scopeLabel}] ${String(done)}/${String(pending.length)} written (${elapsedMin} min elapsed) — last: ${key}`,
+        `[${locale}/${scopeLabel}] ${String(done)}/${String(pending.length)} written (${elapsedMin.toFixed(1)} min elapsed, ${rate.toFixed(1)}/min) — last: ${key}`,
       );
     }
   } catch (error) {
     failed += 1;
+    if (useProgressBar) process.stdout.write('\n');
     console.error(`[${locale}/${scopeLabel}] FAILED ${key}: ${error.message}`);
+    if (useProgressBar) renderProgress();
   }
 
   if (delayMs > 0) await sleep(delayMs);

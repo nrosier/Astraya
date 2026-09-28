@@ -1,5 +1,18 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rename, writeFile } from 'node:fs/promises';
 import * as prettier from 'prettier';
+
+/**
+ * `rename()` replaces its destination atomically on POSIX and on Windows (Node's
+ * implementation uses `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING`), so a process killed
+ * mid-write (Ctrl-C, OOM, crash) leaves either the old file intact or the new one complete —
+ * never a truncated corpus file. The suffix guards against two concurrent writers (e.g. two
+ * `--persona` batch runs against the same locale) racing on the same temp path.
+ */
+async function writeFileAtomic(path, content) {
+  const tmpPath = `${path}.tmp-${String(process.pid)}-${Math.random().toString(36).slice(2)}`;
+  await writeFile(tmpPath, content, 'utf8');
+  await rename(tmpPath, path);
+}
 
 /**
  * Splits a corpus file's raw JSON text into the [start, end) span of each
@@ -61,10 +74,33 @@ async function formatEntry(entry, filepath) {
  * caller (say, `--category=dignity-state`) meant to touch.
  */
 export async function writeCorpus(path, corpus) {
-  const rawText = await readFile(path, 'utf8');
+  let rawText;
+  try {
+    rawText = await readFile(path, 'utf8');
+  } catch (error) {
+    // No file on disk at all (as opposed to an existing-but-empty `[]`): start from scratch,
+    // same bootstrap path the zero-span branch below already handles.
+    if (error.code !== 'ENOENT') throw error;
+    rawText = '[]\n';
+  }
   const spans = splitEntrySpans(rawText);
 
-  const pieces = [rawText.slice(0, spans[0]?.start ?? rawText.length)];
+  if (spans.length === 0) {
+    // Bootstrapping from a fresh `[]` (or `[ ]`, `[\n]`, ...): there is no
+    // existing entry to diff against or append after, so the general
+    // per-span loop below — which anchors on spans[0] and on the previous
+    // entry's own end — has nothing to anchor on. Emit the whole array
+    // fresh instead, preserving whatever comes after the closing `]`
+    // (typically just a trailing newline).
+    const closeIdx = rawText.lastIndexOf(']');
+    if (closeIdx === -1) throw new Error(`writeCorpus: ${path} has no top-level array`);
+    const entries = await Promise.all(corpus.map((entry) => formatEntry(entry, path)));
+    const body = entries.length > 0 ? `\n  ${entries.join(',\n  ')}\n` : '';
+    await writeFileAtomic(path, `[${body}]${rawText.slice(closeIdx + 1)}`);
+    return;
+  }
+
+  const pieces = [rawText.slice(0, spans[0].start)];
 
   for (let i = 0; i < spans.length; i += 1) {
     const { start, end } = spans[i];
@@ -87,5 +123,5 @@ export async function writeCorpus(path, corpus) {
   }
   pieces[pieces.length - 1] = appendedText.join('') + pieces[pieces.length - 1];
 
-  await writeFile(path, pieces.join(''), 'utf8');
+  await writeFileAtomic(path, pieces.join(''));
 }

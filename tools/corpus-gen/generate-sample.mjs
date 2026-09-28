@@ -79,7 +79,7 @@ const placementDescription =
     : `${bodyName} in house ${String(signOrHouse)} (${planetSymbolism(body)?.core ?? ''})`;
 
 const systemInstruction = buildSystemInstruction({ persona, symbolismContext: buildSymbolismContext(locale), locale });
-const userContent = buildUserContent({ placementDescription, corpusEntries, locale });
+const userContent = buildUserContent({ placementDescription, corpusEntries, locale, persona });
 
 console.log('='.repeat(80));
 console.log(`PERSONA: ${persona ? `${persona.title.en} (${persona.id})` : 'neutral (no persona)'}`);

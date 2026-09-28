@@ -41,11 +41,18 @@ export function buildNegativeConstraintsBlock() {
  * key list picked ad hoc per batch — the corpus itself says what's an
  * anchor, in whichever locale the request is for.
  */
-export function buildAnchorsBlock(corpusEntries, locale) {
+export function buildAnchorsBlock(corpusEntries, locale, persona) {
   const anchors = corpusEntries.filter((entry) => entry.anchor === true && entry.locale === locale);
   if (anchors.length === 0) throw new Error(`no anchor entries found for locale "${locale}"`);
+  // Anchors are always neutral-voiced (schema.ts forbids an anchor from declaring a persona), so
+  // when a persona is generating, "match this tone" would fight the persona's own system prompt
+  // above. Scope the instruction to what anchors actually establish across every voice — depth,
+  // length, concreteness — and leave tone to the persona voice instead of the neutral examples.
+  const matchInstruction = persona
+    ? 'match this depth, length and level of concreteness — but keep the voice above, not this tone'
+    : 'match this tone, depth and length';
   return [
-    'GOLD-STANDARD EXAMPLES (match this tone, depth and length — do not copy their content)',
+    `GOLD-STANDARD EXAMPLES (${matchInstruction} — do not copy their content)`,
     ...anchors.map((entry) => `- ${entry.text}`),
   ].join('\n');
 }
@@ -70,11 +77,11 @@ export function buildSystemInstruction({ persona, symbolismContext, locale }) {
   ].join('\n');
 }
 
-export function buildUserContent({ placementDescription, corpusEntries, locale }) {
+export function buildUserContent({ placementDescription, corpusEntries, locale, persona }) {
   return [
     `TARGET PLACEMENT: ${placementDescription}`,
     '',
-    buildAnchorsBlock(corpusEntries, locale),
+    buildAnchorsBlock(corpusEntries, locale, persona),
     '',
     'Write one corpus entry for the target placement, in the voice above, obeying every hard constraint.',
   ].join('\n');
