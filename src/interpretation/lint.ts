@@ -13,10 +13,15 @@
  * near-duplicate detection (that catches whole-text similarity; this catches
  * only the opening).
  */
-import type { CorpusEntry } from './schema.js';
+import type { CorpusEntry, Locale } from './schema.js';
 
 export type LintRule =
-  'length' | 'fatalistic-phrasing' | 'medical-legal-financial-claim' | 'gendered-assumption' | 'repetitive-openings';
+  | 'length'
+  | 'fatalistic-phrasing'
+  | 'medical-legal-financial-claim'
+  | 'gendered-assumption'
+  | 'repetitive-openings'
+  | 'language-mismatch';
 
 export interface LintIssue {
   readonly rule: LintRule;
@@ -90,6 +95,59 @@ export const MEDICAL_LEGAL_FINANCIAL_TERMS = [
  * lowercase, so "His" in "History" or capitalised proper nouns are not touched.
  */
 const GENDERED_WORDS = ['he', 'she', 'him', 'her', 'his', 'hers', 'himself', 'herself'];
+
+/**
+ * Very-high-frequency function words, padded with spaces so "de" doesn't match inside
+ * "de" as a substring of a longer word. An entry containing none of its own locale's
+ * words is almost certainly written in the wrong language outright, rather than just
+ * missing a stylistic marker — a single wrong-language entry otherwise sails through
+ * every other rule here unnoticed, since none of them are locale-aware.
+ */
+const COMMON_WORDS_BY_LOCALE: Record<Locale, readonly string[]> = {
+  en: [
+    ' the ',
+    ' a ',
+    ' an ',
+    ' to ',
+    ' of ',
+    ' in ',
+    ' is ',
+    ' and ',
+    ' with ',
+    ' that ',
+    ' this ',
+    ' for ',
+    ' are ',
+    ' your ',
+    ' you ',
+    ' by ',
+    ' as ',
+    ' on ',
+    ' it ',
+  ],
+  nl: [
+    ' de ',
+    ' het ',
+    ' een ',
+    ' is ',
+    ' niet ',
+    ' en ',
+    ' je ',
+    ' met ',
+    ' van ',
+    ' dat ',
+    ' kan ',
+    ' wordt ',
+    ' aan ',
+    ' op ',
+    ' te ',
+    ' in ',
+    ' voor ',
+    ' naar ',
+    ' zijn ',
+    ' jouw ',
+  ],
+};
 
 /** How large a share of one locale's entries may share the same opening word before it reads as templated. */
 const MAX_SHARED_OPENING_SHARE = 0.15;
@@ -167,6 +225,16 @@ export function lintEntry(entry: CorpusEntry): LintIssue[] {
         message: `contains the gendered pronoun "${word}", which assumes the reader's gender`,
       });
     }
+  }
+
+  const ownLocaleWords = COMMON_WORDS_BY_LOCALE[entry.locale];
+  const padded = ` ${lower} `;
+  if (!ownLocaleWords.some((word) => padded.includes(word))) {
+    issues.push({
+      rule: 'language-mismatch',
+      key: entry.key,
+      message: `text contains none of ${entry.locale}'s common words — likely written in the wrong language`,
+    });
   }
 
   return issues;

@@ -24,20 +24,20 @@ describe('lintEntry (#57)', () => {
   });
 
   it('flags text below the minimum length', () => {
-    const issues = lintEntry(entry('Too short.'));
+    const issues = lintEntry(entry('You are too short.'));
     expect(issues).toHaveLength(1);
     expect(issues[0]).toMatchObject({ rule: 'length' });
   });
 
   it('flags text over the maximum length', () => {
-    const issues = lintEntry(entry('x'.repeat(MAX_LENGTH + 1)));
+    const issues = lintEntry(entry(`you ${'x'.repeat(MAX_LENGTH)}`));
     expect(issues).toHaveLength(1);
     expect(issues[0]).toMatchObject({ rule: 'length' });
   });
 
   it('accepts text at exactly the length bounds', () => {
-    expect(lintEntry(entry('x'.repeat(MIN_LENGTH)))).toEqual([]);
-    expect(lintEntry(entry('x'.repeat(MAX_LENGTH)))).toEqual([]);
+    expect(lintEntry(entry(`you ${'x'.repeat(MIN_LENGTH - 4)}`))).toEqual([]);
+    expect(lintEntry(entry(`you ${'x'.repeat(MAX_LENGTH - 4)}`))).toEqual([]);
   });
 
   it('flags fatalistic phrasing', () => {
@@ -59,6 +59,17 @@ describe('lintEntry (#57)', () => {
     // "His" the proper noun (a name, a place) is not what this rule exists to catch —
     // only the lowercase third-person pronoun does, and only as a whole word.
     expect(lintEntry(entry(`${CLEAN_TEXT} History rhymes with itself here.`))).toEqual([]);
+  });
+
+  it('flags an English entry declared as Dutch', () => {
+    const issues = lintEntry(entry(CLEAN_TEXT, { locale: 'nl' }));
+    expect(issues.some((issue) => issue.rule === 'language-mismatch')).toBe(true);
+  });
+
+  it('accepts a genuinely Dutch entry declared as Dutch', () => {
+    const dutchText =
+      'Een rusteloze nieuwsgierigheid kleurt hoe je je gedraagt: je merkt snel nieuwe mogelijkheden op en praat er graag over.';
+    expect(lintEntry(entry(dutchText, { locale: 'nl' }))).toEqual([]);
   });
 
   it('reports every rule an entry breaks, not just the first', () => {

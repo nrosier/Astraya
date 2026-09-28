@@ -48,7 +48,7 @@ import { buildSystemInstruction, buildUserContent } from './lib/prompt.mjs';
 import { writeCorpus } from './lib/write-corpus.mjs';
 import { CORPUS_ENTRY_RESPONSE_SCHEMA, placementKey } from '../../src/interpretation/schema.ts';
 import { buildSymbolismContext, planetSymbolism, signSymbolism } from '../../src/interpretation/symbolism.ts';
-import { lintCorpus } from '../../src/interpretation/lint.ts';
+import { lintCorpus, lintEntry } from '../../src/interpretation/lint.ts';
 import { findNearDuplicates } from '../../src/interpretation/dedupe.ts';
 import { BODIES } from '../../src/astrology/bodies.ts';
 import { SIGNS } from '../../src/astrology/signs.ts';
@@ -293,6 +293,13 @@ await withConcurrency(pending, concurrency, async ({ placement, key }) => {
         generatedAt: new Date().toISOString().slice(0, 10),
       },
     };
+
+    // Caught below and counted as a failed key, same as any other bad response —
+    // a model that ignores the locale in its own system prompt otherwise sails
+    // through untouched, since none of this file's other checks are locale-aware.
+    const languageIssue = lintEntry(entry).find((issue) => issue.rule === 'language-mismatch');
+    if (languageIssue) throw new Error(languageIssue.message);
+
     corpus.push(entry);
     await persist();
     done += 1;
