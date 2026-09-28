@@ -4,6 +4,36 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.19.0] — 2026-09-28
+
+**Admins can now correct the interpretation corpus straight from the app, and purging a person now actually erases their data everywhere it had synced — not just on the device that ran it.**
+
+M9 (Polish & launch) progress, not a finished milestone — the human review of high-salience corpus entries (#63) is still open, and v1.0.0 hasn't shipped. This release also closes out every finding from the September security/privacy audit (priority-high, -medium and -low) and its accessibility follow-ups.
+
+### Added
+
+- **Admin-editable interpretation corpus, with promote-only auto-promotion and a corrections export (#292, #349).** A new `/admin/corpus-overrides` screen lets an admin browse and correct any corpus entry per locale. Corrections are served ahead of the static text — `GET /api/corpus-overrides/:locale` stays public, since it only ever replaces text every visitor already gets from the static corpus — and can be exported for review. `ASTRAYA_ADMIN_USERNAMES` and `ASTRAYA_OIDC_ADMIN_GROUPS`/`ASTRAYA_OIDC_ADMIN_GROUP_CLAIM` add env-configured admin auto-promotion alongside the existing manual Promote button, deliberately promote-only so removing a name or group can never cause a surprise lockout.
+- **Synastry now shows real per-aspect interpretive text, and Composite/Harmonic charts get their first report text at all (#359, #365).** A new synastry-aspect corpus category, generated with a local Ollama/Mistral backend (`--provider`) that no longer depends on a hosted API. Comes with the corpus's first automated verification signal — a fact-grounding judge plus classical-source triage against Lilly's _Christian Astrology_ for dignity-state entries — which flagged 95 of 168 shipped dignity-state entries (57%) as diverging from the classical source, surfaced for #292's ongoing human review rather than auto-corrected.
+- **corpus-gen tooling can bootstrap a locale's corpus from scratch now**, with a throughput-aware progress bar and crash-safe atomic writes, instead of requiring an existing (even empty) corpus file to start from.
+
+### Changed
+
+- **The birth-place map is gone; picking a birth place is search-only now (#348).** Typing a place name and choosing from the match list is enough precision for natal astrology (about 111 km of position error before an Ascendant shifts), and it never discloses exact coordinates to a third party, only this app's own server. The Leaflet map, "Use my location", and reverse-geocoding are all removed.
+
+### Fixed
+
+- **sync:** purging a person now propagates the erasure to every already-synced peer and to server-side storage, instead of staying local to the device that ran it (#308, #361).
+- **security:** every finding from the September security/privacy audit is closed — proxy headers are no longer trusted by default, every auth/admin/ops route is rate-limited, each browser tab holds an exclusive write lock, and clock-skewed ops are quarantined instead of retried forever (#309-#312, #346); sixteen priority-medium findings across server transactions/quotas, auth/admin hardening, sync-protocol correctness, PWA cache scoping and log redaction, session lifecycle, and chart/ephemeris performance (#313-#327, #337, #347); and fifteen priority-low findings including attribute-safe SVG escaping, an Origin check as CSRF defence in depth, timing-safe bootstrap-token comparison, a prototype-pollution guard on synced operation fields, HSTS when served over HTTPS, and a key-rotation script for a leaked encryption key (#328-#343, #345).
+- **security:** the corpus-overrides admin routes are now rate-limited like every other route, and deleting an admin no longer throws a foreign-key error — their overrides cascade with them (#351, #352, #362).
+- **security:** the public corpus-overrides endpoint no longer discloses which admin made a correction, and admin-edited overrides now go through the same content lint (length, fatalistic phrasing, medical/legal/financial claims, gendered pronouns) as every machine-generated entry (#353, #354, #363).
+- **a11y:** the corpus-overrides admin panel now gives Saving/Reset busy-state feedback and an aria-live result count, and the admin screens have axe-core end-to-end coverage for the first time (#355-#358, #364).
+- **security:** GitHub Actions workflow permissions are no longer overly broad (#297).
+
+### Documentation
+
+- **agents:** subagent definitions rewritten for Astraya's actual architecture, later extended with a domain-correctness astrologer reviewer, and the full security/privacy audit that produced this release's fix list checked in (#344).
+- repo and Pages links now point at the lowercase `astraya` slug (#350).
+
 ## [0.18.1] — 2026-09-21
 
 Patch release: a bug fix and two related additions to the birth-place map's geocoding, none of them milestone work.
