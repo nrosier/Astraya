@@ -22,6 +22,7 @@ import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeSynastry, type SynastryData } from '../domain/synastry.js';
 import { renderMultiWheelSvg, type CrossRingAspects } from '../chart/multi-wheel.js';
 import { aspectDisplayName, bodyDisplayName } from './astro-names.messages.js';
+import { composeFallbackText } from '../interpretation/compose.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { ordered } from './people-list.js';
@@ -31,7 +32,25 @@ import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import { synastryViewMessages } from './SynastryView.messages.js';
 import type { TableColumn } from './table-sort.js';
-import type { Locale } from '../interpretation/schema.js';
+import type { CorpusPlacement, Locale } from '../interpretation/schema.js';
+
+/**
+ * The `synastry-aspect` fallback sentence (#359) for one cross-chart aspect — `bodyA` is
+ * always this screen's `person`, `bodyB` always the chosen partner, mirroring
+ * `PeriodicTransitView.tsx`'s `transitAspectSentence` for `transit-aspect`. No corpus content
+ * has been written for `synastry-aspect` yet, so every sentence here is the mechanical
+ * fallback, not a persona-voiced entry — the same "never blank" guarantee #59 gives every
+ * other category, now extended to this screen for the first time.
+ */
+function synastryAspectSentence(row: AspectRow, locale: Locale): string {
+  const placement: CorpusPlacement = {
+    category: 'synastry-aspect',
+    aspect: row.aspectKey,
+    bodyA: row.bodyAKey,
+    bodyB: row.bodyBKey,
+  };
+  return composeFallbackText(placement, locale);
+}
 
 type Load =
   | { readonly kind: 'idle' }
@@ -65,6 +84,11 @@ function aspectColumns(t: typeof synastryViewMessages.en, locale: Locale): reado
       label: t.applyingLabel,
       valueOf: (row) => row.applying,
       render: (row) => (row.applying ? t.applying : t.separating),
+    },
+    {
+      key: 'interpretation',
+      label: t.interpretationLabel,
+      valueOf: (row) => synastryAspectSentence(row, locale),
     },
   ];
 }

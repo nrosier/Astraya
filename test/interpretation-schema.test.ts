@@ -17,6 +17,7 @@ const PLACEMENTS: readonly CorpusPlacement[] = [
   { category: 'sign-on-cusp', sign: 4, house: 1 },
   { category: 'aspect-pair', aspect: 'square', bodyA: 'mars', bodyB: 'sun' },
   { category: 'transit-aspect', aspect: 'trine', transiting: 'mars', natal: 'sun' },
+  { category: 'synastry-aspect', aspect: 'trine', bodyA: 'mars', bodyB: 'sun' },
   { category: 'dignity-state', body: 'jupiter', state: 'exalted' },
   { category: 'nakshatra', body: 'moon', nakshatra: 3 },
   { category: 'pattern', pattern: 'bowl' },
@@ -74,6 +75,14 @@ describe('placementKey / parsePlacementKey (#53)', () => {
       transiting: 'saturn',
       natal: 'saturn',
     });
+  });
+
+  it('does not canonicalize synastry-aspect bodies — bodyA is always this chart, bodyB always the other (#359)', () => {
+    const forward = placementKey({ category: 'synastry-aspect', aspect: 'trine', bodyA: 'mars', bodyB: 'sun' });
+    const reversed = placementKey({ category: 'synastry-aspect', aspect: 'trine', bodyA: 'sun', bodyB: 'mars' });
+    expect(forward).toBe('synastry-aspect:trine:mars:sun');
+    expect(reversed).toBe('synastry-aspect:trine:sun:mars');
+    expect(forward).not.toBe(reversed);
   });
 
   it('categoryOfKey reads just the first segment', () => {
@@ -151,6 +160,29 @@ describe('validateCorpusEntries (#53)', () => {
 
   it('rejects a transit-aspect entry with an unknown natal body', () => {
     const result = validateCorpusEntries([validEntry({ key: 'transit-aspect:trine:mars:notabody' })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues[0]?.message).toMatch(/unknown body key/);
+  });
+
+  it('accepts a synastry-aspect entry (#359)', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'synastry-aspect:trine:mars:sun' })]);
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects a synastry-aspect entry with an unknown aspect key', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'synastry-aspect:not-an-aspect:mars:sun' })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues[0]?.message).toMatch(/unknown aspect key/);
+  });
+
+  it('rejects a synastry-aspect entry with an unknown bodyA', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'synastry-aspect:trine:notabody:sun' })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues[0]?.message).toMatch(/unknown body key/);
+  });
+
+  it('rejects a synastry-aspect entry with an unknown bodyB', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'synastry-aspect:trine:mars:notabody' })]);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.issues[0]?.message).toMatch(/unknown body key/);
   });

@@ -6,10 +6,15 @@
  * is the output usable" check, not the batch runner (#56's other
  * checkboxes — batching, resumability — are not built yet).
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs <personaId|neutral> [category] [body] [signOrHouse] [--locale=en|nl]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs <personaId|neutral> [category] [body] [signOrHouse] [--locale=en|nl] [--provider=gemini|ollama]
  *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs traditionalist planet-in-sign jupiter 8
  *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs mystic planet-in-sign moon 5 --locale=nl
  *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs neutral planet-in-sign moon 5 --locale=nl
+ *   npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs neutral planet-in-sign moon 5 --provider=ollama
+ *
+ * `--provider=ollama` (#359) is the smoke test to run before ever trusting
+ * `generate-batch.mjs --provider=ollama` with a real batch — see
+ * `lib/ollama.mjs` for the local-model client this switches to.
  *
  * Plain `node` cannot run this file: schema.ts/symbolism.ts import bodies.ts/
  * signs.ts as real runtime values through `.js` specifiers that only a
@@ -18,7 +23,6 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generateStructured } from './lib/gemini.mjs';
 import { buildSystemInstruction, buildUserContent } from './lib/prompt.mjs';
 import { CORPUS_ENTRY_RESPONSE_SCHEMA, placementKey } from '../../src/interpretation/schema.ts';
 import { buildSymbolismContext, planetSymbolism, signSymbolism } from '../../src/interpretation/symbolism.ts';
@@ -33,6 +37,13 @@ const rawArgs = process.argv.slice(2);
 const localeFlag = rawArgs.find((arg) => arg.startsWith('--locale='));
 const locale = localeFlag ? localeFlag.slice('--locale='.length) : 'en';
 if (locale !== 'en' && locale !== 'nl') throw new Error(`--locale must be "en" or "nl", got "${locale}"`);
+const providerFlag = rawArgs.find((arg) => arg.startsWith('--provider='));
+const provider = providerFlag ? providerFlag.slice('--provider='.length) : 'gemini';
+if (provider !== 'gemini' && provider !== 'ollama')
+  throw new Error(`--provider must be "gemini" or "ollama", got "${provider}"`);
+const { generateStructured } = await import(provider === 'ollama' ? './lib/ollama.mjs' : './lib/gemini.mjs');
+const model = provider === 'ollama' ? process.env.OLLAMA_MODEL || 'mistral' : process.env.GEMINI_MODEL;
+const baseUrl = provider === 'ollama' ? process.env.OLLAMA_BASE_URL : process.env.GEMINI_BASE_URL;
 const positional = rawArgs.filter((arg) => !arg.startsWith('--'));
 
 const [personaId, category = 'planet-in-sign', body = 'jupiter', signOrHouseRaw = '8'] = positional;
@@ -73,15 +84,15 @@ const userContent = buildUserContent({ placementDescription, corpusEntries, loca
 console.log('='.repeat(80));
 console.log(`PERSONA: ${persona ? `${persona.title.en} (${persona.id})` : 'neutral (no persona)'}`);
 console.log(`PLACEMENT: ${key} — ${placementDescription}`);
-console.log(`MODEL: ${process.env.GEMINI_MODEL}  TEMPERATURE: ${process.env.GEMINI_TEMPERATURE}`);
+console.log(`PROVIDER: ${provider}  MODEL: ${String(model)}  TEMPERATURE: ${process.env.GEMINI_TEMPERATURE}`);
 console.log('='.repeat(80));
 
 let result;
 try {
   result = await generateStructured({
     apiKey: process.env.GEMINI_API_KEY,
-    model: process.env.GEMINI_MODEL,
-    baseUrl: process.env.GEMINI_BASE_URL,
+    model,
+    baseUrl,
     temperature: Number(process.env.GEMINI_TEMPERATURE ?? '0.75'),
     systemInstruction,
     userContent,
@@ -105,7 +116,7 @@ const draftEntry = {
   ...(persona ? { persona: persona.id } : {}),
   provenance: {
     source: 'generated',
-    model: process.env.GEMINI_MODEL,
+    model,
     generatedAt: new Date().toISOString().slice(0, 10),
   },
 };

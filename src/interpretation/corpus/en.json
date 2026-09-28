@@ -136,7 +136,7 @@
     "locale": "en",
     "text": "With Mars in its detriment in Taurus, the naturally fiery, quick and direct drive to act gets bogged down on foreign ground, because an impulsive principle must express itself through a patient, conservative earth sign. Motives center on tangible possession and security, so initiatives are slow to get moving. Once in motion, persistence is considerable, but the character can struggle with bottled-up frustration or stubborn passivity.",
     "tier": "core",
-    "tags": ["dignity", "detriment"],
+    "tags": ["dignity", "detriment", "diverges-from-classical-source"],
     "provenance": {
       "source": "generated",
       "model": "claude-sonnet-5",
@@ -148,7 +148,7 @@
     "locale": "en",
     "text": "With Mercury in Sagittarius, the principle of detail-noticing and concrete analysis stands opposite its own rulership. The mind leans toward the big picture, the vision, the overarching idea rather than the precise fact. The character communicates with enthusiasm and philosophical flair, but can struggle to verify data carefully — thought flies quickly toward the horizon, at the risk of overlooking concrete steps or essential detail.",
     "tier": "core",
-    "tags": ["dignity", "detriment"],
+    "tags": ["dignity", "detriment", "diverges-from-classical-source"],
     "provenance": {
       "source": "generated",
       "model": "claude-sonnet-5",
@@ -160,7 +160,7 @@
     "locale": "en",
     "text": "Venus in its detriment in Scorpio finds its pull toward light peace and easy harmony cut across by the water sign's intensity. Affection here is not casual or merely charming, but seeks fusion, loyalty to the bone and absolute truthfulness. There's a deep capacity for loyalty and transformation through love, though the character can wrestle with possessiveness, suspicion, or testing a partner to their limits.",
     "tier": "core",
-    "tags": ["dignity", "detriment"],
+    "tags": ["dignity", "detriment", "diverges-from-classical-source"],
     "provenance": {
       "source": "generated",
       "model": "claude-sonnet-5",
@@ -184,7 +184,7 @@
     "locale": "en",
     "text": "The Moon in its fall in Scorpio sits on emotional ground that runs essentially against its need for rest, nurture and gentle protection. Here the feeling-world is entered by the intense, instinctive waters of the depths, so the emotional response turns intense, guarded and self-protective. This grants a considerable capacity for emotional transformation and resilience in crisis, but an ongoing task of turning inner mistrust into trust.",
     "tier": "core",
-    "tags": ["dignity", "fall"],
+    "tags": ["dignity", "fall", "diverges-from-classical-source"],
     "provenance": {
       "source": "generated",
       "model": "claude-sonnet-5",
@@ -196,7 +196,7 @@
     "locale": "en",
     "text": "With Saturn in its fall in Aries, the principle of limit, restraint, structure and patience runs up against the unruly, uncontained urge of the first fire sign. This can show as an inner conflict between the drive to break through independently and the fear of acting without certainty of success. Once that tension is consciously worked through, the character learns to overcome obstacles in a focused, persistent way and build its own authority.",
     "tier": "core",
-    "tags": ["dignity", "fall"],
+    "tags": ["dignity", "fall", "diverges-from-classical-source"],
     "provenance": {
       "source": "generated",
       "model": "claude-sonnet-5",
@@ -208,7 +208,7 @@
     "locale": "en",
     "text": "Mercury in Pisces stands opposite its exaltation; the logical, analytical mind here dissolves into an ocean of images, feelings and intuitive impressions. Thought follows no strict line of cause and effect, but moves by association, imagination and poetic perception. The character has a considerable artistic imagination, but can founder for lack of mental structure or clear boundaries in communication — what is lost in sharpness is gained in empathic understanding.",
     "tier": "core",
-    "tags": ["dignity", "fall"],
+    "tags": ["dignity", "fall", "diverges-from-classical-source"],
     "provenance": {
       "source": "generated",
       "model": "claude-sonnet-5",
@@ -220,7 +220,7 @@
     "locale": "en",
     "text": "Mars in its fall in Cancer finds its natural drive toward direct, forward action slowed by emotional conditions and the need for safety. Energy rarely discharges straightforwardly, moving instead cautiously, protectively or defensively. The character acts chiefly when it senses that its own circle or well-being is under threat. Growth here calls for learning a healthy, direct assertiveness rather than bottled-up tension.",
     "tier": "core",
-    "tags": ["dignity", "fall"],
+    "tags": ["dignity", "fall", "diverges-from-classical-source"],
     "provenance": {
       "source": "generated",
       "model": "claude-sonnet-5",
@@ -275,10 +275,8 @@
     "locale": "en",
     "text": "Sun in Aquarius is a sign of reconnecting with the world. Despite of you willing to reconnect or not, you will be shown the path towards socializing. You will mingle with people and will be keen to spread the knowledge acquired.",
     "tier": "core",
-    "tags": [],
-    "provenance": {
-      "source": "hand-written"
-    }
+    "tags": ["diverges-from-classical-source"],
+    "provenance": { "source": "hand-written" }
   },
   {
     "key": "dignity-state:saturn:detriment",
@@ -295,10 +293,8 @@
     "locale": "en",
     "text": "Sun in Libra requires balance to thrive in life. This position of the Sun in its debilitated sign makes you positive but may make you fickle minded and indecisive.",
     "tier": "core",
-    "tags": [],
-    "provenance": {
-      "source": "hand-written"
-    }
+    "tags": ["diverges-from-classical-source"],
+    "provenance": { "source": "hand-written" }
   },
   {
     "key": "planet-in-sign:sun:0",
@@ -32823,7 +32819,7 @@
     "locale": "en",
     "text": "You find emotional safety through fierce independence and intellectual control over your inner life, preferring detachment to vulnerability. This guarded approach protects you from feeling overwhelmed, yet it can leave you isolated when you most need gentle comfort.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -32835,7 +32831,7 @@
     "locale": "en",
     "text": "You approach personal connection with a deep desire for absolute sincerity and emotional truth in your bonds. This high standard can lead you to doubt mutual affection, looking for hidden flaws where simple appreciation would suffice.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -68155,7 +68151,7 @@
     "locale": "en",
     "text": "Your vitality finds itself displaced from familiar shores, requiring you to forge a purpose that relies on internal authority rather than external applause. This placement asks you to construct a sense of self from the inside out, discovering your core will by standing apart from prevailing expectations.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68168,7 +68164,7 @@
     "locale": "en",
     "text": "Your core will learns to shine through struggle and deliberate effort rather than immediate acclaim. You build your purpose by continuously overcoming obstacles, finding strength in quiet perseverance instead of outward display.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68207,7 +68203,7 @@
     "locale": "en",
     "text": "Emotional safety is constantly sought through an elusive fog where old maps of belonging refuse to hold firm. You absorb the unseen currents of every room, struggling to anchor feelings that constantly dissolve into the collective ether. Surrendering the need for familiar shores allows peace to rise from deep within.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68220,7 +68216,7 @@
     "locale": "en",
     "text": "Emotional safety feels perpetually out of reach, leaving you to manage an inner tide that rarely matches the expectations of the outer world. You search for sanctuary by over-adapting to what others require, quietly carrying the heavy burden of keeping the peace.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68246,7 +68242,7 @@
     "locale": "en",
     "text": "Your mental processing favors unconventional paths over standard formulas, leading you to stumble over straightforward logic while grasping hidden layers effortlessly. You gather facts through intuition and raw impressions rather than rigid systems, often struggling to articulate thoughts within conventional linguistic frameworks.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68272,7 +68268,7 @@
     "locale": "en",
     "text": "Your mental processing operates against standard expectations, preferring skepticism and friction over easy consensus. You gather knowledge by stripping away surface pleasantries to test what remains under pressure. This rigorous skepticism protects you from accepting hollow answers, though it demands repeated effort to articulate your thoughts so others can follow.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68298,7 +68294,7 @@
     "locale": "en",
     "text": "Affection meets friction where expectations clash with raw reality, forcing a reconstruction of what you value most. You often feel unworthy of the warmth you seek, which breeds a habit of settling or guarding your heart fiercely.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68324,7 +68320,7 @@
     "locale": "en",
     "text": "Affection carries a heavy burden of self-doubt and unworthiness, making peace feel perpetually out of reach. You test connections through endless sacrifice, carrying the weight of pleasing others while starving your own emotional hunger for simple harmony. What feels like devotion is often an unspoken penance, asking you to learn that kindness requires no suffering to be real.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68363,7 +68359,7 @@
     "locale": "en",
     "text": "Action finds itself obstructed by hesitation, turning every impulse inward before it reaches the surface. Frustration builds when direct exertion meets unseen barriers, requiring you to learn patience through stalled momentum.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68376,7 +68372,7 @@
     "locale": "en",
     "text": "Your drive meets friction where traditional outlets fail, forcing you to channel will through indirect channels and quiet endurance. Action requires deliberate strategy rather than raw force, teaching you to outlast obstacles instead of breaking them.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68415,7 +68411,7 @@
     "locale": "en",
     "text": "You seek meaning and growth by questioning conventional truths, often finding that surplus arrives only after you strip away dogma. Excessive confidence pulls you toward radical philosophies, teaching you to locate profound wisdom in the margins rather than in broad societal agreement.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68428,7 +68424,7 @@
     "locale": "en",
     "text": "Growth demands careful sorting rather than blind leaps of faith, teaching you to seek meaning through meticulous refinement. Belief takes root only when subjected to rigorous scrutiny, ensuring that what survives holds authentic worth.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68467,7 +68463,7 @@
     "locale": "en",
     "text": "Carrying heavy burdens of authority often feels like pushing against a permanent wall, demanding endless toil just to prove your worth. Mastery arrives only after repeatedly failing against established rules, forcing you to forge an entirely separate path of duty.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -68480,7 +68476,7 @@
     "locale": "en",
     "text": "Burdened by impossible standards of authority, you face chronic delays in building outer structures and must master endurance against relentless doubt. This heavy pressure strips away false ambition, forging a resilient inner structure from the ash of repeated trials.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "mystic",
     "provenance": {
       "source": "generated",
@@ -103801,7 +103797,7 @@
     "locale": "en",
     "text": "Your vitality finds itself stripped of natural ease, forcing your sense of self to be forged through friction rather than simple recognition. Authority and outward standing require constant struggle to establish, as standard approval does not come without labor. You build personal authority the hard way, constantly proving your capability against unyielding obstacles.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -103814,7 +103810,7 @@
     "locale": "en",
     "text": "Your fundamental vitality labors against the grain, requiring constant exertion to secure the authority and recognition you seek. Self-worth is frequently forged through opposition, demanding that you prove your authority in environments that resist your natural expression.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -103853,7 +103849,7 @@
     "locale": "en",
     "text": "Your instinctive emotional response struggles to find easy sanctuary, leading to chronic restlessness and a persistent sense of displacement. Inner safety requires deliberate effort rather than automatic comfort, as familiar environments often breed quiet dissatisfaction.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -103866,7 +103862,7 @@
     "locale": "en",
     "text": "Your instinctive emotional response struggles to find easy rest or validation, often leading to a chronic sense of internal dissatisfaction. You seek comfort through relentless self-scrutiny and fixing perceived flaws, yet peace remains difficult to sustain.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -103905,7 +103901,7 @@
     "locale": "en",
     "text": "Your reasoning processes through obstacles by second-guessing established frameworks, often inviting unnecessary friction into everyday exchanges. You struggle to find the precise words needed for straightforward expression, leading to frequent misunderstandings in daily commerce. This pattern pulls you toward overcomplicating simple directives.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -103918,7 +103914,7 @@
     "locale": "en",
     "text": "Your intellect operates under heavy constraints, preferring meticulous caution over swift conclusions. You struggle to articulate quick thoughts smoothly, often overthinking details until the thread of speech is lost. This placement breeds severe self-criticism regarding your own reasoning, yet yields a deeply thorough analytical capacity.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -103957,7 +103953,7 @@
     "locale": "en",
     "text": "Your approach to connection carries an inherent friction, struggling to find ease in matters of attachment and pleasure. You tend to feel under-valued or disappointed in partnerships, as your standards for harmony are repeatedly tested by circumstance. Finding satisfaction requires overcoming a persistent sense of lack when giving or receiving affection.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -103983,7 +103979,7 @@
     "locale": "en",
     "text": "Affection operates under a heavy sense of lack and unworthiness, leading you to accept substandard conditions out of fear that nothing better exists. You struggle to receive pleasure without first earning it through penance or toil. Social bonds are frequently complicated by self-sabotage, as you expect rejection before a connection can properly take root.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -104009,7 +104005,7 @@
     "locale": "en",
     "text": "Your drive meets frustration when pursuing goals, often forcing you to work twice as hard to achieve what others secure with ease. Discontent stems from misplaced effort, turning routine tasks into exhausting battlegrounds where assertion misfires.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -104035,7 +104031,7 @@
     "locale": "en",
     "text": "When asserting will and pursuing objectives, you struggle to find firm footing and often encounter friction in your attempts to conquer. Frustration builds because your initial drive lacks natural power, forcing you to expend extra toil for modest gains. Direct combat tires you quickly, demanding that you cultivate patience where a forceful charge fails.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -104061,7 +104057,7 @@
     "locale": "en",
     "text": "Your pursuits of meaning and opportunity face structural resistance, often requiring extra labor to secure what others receive easily. This placement struggles to find fitting outlets for optimism, leading to overreach or skepticism regarding grand philosophies. Authority and formal institutions offer fewer guarantees of abundance, demanding self-reliance where luck falls short.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -104074,7 +104070,7 @@
     "locale": "en",
     "text": "Your pursuits of meaning and prosperity constantly meet unnecessary trials, requiring grueling effort to secure any favor or fortune. Beliefs and grand philosophies undergo rigorous skepticism, forcing you to build authority through hardship rather than inherited luck.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -104113,7 +104109,7 @@
     "locale": "en",
     "text": "Obstacles arrive as persistent heavy burdens that demand rigorous endurance, forcing you to build patience through arduous trials. Mastery requires enduring heavy trials and accepting long delays before any lasting fruit emerges.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -104126,7 +104122,7 @@
     "locale": "en",
     "text": "Burensome duties and heavy delays restrict your efforts, testing your endurance against relentless structural walls. Mastery arrives only after persistent struggle through severe setbacks, requiring immense endurance to build anything lasting.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "traditionalist",
     "provenance": {
       "source": "generated",
@@ -139447,7 +139443,7 @@
     "locale": "en",
     "text": "Your core purpose and vitality sometimes struggle for recognition, making self-doubt a familiar visitor when you try to shine. This internal friction offers a profound invitation to define your worth from within rather than seeking applause from the outside world.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139460,7 +139456,7 @@
     "locale": "en",
     "text": "Your core sense of identity often feels difficult to anchor through standard paths of validation, asking you to discover worth from within rather than from external applause. This sensitive spot invites profound personal renewal, teaching you to build self-acceptance through what you quietly cultivate on your own terms.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139499,7 +139495,7 @@
     "locale": "en",
     "text": "Your instinctive emotional response often feels at odds with the surrounding environment, creating a tender sensitivity to belonging. You tend to carry an inner ache for security, which invites profound compassion for your own vulnerabilities and gentle healing from early isolation.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139512,7 +139508,7 @@
     "locale": "en",
     "text": "Your instinctive emotional response carries a quiet ache of feeling misunderstood by the world around you. This inner friction teaches you profound tenderness toward your own vulnerability, letting you hold space for pain with remarkable grace.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139551,7 +139547,7 @@
     "locale": "en",
     "text": "Your mind often works against accepted frameworks, making standard channels of learning feel frustratingly narrow. You find your own unconventional paths to logic, discovering that true clarity comes only after questioning the rules everyone else follows without a second thought.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139564,7 +139560,7 @@
     "locale": "en",
     "text": "Your mental processing carries a heavy inner critic, often making you second-guess your own thoughts before you share them with others. You can heal this harsh self-judgment by realizing that learning is an ongoing journey of trial rather than an immediate test of worth.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139603,7 +139599,7 @@
     "locale": "en",
     "text": "Your feelings of affection often carry a quiet friction, as if what you desire and what you receive never quite match cleanly. This tender sensitivity teaches you to build self-worth from within rather than relying on external approval. By embracing these unique hurdles, you cultivate a deeply authentic capacity for loving.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139616,7 +139612,7 @@
     "locale": "en",
     "text": "Your heart learns early to expect rejection, often leading you to overcompensate by giving too much to secure affection. Healing unfolds when you realize your worth does not depend on proving yourself to others.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139655,7 +139651,7 @@
     "locale": "en",
     "text": "Your drive meets frustration when trying to assert itself directly, making direct conflict feel strangely heavy or blocked. This tender friction invites you to discover quieter, deeply strategic paths to your goals rather than relying on brute force. Learning to channel your immense power with patience turns early roadblocks into profound inner strength.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139668,7 +139664,7 @@
     "locale": "en",
     "text": "Your drive meets frustration when the outer world demands a force you prefer to channel through patience and internal reflection. You learn to assert yourself by quiet persistence rather than direct combat, finding profound strength in softening your approach.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139707,7 +139703,7 @@
     "locale": "en",
     "text": "Your search for meaning often takes unconventional routes, pushing you to question accepted beliefs and find your own philosophy. Growth happens when you stop seeking external approval and trust the inner wisdom you have gathered along the way.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139720,7 +139716,7 @@
     "locale": "en",
     "text": "Growth often feels complicated by a quiet hesitation to accept abundance as your birthright, leading you to question whether good fortune is truly meant for you. By examining these early doubts, you can learn to welcome support without needing to earn it through constant striving.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139759,7 +139755,7 @@
     "locale": "en",
     "text": "Your path to enduring mastery asks you to build structures where comfort feels scarce, requiring deep patience with yourself as you learn discipline. By meeting every early delay as an invitation to forge your own strength, you transform heavy burdens into a reliable foundation for your life.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -139772,7 +139768,7 @@
     "locale": "en",
     "text": "Carrying heavy burdens often feels like your default state, leading you to believe that every obstacle requires a punishing effort. Through meeting these strict internal demands with gentle self-compassion, you can transform old feelings of inadequacy into enduring strength.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "big_sister",
     "provenance": {
       "source": "generated",
@@ -175067,7 +175063,7 @@
     "locale": "en",
     "text": "You construct a bulletproof public persona because deep down you are terrified of looking mediocre. You need endless applause just to function, treating your ego like an endangered species that requires constant validation.",
     "tier": "core",
-    "tags": ["exalted"],
+    "tags": ["exalted", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175080,7 +175076,7 @@
     "locale": "en",
     "text": "You demand the spotlight because deep down you are terrified you are actually invisible. Your main personality trait is making sure everyone else knows you are running the show.",
     "tier": "core",
-    "tags": ["ruler"],
+    "tags": ["ruler", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175093,7 +175089,7 @@
     "locale": "en",
     "text": "Your ego spends half its time apologizing for existing and the other half overcompensating with hollow validation-seeking. You build your whole sense of self around expectations that were never yours to begin with, then act shocked when burnout hits.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175106,7 +175102,7 @@
     "locale": "en",
     "text": "You construct your entire personality around approval you fundamentally struggle to secure. Instead of admitting defeat, you double down on performative competence until burnout does the heavy lifting for you.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175119,7 +175115,7 @@
     "locale": "en",
     "text": "You hoard emotional safety like a dragon sitting on a pile of gold, treating your private life as a fortified compound. Vulnerability looks like an existential threat, so you armor up before anyone gets close enough to see you sweat. Stop punishing people for trying to love you without a security clearance.",
     "tier": "core",
-    "tags": ["ruler"],
+    "tags": ["ruler", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175132,7 +175128,7 @@
     "locale": "en",
     "text": "You demand total control over your domestic sanctuary and expect everyone to bend to your emotional hygiene standards. When chaos strikes, you quietly meltdown behind locked doors instead of just admitting you need a nap.",
     "tier": "core",
-    "tags": ["exalted"],
+    "tags": ["exalted", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175145,7 +175141,7 @@
     "locale": "en",
     "text": "Your feelings are a complete disaster area because you expect logic to solve emotional panic, which never works. You treat basic vulnerability like a personal failure and hide behind cold detachment until you inevitably snap. Stop psychoanalyzing your own breakdowns and just let yourself feel something without building a fortress.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175158,7 +175154,7 @@
     "locale": "en",
     "text": "Your emotional default is a chronic state of waiting for the other shoe to drop, treating basic vulnerability like a personal failure. You exhaust yourself trying to logic away feelings that demand actual comfort instead of military-grade self-criticism.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175171,7 +175167,7 @@
     "locale": "en",
     "text": "Your thought process runs on hyperactive overdrive, connecting dots nobody asked you to link while you talk circles around your own arguments. You treat every debate like an Olympic sport you invented, weaponizing trivia to win arguments against empty rooms. Stop treating your inner monologue like a breaking news broadcast and let people finish a sentence for once.",
     "tier": "core",
-    "tags": ["ruler"],
+    "tags": ["ruler", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175197,7 +175193,7 @@
     "locale": "en",
     "text": "You process facts through a needlessly contrarian filter, preferring an argument over an answer just to watch people scramble. Your mental default is overcomplicating simple concepts until you completely lose the room. Stop treating every casual chat like a debate tournament nobody asked you to host.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175210,7 +175206,7 @@
     "locale": "en",
     "text": "Your brain loves to overcomplicate the simplest facts just to make them feel heavy. You collect useless trivia like it is survival gear, then completely blank on basic instructions. Stop turning every minor misunderstanding into a federal case of intellectual inadequacy.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175223,7 +175219,7 @@
     "locale": "en",
     "text": "You hoard affection like a dragon sitting on a pile of gold, demanding absolute devotion while refusing to compromise. Your relationships are high-maintenance battlegrounds where you test loyalty through sheer stubbornness. Stop treating romance like a hostage negotiation just because you are terrified of losing control.",
     "tier": "core",
-    "tags": ["ruler"],
+    "tags": ["ruler", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175236,7 +175232,7 @@
     "locale": "en",
     "text": "You demand unconditional adoration while offering maximum devotion right back. You treat romance like a high-stakes luxury brand, refusing to settle for anything that looks cheap or half-assed. Your charm works like a cheat code, making everyone else bend over backward just to keep you happy.",
     "tier": "core",
-    "tags": ["exalted"],
+    "tags": ["exalted", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175249,7 +175245,7 @@
     "locale": "en",
     "text": "You collect broken bonds like participation trophies and call it romance. Your default setting for affection is picking the exact wrong person and wondering why the wreckage feels so familiar.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175262,7 +175258,7 @@
     "locale": "en",
     "text": "You collect broken connections like tragic hobbies and mistake emotional friction for actual passion. When relating requires basic effort, you immediately sabotage it to prove your own pessimistic theories right.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175275,7 +175271,7 @@
     "locale": "en",
     "text": "You fight like you are defending a medieval fortress against your own friends. Your default mode in a conflict is total annihilation, making simple disagreements exhausting because you refuse to lose anything, even your dignity. Stop treating every minor annoyance like an existential threat.",
     "tier": "core",
-    "tags": ["ruler"],
+    "tags": ["ruler", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175301,7 +175297,7 @@
     "locale": "en",
     "text": "Your drive stalls out right when you need a push, leaking power into passive-aggressive sulking instead of actual fights. You pick battles poorly, exhaust yourself on useless obstacles, and manage to trip over your own feet while trying to prove a point.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175314,7 +175310,7 @@
     "locale": "en",
     "text": "You fight like you are swinging underwater, constantly tripping over your own feet while trying to prove a point nobody asked for. Instead of direct action, you specialize in passive-aggressive sulking and terrible timing that ruins your own momentum. Your drive stumbles because you spend all your time second-guessing every swing before you even throw it.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175327,7 +175323,7 @@
     "locale": "en",
     "text": "Your endless appetite for growth easily morphs into profound self-righteousness, assuming luck is just a permanent perk of your brilliant philosophies. You preach boundless optimism while accidentally funding your grand schemes through absolute chaos and sheer denial.",
     "tier": "core",
-    "tags": ["ruler"],
+    "tags": ["ruler", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175340,7 +175336,7 @@
     "locale": "en",
     "text": "You expect blind luck to bail out your chronic excess because the universe has practically coddled you from day one. That sickeningly sweet optimism stops you from learning actual limits until reality finally forces a reality check.",
     "tier": "core",
-    "tags": ["exalted"],
+    "tags": ["exalted", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175353,7 +175349,7 @@
     "locale": "en",
     "text": "You hoard useless beliefs and mistake endless overindulgence for actual growth. You chase grand opportunities that completely miss reality, expecting blind luck to fix your terrible planning. Stopping before excess ruins everything feels impossible.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175366,7 +175362,7 @@
     "locale": "en",
     "text": "Your optimism comes pre-loaded with chronic self-sabotage because you refuse to lower your unrealistic standards. You waste endless energy chasing grand visions while completely ignoring the basic details right in front of you.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175379,7 +175375,7 @@
     "locale": "en",
     "text": "You hoard control like a dragon sitting on a pile of gold you are too terrified to spend. Building structures is your entire personality, treating every minor setback like the complete collapse of civilization. You mistake exhaustion for achievement.",
     "tier": "core",
-    "tags": ["exalted"],
+    "tags": ["exalted", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175392,7 +175388,7 @@
     "locale": "en",
     "text": "You hoard control like a dragon protecting garbage because trusting anyone else feels like a fatal error. Your entire existence is a rigid obstacle course you built yourself just so you can complain about how hard it is to finish.",
     "tier": "core",
-    "tags": ["ruler"],
+    "tags": ["ruler", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175405,7 +175401,7 @@
     "locale": "en",
     "text": "You trip over basic structural boundaries because authority figures make you irrationally furious. You treat every assigned duty like an insult to your personal sovereignty, then complain when the house of cards falls over.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "unverified-flagged-by-judge", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -175418,7 +175414,7 @@
     "locale": "en",
     "text": "You approach rules and authority like a teenager told to clean their room, immediately looking for loopholes just to spite the concept of structure. Your internal bottleneck turns simple tasks into existential burdens because you refuse to do things the easy way. Responsibility feels like a personal attack until you finally learn that avoiding the work takes twice as much energy.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "cynic",
     "provenance": {
       "source": "generated",
@@ -210726,7 +210722,7 @@
     "locale": "en",
     "text": "Your vitality finds itself at odds with standard expectations, pushing you to construct a personal purpose entirely from scratch. You validate your own worth through hard-won output rather than relying on external approval.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210752,7 +210748,7 @@
     "locale": "en",
     "text": "Your emotional security relies entirely on managing your domestic environment and maintaining strict control over daily routines. When familiar systems break down, you restore calm through deliberate organization and practical domestic tasks.",
     "tier": "core",
-    "tags": ["ruler"],
+    "tags": ["ruler", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210765,7 +210761,7 @@
     "locale": "en",
     "text": "Your core sense of self requires outside validation to feel fully established. Building a durable routine helps ground personal authority against shifting external opinions.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210791,7 +210787,7 @@
     "locale": "en",
     "text": "Emotional safety requires constant management, as internal security feels difficult to secure naturally. You process feelings through strict physical routines and problem-solving, often mistaking external chaos for personal failure. Building a predictable daily framework helps stabilize this inner friction.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210804,7 +210800,7 @@
     "locale": "en",
     "text": "Your instinctive needs are easily thwarted by external chaos, demanding a deliberate effort to establish personal safety. You process emotional security through hyper-vigilance, requiring strict physical order to settle internal friction. Build reliable daily routines to ground your reactions before minor disruptions trigger stress.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210830,7 +210826,7 @@
     "locale": "en",
     "text": "Your processing style resists standard frameworks, forcing you to construct alternative methods for sorting details. You tend to overcomplicate simple exchanges because you look for hidden flaws in every instruction.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210856,7 +210852,7 @@
     "locale": "en",
     "text": "You process facts by demanding strict proof and exhaustive testing before accepting any premise as valid. This creates a mental filter that strains out quick assumptions, forcing you to slow down and verify every detail yourself. Build daily routines around structured note-taking and factual verification to keep your reasoning anchored and productive.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210895,7 +210891,7 @@
     "locale": "en",
     "text": "You struggle to receive affection smoothly because your instincts constantly doubt whether warmth is genuine or lasting. This friction pushes you to overcompensate by proving your worth through relentless hard work rather than asking for what you need.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210908,7 +210904,7 @@
     "locale": "en",
     "text": "You approach personal connection with high standards and self-critique, often doubting whether your affection is received or deserved. Building trust requires establishing practical routines and demonstrable reliability rather than relying on spontaneous romance.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210934,7 +210930,7 @@
     "locale": "en",
     "text": "Your drive is anchored by steady, methodical effort that refuses to rush outcomes. You build momentum through physical endurance and practical execution, turning raw ambition into tangible output by sticking to a rigid routine. Obstacles are met with stubborn persistence rather than quick outbursts.",
     "tier": "core",
-    "tags": ["ruler"],
+    "tags": ["ruler", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210947,7 +210943,7 @@
     "locale": "en",
     "text": "Your drive meets friction because your actions require indirect channels rather than straightforward force. You exert effort best by pacing projects carefully and building physical stamina through methodical, repetitive daily routines.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210973,7 +210969,7 @@
     "locale": "en",
     "text": "Action requires careful calibration because your drive meets friction when asserting demands openly. You measure every initiative against practical utility before committing physical effort, preferring indirect persistence over forceful confrontation. Progress happens by securing stable foundations rather than rushing headlong into conflict.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -210999,7 +210995,7 @@
     "locale": "en",
     "text": "You struggle to find straightforward luck and often overextend your efforts when chasing broad ambitions. Growth requires scaling back grand theories to focus on modest, concrete returns rather than counting on easy windfalls.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -211025,7 +211021,7 @@
     "locale": "en",
     "text": "You tend to find growth through meticulous effort and careful scaling rather than leaping at grand gambles. Expecting easy windfalls invites frustration, so you build lasting security by treating each milestone as a practical task to manage.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -211051,7 +211047,7 @@
     "locale": "en",
     "text": "Your structural foundations face repeated hurdles, requiring deliberate effort to build lasting order. Progress demands slow, methodical construction rather than shortcuts, turning every obstacle into a test of endurance.",
     "tier": "core",
-    "tags": ["detriment"],
+    "tags": ["detriment", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",
@@ -211064,7 +211060,7 @@
     "locale": "en",
     "text": "You meet external demands with a sense of strain, often feeling that authority expects too much while offering too little support. Progress requires building rigid routines to compensate for internal hesitation, transforming heavy obligations into reliable daily output.",
     "tier": "core",
-    "tags": ["fall"],
+    "tags": ["fall", "diverges-from-classical-source"],
     "persona": "pragmatist",
     "provenance": {
       "source": "generated",

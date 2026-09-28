@@ -62,6 +62,13 @@ test('two people with known birth times get a Synastry screen with a bi-wheel an
   await expect(page.locator('div.chart-wheel svg')).toHaveCount(1);
   await expect(page.getByRole('table', { name: 'Aspects' })).toBeVisible();
 
+  // #359: the aspect table's new Interpretation column never renders blank, even though no
+  // corpus content has been written for synastry-aspect yet — it falls back to the mechanical
+  // "Trine between your X and their Y" sentence composed by `composeFallbackText`.
+  await expect(page.getByRole('columnheader', { name: 'Interpretation' })).toBeVisible();
+  const firstInterpretationCell = page.getByRole('row').nth(1).getByRole('cell').last();
+  await expect(firstInterpretationCell).not.toBeEmpty();
+
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Download CSV', exact: true }).click(),

@@ -11,7 +11,10 @@
  * bodies with a defined traditional rulership — that one is a correctness
  * constraint, not a scope choice: Pluto, an asteroid, etc. have no classical
  * dignity to describe, so generating one would be inventing astrology, not
- * omitting coverage.
+ * omitting coverage. synastry-aspect (#359) reuses aspect-pair's own
+ * corePairs() x ASPECTS coverage — the neutral entry describes the pair's
+ * dynamic regardless of which chart owns which body, mirroring aspect-pair's
+ * own symmetric phrasing.
  *
  * Resumable and idempotent: every successful entry is written to
  * src/interpretation/corpus/<locale>.json immediately, and a re-run skips
@@ -20,7 +23,7 @@
  * at a time by design, so `--locale=en` and `--locale=nl` can run
  * concurrently or be resumed independently, per #56.
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama]
  *
  * `--persona` (a `tools/corpus-gen/personas.json` id) generates that
  * persona's voice for each placement instead of the neutral default;
@@ -31,12 +34,18 @@
  * back-to-back, since that pass is quadratic in the locale's total entry
  * count and repeating it after every round pays a rising cost for no benefit
  * until the last round is done anyway.
+ *
+ * `--provider=gemini|ollama` (#359, default gemini) picks which machine runs
+ * this: Ollama only ever runs against whoever's own machine has it
+ * installed, so `--provider=ollama` is for local/dev generation. Actually
+ * regenerating the corpus for the production/hosted deployment stays on
+ * Gemini for now — a hosted environment has no local model to call.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generateStructured } from './lib/gemini.mjs';
 import { buildSystemInstruction, buildUserContent } from './lib/prompt.mjs';
+import { writeCorpus } from './lib/write-corpus.mjs';
 import { CORPUS_ENTRY_RESPONSE_SCHEMA, placementKey } from '../../src/interpretation/schema.ts';
 import { buildSymbolismContext, planetSymbolism, signSymbolism } from '../../src/interpretation/symbolism.ts';
 import { lintCorpus } from '../../src/interpretation/lint.ts';
@@ -80,6 +89,13 @@ function buildPlacements() {
     for (const [bodyA, bodyB] of corePairs())
       placements.push({ category: 'aspect-pair', aspect: aspect.key, bodyA, bodyB });
   }
+  // synastry-aspect (#359) mirrors aspect-pair's corePairs() x ASPECTS shape — the batch
+  // default entry is written for the pair regardless of which side is "this chart" vs
+  // "the other chart", same as aspect-pair's own symmetric text.
+  for (const aspect of ASPECTS) {
+    for (const [bodyA, bodyB] of corePairs())
+      placements.push({ category: 'synastry-aspect', aspect: aspect.key, bodyA, bodyB });
+  }
   for (const body of TRADITIONAL_RULER_KEYS) {
     for (const state of DIGNITY_STATES) placements.push({ category: 'dignity-state', body, state });
   }
@@ -97,6 +113,8 @@ function placementDescription(placement) {
       return `${SIGNS[placement.sign]?.name ?? String(placement.sign)} on the cusp of house ${String(placement.house)} (${signSymbolism(placement.sign)?.core ?? ''})`;
     case 'aspect-pair':
       return `${bodyName(placement.bodyA)} ${placement.aspect} ${bodyName(placement.bodyB)}`;
+    case 'synastry-aspect':
+      return `synastry: ${bodyName(placement.bodyA)} ${placement.aspect} ${bodyName(placement.bodyB)} (cross-chart)`;
     case 'dignity-state':
       return `${bodyName(placement.body)} in ${placement.state}`;
     default:
@@ -134,6 +152,13 @@ const concurrency = Number(flag('concurrency', '3'));
 const delayMs = Number(flag('delay-ms', '200'));
 const skipFinalChecks = rawArgs.includes('--skip-final-checks');
 
+const provider = flag('provider', 'gemini');
+if (provider !== 'gemini' && provider !== 'ollama')
+  throw new Error(`--provider must be "gemini" or "ollama", got "${provider}"`);
+const { generateStructured } = await import(provider === 'ollama' ? './lib/ollama.mjs' : './lib/gemini.mjs');
+const model = provider === 'ollama' ? process.env.OLLAMA_MODEL || 'mistral' : process.env.GEMINI_MODEL;
+const baseUrl = provider === 'ollama' ? process.env.OLLAMA_BASE_URL : process.env.GEMINI_BASE_URL;
+
 const personas = JSON.parse(await readFile(join(root, 'tools', 'corpus-gen', 'personas.json'), 'utf8')).personas;
 const personaIdFlag = flag('persona');
 const persona = personaIdFlag ? personas.find((p) => p.id === personaIdFlag) : undefined;
@@ -153,7 +178,7 @@ const pending = allPlacements
   .slice(0, Number.isFinite(limit) ? limit : undefined);
 
 console.log(
-  `[${locale}/${scopeLabel}] restricted scope: ${String(allPlacements.length)} placements, ${String(existingKeys.size)} already shipped, ${String(pending.length)} to generate`,
+  `[${locale}/${scopeLabel}] provider: ${provider} (model: ${String(model)}) — restricted scope: ${String(allPlacements.length)} placements, ${String(existingKeys.size)} already shipped, ${String(pending.length)} to generate`,
 );
 if (pending.length === 0) {
   console.log(`[${locale}/${scopeLabel}] nothing to do.`);
@@ -167,7 +192,7 @@ let failed = 0;
 const lock = { writing: Promise.resolve() };
 
 async function persist() {
-  lock.writing = lock.writing.then(() => writeFile(corpusPath, `${JSON.stringify(corpus, null, 2)}\n`, 'utf8'));
+  lock.writing = lock.writing.then(() => writeCorpus(corpusPath, corpus));
   await lock.writing;
 }
 
@@ -185,8 +210,8 @@ await withConcurrency(pending, concurrency, async ({ placement, key }) => {
   try {
     const result = await generateStructured({
       apiKey: process.env.GEMINI_API_KEY,
-      model: process.env.GEMINI_MODEL,
-      baseUrl: process.env.GEMINI_BASE_URL,
+      model,
+      baseUrl,
       temperature: Number(process.env.GEMINI_TEMPERATURE ?? '0.75'),
       systemInstruction,
       userContent,
@@ -207,7 +232,7 @@ await withConcurrency(pending, concurrency, async ({ placement, key }) => {
       ...(persona ? { persona: persona.id } : {}),
       provenance: {
         source: 'generated',
-        model: process.env.GEMINI_MODEL,
+        model,
         generatedAt: new Date().toISOString().slice(0, 10),
       },
     };
@@ -230,12 +255,18 @@ await withConcurrency(pending, concurrency, async ({ placement, key }) => {
 
 console.log(`\n[${locale}/${scopeLabel}] batch complete: ${String(done)} written, ${String(failed)} failed`);
 
-const inputCostPerM = 0.3;
-const outputCostPerM = 2.5;
-const cost = (usageIn / 1_000_000) * inputCostPerM + (usageOut / 1_000_000) * outputCostPerM;
-console.log(
-  `[${locale}/${scopeLabel}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — est. cost at Standard-tier rates: $${cost.toFixed(2)}`,
-);
+if (provider === 'ollama') {
+  console.log(
+    `[${locale}/${scopeLabel}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — $0.00 (local model)`,
+  );
+} else {
+  const inputCostPerM = 0.3;
+  const outputCostPerM = 2.5;
+  const cost = (usageIn / 1_000_000) * inputCostPerM + (usageOut / 1_000_000) * outputCostPerM;
+  console.log(
+    `[${locale}/${scopeLabel}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — est. cost at Standard-tier rates: $${cost.toFixed(2)}`,
+  );
+}
 
 if (skipFinalChecks) {
   console.log(`\n[${locale}/${scopeLabel}] --skip-final-checks set: skipping whole-locale lint/dedupe pass.`);

@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { computeComposite, type CompositeData } from '../domain/composite.js';
 import { ChartDataView } from './ChartView.js';
+import { ReportView } from './ReportView.js';
 import { compositeViewMessages } from './CompositeView.messages.js';
 import { useMessages } from './messages.js';
 import { ordered } from './people-list.js';
@@ -136,6 +137,8 @@ export function CompositeView({ personId }: { personId: string }): React.JSX.Ele
           metaLines={[displayName]}
         />
       )}
+
+      {partnerId !== '' && load.kind === 'ready' && <ReportView chart={load.data} />}
     </main>
   );
 }

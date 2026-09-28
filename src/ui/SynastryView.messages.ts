@@ -28,6 +28,7 @@ const en = {
   applyingLabel: 'Applying',
   applying: 'Applying',
   separating: 'Separating',
+  interpretationLabel: 'Interpretation',
 };
 
 const nl: typeof en = {
@@ -57,6 +58,7 @@ const nl: typeof en = {
   applyingLabel: 'Toenemend',
   applying: 'Toenemend',
   separating: 'Afnemend',
+  interpretationLabel: 'Interpretatie',
 };
 
 export const synastryViewMessages = { en, nl };

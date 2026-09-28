@@ -27,6 +27,12 @@ describe('describePlacement (#62)', () => {
     );
   });
 
+  it('describes a synastry-aspect placement (#359)', () => {
+    expect(describePlacement({ category: 'synastry-aspect', aspect: 'trine', bodyA: 'venus', bodyB: 'mars' })).toBe(
+      'your Venus trine their Mars',
+    );
+  });
+
   it('describes a dignity-state placement', () => {
     expect(describePlacement({ category: 'dignity-state', body: 'jupiter', state: 'exalted' })).toBe(
       'Jupiter: exalted',

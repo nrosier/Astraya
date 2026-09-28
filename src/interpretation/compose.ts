@@ -15,12 +15,13 @@
  *
  * Scoped to the same five categories #60's rule engine covers
  * (planet-in-sign, planet-in-house, sign-on-cusp, aspect-pair, dignity-state),
- * plus `transit-aspect` (#207), which reuses this same fallback machinery for
- * a different pair of roles (transiting body, natal body) rather than a
- * same-chart pair. `nakshatra` and `pattern` are out of scope for the same
- * reason #60 excluded them: neither is produced by anything currently
- * feeding this module, and both would need chart data (sidereal longitude,
- * whole-chart shape) rather than a `CorpusPlacement`'s own fields.
+ * plus `transit-aspect` (#207) and `synastry-aspect` (#359), which reuse this
+ * same fallback machinery for a different pair of roles (transiting/natal,
+ * or this-chart/other-chart) rather than a same-chart pair. `nakshatra` and
+ * `pattern` are out of scope for the same reason #60 excluded them: neither
+ * is produced by anything currently feeding this module, and both would need
+ * chart data (sidereal longitude, whole-chart shape) rather than a
+ * `CorpusPlacement`'s own fields.
  *
  * Dutch terminology note: the twelve sign names, ten planet/luminary names
  * and five major-aspect names below are standard, unremarkable translations.
@@ -164,6 +165,11 @@ function bodyName(key: string, locale: Locale): string {
   return body === undefined ? key : body.name;
 }
 
+/** `bodyName`, but without a leading definite article — for slotting after a possessive ("your", "jouw") where "your the Sun" would be wrong. */
+function possessiveBodyName(key: string, locale: Locale): string {
+  return bodyName(key, locale).replace(/^(the|de) /, '');
+}
+
 function aspectName(key: string, locale: Locale): string {
   const name = ASPECT_NAMES[locale][key];
   if (name !== undefined) return name;
@@ -233,6 +239,14 @@ export function composeFallbackText(placement: CorpusPlacement, locale: Locale):
       return locale === 'nl'
         ? `${capitalize(aspect)} tussen transiterende ${transiting} en radix ${natal}.`
         : `${capitalize(aspect)} between transiting ${transiting} and natal ${natal}.`;
+    }
+    case 'synastry-aspect': {
+      const aspect = aspectName(placement.aspect, locale);
+      const bodyA = possessiveBodyName(placement.bodyA, locale);
+      const bodyB = possessiveBodyName(placement.bodyB, locale);
+      return locale === 'nl'
+        ? `${capitalize(aspect)} tussen jouw ${bodyA} en hun ${bodyB}.`
+        : `${capitalize(aspect)} between your ${bodyA} and their ${bodyB}.`;
     }
     case 'dignity-state': {
       const body = capitalize(bodyName(placement.body, locale));

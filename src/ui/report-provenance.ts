@@ -46,6 +46,8 @@ export function describePlacement(placement: CorpusPlacement): string {
       return `${bodyLabel(placement.bodyA)} ${aspectLabel(placement.aspect)} ${bodyLabel(placement.bodyB)}`;
     case 'transit-aspect':
       return `transiting ${bodyLabel(placement.transiting)} ${aspectLabel(placement.aspect)} natal ${bodyLabel(placement.natal)}`;
+    case 'synastry-aspect':
+      return `your ${bodyLabel(placement.bodyA)} ${aspectLabel(placement.aspect)} their ${bodyLabel(placement.bodyB)}`;
     case 'dignity-state':
       return `${bodyLabel(placement.body)}: ${placement.state}`;
     case 'nakshatra':
