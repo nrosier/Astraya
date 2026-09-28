@@ -15,6 +15,10 @@
  */
 
 const DEFAULT_BASE_URL = 'http://localhost:11434';
+// Ollama's own default is VRAM-tier-dependent (4k below 24GiB), not fixed —
+// setting this explicitly means every call gets the same context budget
+// regardless of which machine runs it, rather than an implicit, silent one.
+const DEFAULT_NUM_CTX = 4096;
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
 async function sleep(ms) {
@@ -46,7 +50,7 @@ export async function generateStructured({
     ],
     format: responseSchema,
     stream: false,
-    options: { temperature },
+    options: { temperature, num_ctx: Number(process.env.OLLAMA_NUM_CTX) || DEFAULT_NUM_CTX },
   };
 
   let lastError;

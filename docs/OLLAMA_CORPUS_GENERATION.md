@@ -42,6 +42,7 @@ Relevant variables (see `.env.example` for the full annotated list):
 ```
 OLLAMA_MODEL=mistral
 OLLAMA_BASE_URL=
+OLLAMA_NUM_CTX=
 ```
 
 - `OLLAMA_MODEL` — which local model to call. `mistral` is already the
@@ -51,6 +52,13 @@ OLLAMA_BASE_URL=
 - `OLLAMA_BASE_URL` — leave empty to use the default local endpoint
   (`http://localhost:11434`). Only set this if Ollama is reachable
   somewhere else (a remote box, a non-default port).
+- `OLLAMA_NUM_CTX` — leave empty for the client's own default (4096
+  tokens). Ollama's _own_ default context length is VRAM-tier-dependent
+  (4k below 24GiB of VRAM) rather than fixed by the model, so this is set
+  explicitly on every request instead of silently inheriting whatever the
+  serving machine happens to pick. Raise it if a corpus-gen prompt is
+  getting truncated — check `ollama ps`'s `CONTEXT` column to see what's
+  actually allocated.
 
 No API key: Ollama is a local server, not a hosted one.
 
