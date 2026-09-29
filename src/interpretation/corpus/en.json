@@ -211041,5 +211041,161 @@
       "model": "gemini-3.5-flash-lite",
       "generatedAt": "2026-09-09"
     }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:juno",
+    "locale": "en",
+    "text": "You commit to relationships by tending to their needs, finding deep fulfillment when your care feels necessary and valued. This connection gives you the capacity to nurture bonds through profound emotional support, but you risk making your devotion feel conditional on your ability to provide for the other person.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:interpolatedLilith",
+    "locale": "en",
+    "text": "You possess a profound capacity to recognize and fulfill deep emotional needs, granting comfort and care through heartfelt devotion. You are skilled at nurturing yourself and others by honoring your primal needs for value and recognition. However, you may struggle with defining emotional boundaries or feeling that your deepest efforts are unmet or taken for granted.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:chiron",
+    "locale": "en",
+    "text": "You possess a profound capacity for nurturing and emotional sustenance, giving you a deep gift for guiding others toward healing. You are naturally drawn to assisting with sensitive wounds, but you may struggle to separate your own emotional boundaries from the care you give, risking exhaustion by defining your self-worth through the needs of others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:jupiter",
+    "locale": "en",
+    "text": "You find the capacity to nurture others to be a source of great confidence and expansion. Your caregiving efforts tend to feel naturally generous and highly beneficial to those around you, making you a source of expansive support. However, you may sometimes overextend your boundaries in the name of helping, making it hard to distinguish where your provision ends and another's begins.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:mars",
+    "locale": "en",
+    "text": "You assert your deep need to nurture and care, fighting actively for emotional provision and security. You are driven to protect what you value through tangible action and initiative, showing care by making things happen. However, this powerful impulse can cause your emotional needs to become entangled in conflict or overly defensive acts of giving.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:meanLilith",
+    "locale": "en",
+    "text": "You possess an instinctive capacity to nurture others by honoring their deep, unacknowledged needs, giving care that is intensely personal and raw. This gift allows you to recognize what is needed to feel truly safe, even when it defies convention. The challenge lies in defining where self-care ends and emotional sacrifice begins, sometimes requiring you to hide fundamental needs to maintain connection.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:meanNode",
+    "locale": "en",
+    "text": "You find profound meaning in nurturing and caring for others, making emotional sustenance a central part of your life journey. This pull suggests that your deepest lessons come through the act of giving and receiving care, which sometimes leads you to prioritize the needs of others over your own. ",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:mercury",
+    "locale": "en",
+    "text": "You communicate care and concern naturally, using your words to assure others and offer emotional support. This gift makes you feel helpful when you guide people through understanding or sharing knowledge. The tendency, however, is to take on the emotional weight of others’ thoughts, sometimes feeling responsible for their feeling safe or understood.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:moon",
+    "locale": "en",
+    "text": "You feel a natural, deep bond that provides emotional sustenance and a strong sense of mutual care. You are skilled at recognizing exactly what comfort or nurturing another person requires, and giving it feels deeply natural. However, you may sometimes mistake the need to care for another as your own emotional requirement, leading to difficulty establishing boundaries.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:neptune",
+    "locale": "en",
+    "text": "You possess a profound capacity for empathetic care, feeling the needs of others with an intuitive depth that connects you deeply to the emotional life of those around you. This gift allows you to nurture connections on a near-spiritual level. Your challenge is recognizing where your boundless compassion ends and where your own emotional boundaries begin, avoiding the tendency to dissolve your self in the care of others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:osculatingLilith",
+    "locale": "en",
+    "text": "You possess a deep capacity for nurturing the parts of someone else that feel rejected or unaccepted, offering a powerful, unconditional space for their wild emotional truth. Your challenge is that you may tie your own sense of care and self-worth to honoring those difficult emotional needs, risking the blurring of personal emotional boundaries.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:pallas",
+    "locale": "en",
+    "text": "You show care and support through thoughtful application of intellect, offering wisdom that feels both nurturing and strategically sound. This ability allows you to comfort others by advising them on the best path forward, making you a source of reliable guidance. However, you might sometimes treat emotional needs as puzzles to be solved, leading to a tendency to withdraw feeling in favor of perfect advice.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
+  },
+  {
+    "key": "synastry-aspect:conjunction:ceres:pluto",
+    "locale": "en",
+    "text": "You possess a potent capacity to profoundly transform emotional needs and cycles of care. You can transmute deep loss into powerful renewal, building life out of what has been broken. Be aware that this profound intensity means emotional provisioning can become a site of struggle, demanding a careful negotiation of control and deepest worth within a bond.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "gemma4",
+      "generatedAt": "2026-09-29"
+    }
   }
 ]
