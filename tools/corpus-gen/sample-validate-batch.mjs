@@ -16,16 +16,12 @@
  * synastry-aspect post-#371's revert), so there's nothing to tag the way
  * verify-batch.mjs tags existing entries.
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/sample-validate-batch.mjs --category=synastry-aspect [--locale=nl] [--sample-size=18] [--provider=ollama|gemini|ica] [--judge-provider=gemini|ollama|ica] [--seed=N] [--out=FILE]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/sample-validate-batch.mjs --category=synastry-aspect [--locale=nl] [--sample-size=18] [--provider=ollama|gemini] [--judge-provider=gemini|ollama] [--seed=N] [--out=FILE]
  *
  * `--provider` (default ollama) is the generator being validated;
  * `--judge-provider` (default gemini) must differ from it unless
  * `--allow-same-provider-judge` is passed — a same-model judge grading its
  * own homework defeats the point of an independent fact-grounding check.
- * `ica` (lib/ica.mjs) is a hosted OpenAI-compatible gateway, for comparing a
- * larger hosted model against a local Ollama one on equal footing (same
- * sample, same judge) — see ASTRAYA_ICA_API_KEY/ASTRAYA_ICA_BASE_URL/
- * ASTRAYA_ICA_MODEL in .env.local.
  *
  * When the clean rate is low, the report's "propose solutions" section
  * explicitly suggests generating and validating a comparison sample with an
@@ -131,7 +127,7 @@ const sampleSize = Number(flag('sample-size', '18'));
 const seed = Number(flag('seed', '368'));
 const outPath = flag('out');
 
-const PROVIDERS = ['gemini', 'ollama', 'ica'];
+const PROVIDERS = ['gemini', 'ollama'];
 const provider = flag('provider', 'ollama');
 if (!PROVIDERS.includes(provider))
   throw new Error(`--provider must be one of ${PROVIDERS.join(', ')}, got "${provider}"`);
@@ -147,20 +143,17 @@ if (judgeProvider === provider && !rawArgs.includes('--allow-same-provider-judge
 }
 
 function libFor(p) {
-  return p === 'ollama' ? './lib/ollama.mjs' : p === 'ica' ? './lib/ica.mjs' : './lib/gemini.mjs';
+  return p === 'ollama' ? './lib/ollama.mjs' : './lib/gemini.mjs';
 }
 function modelFor(p) {
   if (p === 'ollama') return process.env.OLLAMA_MODEL || 'gemma4';
-  if (p === 'ica') return process.env.ASTRAYA_ICA_MODEL;
   return process.env.GEMINI_MODEL;
 }
 function baseUrlFor(p) {
   if (p === 'ollama') return process.env.OLLAMA_BASE_URL;
-  if (p === 'ica') return process.env.ASTRAYA_ICA_BASE_URL;
   return process.env.GEMINI_BASE_URL;
 }
 function apiKeyFor(p) {
-  if (p === 'ica') return process.env.ASTRAYA_ICA_API_KEY;
   if (p === 'gemini') return process.env.GEMINI_API_KEY;
   return undefined;
 }
