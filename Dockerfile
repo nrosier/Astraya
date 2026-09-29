@@ -89,12 +89,14 @@ COPY --from=build /app/src/interpretation/lint.ts ./src/interpretation/lint.ts
 # Tier 2 (#360, server/interpretation-routes.ts) re-resolves each request's
 # placementKeys against this server's own copy of the corpus, and runs the
 # same customPrompt guardrail the client already ran — authoritatively, not
-# just as a UX nicety. This is the full value-import closure that route
-# actually reaches at runtime (traced by hand from its own imports down);
-# files only ever reached through a TypeScript `import type` — which Node's
-# type stripping erases before resolution is attempted, so they're never
-# read from disk — are deliberately left out (e.g. src/astrology/dignities.ts,
-# src/ephemeris/types.ts).
+# just as a UX nicety. Freeform mode's houseOf() call additionally reaches
+# src/astrology/emphasis.ts, which itself makes a real value import of
+# rulerOf() from dignities.ts (not just the `import type` it also has) — so
+# dignities.ts is copied too, unlike src/ephemeris/types.ts below, which is
+# only ever reached through `import type` and is erased by Node's type
+# stripping before resolution is attempted. This is the full value-import
+# closure that route actually reaches at runtime (traced by hand from its
+# own imports down).
 COPY --from=build /app/src/interpretation/schema.ts ./src/interpretation/schema.ts
 COPY --from=build /app/src/interpretation/compose.ts ./src/interpretation/compose.ts
 COPY --from=build /app/src/interpretation/index.ts ./src/interpretation/index.ts
@@ -106,6 +108,8 @@ COPY --from=build /app/src/astrology/bodies.ts ./src/astrology/bodies.ts
 COPY --from=build /app/src/astrology/aspects.ts ./src/astrology/aspects.ts
 COPY --from=build /app/src/astrology/signs.ts ./src/astrology/signs.ts
 COPY --from=build /app/src/astrology/nakshatras.ts ./src/astrology/nakshatras.ts
+COPY --from=build /app/src/astrology/emphasis.ts ./src/astrology/emphasis.ts
+COPY --from=build /app/src/astrology/dignities.ts ./src/astrology/dignities.ts
 COPY --from=build /app/src/ephemeris/generated-constants.ts ./src/ephemeris/generated-constants.ts
 
 # `data/` is the one writable path in the tree — it holds the SQLite file plus

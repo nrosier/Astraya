@@ -20,9 +20,9 @@
  * in the opposite sign. Both are derived from the tables above rather than
  * duplicated, so they can never drift out of sync with them.
  */
-import { bodyByKey } from './bodies.js';
+import { bodyByKey } from './bodies.ts';
 import type { BodyId, Degrees } from '../ephemeris/types.js';
-import { oppositeSign, signIndex } from './signs.js';
+import { oppositeSign, signIndex } from './signs.ts';
 
 export type RulershipScheme = 'traditional' | 'modern';
 

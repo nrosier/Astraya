@@ -17,8 +17,10 @@
  * a separate mechanism.
  */
 import type { BodyId, Degrees } from '../ephemeris/types.js';
-import { type RulershipScheme, rulerOf } from './dignities.js';
-import { type Element, type Modality, SIGNS, signIndex, signOf } from './signs.js';
+import type { RulershipScheme } from './dignities.js';
+import { rulerOf } from './dignities.ts';
+import type { Element, Modality } from './signs.js';
+import { SIGNS, signIndex, signOf } from './signs.ts';
 
 function norm360(degrees: Degrees): Degrees {
   const value = degrees % 360;
