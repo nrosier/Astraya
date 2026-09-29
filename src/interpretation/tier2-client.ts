@@ -40,18 +40,24 @@ async function errorMessage(response: Response): Promise<string> {
   return `Request failed with status ${String(response.status)}`;
 }
 
+/** Hand-mirrors `server/interpretation/llm-client.ts`'s `Tier2Section` — no shared schema library between client and server. */
+export interface Tier2Section {
+  readonly heading: string;
+  readonly body: string;
+}
+
 /** Generates one Tier-2, AI-customized interpretation for the given placements and free-text style instructions. */
 export async function generateTier2Interpretation(
   placementKeys: readonly string[],
   customPrompt: string,
   locale: Locale,
-): Promise<string> {
+): Promise<readonly Tier2Section[]> {
   const response = await fetch('/api/interpretation/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ placementKeys, customPrompt, locale }),
   });
   if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
-  const { text } = (await response.json()) as { text: string };
-  return text;
+  const { sections } = (await response.json()) as { sections: readonly Tier2Section[] };
+  return sections;
 }

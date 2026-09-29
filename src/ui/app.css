@@ -1273,6 +1273,31 @@ label.stacked textarea:focus-visible {
   margin-top: 0.2rem;
 }
 
+/* Tier 2 (#360): the AI-customized interpretation's own sections, one `<article>` per
+   `{heading, body}` pair the model returns (#376) — same rhythm as `.report-section`
+   one level up, since this renders inside that same tab rather than a whole report. */
+.tier2-result {
+  margin-top: 1.25rem;
+}
+
+.tier2-result article {
+  margin-bottom: 1.75rem;
+}
+
+.tier2-result article:last-child {
+  margin-bottom: 0;
+}
+
+.tier2-result h4 {
+  margin: 0 0 0.4rem;
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+.tier2-result p {
+  margin: 0;
+}
+
 /* The AstroChart reference wheel shown alongside Astraya's own rendering in dev builds
    only, for side-by-side comparison (#231-adjacent). */
 .chart-wheel-reference {

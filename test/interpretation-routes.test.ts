@@ -29,7 +29,8 @@ let app: FastifyInstance;
 let fetchMock: ReturnType<typeof vi.fn>;
 const realFetch = globalThis.fetch;
 
-function geminiOk(text: string, promptTokenCount = 10, candidatesTokenCount = 20): Response {
+function geminiOk(sectionBody: string, promptTokenCount = 10, candidatesTokenCount = 20): Response {
+  const text = JSON.stringify({ sections: [{ heading: 'Overview', body: sectionBody }] });
   return new Response(
     JSON.stringify({
       candidates: [{ content: { parts: [{ text }] } }],
@@ -114,7 +115,9 @@ describe('POST /api/interpretation/generate', () => {
       payload: VALID_BODY,
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json<{ text: string }>().text).toBe('A restyled interpretation.');
+    expect(response.json<{ sections: { heading: string; body: string }[] }>().sections).toEqual([
+      { heading: 'Overview', body: 'A restyled interpretation.' },
+    ]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

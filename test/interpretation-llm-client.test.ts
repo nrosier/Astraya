@@ -38,4 +38,30 @@ describe('generateTier2Text', () => {
       'Tier 2 model call failed (400): server error',
     );
   });
+
+  it('parses structured sections from a successful response (#376)', async () => {
+    const sections = [{ heading: 'Career', body: 'Focused and ambitious.' }];
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: JSON.stringify({ sections }) }] } }],
+          usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 15 },
+        }),
+        { status: 200 },
+      );
+    const result = await generateTier2Text(config, 'system', 'user');
+    expect(result).toEqual({ sections, promptTokens: 5, outputTokens: 15 });
+  });
+
+  it('throws a clear error when a 200 response has a malformed sections shape', async () => {
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: JSON.stringify({ sections: [{ heading: 'Career' }] }) }] } }],
+          usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 15 },
+        }),
+        { status: 200 },
+      );
+    await expect(generateTier2Text(config, 'system', 'user')).rejects.toThrow(/unexpected model response shape/);
+  });
 });

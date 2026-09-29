@@ -27,7 +27,8 @@ let baseUrl: string;
 let requestBodies: unknown[];
 const realFetch = globalThis.fetch;
 
-function geminiOk(text: string): Response {
+function geminiOk(sectionBody: string): Response {
+  const text = JSON.stringify({ sections: [{ heading: 'Overview', body: sectionBody }] });
   return new Response(
     JSON.stringify({
       candidates: [{ content: { parts: [{ text }] } }],
@@ -84,10 +85,10 @@ async function setupAdmin(username = 'alice', password = 'correct-horse-battery'
 }
 
 describe('generateTier2Interpretation', () => {
-  it('resolves with the generated text on a successful response', async () => {
+  it('resolves with the generated sections on a successful response', async () => {
     await setupAdmin();
-    const text = await generateTier2Interpretation(['dignity-state:sun:ruler'], 'warm and encouraging', 'en');
-    expect(text).toBe('A restyled interpretation.');
+    const sections = await generateTier2Interpretation(['dignity-state:sun:ruler'], 'warm and encouraging', 'en');
+    expect(sections).toEqual([{ heading: 'Overview', body: 'A restyled interpretation.' }]);
   });
 
   it('sends placementKeys, customPrompt, and locale as the request body', async () => {

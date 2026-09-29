@@ -566,7 +566,10 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     const address = app.server.address();
     if (address === null || typeof address === 'string') throw new Error('server did not bind to a port');
     baseUrl = `http://127.0.0.1:${String(address.port)}`;
-    generateResponse = () => new Response(JSON.stringify({ text: 'A restyled interpretation.' }), { status: 200 });
+    generateResponse = () =>
+      new Response(JSON.stringify({ sections: [{ heading: 'Overview', body: 'A restyled interpretation.' }] }), {
+        status: 200,
+      });
 
     // `alice` is provisioned directly against the real, listening server — a real sign-in
     // (below, via `latestSession.signIn`, through the fetch stub) is what gives
@@ -715,7 +718,9 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     });
 
     await vi.waitFor(() => {
-      expect(panelOf(container).querySelector('.tier2-result')?.textContent).toBe('A restyled interpretation.');
+      const resultEl = panelOf(container).querySelector('.tier2-result');
+      expect(resultEl?.querySelector('h4')?.textContent).toBe('Overview');
+      expect(resultEl?.querySelector('p')?.textContent).toBe('A restyled interpretation.');
     });
     expect(panelOf(container).querySelector('[role="alert"]')).toBeNull();
 

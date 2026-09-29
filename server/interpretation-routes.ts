@@ -55,6 +55,8 @@ const SYSTEM_INSTRUCTION = [
   'matching that style. Do not invent new facts, placements, dates, or claims not',
   'present in the facts given to you. Do not give medical, legal, or financial',
   'advice, and do not use fatalistic or absolute ("you will never...") phrasing.',
+  'Organize your response into 2 to 4 short thematic sections, each with a brief',
+  'heading and a 1 to 3 sentence body — never one long undivided paragraph (#376).',
 ].join(' ');
 
 // A real report has a few dozen placements at most; this is a generous ceiling against
@@ -173,7 +175,7 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
 
       let result;
       try {
-        result = await generateTier2Text(config, SYSTEM_INSTRUCTION, userContent);
+        result = await generateTier2Text(config, SYSTEM_INSTRUCTION, userContent, 2, request.log);
       } catch (error) {
         request.log.error(error, 'Tier 2 model call failed');
         return reply.code(502).send({ error: 'The AI-customized interpretation could not be generated right now.' });
@@ -187,7 +189,7 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
         costCents,
       });
 
-      return reply.send({ text: result.text });
+      return reply.send({ sections: result.sections });
     },
   );
 }

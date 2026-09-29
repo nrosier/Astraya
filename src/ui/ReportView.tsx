@@ -45,7 +45,7 @@ import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { useSessionUserOrUndefined } from './session-context.js';
 import { reportViewMessages } from './ReportView.messages.js';
-import { generateTier2Interpretation, Tier2Error } from '../interpretation/tier2-client.js';
+import { generateTier2Interpretation, Tier2Error, type Tier2Section } from '../interpretation/tier2-client.js';
 import type { ChartData } from '../domain/chart-compute.js';
 
 type InterpretationTabKey = 'standard' | 'ai';
@@ -156,7 +156,7 @@ function AiCustomizedPanel({
   const [consent, setConsent] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<string | undefined>(undefined);
+  const [result, setResult] = useState<readonly Tier2Section[] | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
   if (user === undefined) {
@@ -186,8 +186,8 @@ function AiCustomizedPanel({
     setGenerating(true);
     setError(undefined);
     generateTier2Interpretation(placementKeys, customPrompt, locale)
-      .then((text) => {
-        setResult(text);
+      .then((sections) => {
+        setResult(sections);
       })
       .catch((caught: unknown) => {
         setError(caught instanceof Tier2Error ? caught.message : String(caught));
@@ -238,7 +238,16 @@ function AiCustomizedPanel({
         {generating ? t.tier2Generating : t.tier2Generate}
       </button>
       {error !== undefined && <p role="alert">{t.tier2Error(error)}</p>}
-      {result !== undefined && <p className="tier2-result">{result}</p>}
+      {result !== undefined && (
+        <div className="tier2-result">
+          {result.map((section) => (
+            <article key={section.heading}>
+              <h4>{section.heading}</h4>
+              <p>{section.body}</p>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
