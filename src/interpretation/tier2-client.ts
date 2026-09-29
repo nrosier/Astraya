@@ -6,18 +6,24 @@
  * response beyond its own shape, and every rejection carries the server's
  * own message.
  *
- * Takes `placementKeys` (from `report.ts`'s `reportPlacementKeys`) rather
- * than the chart or corpus text itself — the server re-resolves each key's
- * grounded Tier-1 text against its own copy of the corpus, so no
- * interpretation prose crosses the wire from the client at all, only the
- * de-identified placement keys already safe to send per ADR 0003's
- * structural PII-minimization.
+ * Two modes, see ADR 0003:
+ * - `'grounded'` sends `placementKeys` (from `report.ts`'s
+ *   `reportPlacementKeys`) rather than the chart or corpus text itself — the
+ *   server re-resolves each key's grounded Tier-1 text against its own copy
+ *   of the corpus, so no interpretation prose crosses the wire from the
+ *   client at all, only the de-identified placement keys already safe to
+ *   send per ADR 0003's structural PII-minimization, and the model only
+ *   restyles that given text.
+ * - `'freeform'` sends `chartData` (computed positions/houses/aspects — see
+ *   `toTier2ChartPayload`) and lets the model originate its own
+ *   interpretation from it. This deliberately gives up grounded mode's
+ *   "no chart data crosses the wire" guarantee for this mode only; ADR 0003
+ *   documents the tradeoff.
  *
- * `locale` is sent alongside them so the server resolves each key's
- * grounded Tier-1 text in the language the report is already showing —
- * itself locale-agnostic data (`schema.ts`'s canonical body/aspect ids),
- * not the birth data the placement keys are already scoped to exclude.
+ * `locale` is sent alongside either payload so the server responds in the
+ * language the report is already showing.
  */
+import type { ChartData } from '../domain/chart-compute.js';
 import type { Locale } from './schema.js';
 
 export class Tier2Error extends Error {
@@ -46,16 +52,63 @@ export interface Tier2Section {
   readonly body: string;
 }
 
-/** Generates one Tier-2, AI-customized interpretation for the given placements and free-text style instructions. */
-export async function generateTier2Interpretation(
-  placementKeys: readonly string[],
-  customPrompt: string,
-  locale: Locale,
-): Promise<readonly Tier2Section[]> {
+/**
+ * Hand-mirrors `server/interpretation-routes.ts`'s `chartData` validation
+ * shape for freeform mode. Deliberately a subset of `ChartData` — only
+ * `positions`/`houses`/`aspects`, not `dignities`/`sect`/`partOfFortune`/
+ * `partOfSpirit`, which freeform mode doesn't send.
+ */
+export interface Tier2ChartDataPayload {
+  readonly positions: readonly { readonly body: number; readonly longitude: number }[];
+  readonly houses: { readonly cusps: readonly number[]; readonly ascendant: number; readonly midheaven: number };
+  readonly aspects: readonly {
+    readonly bodyA: number;
+    readonly bodyB: number;
+    readonly aspectKey: string;
+    readonly separation: number;
+    readonly orb: number;
+  }[];
+}
+
+/** Flattens a computed `ChartData` into freeform mode's wire payload. */
+export function toTier2ChartPayload(chart: ChartData): Tier2ChartDataPayload {
+  return {
+    positions: chart.positions.map((position) => ({ body: position.body, longitude: position.longitude })),
+    houses: {
+      cusps: chart.houses.cusps,
+      ascendant: chart.houses.ascendant,
+      midheaven: chart.houses.midheaven,
+    },
+    aspects: chart.aspects.map((aspect) => ({
+      bodyA: aspect.bodyA,
+      bodyB: aspect.bodyB,
+      aspectKey: aspect.aspect.key,
+      separation: aspect.separation,
+      orb: aspect.orb,
+    })),
+  };
+}
+
+export type Tier2Request =
+  | {
+      readonly mode: 'grounded';
+      readonly placementKeys: readonly string[];
+      readonly customPrompt: string;
+      readonly locale: Locale;
+    }
+  | {
+      readonly mode: 'freeform';
+      readonly chartData: Tier2ChartDataPayload;
+      readonly customPrompt: string;
+      readonly locale: Locale;
+    };
+
+/** Generates one Tier-2, AI-customized interpretation for the given request. */
+export async function generateTier2Interpretation(request: Tier2Request): Promise<readonly Tier2Section[]> {
   const response = await fetch('/api/interpretation/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ placementKeys, customPrompt, locale }),
+    body: JSON.stringify(request),
   });
   if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
   const { sections } = (await response.json()) as { sections: readonly Tier2Section[] };

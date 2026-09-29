@@ -14,7 +14,72 @@ import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
-import { generateTier2Interpretation, Tier2Error } from '../src/interpretation/tier2-client.ts';
+import { generateTier2Interpretation, Tier2Error, toTier2ChartPayload } from '../src/interpretation/tier2-client.ts';
+import { bodyByKey } from '../src/astrology/bodies.ts';
+import type { ChartData } from '../src/domain/chart-compute.ts';
+import type { BodyId, HousePositions } from '../src/ephemeris/types.ts';
+
+function idOf(key: string): BodyId {
+  const body = bodyByKey(key);
+  if (body === undefined) throw new Error(`test fixture bug: no body keyed "${key}"`);
+  return body.id;
+}
+
+const SUN = idOf('sun');
+const MOON = idOf('moon');
+
+const HOUSES: HousePositions = {
+  cusps: [0, 10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340],
+  ascendant: 10,
+  midheaven: 280,
+  armc: 278,
+  vertex: 200,
+  equatorialAscendant: 12,
+  coAscendantKoch: 14,
+  coAscendantMunkasey: 16,
+  polarAscendant: 18,
+  system: 'P',
+};
+
+const FIXTURE_CHART: ChartData = {
+  positions: [
+    {
+      body: SUN,
+      longitude: 14,
+      latitude: 0,
+      distance: 1,
+      longitudeSpeed: 1,
+      latitudeSpeed: 0,
+      distanceSpeed: 0,
+      retrograde: false,
+    },
+    {
+      body: MOON,
+      longitude: 100,
+      latitude: 0,
+      distance: 1,
+      longitudeSpeed: -0.5,
+      latitudeSpeed: 0,
+      distanceSpeed: 0,
+      retrograde: true,
+    },
+  ],
+  houses: HOUSES,
+  aspects: [
+    {
+      bodyA: SUN,
+      bodyB: MOON,
+      aspect: { key: 'trine', name: 'Trine', angle: 120, family: 'major' },
+      separation: 119,
+      orb: 1,
+      applying: false,
+    },
+  ],
+  dignities: new Map(),
+  sect: 'day',
+  partOfFortune: 0,
+  partOfSpirit: 0,
+};
 
 const BOOTSTRAP_TOKEN = 'test-bootstrap-token';
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com';
@@ -84,28 +149,68 @@ async function setupAdmin(username = 'alice', password = 'correct-horse-battery'
   if (!response.ok) throw new Error(`setup failed with status ${String(response.status)}`);
 }
 
+describe('toTier2ChartPayload', () => {
+  it('flattens positions, houses, and aspects into the wire shape', () => {
+    expect(toTier2ChartPayload(FIXTURE_CHART)).toEqual({
+      positions: [
+        { body: SUN, longitude: 14 },
+        { body: MOON, longitude: 100 },
+      ],
+      houses: { cusps: HOUSES.cusps, ascendant: 10, midheaven: 280 },
+      aspects: [{ bodyA: SUN, bodyB: MOON, aspectKey: 'trine', separation: 119, orb: 1 }],
+    });
+  });
+});
+
 describe('generateTier2Interpretation', () => {
   it('resolves with the generated sections on a successful response', async () => {
     await setupAdmin();
-    const sections = await generateTier2Interpretation(['dignity-state:sun:ruler'], 'warm and encouraging', 'en');
+    const sections = await generateTier2Interpretation({
+      mode: 'grounded',
+      placementKeys: ['dignity-state:sun:ruler'],
+      customPrompt: 'warm and encouraging',
+      locale: 'en',
+    });
     expect(sections).toEqual([{ heading: 'Overview', body: 'A restyled interpretation.' }]);
   });
 
-  it('sends placementKeys, customPrompt, and locale as the request body', async () => {
+  it('sends mode, placementKeys, customPrompt, and locale as the request body in grounded mode', async () => {
     await setupAdmin();
-    await generateTier2Interpretation(['dignity-state:sun:ruler', 'planet-in-sign:moon:3'], 'blunt and direct', 'nl');
+    await generateTier2Interpretation({
+      mode: 'grounded',
+      placementKeys: ['dignity-state:sun:ruler', 'planet-in-sign:moon:3'],
+      customPrompt: 'blunt and direct',
+      locale: 'nl',
+    });
 
     const sent = requestBodies.at(-1);
     expect(sent).toEqual({
+      mode: 'grounded',
       placementKeys: ['dignity-state:sun:ruler', 'planet-in-sign:moon:3'],
       customPrompt: 'blunt and direct',
       locale: 'nl',
     });
   });
 
+  it('sends mode, chartData, customPrompt, and locale as the request body in freeform mode', async () => {
+    await setupAdmin();
+    const chartData = toTier2ChartPayload(FIXTURE_CHART);
+    await generateTier2Interpretation({ mode: 'freeform', chartData, customPrompt: 'blunt and direct', locale: 'nl' });
+
+    const sent = requestBodies.at(-1);
+    expect(sent).toEqual({ mode: 'freeform', chartData, customPrompt: 'blunt and direct', locale: 'nl' });
+  });
+
   it('throws a Tier2Error carrying the server’s own message and status on a non-2xx response', async () => {
     await setupAdmin();
-    await expect(generateTier2Interpretation([], 'warm and encouraging', 'en')).rejects.toMatchObject({
+    await expect(
+      generateTier2Interpretation({
+        mode: 'grounded',
+        placementKeys: [],
+        customPrompt: 'warm and encouraging',
+        locale: 'en',
+      }),
+    ).rejects.toMatchObject({
       name: 'Tier2Error',
       status: 400,
       message: 'placementKeys must be a non-empty array',
@@ -114,13 +219,25 @@ describe('generateTier2Interpretation', () => {
 
   it('throws a Tier2Error with status 401 when signed out', async () => {
     await expect(
-      generateTier2Interpretation(['dignity-state:sun:ruler'], 'warm and encouraging', 'en'),
+      generateTier2Interpretation({
+        mode: 'grounded',
+        placementKeys: ['dignity-state:sun:ruler'],
+        customPrompt: 'warm and encouraging',
+        locale: 'en',
+      }),
     ).rejects.toMatchObject({ name: 'Tier2Error', status: 401 });
   });
 
   it('falls back to a generic message when the error response body is not JSON', async () => {
     globalThis.fetch = () => Promise.resolve(new Response('not json', { status: 500 }));
-    await expect(generateTier2Interpretation(['dignity-state:sun:ruler'], 'x', 'en')).rejects.toMatchObject({
+    await expect(
+      generateTier2Interpretation({
+        mode: 'grounded',
+        placementKeys: ['dignity-state:sun:ruler'],
+        customPrompt: 'x',
+        locale: 'en',
+      }),
+    ).rejects.toMatchObject({
       name: 'Tier2Error',
       status: 500,
       message: 'Request failed with status 500',

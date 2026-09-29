@@ -45,7 +45,12 @@ import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { useSessionUserOrUndefined } from './session-context.js';
 import { reportViewMessages } from './ReportView.messages.js';
-import { generateTier2Interpretation, Tier2Error, type Tier2Section } from '../interpretation/tier2-client.js';
+import {
+  generateTier2Interpretation,
+  toTier2ChartPayload,
+  Tier2Error,
+  type Tier2Section,
+} from '../interpretation/tier2-client.js';
 import type { ChartData } from '../domain/chart-compute.js';
 
 type InterpretationTabKey = 'standard' | 'ai';
@@ -147,13 +152,16 @@ function Paragraph({
 function AiCustomizedPanel({
   report,
   locale,
+  chart,
 }: {
   readonly report: Report;
   readonly locale: Locale;
+  readonly chart: ChartData;
 }): React.JSX.Element {
   const t = useMessages(reportViewMessages);
   const user = useSessionUserOrUndefined();
   const [consent, setConsent] = useState(false);
+  const [mode, setMode] = useState<'grounded' | 'freeform'>('grounded');
   const [customPrompt, setCustomPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<readonly Tier2Section[] | undefined>(undefined);
@@ -185,7 +193,11 @@ function AiCustomizedPanel({
   function handleGenerate(): void {
     setGenerating(true);
     setError(undefined);
-    generateTier2Interpretation(placementKeys, customPrompt, locale)
+    const request =
+      mode === 'grounded'
+        ? { mode: 'grounded' as const, placementKeys, customPrompt, locale }
+        : { mode: 'freeform' as const, chartData: toTier2ChartPayload(chart), customPrompt, locale };
+    generateTier2Interpretation(request)
       .then((sections) => {
         setResult(sections);
       })
@@ -210,6 +222,33 @@ function AiCustomizedPanel({
         />{' '}
         {t.tier2ConsentLabel}
       </label>
+      <fieldset className="field-group">
+        <legend>{t.tier2ModeLabel}</legend>
+        <div role="radiogroup" aria-label={t.tier2ModeLabel}>
+          <label>
+            <input
+              type="radio"
+              name="tier2-mode"
+              checked={mode === 'grounded'}
+              onChange={() => {
+                setMode('grounded');
+              }}
+            />{' '}
+            {t.tier2ModeGrounded}
+          </label>{' '}
+          <label>
+            <input
+              type="radio"
+              name="tier2-mode"
+              checked={mode === 'freeform'}
+              onChange={() => {
+                setMode('freeform');
+              }}
+            />{' '}
+            {t.tier2ModeFreeform}
+          </label>
+        </div>
+      </fieldset>
       <label className="stacked">
         {t.customPromptLabel}
         <textarea
@@ -422,7 +461,7 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
             ))}
           </>
         ) : (
-          <AiCustomizedPanel report={report} locale={locale} />
+          <AiCustomizedPanel report={report} locale={locale} chart={chart} />
         )}
       </div>
     </div>

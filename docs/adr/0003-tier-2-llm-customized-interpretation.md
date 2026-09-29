@@ -29,16 +29,38 @@ its own "AI-Customized" sub-tab alongside "Standard", gated by
 never-persisted consent checkbox: consent authorizes one specific request,
 not a standing preference.
 
-**The client never sends birth data, chart data, or interpretation prose.**
-It sends `placementKeys` (`report.ts`'s `reportPlacementKeys` — e.g.
-`planet-in-sign:sun:4`) and `locale`. A placement key is structurally
-incapable of carrying a name, a date, or coordinates: it is built by
-`placementKey()` from a closed set of category/body/sign/house/aspect
-tokens (`schema.ts`), not from anything a user typed. The server
-(`server/interpretation-routes.ts`) re-resolves each key's grounded Tier-1
-text against its own copy of the corpus (`resolvePlacementText`) — the
-facts a model sees are always ones this app already reviewed and shipped,
-never re-derived from the request.
+**Tier 2 has two modes, chosen per request by the reader — `'grounded'`
+(the default) and `'freeform'` — and only `'grounded'` carries the
+guarantee below in full.**
+
+**In grounded mode, the client never sends birth data, chart data, or
+interpretation prose.** It sends `placementKeys` (`report.ts`'s
+`reportPlacementKeys` — e.g. `planet-in-sign:sun:4`) and `locale`. A
+placement key is structurally incapable of carrying a name, a date, or
+coordinates: it is built by `placementKey()` from a closed set of
+category/body/sign/house/aspect tokens (`schema.ts`), not from anything a
+user typed. The server (`server/interpretation-routes.ts`) re-resolves
+each key's grounded Tier-1 text against its own copy of the corpus
+(`resolvePlacementText`) — the facts a model sees are always ones this app
+already reviewed and shipped, and the model's only job is to restyle that
+given text, never originate new claims.
+
+**In freeform mode, the client sends `chartData` — the reader's exact
+computed positions, houses, and aspects — and the model originates its own
+interpretation from them, rather than restyling reviewed text.** This is a
+deliberate, explicit departure from the guarantee above, offered as an
+opt-in second mode for readers who want more than a restyled version of
+the reviewed corpus. `chartData` still never carries a name, birth date, or
+location — it is `ChartData`'s computed output (`chart-compute.ts`), not
+its input — but it is far more granular than a placement key (exact
+degrees, not a bucketed sign/house category), and the model is free to say
+things about the chart the corpus never wrote. Every numeric id and key in
+`chartData` is still closed-set-revalidated server-side before it reaches
+the prompt (`validateChartData`: `bodyById`, `aspectByKey`, and bounds
+checks on every longitude/separation/orb) — the same anti-injection
+discipline `validateKey` applies to grounded mode's placement keys, just
+applied to a richer payload. Freeform mode does not get grounded mode's
+"never originates content" guarantee; it is not offered as if it did.
 
 **`customPrompt` is the one field that structural guarantee doesn't cover.**
 Free-form style/tone/focus instructions can't be made structurally incapable
@@ -89,6 +111,12 @@ Good:
 
 Costs, stated plainly:
 
+- Freeform mode sends real chart data (exact degrees, all bodies, all
+  aspects, both angles) to a third party, and lets the model originate
+  content rather than restyle reviewed text. This is a real reduction in
+  the privacy and fact-grounding guarantees grounded mode provides,
+  accepted knowingly as the cost of the mode's own reason to exist — not
+  something the UI or this document should understate.
 - `customPrompt`'s guardrail is best-effort, not structural — it can't
   detect a birth date typed as a fragment ("the fourth of July") or a
   disguised injection attempt. It is documented as such rather than

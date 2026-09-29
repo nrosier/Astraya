@@ -4,15 +4,26 @@
  * docs/adr/0003-tier-2-llm-customized-interpretation.md for the full
  * architecture — this file is the route itself.
  *
- * The client sends `placementKeys` (from `report.ts`'s `reportPlacementKeys`)
- * rather than birth data or chart-derived text: each key is re-resolved
- * against this server's own copy of the corpus (`resolvePlacementText`), so
- * no interpretation prose or personal data crosses the wire from the client,
- * only the structurally de-identified keys ADR 0003 documents. `customPrompt`
- * is the one free-text field that structural constraint doesn't cover, so it
- * is run through `checkCustomPrompt` here — authoritatively, regardless of
- * whether the client already filtered it — before it is ever combined with
- * the resolved facts and sent to the model.
+ * Two modes:
+ * - `'grounded'` (default, unchanged since #360): the client sends
+ *   `placementKeys` (from `report.ts`'s `reportPlacementKeys`) rather than
+ *   birth data or chart-derived text; each key is re-resolved against this
+ *   server's own copy of the corpus (`resolvePlacementText`), so no
+ *   interpretation prose or personal data crosses the wire from the client,
+ *   only the structurally de-identified keys ADR 0003 documents, and the
+ *   model only restyles that given text.
+ * - `'freeform'`: the client sends `chartData` (computed positions/houses/
+ *   aspects), and the model originates its own interpretation from it —
+ *   deliberately giving up the "no chart data crosses the wire" guarantee
+ *   for this mode only, per ADR 0003's updated scope. `validateChartData`
+ *   below re-derives and closed-set-checks every numeric id/key, the same
+ *   reason `validateKey` does for grounded mode: untrusted client data must
+ *   never reach the third-party prompt unchecked.
+ *
+ * `customPrompt` is the one free-text field neither mode's structural
+ * constraint covers, so it is run through `checkCustomPrompt` here —
+ * authoritatively, regardless of whether the client already filtered it —
+ * before it is ever combined with the resolved facts and sent to the model.
  *
  * Gated by `requireUser`: any signed-in user, not admin-only, since this is
  * a per-user feature, not an admin one. Rate-limited per user (not global)
@@ -30,15 +41,40 @@ import { checkCustomPrompt } from '../src/interpretation/prompt-guardrail.ts';
 import { CORPUS_LOCALES, parsePlacementKey, validateKey, type Locale } from '../src/interpretation/schema.ts';
 import { resolvePlacementText } from '../src/interpretation/compose.ts';
 import { CORPUS } from '../src/interpretation/index.ts';
+import { bodyById } from '../src/astrology/bodies.ts';
+import { aspectByKey } from '../src/astrology/aspects.ts';
+import { signOf, degreesInSign } from '../src/astrology/signs.ts';
+import { houseOf } from '../src/astrology/emphasis.ts';
 
 function isLocale(value: unknown): value is Locale {
   return typeof value === 'string' && (CORPUS_LOCALES as readonly string[]).includes(value);
 }
 
+type Mode = 'grounded' | 'freeform';
+
+function isMode(value: unknown): value is Mode {
+  return value === 'grounded' || value === 'freeform';
+}
+
 interface GenerateBody {
+  readonly mode?: unknown;
   readonly placementKeys?: unknown;
+  readonly chartData?: unknown;
   readonly customPrompt?: unknown;
   readonly locale?: unknown;
+}
+
+/** Freeform mode's validated wire shape — hand-mirrors `src/interpretation/tier2-client.ts`'s `Tier2ChartDataPayload`. */
+interface ChartDataPayload {
+  readonly positions: readonly { readonly body: number; readonly longitude: number }[];
+  readonly houses: { readonly cusps: readonly number[]; readonly ascendant: number; readonly midheaven: number };
+  readonly aspects: readonly {
+    readonly bodyA: number;
+    readonly bodyB: number;
+    readonly aspectKey: string;
+    readonly separation: number;
+    readonly orb: number;
+  }[];
 }
 
 /** `requireUser` is this route's preHandler, so by the time a handler body runs this cannot be unset. */
@@ -59,9 +95,30 @@ const SYSTEM_INSTRUCTION = [
   'heading and a 1 to 3 sentence body — never one long undivided paragraph (#376).',
 ].join(' ');
 
+const FREEFORM_SYSTEM_INSTRUCTION = [
+  'You write an original astrological interpretation from a list of grounded',
+  'chart facts — exact placements, houses, and aspects, already computed and',
+  'correct — and a short instruction describing the style, tone, or focus the',
+  'reader wants. Unlike a restyling task, you originate the interpretation',
+  "yourself: draw on the reader's chart facts to say what they mean, not just",
+  'reword them. Stay strictly within the facts given to you — do not invent',
+  'placements, aspects, dates, or claims not present in them. Do not give',
+  'medical, legal, or financial advice, and do not use fatalistic or absolute',
+  '("you will never...") phrasing. Organize your response into 2 to 4 short',
+  'thematic sections, each with a brief heading and a 1 to 3 sentence body —',
+  'never one long undivided paragraph.',
+].join(' ');
+
 // A real report has a few dozen placements at most; this is a generous ceiling against
 // a request padded with junk entries to inflate token usage/cost per call.
 const MAX_PLACEMENT_KEYS = 200;
+
+// A real chart has a couple dozen bodies at most (planets, angles, nodes, asteroids); a
+// full house wheel is always 13 entries (index 0 unused, 1..12 real); a real chart has at
+// most a few hundred aspect pairs. Generous ceilings against a padded request inflating cost.
+const MAX_BODIES = 40;
+const HOUSE_CUSP_COUNT = 13;
+const MAX_ASPECTS = 200;
 
 /**
  * Reads a cost-cap env var, failing closed (cap of 0, i.e. blocked) on a
@@ -84,9 +141,126 @@ function buildUserContent(facts: readonly string[], customPrompt: string, locale
     'Style, tone, and focus instructions from the reader:',
     customPrompt,
     '',
-    'Grounded facts to restyle (do not add facts beyond these):',
+    'Grounded facts (do not add facts beyond these):',
     ...facts.map((fact) => `- ${fact}`),
   ].join('\n');
+}
+
+/** `max` is exclusive — matches longitude's `[0, 360)` convention. */
+function isFiniteNumberInRange(value: unknown, min: number, max: number): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= min && value < max;
+}
+
+function isFiniteNumberInClosedRange(value: unknown, min: number, max: number): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
+}
+
+/**
+ * Re-derives and closed-set-validates freeform mode's `chartData` payload —
+ * the same reason `validateKey` does this for grounded mode's
+ * `placementKeys`: an attacker-chosen body id, aspect key, or out-of-range
+ * angle would otherwise be echoed into the model prompt unchecked.
+ */
+function validateChartData(payload: unknown): { chartData: ChartDataPayload } | { errors: string[] } {
+  const errors: string[] = [];
+  if (typeof payload !== 'object' || payload === null) {
+    return { errors: ['chartData must be an object'] };
+  }
+  const { positions, houses, aspects } = payload as Record<string, unknown>;
+
+  if (!Array.isArray(positions) || positions.length === 0) {
+    errors.push('chartData.positions must be a non-empty array');
+  } else if (positions.length > MAX_BODIES) {
+    errors.push(`chartData.positions must not exceed ${String(MAX_BODIES)} entries`);
+  } else {
+    for (const [index, entry] of positions.entries()) {
+      if (typeof entry !== 'object' || entry === null) {
+        errors.push(`chartData.positions[${String(index)}] must be an object`);
+        continue;
+      }
+      const { body, longitude } = entry as Record<string, unknown>;
+      if (typeof body !== 'number' || bodyById(body) === undefined) {
+        errors.push(`chartData.positions[${String(index)}].body must be a known body id`);
+      }
+      if (!isFiniteNumberInRange(longitude, 0, 360)) {
+        errors.push(`chartData.positions[${String(index)}].longitude must be a number in [0, 360)`);
+      }
+    }
+  }
+
+  if (typeof houses !== 'object' || houses === null) {
+    errors.push('chartData.houses must be an object');
+  } else {
+    const { cusps, ascendant, midheaven } = houses as Record<string, unknown>;
+    if (!Array.isArray(cusps) || cusps.length !== HOUSE_CUSP_COUNT) {
+      errors.push(`chartData.houses.cusps must be an array of exactly ${String(HOUSE_CUSP_COUNT)} entries`);
+    } else if (!cusps.every((cusp) => isFiniteNumberInRange(cusp, 0, 360))) {
+      errors.push('chartData.houses.cusps entries must all be numbers in [0, 360)');
+    }
+    if (!isFiniteNumberInRange(ascendant, 0, 360)) {
+      errors.push('chartData.houses.ascendant must be a number in [0, 360)');
+    }
+    if (!isFiniteNumberInRange(midheaven, 0, 360)) {
+      errors.push('chartData.houses.midheaven must be a number in [0, 360)');
+    }
+  }
+
+  if (!Array.isArray(aspects)) {
+    errors.push('chartData.aspects must be an array');
+  } else if (aspects.length > MAX_ASPECTS) {
+    errors.push(`chartData.aspects must not exceed ${String(MAX_ASPECTS)} entries`);
+  } else {
+    for (const [index, entry] of aspects.entries()) {
+      if (typeof entry !== 'object' || entry === null) {
+        errors.push(`chartData.aspects[${String(index)}] must be an object`);
+        continue;
+      }
+      const { bodyA, bodyB, aspectKey, separation, orb } = entry as Record<string, unknown>;
+      if (typeof bodyA !== 'number' || bodyById(bodyA) === undefined) {
+        errors.push(`chartData.aspects[${String(index)}].bodyA must be a known body id`);
+      }
+      if (typeof bodyB !== 'number' || bodyById(bodyB) === undefined) {
+        errors.push(`chartData.aspects[${String(index)}].bodyB must be a known body id`);
+      }
+      if (typeof aspectKey !== 'string' || aspectByKey(aspectKey) === undefined) {
+        errors.push(`chartData.aspects[${String(index)}].aspectKey must be a known aspect key`);
+      }
+      if (!isFiniteNumberInClosedRange(separation, 0, 180)) {
+        errors.push(`chartData.aspects[${String(index)}].separation must be a number in [0, 180]`);
+      }
+      if (typeof orb !== 'number' || !Number.isFinite(orb) || orb < 0) {
+        errors.push(`chartData.aspects[${String(index)}].orb must be a non-negative number`);
+      }
+    }
+  }
+
+  if (errors.length > 0) return { errors };
+  return { chartData: payload as ChartDataPayload };
+}
+
+function formatLongitude(longitude: number): string {
+  return `${degreesInSign(longitude).toFixed(1)}° ${signOf(longitude).name}`;
+}
+
+/** Turns validated `chartData` into human-readable facts the model can originate an interpretation from — reusing the same sign/house formatting primitives `report.ts` already uses, not new formatting logic. */
+function buildFreeformFacts(chartData: ChartDataPayload): string[] {
+  const facts: string[] = [];
+  for (const position of chartData.positions) {
+    const body = bodyById(position.body);
+    if (body === undefined) continue;
+    const house = houseOf(position.longitude, chartData.houses.cusps);
+    facts.push(`${body.name}: ${formatLongitude(position.longitude)}, house ${String(house)}`);
+  }
+  facts.push(`Ascendant: ${formatLongitude(chartData.houses.ascendant)}`);
+  facts.push(`Midheaven: ${formatLongitude(chartData.houses.midheaven)}`);
+  for (const aspect of chartData.aspects) {
+    const bodyA = bodyById(aspect.bodyA);
+    const bodyB = bodyById(aspect.bodyB);
+    const aspectDefinition = aspectByKey(aspect.aspectKey);
+    if (bodyA === undefined || bodyB === undefined || aspectDefinition === undefined) continue;
+    facts.push(`${bodyA.name} ${aspectDefinition.name} ${bodyB.name} (orb ${aspect.orb.toFixed(1)}°)`);
+  }
+  return facts;
 }
 
 export function registerInterpretationRoutes(app: FastifyInstance, db: Database): void {
@@ -109,29 +283,15 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
       },
     },
     async (request, reply) => {
-      const { placementKeys, customPrompt, locale } = request.body;
+      const { mode: rawMode, placementKeys, chartData, customPrompt, locale } = request.body;
 
-      if (!Array.isArray(placementKeys) || placementKeys.length === 0) {
-        return reply.code(400).send({ error: 'placementKeys must be a non-empty array' });
+      // A missing `mode` defaults to `'grounded'` — this route's original, only behavior — so
+      // this isn't a breaking change for any caller that predates freeform mode.
+      const mode: Mode | undefined = rawMode === undefined ? 'grounded' : isMode(rawMode) ? rawMode : undefined;
+      if (mode === undefined) {
+        return reply.code(400).send({ error: "mode must be 'grounded' or 'freeform'" });
       }
-      if (placementKeys.length > MAX_PLACEMENT_KEYS) {
-        return reply.code(400).send({ error: `placementKeys must not exceed ${String(MAX_PLACEMENT_KEYS)} entries` });
-      }
-      if (!placementKeys.every((key) => typeof key === 'string')) {
-        return reply.code(400).send({ error: 'placementKeys must all be strings' });
-      }
-      // `validateKey` re-derives each placement and checks its body/aspect is in the closed
-      // reference set and its sign/house/pattern is in range — not just that the key parses
-      // (`parsePlacementKey`'s weaker job). Without this, an attacker-chosen `body`/`aspect`
-      // string would be echoed verbatim into the model prompt below, bypassing `checkCustomPrompt`
-      // entirely via a field that check never inspects.
-      const keyErrors = placementKeys.flatMap((key) => validateKey(key));
-      if (keyErrors.length > 0) {
-        return reply
-          .code(400)
-          .send({ error: `placementKeys must all be well-formed placement keys: ${keyErrors.join('; ')}` });
-      }
-      const parsedPlacements = placementKeys.map((key) => parsePlacementKey(key));
+
       if (typeof customPrompt !== 'string') {
         return reply.code(400).send({ error: 'customPrompt must be a string' });
       }
@@ -144,6 +304,43 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
         return reply
           .code(400)
           .send({ error: `customPrompt failed: ${guardrailIssues.map((issue) => issue.message).join('; ')}` });
+      }
+
+      let facts: string[];
+      let systemInstruction: string;
+      if (mode === 'grounded') {
+        if (!Array.isArray(placementKeys) || placementKeys.length === 0) {
+          return reply.code(400).send({ error: 'placementKeys must be a non-empty array' });
+        }
+        if (placementKeys.length > MAX_PLACEMENT_KEYS) {
+          return reply.code(400).send({ error: `placementKeys must not exceed ${String(MAX_PLACEMENT_KEYS)} entries` });
+        }
+        if (!placementKeys.every((key) => typeof key === 'string')) {
+          return reply.code(400).send({ error: 'placementKeys must all be strings' });
+        }
+        // `validateKey` re-derives each placement and checks its body/aspect is in the closed
+        // reference set and its sign/house/pattern is in range — not just that the key parses
+        // (`parsePlacementKey`'s weaker job). Without this, an attacker-chosen `body`/`aspect`
+        // string would be echoed verbatim into the model prompt below, bypassing `checkCustomPrompt`
+        // entirely via a field that check never inspects.
+        const keyErrors = placementKeys.flatMap((key) => validateKey(key));
+        if (keyErrors.length > 0) {
+          return reply
+            .code(400)
+            .send({ error: `placementKeys must all be well-formed placement keys: ${keyErrors.join('; ')}` });
+        }
+        // Safe: `validateKey` above already confirmed every key parses.
+        const parsedPlacements = placementKeys.map((key) => parsePlacementKey(key));
+        const placements = parsedPlacements as readonly NonNullable<(typeof parsedPlacements)[number]>[];
+        facts = placements.map((placement) => resolvePlacementText(placement, locale, CORPUS));
+        systemInstruction = SYSTEM_INSTRUCTION;
+      } else {
+        const validated = validateChartData(chartData);
+        if ('errors' in validated) {
+          return reply.code(400).send({ error: `chartData is invalid: ${validated.errors.join('; ')}` });
+        }
+        facts = buildFreeformFacts(validated.chartData);
+        systemInstruction = FREEFORM_SYSTEM_INSTRUCTION;
       }
 
       const config = loadTier2Config();
@@ -168,14 +365,11 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
         return reply.code(503).send({ error: 'Daily usage limit reached for this deployment. Try again tomorrow.' });
       }
 
-      // Safe: `validateKey` above already confirmed every key parses.
-      const placements = parsedPlacements as readonly NonNullable<(typeof parsedPlacements)[number]>[];
-      const facts = placements.map((placement) => resolvePlacementText(placement, locale, CORPUS));
       const userContent = buildUserContent(facts, customPrompt, locale);
 
       let result;
       try {
-        result = await generateTier2Text(config, SYSTEM_INSTRUCTION, userContent, 2, request.log);
+        result = await generateTier2Text(config, systemInstruction, userContent, 2, request.log);
       } catch (error) {
         request.log.error(error, 'Tier 2 model call failed');
         return reply.code(502).send({ error: 'The AI-customized interpretation could not be generated right now.' });
