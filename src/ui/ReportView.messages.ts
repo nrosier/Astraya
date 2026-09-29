@@ -16,6 +16,9 @@ const en = {
   tier2SignInPrompt: 'Sign in to generate an AI-customized interpretation in your own style and tone.',
   tier2ConsentLabel:
     'Send the placements above (no name or birth data) to a third-party AI model for this one request.',
+  tier2ModeLabel: 'Interpretation mode',
+  tier2ModeGrounded: 'Restyle reviewed text — sends only the placements above',
+  tier2ModeFreeform: 'AI-written from your full chart — sends your exact positions, houses, and aspects',
   customPromptLabel: 'Style, tone, and focus instructions',
   customPromptPlaceholder: 'e.g. warm and encouraging, focused on career growth',
   guardrailIssueLength: 'Keep this between 1 and 500 characters.',
@@ -47,6 +50,10 @@ const nl: typeof en = {
   tier2SignInPrompt: 'Log in om een AI-gepersonaliseerde interpretatie in je eigen stijl en toon te genereren.',
   tier2ConsentLabel:
     'Verstuur de bovenstaande plaatsingen (geen naam of geboortegegevens) naar een AI-model van derden voor dit ene verzoek.',
+  tier2ModeLabel: 'Interpretatiemodus',
+  tier2ModeGrounded: 'Herschrijf beoordeelde tekst — verstuurt alleen de bovenstaande plaatsingen',
+  tier2ModeFreeform:
+    'Door AI geschreven vanuit je volledige horoscoop — verstuurt je exacte posities, huizen en aspecten',
   customPromptLabel: 'Instructies voor stijl, toon en focus',
   customPromptPlaceholder: 'bijv. warm en aanmoedigend, gericht op carrièregroei',
   guardrailIssueLength: 'Houd dit tussen 1 en 500 tekens.',

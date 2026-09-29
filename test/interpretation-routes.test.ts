@@ -15,6 +15,7 @@ import { DatabaseSync } from 'node:sqlite';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
 import { hashPassword } from '../server/auth/passwords.ts';
+import { bodyByKey } from '../src/astrology/bodies.ts';
 
 const BOOTSTRAP_TOKEN = 'test-bootstrap-token';
 const SESSION_COOKIE = 'astraya_session';
@@ -29,7 +30,8 @@ let app: FastifyInstance;
 let fetchMock: ReturnType<typeof vi.fn>;
 const realFetch = globalThis.fetch;
 
-function geminiOk(text: string, promptTokenCount = 10, candidatesTokenCount = 20): Response {
+function geminiOk(sectionBody: string, promptTokenCount = 10, candidatesTokenCount = 20): Response {
+  const text = JSON.stringify({ sections: [{ heading: 'Overview', body: sectionBody }] });
   return new Response(
     JSON.stringify({
       candidates: [{ content: { parts: [{ text }] } }],
@@ -98,6 +100,35 @@ const VALID_BODY = {
   locale: 'en',
 };
 
+function idOf(key: string): number {
+  const body = bodyByKey(key);
+  if (body === undefined) throw new Error(`test fixture bug: no body keyed "${key}"`);
+  return body.id;
+}
+
+const SUN_ID = idOf('sun');
+const MOON_ID = idOf('moon');
+
+const VALID_CHART_DATA = {
+  positions: [
+    { body: SUN_ID, longitude: 14 },
+    { body: MOON_ID, longitude: 100 },
+  ],
+  houses: {
+    cusps: [0, 10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340],
+    ascendant: 10,
+    midheaven: 280,
+  },
+  aspects: [{ bodyA: SUN_ID, bodyB: MOON_ID, aspectKey: 'trine', separation: 119, orb: 1 }],
+};
+
+const VALID_FREEFORM_BODY = {
+  mode: 'freeform',
+  chartData: VALID_CHART_DATA,
+  customPrompt: 'warm and encouraging, focused on career growth',
+  locale: 'en',
+};
+
 describe('POST /api/interpretation/generate', () => {
   it('rejects an unauthenticated request with 401', async () => {
     const response = await app.inject({ method: 'POST', url: '/api/interpretation/generate', payload: VALID_BODY });
@@ -114,7 +145,9 @@ describe('POST /api/interpretation/generate', () => {
       payload: VALID_BODY,
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json<{ text: string }>().text).toBe('A restyled interpretation.');
+    expect(response.json<{ sections: { heading: string; body: string }[] }>().sections).toEqual([
+      { heading: 'Overview', body: 'A restyled interpretation.' },
+    ]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -205,6 +238,134 @@ describe('POST /api/interpretation/generate', () => {
         url: '/api/interpretation/generate',
         cookies: { [SESSION_COOKIE]: cookie },
         payload: { ...VALID_BODY, locale: 'fr' },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('freeform mode (chartData, mode 2)', () => {
+    it('generates text from the given chart facts', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: VALID_FREEFORM_BODY,
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json<{ sections: { heading: string; body: string }[] }>().sections).toEqual([
+        { heading: 'Overview', body: 'A restyled interpretation.' },
+      ]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects an unknown mode with 400', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: { ...VALID_FREEFORM_BODY, mode: 'bogus' },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects a position naming an unknown body id with 400', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: {
+          ...VALID_FREEFORM_BODY,
+          chartData: { ...VALID_CHART_DATA, positions: [{ body: -999, longitude: 14 }] },
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects an out-of-range longitude with 400', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: {
+          ...VALID_FREEFORM_BODY,
+          chartData: { ...VALID_CHART_DATA, positions: [{ body: SUN_ID, longitude: 400 }] },
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects an aspect naming an unknown aspect key with 400', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: {
+          ...VALID_FREEFORM_BODY,
+          chartData: {
+            ...VALID_CHART_DATA,
+            aspects: [{ bodyA: SUN_ID, bodyB: MOON_ID, aspectKey: 'not-a-real-aspect', separation: 119, orb: 1 }],
+          },
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects an out-of-range aspect separation with 400', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: {
+          ...VALID_FREEFORM_BODY,
+          chartData: {
+            ...VALID_CHART_DATA,
+            aspects: [{ bodyA: SUN_ID, bodyB: MOON_ID, aspectKey: 'trine', separation: 200, orb: 1 }],
+          },
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects house cusps with the wrong array length with 400', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: {
+          ...VALID_FREEFORM_BODY,
+          chartData: { ...VALID_CHART_DATA, houses: { ...VALID_CHART_DATA.houses, cusps: [0, 10, 40] } },
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects more than MAX_BODIES (40) position entries with 400', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: {
+          ...VALID_FREEFORM_BODY,
+          chartData: {
+            ...VALID_CHART_DATA,
+            positions: Array.from({ length: 41 }, () => ({ body: SUN_ID, longitude: 14 })),
+          },
+        },
       });
       expect(response.statusCode).toBe(400);
       expect(fetchMock).not.toHaveBeenCalled();

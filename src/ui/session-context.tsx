@@ -9,6 +9,7 @@ import { exchangeOidcCode, login, logout, me, setup as apiSetup } from '../sync/
 import { createSyncEngine, pushRecords } from '../sync/engine.js';
 import { consumeOidcCallback } from './oidc-pkce.js';
 import { IS_DEMO_MODE } from '../demo-mode.js';
+import { trace } from '../trace.js';
 import type { AuthUser } from '../sync/auth-client.js';
 import type { SyncEngine } from '../sync/engine.js';
 import type { OpRecord } from '../store/ops.js';
@@ -273,9 +274,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     // first push/pull tick against a store that hasn't yet folded in the adopted anonymous
     // records, racing the adoption merge — mirrors the two-step shape `completeSignIn`'s
     // orphaned-account branch already uses.
+    trace('session', 'switchTo: opening account store', { userId: authUser.id, createEngine });
     const opened = await openAccountStore(authUser, false, () => {
       handleUnauthorized(authUser.id);
     });
+    trace('session', 'switchTo: account store opened', { userId: authUser.id, people: opened.store.state.people.size });
     if (adopted.length > 0) await opened.store.receive(adopted);
     const engine = createEngine
       ? await createSyncEngine({
@@ -285,6 +288,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
           },
         })
       : undefined;
+    trace('session', 'switchTo: engine created, about to flip status to ready', {
+      userId: authUser.id,
+      people: opened.store.state.people.size,
+    });
     engineRef.current?.close();
     storeRef.current?.close();
     storeRef.current = opened.store;
@@ -292,6 +299,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }): Re
     setStatus({ kind: 'ready', store: opened.store });
     setUser(authUser);
     setEngine(engine);
+    trace('session', 'switchTo: status flipped to ready', { userId: authUser.id });
   }
 
   /**

@@ -19,6 +19,16 @@ export const NEUTRAL_SYSTEM_PROMPT = {
   nl: 'Je bent een psychologisch onderlegde, evenwichtige astroloog die de standaardtekst schrijft in een interpretatiecorpus — de tekst die elke lezer ziet voordat die een specifiekere stem kiest. Spreek de eigenaar van de horoscoop rechtstreeks aan, in de tweede persoon, zoals elke andere stem in dit corpus dat doet. Beschrijf de blijvende aanleg van de stand: noem eerst de kracht of de gave die ze geeft, dan de natuurlijke valkuil of schaduwzijde, in heldere, warme maar precieze taal, zonder een van beide te dramatiseren. Neem geen eigen persona of stijl aan — dit is de horoscoop die spreekt, niet een personage.',
 };
 
+/**
+ * Ollama models (unlike Gemini) have been observed to drift to English mid-batch
+ * for non-English locales (#371) — a local model with no locale hint defaults toward
+ * its dominant training language. Gemini stays on-locale without this, so it's opt-in
+ * per `buildSystemInstruction`'s `forceLanguageDirective` param rather than always-on.
+ */
+export const FORCE_LANGUAGE_DIRECTIVE = {
+  nl: 'BELANGRIJK: Schrijf uitsluitend in het Nederlands. Elke zin moet Nederlands zijn. Gebruik geen Engels.',
+};
+
 export const NEGATIVE_CONSTRAINTS = [
   'Do not use astrological jargon that duplicates what the chart data already states: cosmic, alignment, transit, energies, vibration, native, or the placement’s own terms (the planet name, sign name, house number).',
   'Do not state numbers or degrees. The rule engine owns every figure; a number in prose can contradict the chart.',
@@ -62,11 +72,13 @@ export function buildAnchorsBlock(corpusEntries, locale, persona) {
  * `persona` is optional — omit it (or pass `undefined`) to generate the
  * default/neutral entry instead of a persona's flavor.
  */
-export function buildSystemInstruction({ persona, symbolismContext, locale }) {
+export function buildSystemInstruction({ persona, symbolismContext, locale, forceLanguageDirective }) {
   const personaPrompt = persona
     ? (persona.systemPrompts[locale] ?? persona.systemPrompts.en)
     : (NEUTRAL_SYSTEM_PROMPT[locale] ?? NEUTRAL_SYSTEM_PROMPT.en);
+  const languageDirective = forceLanguageDirective ? FORCE_LANGUAGE_DIRECTIVE[locale] : undefined;
   return [
+    ...(languageDirective ? [languageDirective, ''] : []),
     personaPrompt,
     '',
     'Even in this voice, the output feeds a structured interpretation corpus, not a chat reply — the constraints below override any instinct the voice above has to hedge, moralize or use extended metaphor.',

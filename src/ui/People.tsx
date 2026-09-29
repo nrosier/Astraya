@@ -13,6 +13,7 @@ import { useMessages } from './messages.js';
 import { caveated, ordered, summary } from './people-list.js';
 import { peopleMessages } from './People.messages.js';
 import { useStore, useStoreState } from './store-context.js';
+import { trace } from '../trace.js';
 
 export function People(): React.JSX.Element {
   const store = useStore();
@@ -23,6 +24,7 @@ export function People(): React.JSX.Element {
   const [error, setError] = useState<string>();
 
   const people = ordered(state.people);
+  trace('People', 'render', { deviceId: store.deviceId, people: people.length });
 
   const create = (): void => {
     setBusy(true);

@@ -22,6 +22,7 @@ import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
 import { ReportView, PERSONA_LABELS } from '../src/ui/ReportView.js';
 import { reportViewMessages } from '../src/ui/ReportView.messages.js';
+import { toTier2ChartPayload } from '../src/interpretation/tier2-client.js';
 import { getLocale, setLocale } from '../src/ui/locale.js';
 import { bodyByKey } from '../src/astrology/bodies.js';
 import { SessionProvider, useSession, useStoreStatus } from '../src/ui/session-context.js';
@@ -475,6 +476,7 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
   let app: FastifyInstance;
   let baseUrl: string;
   let generateResponse: () => Response;
+  let lastGenerateRequest: unknown;
 
   interface SessionProbeApi {
     readonly status: StoreStatus;
@@ -545,6 +547,16 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     return button;
   }
 
+  function modeRadio(container: HTMLElement, labelText: string): HTMLInputElement {
+    const label = Array.from(panelOf(container).querySelectorAll('label')).find(
+      (candidate) =>
+        candidate.querySelector('input[type="radio"]') !== null && candidate.textContent.includes(labelText),
+    );
+    const input = label?.querySelector('input[type="radio"]');
+    if (!(input instanceof HTMLInputElement)) throw new Error(`test fixture bug: no radio labeled "${labelText}"`);
+    return input;
+  }
+
   /**
    * React overrides the `value` property on a controlled textarea instance itself, so setting
    * `.value = ...` directly and dispatching `input` looks like "no change" to it. Going through
@@ -566,7 +578,10 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     const address = app.server.address();
     if (address === null || typeof address === 'string') throw new Error('server did not bind to a port');
     baseUrl = `http://127.0.0.1:${String(address.port)}`;
-    generateResponse = () => new Response(JSON.stringify({ text: 'A restyled interpretation.' }), { status: 200 });
+    generateResponse = () =>
+      new Response(JSON.stringify({ sections: [{ heading: 'Overview', body: 'A restyled interpretation.' }] }), {
+        status: 200,
+      });
 
     // `alice` is provisioned directly against the real, listening server — a real sign-in
     // (below, via `latestSession.signIn`, through the fetch stub) is what gives
@@ -590,7 +605,10 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
         }
         // The route itself: intercepted here rather than reaching `app`, per this describe
         // block's own doc comment above.
-        if (url === '/api/interpretation/generate') return generateResponse();
+        if (url === '/api/interpretation/generate') {
+          lastGenerateRequest = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
+          return generateResponse();
+        }
         // Everything else (`/api/setup`, `/api/auth/*`) is real sign-in traffic — proxied to
         // the real listening server, carrying the session cookie the same way a browser would.
         const target = new URL(url, baseUrl);
@@ -615,6 +633,7 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     rmSync(dir, { recursive: true, force: true });
     localStorage.clear();
     latestSession = undefined;
+    lastGenerateRequest = undefined;
   });
 
   it('renders the consent checkbox, prompt textarea, and Generate button once signed in', async () => {
@@ -715,7 +734,9 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     });
 
     await vi.waitFor(() => {
-      expect(panelOf(container).querySelector('.tier2-result')?.textContent).toBe('A restyled interpretation.');
+      const resultEl = panelOf(container).querySelector('.tier2-result');
+      expect(resultEl?.querySelector('h4')?.textContent).toBe('Overview');
+      expect(resultEl?.querySelector('p')?.textContent).toBe('A restyled interpretation.');
     });
     expect(panelOf(container).querySelector('[role="alert"]')).toBeNull();
 
@@ -754,5 +775,78 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
       root.unmount();
     });
     container.remove();
+  });
+
+  it('sends placementKeys (not chartData) in the default, grounded mode', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      consentCheckbox(container).click();
+      setTextareaValue(customPromptTextarea(container), 'warm and encouraging, focused on career growth');
+      await Promise.resolve();
+    });
+
+    act(() => {
+      generateButton(container).click();
+    });
+
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.tier2-result')).not.toBeNull();
+    });
+
+    expect(lastGenerateRequest).toMatchObject({ mode: 'grounded' });
+    expect(lastGenerateRequest).toHaveProperty('placementKeys');
+    expect(lastGenerateRequest).not.toHaveProperty('chartData');
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('sends chartData (not placementKeys) once freeform mode is selected', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      consentCheckbox(container).click();
+      setTextareaValue(customPromptTextarea(container), 'warm and encouraging, focused on career growth');
+      modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      await Promise.resolve();
+    });
+
+    act(() => {
+      generateButton(container).click();
+    });
+
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.tier2-result')).not.toBeNull();
+    });
+
+    expect(lastGenerateRequest).toMatchObject({ mode: 'freeform' });
+    expect(lastGenerateRequest).not.toHaveProperty('placementKeys');
+    expect(lastGenerateRequest).toHaveProperty('chartData', toTier2ChartPayload(makeChart()));
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('renders the mode toggle labels in the active locale', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      setLocale('nl');
+      await Promise.resolve();
+    });
+
+    expect(modeRadio(container, reportViewMessages.nl.tier2ModeGrounded).checked).toBe(true);
+    expect(panelOf(container).textContent).toContain(reportViewMessages.nl.tier2ModeFreeform);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+    setLocale('en');
   });
 });

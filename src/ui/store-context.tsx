@@ -12,6 +12,7 @@
 import { createContext, useContext, useSyncExternalStore } from 'react';
 import type { State } from '../store/fold.js';
 import type { Store } from '../store/store.js';
+import { trace } from '../trace.js';
 
 const StoreContext = createContext<Store | undefined>(undefined);
 
@@ -48,7 +49,18 @@ export function useOptionalStore(): Store | undefined {
 export function useStoreState(): State {
   const store = useStore();
   return useSyncExternalStore(
-    (onChange) => store.subscribe(onChange),
-    () => store.state,
+    (onChange) => {
+      trace('store-context', 'subscribing to store', { deviceId: store.deviceId });
+      const unsubscribe = store.subscribe(onChange);
+      return () => {
+        trace('store-context', 'unsubscribing from store', { deviceId: store.deviceId });
+        unsubscribe();
+      };
+    },
+    () => {
+      const snapshot = store.state;
+      trace('store-context', 'getSnapshot', { deviceId: store.deviceId, people: snapshot.people.size });
+      return snapshot;
+    },
   );
 }

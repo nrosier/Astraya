@@ -4,6 +4,39 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.21.0] — 2026-09-29
+
+**AI-Customized interpretation gains a second, freeform mode that lets the model originate its own reading from a reader's full chart, instead of only restyling reviewed corpus text.**
+
+M9 (Polish & launch) progress, not a finished milestone — v1.0.0 hasn't shipped yet.
+
+### Added
+
+- **Freeform Tier-2 mode, alongside the existing grounded restyling.** The AI-Customized tab now offers a second mode where the model composes its own interpretation from the reader's exact computed positions, houses, and aspects, rather than restyling already-reviewed corpus text. This is a deliberate departure from grounded mode's stricter guarantee — freeform still never sends a name, birth date, or location, but it is far more granular than a placement key and the model can say things about the chart the corpus never wrote. Every id and key in the chart payload is still closed-set-revalidated server-side before it reaches the prompt, the same anti-injection discipline grounded mode already had. ADR 0003 is updated with the trade-off.
+- **Tier-2 responses are now structured sections instead of one prose blob (#376).** The server asks the model for `{ sections: [{ heading, body }] }` via structured-output mode instead of free text, so the client renders real headings and paragraphs instead of guessing at line breaks in a single string.
+- **diagnostics:** toggleable client tracing for the login/sync/render pipeline (#372). Gated behind localStorage so it costs nothing by default; instruments the login → sync → store → React-subscription → render handoff to make a stale-data-after-fresh-login race observable without attaching a debugger.
+
+### Fixed
+
+- **ui:** the topbar's theme/language toggles, sign-in button, demo badge, and signed-in controls now share one consistent pill style instead of each redefining their own height/radius/border (#367); Report table-of-contents links now scroll to their section instead of being swallowed by the app's global hash router (#373); the AI-Customized custom-prompt textarea spans the full card width instead of rendering narrow (#374).
+- **interpretation:** Tier-2's 503 (no provider configured) now logs which env var is missing server-side, instead of leaving an admin to guess between two unrelated API keys (#375).
+- **interpretation:** a misconfigured Tier-2 model id now names the model and the env var to fix in the server log, instead of a bare 404 with no id in it (#375).
+
+## [0.20.0] — 2026-09-29
+
+**A signed-in user can now ask an AI to restyle their interpretation in their own words, alongside the existing local corpus text.**
+
+M9 (Polish & launch) progress, not a finished milestone — v1.0.0 hasn't shipped yet.
+
+### Added
+
+- **Tier-2 AI-customized interpretation, opt-in and per-request (#360).** The Interpretation screen (renamed from "Report", since it now covers both tiers) gains a "Standard"/"AI-Customized" sub-tab pair. Turning on Tier 2 sends only de-identified placement keys — never the chart itself — plus a guardrailed free-text style/tone/focus field to a configurable third-party model (disabled with a clear 503 if no provider is set), behind a consent checkbox, a prompt-injection/fatalistic/medical-legal-financial-phrasing/PII-shape check that runs both client-side and authoritatively on the server, and per-user and total daily cost caps on top of the existing rate limit. ADR 0003 records the data-minimization and cost-cap reasoning. Also fixes a bug this work surfaced before it could ship: the production Docker image was missing runtime files the new routes depend on and would have crashed the whole server at startup, not just failed to offer Tier 2.
+
+### Fixed
+
+- **Interpretation corpus:** a batch of synastry-aspect entries shipped in English under the Dutch locale; the batch is reverted and a language-mismatch lint gate now catches this class of mistake before it ships again (#371).
+- **corpus-gen:** Ollama requests now set an explicit context size, instead of relying on a default that could silently truncate longer prompts.
+
 ## [0.19.0] — 2026-09-28
 
 **Admins can now correct the interpretation corpus straight from the app, and purging a person now actually erases their data everywhere it had synced — not just on the device that ran it.**

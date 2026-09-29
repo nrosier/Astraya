@@ -45,7 +45,12 @@ import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { useSessionUserOrUndefined } from './session-context.js';
 import { reportViewMessages } from './ReportView.messages.js';
-import { generateTier2Interpretation, Tier2Error } from '../interpretation/tier2-client.js';
+import {
+  generateTier2Interpretation,
+  toTier2ChartPayload,
+  Tier2Error,
+  type Tier2Section,
+} from '../interpretation/tier2-client.js';
 import type { ChartData } from '../domain/chart-compute.js';
 
 type InterpretationTabKey = 'standard' | 'ai';
@@ -147,16 +152,19 @@ function Paragraph({
 function AiCustomizedPanel({
   report,
   locale,
+  chart,
 }: {
   readonly report: Report;
   readonly locale: Locale;
+  readonly chart: ChartData;
 }): React.JSX.Element {
   const t = useMessages(reportViewMessages);
   const user = useSessionUserOrUndefined();
   const [consent, setConsent] = useState(false);
+  const [mode, setMode] = useState<'grounded' | 'freeform'>('grounded');
   const [customPrompt, setCustomPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<string | undefined>(undefined);
+  const [result, setResult] = useState<readonly Tier2Section[] | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
   if (user === undefined) {
@@ -185,9 +193,13 @@ function AiCustomizedPanel({
   function handleGenerate(): void {
     setGenerating(true);
     setError(undefined);
-    generateTier2Interpretation(placementKeys, customPrompt, locale)
-      .then((text) => {
-        setResult(text);
+    const request =
+      mode === 'grounded'
+        ? { mode: 'grounded' as const, placementKeys, customPrompt, locale }
+        : { mode: 'freeform' as const, chartData: toTier2ChartPayload(chart), customPrompt, locale };
+    generateTier2Interpretation(request)
+      .then((sections) => {
+        setResult(sections);
       })
       .catch((caught: unknown) => {
         setError(caught instanceof Tier2Error ? caught.message : String(caught));
@@ -210,7 +222,34 @@ function AiCustomizedPanel({
         />{' '}
         {t.tier2ConsentLabel}
       </label>
-      <label>
+      <fieldset className="field-group">
+        <legend>{t.tier2ModeLabel}</legend>
+        <div role="radiogroup" aria-label={t.tier2ModeLabel}>
+          <label>
+            <input
+              type="radio"
+              name="tier2-mode"
+              checked={mode === 'grounded'}
+              onChange={() => {
+                setMode('grounded');
+              }}
+            />{' '}
+            {t.tier2ModeGrounded}
+          </label>{' '}
+          <label>
+            <input
+              type="radio"
+              name="tier2-mode"
+              checked={mode === 'freeform'}
+              onChange={() => {
+                setMode('freeform');
+              }}
+            />{' '}
+            {t.tier2ModeFreeform}
+          </label>
+        </div>
+      </fieldset>
+      <label className="stacked">
         {t.customPromptLabel}
         <textarea
           value={customPrompt}
@@ -238,7 +277,16 @@ function AiCustomizedPanel({
         {generating ? t.tier2Generating : t.tier2Generate}
       </button>
       {error !== undefined && <p role="alert">{t.tier2Error(error)}</p>}
-      {result !== undefined && <p className="tier2-result">{result}</p>}
+      {result !== undefined && (
+        <div className="tier2-result">
+          {result.map((section) => (
+            <article key={section.heading}>
+              <h4>{section.heading}</h4>
+              <p>{section.body}</p>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -379,7 +427,20 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
               <ul>
                 {report.sections.map((section) => (
                   <li key={section.id}>
-                    <a href={`#report-section-${section.id}`}>{section.title}</a>
+                    {/* Not a plain in-page `<a href="#...">`: the app's own hash-based router
+                        (`route.ts`) treats every `hashchange` as a navigation, and a bare
+                        anchor click here would match no known route and bounce to the people
+                        list instead of scrolling (#373). Scroll and focus the target directly,
+                        without touching `window.location.hash`. */}
+                    <a
+                      href={`#report-section-${section.id}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        document.getElementById(`report-section-${section.id}`)?.focus();
+                      }}
+                    >
+                      {section.title}
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -400,7 +461,7 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
             ))}
           </>
         ) : (
-          <AiCustomizedPanel report={report} locale={locale} />
+          <AiCustomizedPanel report={report} locale={locale} chart={chart} />
         )}
       </div>
     </div>

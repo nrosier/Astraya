@@ -37,10 +37,20 @@ export function loadTier2Config(env: NodeJS.ProcessEnv = process.env): Tier2Conf
   };
 }
 
+export interface Tier2Section {
+  readonly heading: string;
+  readonly body: string;
+}
+
 export interface Tier2Result {
-  readonly text: string;
+  readonly sections: readonly Tier2Section[];
   readonly promptTokens: number;
   readonly outputTokens: number;
+}
+
+/** Fastify's request-scoped pino logger satisfies this; kept minimal so this file needn't depend on fastify's types. */
+export interface Tier2Logger {
+  debug(obj: Record<string, unknown>, msg?: string): void;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -56,8 +66,57 @@ interface GeminiResponse {
   readonly usageMetadata?: { readonly promptTokenCount?: number; readonly candidatesTokenCount?: number };
 }
 
+// Gemini's `Schema` type uses uppercase type names (`OBJECT`/`ARRAY`/`STRING`), unlike ordinary
+// JSON Schema — same convention `tools/corpus-gen/lib/gemini.mjs`'s `toGeminiSchema` upcases into.
+// Written directly here rather than imported: that module is build-time-only tooling and this is
+// a live runtime request path (see the file-level doc comment above).
+const TIER2_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    sections: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: { heading: { type: 'STRING' }, body: { type: 'STRING' } },
+        required: ['heading', 'body'],
+      },
+    },
+  },
+  required: ['sections'],
+};
+
+function isTier2Section(value: unknown): value is Tier2Section {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { heading?: unknown }).heading === 'string' &&
+    typeof (value as { body?: unknown }).body === 'string'
+  );
+}
+
 /**
- * One free-form-text generation call. Retries on 5xx/429 (transient, per
+ * Parses the model's structured-output JSON string into `{ sections }`. The
+ * request already asks Gemini to conform to `TIER2_RESPONSE_SCHEMA`
+ * (`gemini.mjs`'s `generateStructured` trusts the same enforcement), but this
+ * still fails closed with a clear error on an unexpected shape rather than
+ * letting a malformed `.sections` crash further downstream.
+ */
+function parseTier2Sections(text: string): readonly Tier2Section[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error(`Tier 2: model response was not valid JSON: ${text.slice(0, 500)}`);
+  }
+  const sections = (parsed as { sections?: unknown } | undefined)?.sections;
+  if (!Array.isArray(sections) || !sections.every(isTier2Section)) {
+    throw new Error(`Tier 2: unexpected model response shape: ${JSON.stringify(parsed).slice(0, 500)}`);
+  }
+  return sections;
+}
+
+/**
+ * One structured-sections generation call. Retries on 5xx/429 (transient, per
  * `gemini.mjs`'s own notes), surfaces 4xx immediately — those are almost
  * always a config problem retrying won't fix.
  */
@@ -66,16 +125,22 @@ export async function generateTier2Text(
   systemInstruction: string,
   userContent: string,
   maxRetries = 2,
+  logger?: Tier2Logger,
 ): Promise<Tier2Result> {
   const url = `${config.baseUrl}/v1beta/models/${config.model}:generateContent`;
   const body = {
     systemInstruction: { parts: [{ text: systemInstruction }] },
     contents: [{ role: 'user', parts: [{ text: userContent }] }],
-    generationConfig: { temperature: 0.7 },
+    generationConfig: {
+      temperature: 0.7,
+      responseMimeType: 'application/json',
+      responseSchema: TIER2_RESPONSE_SCHEMA,
+    },
   };
 
   let lastError: Error | undefined;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    logger?.debug({ url, body }, 'Tier 2 request payload');
     let response: Response;
     try {
       response = await fetch(url, {
@@ -92,19 +157,29 @@ export async function generateTier2Text(
 
     if (response.ok) {
       const payload = (await response.json()) as GeminiResponse;
+      logger?.debug({ payload }, 'Tier 2 response payload');
       const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
       if (typeof text !== 'string') {
         throw new Error(`Tier 2: unexpected model response shape: ${JSON.stringify(payload).slice(0, 500)}`);
       }
       return {
-        text,
+        sections: parseTier2Sections(text),
         promptTokens: payload.usageMetadata?.promptTokenCount ?? 0,
         outputTokens: payload.usageMetadata?.candidatesTokenCount ?? 0,
       };
     }
 
     const errorBody = await response.text();
-    lastError = new Error(`Tier 2 model call failed (${String(response.status)}): ${errorBody.slice(0, 1000)}`);
+    logger?.debug({ status: response.status, errorBody }, 'Tier 2 response payload (error)');
+    // Google returns a bare, often-empty-bodied 404 for an unknown model id — the single most
+    // likely cause being a typo or a retired model in ASTRAYA_INTERPRETATION_MODEL (or its
+    // hardcoded default above), not a transient issue. Name that suspect explicitly so it shows
+    // up in the server log instead of a bare "(404): " that gives the operator nothing to act on.
+    const hint =
+      response.status === 404
+        ? ` — model "${config.model}" not found; check ASTRAYA_INTERPRETATION_MODEL for a typo or a retired model id`
+        : '';
+    lastError = new Error(`Tier 2 model call failed (${String(response.status)}): ${errorBody.slice(0, 1000)}${hint}`);
     if (!RETRYABLE_STATUS.has(response.status) || attempt === maxRetries) throw lastError;
     await sleep(2 ** attempt * 500);
   }

@@ -222,7 +222,7 @@ function SignInForm({
       <button
         ref={triggerRef}
         type="button"
-        className="topbar-signin"
+        className="topbar-pill topbar-signin"
         aria-expanded={false}
         aria-controls={SIGNIN_POPOVER_ID}
         onClick={() => {
@@ -328,10 +328,20 @@ function SignedIn({
 
   return (
     <div className="accountpanel-signedin">
-      <button className="quiet" disabled={busy} onClick={doSignOut}>
+      <button className="topbar-pill quiet" disabled={busy} onClick={doSignOut}>
         {t.signOutButton}
       </button>
-      {user.isAdmin && <a href="#/admin">{t.manageUsersLink}</a>}
+      {user.isAdmin && (
+        <button
+          type="button"
+          className="topbar-pill quiet"
+          onClick={() => {
+            window.location.hash = '#/admin';
+          }}
+        >
+          {t.manageUsersLink}
+        </button>
+      )}
       {error !== undefined && (
         <p className="warning" role="alert">
           {t.signOutFailed(error)}
@@ -418,7 +428,7 @@ export function AccountPanel(): React.JSX.Element {
   return (
     <div className="accountpanel">
       {IS_DEMO_MODE ? (
-        <span className="accountpanel-demo">{t.demoModeBadge}</span>
+        <span className="topbar-pill accountpanel-demo">{t.demoModeBadge}</span>
       ) : adoption !== undefined ? (
         <AdoptionPanel recordCount={adoption.recordCount} resolveAdoption={resolveAdoption} />
       ) : user === undefined ? (
