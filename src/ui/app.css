@@ -143,17 +143,25 @@
   max-width: calc(100vw - 1.5rem);
 }
 
-.theme-toggle {
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
+/* Shared pill shape for every top-bar control (#367) — box only. Cursor/hover stays on
+   each interactive selector below so the non-interactive `.accountpanel-demo` badge
+   doesn't pick up pointer/hover affordances it shouldn't have. */
+.topbar-pill {
   display: flex;
   align-items: center;
-  justify-content: center;
+  height: 2.25rem;
+  padding: 0 0.85rem;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--fg);
+  font-size: 0.875rem;
+}
+
+.theme-toggle {
+  width: 2.25rem;
+  padding: 0;
+  justify-content: center;
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
@@ -164,7 +172,6 @@
 }
 
 .language-toggle {
-  border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -173,13 +180,6 @@
 /* The compact "Sign in" button that replaces `.accountpanel-popover` when signed out and
    collapsed — same shape as `.theme-toggle`'s neighbours, but wide enough for its label. */
 .topbar-signin {
-  height: 2.25rem;
-  padding: 0 0.85rem;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--fg);
-  font-size: 0.875rem;
   cursor: pointer;
 }
 
@@ -191,31 +191,17 @@
    button entirely in a `demo`-mode build (#73) — same pill shape as
    `.topbar-signin`, but not interactive: there's no server for it to act on. */
 .accountpanel-demo {
-  display: flex;
-  align-items: center;
-  height: 2.25rem;
-  padding: 0 0.85rem;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
   color: var(--muted, var(--fg));
-  font-size: 0.875rem;
   white-space: nowrap;
 }
 
 /* Always-visible confirmation of who is signed in (#137) — no click needed, unlike the
-   collapsed `.topbar-signin` button it replaces once signed in. */
+   collapsed `.topbar-signin` button it replaces once signed in. A layout wrapper only:
+   the sign-out and manage-users controls inside are each their own `.topbar-pill`. */
 .accountpanel-signedin {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  height: 2.25rem;
-  padding: 0 0.85rem;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  font-size: 0.875rem;
-  color: var(--fg);
 }
 
 /* Anchors the popover/warning below to this trigger's own box — see the doc comment

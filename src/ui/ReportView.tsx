@@ -210,7 +210,7 @@ function AiCustomizedPanel({
         />{' '}
         {t.tier2ConsentLabel}
       </label>
-      <label>
+      <label className="stacked">
         {t.customPromptLabel}
         <textarea
           value={customPrompt}
@@ -388,7 +388,20 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
               <ul>
                 {report.sections.map((section) => (
                   <li key={section.id}>
-                    <a href={`#report-section-${section.id}`}>{section.title}</a>
+                    {/* Not a plain in-page `<a href="#...">`: the app's own hash-based router
+                        (`route.ts`) treats every `hashchange` as a navigation, and a bare
+                        anchor click here would match no known route and bounce to the people
+                        list instead of scrolling (#373). Scroll and focus the target directly,
+                        without touching `window.location.hash`. */}
+                    <a
+                      href={`#report-section-${section.id}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        document.getElementById(`report-section-${section.id}`)?.focus();
+                      }}
+                    >
+                      {section.title}
+                    </a>
                   </li>
                 ))}
               </ul>
