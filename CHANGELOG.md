@@ -4,6 +4,13 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.21.1] — 2026-09-29
+
+### Fixed
+
+- **docker:** the production image crashed on boot with `ERR_MODULE_NOT_FOUND` for `src/astrology/emphasis.ts` — freeform Tier-2 mode (v0.21.0) made `emphasis.ts` and `dignities.ts` real runtime dependencies, but the Dockerfile's hand-maintained runtime `COPY` allowlist had never been updated to include them. Both files are now copied into the runtime image, and two latent `.js`-vs-`.ts` import-extension bugs in `emphasis.ts`/`dignities.ts` that only surfaced once they ran under the built image are fixed alongside them.
+- **astrology:** a property test in `test/astrology-properties.test.ts` was flaky, occasionally grazing its floating-point tolerance boundary; the tolerance is corrected and the test now passes reliably.
+
 ## [0.21.0] — 2026-09-29
 
 **AI-Customized interpretation gains a second, freeform mode that lets the model originate its own reading from a reader's full chart, instead of only restyling reviewed corpus text.**
