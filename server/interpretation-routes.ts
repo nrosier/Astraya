@@ -146,6 +146,13 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
 
       const config = loadTier2Config();
       if (config === undefined) {
+        // Deliberately not disclosed in the client-facing 503 body (an unauthenticated caller
+        // shouldn't learn server env var names), but an admin reading logs has no other way to
+        // tell this apart from "this deployment doesn't support Tier 2 at all" — GEMINI_API_KEY
+        // (corpus-gen, build-time-only) being set does NOT satisfy this; #375.
+        request.log.warn(
+          'Tier 2 request rejected: ASTRAYA_INTERPRETATION_API_KEY is not set (GEMINI_API_KEY does not count — it is a separate, build-time-only credential for corpus generation).',
+        );
         return reply.code(503).send({ error: 'Tier 2 (AI-customized interpretation) is not configured' });
       }
 
