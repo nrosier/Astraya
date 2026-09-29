@@ -4,6 +4,24 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.21.0] — 2026-09-29
+
+**AI-Customized interpretation gains a second, freeform mode that lets the model originate its own reading from a reader's full chart, instead of only restyling reviewed corpus text.**
+
+M9 (Polish & launch) progress, not a finished milestone — v1.0.0 hasn't shipped yet.
+
+### Added
+
+- **Freeform Tier-2 mode, alongside the existing grounded restyling.** The AI-Customized tab now offers a second mode where the model composes its own interpretation from the reader's exact computed positions, houses, and aspects, rather than restyling already-reviewed corpus text. This is a deliberate departure from grounded mode's stricter guarantee — freeform still never sends a name, birth date, or location, but it is far more granular than a placement key and the model can say things about the chart the corpus never wrote. Every id and key in the chart payload is still closed-set-revalidated server-side before it reaches the prompt, the same anti-injection discipline grounded mode already had. ADR 0003 is updated with the trade-off.
+- **Tier-2 responses are now structured sections instead of one prose blob (#376).** The server asks the model for `{ sections: [{ heading, body }] }` via structured-output mode instead of free text, so the client renders real headings and paragraphs instead of guessing at line breaks in a single string.
+- **diagnostics:** toggleable client tracing for the login/sync/render pipeline (#372). Gated behind localStorage so it costs nothing by default; instruments the login → sync → store → React-subscription → render handoff to make a stale-data-after-fresh-login race observable without attaching a debugger.
+
+### Fixed
+
+- **ui:** the topbar's theme/language toggles, sign-in button, demo badge, and signed-in controls now share one consistent pill style instead of each redefining their own height/radius/border (#367); Report table-of-contents links now scroll to their section instead of being swallowed by the app's global hash router (#373); the AI-Customized custom-prompt textarea spans the full card width instead of rendering narrow (#374).
+- **interpretation:** Tier-2's 503 (no provider configured) now logs which env var is missing server-side, instead of leaving an admin to guess between two unrelated API keys (#375).
+- **interpretation:** a misconfigured Tier-2 model id now names the model and the env var to fix in the server log, instead of a bare 404 with no id in it (#375).
+
 ## [0.20.0] — 2026-09-29
 
 **A signed-in user can now ask an AI to restyle their interpretation in their own words, alongside the existing local corpus text.**
