@@ -42,7 +42,7 @@ const provider = providerFlag ? providerFlag.slice('--provider='.length) : 'gemi
 if (provider !== 'gemini' && provider !== 'ollama')
   throw new Error(`--provider must be "gemini" or "ollama", got "${provider}"`);
 const { generateStructured } = await import(provider === 'ollama' ? './lib/ollama.mjs' : './lib/gemini.mjs');
-const model = provider === 'ollama' ? process.env.OLLAMA_MODEL || 'mistral' : process.env.GEMINI_MODEL;
+const model = provider === 'ollama' ? process.env.OLLAMA_MODEL || 'gemma4' : process.env.GEMINI_MODEL;
 const baseUrl = provider === 'ollama' ? process.env.OLLAMA_BASE_URL : process.env.GEMINI_BASE_URL;
 const positional = rawArgs.filter((arg) => !arg.startsWith('--'));
 

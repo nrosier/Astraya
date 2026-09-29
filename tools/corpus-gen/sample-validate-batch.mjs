@@ -150,7 +150,7 @@ function libFor(p) {
   return p === 'ollama' ? './lib/ollama.mjs' : p === 'ica' ? './lib/ica.mjs' : './lib/gemini.mjs';
 }
 function modelFor(p) {
-  if (p === 'ollama') return process.env.OLLAMA_MODEL || 'mistral';
+  if (p === 'ollama') return process.env.OLLAMA_MODEL || 'gemma4';
   if (p === 'ica') return process.env.ASTRAYA_ICA_MODEL;
   return process.env.GEMINI_MODEL;
 }
@@ -303,12 +303,18 @@ if (generationErrors === total) {
       `or switch models.`,
   );
 } else {
+  const alternateHint =
+    provider === 'ollama' && model === 'gemma4'
+      ? `Consider validating a comparison sample against a different local model, e.g.:\n` +
+        `  OLLAMA_MODEL=<some-other-model> npx tsx --env-file=.env.local tools/corpus-gen/sample-validate-batch.mjs ` +
+        `--category=${category} --locale=${locale}`
+      : `Consider generating and validating a comparison sample with gemma4 (the current default), e.g.:\n` +
+        `  npx tsx --env-file=.env.local tools/corpus-gen/sample-validate-batch.mjs ` +
+        `--category=${category} --locale=${locale}`;
   log(
     `${String(model)} is not reliable enough for "${category}" (${(cleanRate * 100).toFixed(0)}% clean). ` +
       `Recommend against using --provider=${provider} --provider-model=${String(model)} for this category. ` +
-      `Consider generating and validating a comparison sample with an alternate local model, e.g.:\n` +
-      `  OLLAMA_MODEL=gemma4 npx tsx --env-file=.env.local tools/corpus-gen/sample-validate-batch.mjs ` +
-      `--category=${category} --locale=${locale}\n` +
+      `${alternateHint}\n` +
       `before deciding whether to regenerate this category at all.`,
   );
 }

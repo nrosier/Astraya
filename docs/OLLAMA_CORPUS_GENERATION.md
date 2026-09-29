@@ -19,11 +19,18 @@ Install from [ollama.com](https://ollama.com), then pull the model this
 project has standardized on:
 
 ```
-ollama pull mistral
+ollama pull gemma4
 ```
 
-Mistral 7B was chosen because it's Apache-2.0 licensed with no usage
-restriction, unlike Llama's or Gemma's custom licenses. Ollama runs a local
+Originally standardized on Mistral 7B (Apache-2.0, no usage restriction,
+unlike Llama's or Gemma's custom licenses), but #371 found Mistral
+unreliable for non-English locales — it drifted to English mid-generation
+and, even after adding a forced-language directive, produced uncontrolled
+repetition and mistranslations. `gemma4` was validated as a clean
+replacement (#368's `sample-validate-batch.mjs`, 26/26 clean on
+`synastry-aspect`) and is now the default; Gemma's custom license is an
+accepted tradeoff since nothing built with it ships — it only produces
+corpus text that's reviewed before commit. Ollama runs a local
 server on `http://localhost:11434` once installed; nothing else to start
 manually — `ollama pull` and `ollama run` both start it if it isn't already
 running.
@@ -40,14 +47,14 @@ cp .env.example .env.local
 Relevant variables (see `.env.example` for the full annotated list):
 
 ```
-OLLAMA_MODEL=mistral
+OLLAMA_MODEL=gemma4
 OLLAMA_BASE_URL=
 OLLAMA_NUM_CTX=
 ```
 
-- `OLLAMA_MODEL` — which local model to call. `mistral` is already the
+- `OLLAMA_MODEL` — which local model to call. `gemma4` is already the
   default both here and in the script itself (`generate-batch.mjs` falls
-  back to `mistral` if this is unset), so you only need to change it if you
+  back to `gemma4` if this is unset), so you only need to change it if you
   pulled a different model.
 - `OLLAMA_BASE_URL` — leave empty to use the default local endpoint
   (`http://localhost:11434`). Only set this if Ollama is reachable
@@ -157,3 +164,16 @@ npx tsx --env-file=.env.local tools/corpus-gen/classical-triage-batch.mjs --prov
 
 Both are additive/non-destructive triage signals for #292's human review
 queue — they flag, they don't auto-correct.
+
+A third script, `sample-validate-batch.mjs` (#368), is for _before_ running
+a full `generate-batch.mjs` pass: it samples a representative slice of a
+category, generates candidate text for each with the real production
+prompt builder, and checks it against fact-grounding and corpus lint —
+without writing anything. Useful for deciding whether a given
+`OLLAMA_MODEL` is safe to regenerate a whole category with, the way #371's
+investigation used it to validate `gemma4` against `synastry-aspect` before
+Mistral's replacement:
+
+```
+npx tsx --env-file=.env.local tools/corpus-gen/sample-validate-batch.mjs --category=synastry-aspect
+```
