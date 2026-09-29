@@ -78,7 +78,12 @@ const placementDescription =
     ? `${bodyName} in ${SIGNS[signOrHouse]?.name ?? String(signOrHouse)} (${planetSymbolism(body)?.core ?? ''} / ${signSymbolism(signOrHouse)?.core ?? ''})`
     : `${bodyName} in house ${String(signOrHouse)} (${planetSymbolism(body)?.core ?? ''})`;
 
-const systemInstruction = buildSystemInstruction({ persona, symbolismContext: buildSymbolismContext(locale), locale });
+const systemInstruction = buildSystemInstruction({
+  persona,
+  symbolismContext: buildSymbolismContext(locale),
+  locale,
+  forceLanguageDirective: provider === 'ollama',
+});
 const userContent = buildUserContent({ placementDescription, corpusEntries, locale, persona });
 
 console.log('='.repeat(80));

@@ -26,9 +26,9 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildVerificationPrompt, VERIFICATION_RESPONSE_SCHEMA } from './lib/verify.mjs';
 import { writeCorpus } from './lib/write-corpus.mjs';
+import { factsDescription as sharedFactsDescription } from './lib/placements.mjs';
 import { categoryOfKey, parsePlacementKey } from '../../src/interpretation/schema.ts';
 import { BODIES } from '../../src/astrology/bodies.ts';
-import { SIGNS } from '../../src/astrology/signs.ts';
 import { ASPECTS } from '../../src/astrology/aspects.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -42,26 +42,16 @@ function aspectName(key) {
   return ASPECTS.find((a) => a.key === key)?.name ?? key;
 }
 
-/** Renders a placement's own computed facts as plain English — the only ground truth the judge gets. */
+/**
+ * Renders a placement's own computed facts as plain English — the only ground truth the judge
+ * gets. `transit-aspect` isn't in the shared restricted-scope builder (lib/placements.mjs), since
+ * generate-batch.mjs's neutral batch doesn't cover it, so it stays a local case here.
+ */
 function factsDescription(placement) {
-  switch (placement.category) {
-    case 'planet-in-sign':
-      return `${bodyName(placement.body)} in ${SIGNS[placement.sign]?.name ?? String(placement.sign)}`;
-    case 'planet-in-house':
-      return `${bodyName(placement.body)} in house ${String(placement.house)}`;
-    case 'sign-on-cusp':
-      return `${SIGNS[placement.sign]?.name ?? String(placement.sign)} on the cusp of house ${String(placement.house)}`;
-    case 'aspect-pair':
-      return `${bodyName(placement.bodyA)} ${aspectName(placement.aspect)} ${bodyName(placement.bodyB)}`;
-    case 'transit-aspect':
-      return `transiting ${bodyName(placement.transiting)} ${aspectName(placement.aspect)} natal ${bodyName(placement.natal)}`;
-    case 'synastry-aspect':
-      return `this chart's ${bodyName(placement.bodyA)} ${aspectName(placement.aspect)} the other chart's ${bodyName(placement.bodyB)}`;
-    case 'dignity-state':
-      return `${bodyName(placement.body)} in ${placement.state}`;
-    default:
-      throw new Error(`this verifier does not (yet) support category "${placement.category}"`);
+  if (placement.category === 'transit-aspect') {
+    return `transiting ${bodyName(placement.transiting)} ${aspectName(placement.aspect)} natal ${bodyName(placement.natal)}`;
   }
+  return sharedFactsDescription(placement);
 }
 
 async function withConcurrency(items, limit, worker) {
