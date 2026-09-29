@@ -104,7 +104,15 @@ export async function generateTier2Text(
     }
 
     const errorBody = await response.text();
-    lastError = new Error(`Tier 2 model call failed (${String(response.status)}): ${errorBody.slice(0, 1000)}`);
+    // Google returns a bare, often-empty-bodied 404 for an unknown model id — the single most
+    // likely cause being a typo or a retired model in ASTRAYA_INTERPRETATION_MODEL (or its
+    // hardcoded default above), not a transient issue. Name that suspect explicitly so it shows
+    // up in the server log instead of a bare "(404): " that gives the operator nothing to act on.
+    const hint =
+      response.status === 404
+        ? ` — model "${config.model}" not found; check ASTRAYA_INTERPRETATION_MODEL for a typo or a retired model id`
+        : '';
+    lastError = new Error(`Tier 2 model call failed (${String(response.status)}): ${errorBody.slice(0, 1000)}${hint}`);
     if (!RETRYABLE_STATUS.has(response.status) || attempt === maxRetries) throw lastError;
     await sleep(2 ** attempt * 500);
   }
