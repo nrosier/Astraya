@@ -35,6 +35,7 @@ import { createClock, isNodeId, randomNodeId, receive } from './hlc.js';
 import { decode } from './ops.js';
 import { requestPersistence } from './persist.js';
 import { acquireWriteLock } from './tab-lock.js';
+import { trace } from '../trace.js';
 import type { Registers, State } from './fold.js';
 import type { Log, Mutation, Rejection } from './oplog.js';
 import type { Drift, Hlc, NodeId } from './hlc.js';
@@ -273,6 +274,12 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
       }
     }
 
+    trace('store', 'commitRecords: notifying listeners', {
+      deviceId,
+      newRecords: newRecords.length,
+      listeners: listeners.size,
+      people: state.people.size,
+    });
     for (const listener of listeners) listener();
   }
 
@@ -338,6 +345,7 @@ export async function openStore(options: StoreOptions = {}): Promise<Store> {
       // moving it independently of the writer tab's — exactly the collision #311 exists
       // to prevent.
       if (!tabLock.writable) throw new Error(NOT_WRITABLE_MESSAGE);
+      trace('store', 'receiveIncoming: called', { deviceId, incoming: records.length });
       const result = receiveRecords(log, records, now());
       // The clock may have advanced even with nothing new to store — a future record's
       // timestamp still has to be respected — so `log` is always replaced, but the database

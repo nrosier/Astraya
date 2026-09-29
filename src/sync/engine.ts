@@ -12,6 +12,7 @@ import { isHlc, isNodeId, type Hlc, type NodeId } from '../store/hlc.js';
 import type { OpRecord } from '../store/ops.js';
 import type { Store, SyncCursor } from '../store/store.js';
 import type { SyncState } from '../ui/status.js';
+import { trace } from '../trace.js';
 
 /** Matches the server's own `MAX_BATCH_SIZE`/`MAX_PAGE_SIZE` (`server/ops/routes.ts`). */
 const MAX_PAGE_SIZE = 500;
@@ -207,6 +208,7 @@ export async function pushRecords(records: readonly OpRecord[]): Promise<void> {
 
 export async function createSyncEngine(options: SyncEngineOptions): Promise<SyncEngine> {
   const { store, onUnauthorized } = options;
+  trace('sync', 'createSyncEngine: called', { deviceId: store.deviceId, people: store.state.people.size });
   // Read once at creation, same shape as `openStore` reading state off disk. Reassigned as
   // pushing/pulling makes progress; never read back from the store mid-run, so a run's own
   // progress is always self-consistent even if something else changed `store` underneath it
@@ -296,7 +298,9 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
           console.warn('sync: dropping a pulled row that failed to decode', row.seq, error);
         }
       }
+      trace('sync', 'pull: page fetched, calling store.receive', { deviceId: store.deviceId, decoded: decoded.length });
       await store.receive(decoded);
+      trace('sync', 'pull: store.receive resolved', { deviceId: store.deviceId });
       // Persisted only once `receive` has resolved — itself durable-before-return — so a
       // crash here just re-pulls the same page next time, which `receive`'s HLC dedupe makes
       // a harmless no-op rather than a duplicate.
@@ -338,6 +342,7 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
 
   async function runSync(): Promise<void> {
     running = true;
+    trace('sync', 'runSync: starting', { deviceId: store.deviceId });
     try {
       do {
         rerunRequested = false;
@@ -350,6 +355,7 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
         unauthorizedNotified = false;
         clearScheduledRetry();
         const stillPending = ownOutgoing().length > 0;
+        trace('sync', 'runSync: finished', { deviceId: store.deviceId, stillPending });
         setStatus(stillPending ? { kind: 'syncing' } : { kind: 'synced', at: Date.now() });
       }
     } catch (error) {
@@ -380,9 +386,11 @@ export async function createSyncEngine(options: SyncEngineOptions): Promise<Sync
     if (running) {
       // A run is already in flight: rather than starting a second, overlapping one, ask
       // the current run to go again once it finishes.
+      trace('sync', 'trigger: run already in flight, requesting rerun', { deviceId: store.deviceId });
       requestRerun();
       return;
     }
+    trace('sync', 'trigger: firing runSync', { deviceId: store.deviceId });
     void runSync();
   }
 
