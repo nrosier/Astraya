@@ -4,6 +4,21 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.20.0] — 2026-09-29
+
+**A signed-in user can now ask an AI to restyle their interpretation in their own words, alongside the existing local corpus text.**
+
+M9 (Polish & launch) progress, not a finished milestone — v1.0.0 hasn't shipped yet.
+
+### Added
+
+- **Tier-2 AI-customized interpretation, opt-in and per-request (#360).** The Interpretation screen (renamed from "Report", since it now covers both tiers) gains a "Standard"/"AI-Customized" sub-tab pair. Turning on Tier 2 sends only de-identified placement keys — never the chart itself — plus a guardrailed free-text style/tone/focus field to a configurable third-party model (disabled with a clear 503 if no provider is set), behind a consent checkbox, a prompt-injection/fatalistic/medical-legal-financial-phrasing/PII-shape check that runs both client-side and authoritatively on the server, and per-user and total daily cost caps on top of the existing rate limit. ADR 0003 records the data-minimization and cost-cap reasoning. Also fixes a bug this work surfaced before it could ship: the production Docker image was missing runtime files the new routes depend on and would have crashed the whole server at startup, not just failed to offer Tier 2.
+
+### Fixed
+
+- **Interpretation corpus:** a batch of synastry-aspect entries shipped in English under the Dutch locale; the batch is reverted and a language-mismatch lint gate now catches this class of mistake before it ships again (#371).
+- **corpus-gen:** Ollama requests now set an explicit context size, instead of relying on a default that could silently truncate longer prompts.
+
 ## [0.19.0] — 2026-09-28
 
 **Admins can now correct the interpretation corpus straight from the app, and purging a person now actually erases their data everywhere it had synced — not just on the device that ran it.**
