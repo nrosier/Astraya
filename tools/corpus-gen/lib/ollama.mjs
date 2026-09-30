@@ -86,3 +86,46 @@ export async function generateStructured({
   }
   throw lastError;
 }
+
+/**
+ * One embedding request against a local Ollama server (`/api/embed`) — for #368's `all-minilm`
+ * cross-check against Laya's own `similarity` score
+ * (see `docs/LAYA_INTERPRETATION_COMPARISON.md`'s "still open" item). Returns the embedding vector
+ * for a single string input. Same retry policy as `generateStructured`.
+ */
+export async function embed({ model, baseUrl, input, maxRetries = 3 }) {
+  if (!model) throw new Error('OLLAMA_EMBED_MODEL is not set — check .env.local');
+
+  const url = `${baseUrl || DEFAULT_BASE_URL}/api/embed`;
+  const body = { model, input };
+
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    let response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (networkError) {
+      lastError = networkError;
+      if (attempt === maxRetries) throw networkError;
+      await sleep(2 ** attempt * 1000);
+      continue;
+    }
+
+    if (response.ok) {
+      const payload = await response.json();
+      const vector = payload.embeddings?.[0];
+      if (!Array.isArray(vector)) throw new Error(`unexpected embed response shape: ${JSON.stringify(payload).slice(0, 500)}`);
+      return vector;
+    }
+
+    const errorBody = await response.text();
+    lastError = new Error(`Ollama embed API ${String(response.status)}: ${errorBody.slice(0, 1000)}`);
+    if (!RETRYABLE_STATUS.has(response.status) || attempt === maxRetries) throw lastError;
+    await sleep(2 ** attempt * 1000);
+  }
+  throw lastError;
+}

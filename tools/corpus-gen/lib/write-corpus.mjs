@@ -125,3 +125,39 @@ export async function writeCorpus(path, corpus) {
 
   await writeFileAtomic(path, pieces.join(''));
 }
+
+/**
+ * Surgically deletes every entry `shouldRemove` matches, touching nothing else byte-for-byte —
+ * `writeCorpus()` above can't do this (its own invariant: "never reordered or removed, only
+ * replaced in place or appended after"; it throws the moment an index's key stops matching).
+ * Reuses `splitEntrySpans` to find each entry's exact span, drops the matching ones plus their
+ * separator, and re-joins the rest of the file exactly as it already was.
+ */
+export async function removeCorpusEntries(path, shouldRemove) {
+  const rawText = await readFile(path, 'utf8');
+  const spans = splitEntrySpans(rawText);
+  const parsed = spans.map((span) => JSON.parse(rawText.slice(span.start, span.end)));
+
+  const removedKeys = [];
+  const keptSpans = [];
+  for (let i = 0; i < spans.length; i += 1) {
+    if (shouldRemove(parsed[i])) removedKeys.push(parsed[i].key);
+    else keptSpans.push(spans[i]);
+  }
+  if (removedKeys.length === 0) return { removedKeys };
+
+  if (keptSpans.length === 0) {
+    await writeFileAtomic(path, '[]\n');
+    return { removedKeys };
+  }
+
+  const pieces = [rawText.slice(0, spans[0].start)];
+  for (let i = 0; i < keptSpans.length; i += 1) {
+    pieces.push(rawText.slice(keptSpans[i].start, keptSpans[i].end));
+    if (i < keptSpans.length - 1) pieces.push(',\n  ');
+  }
+  pieces.push(rawText.slice(spans[spans.length - 1].end));
+
+  await writeFileAtomic(path, pieces.join(''));
+  return { removedKeys };
+}

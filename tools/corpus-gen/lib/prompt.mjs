@@ -34,7 +34,7 @@ export const NEGATIVE_CONSTRAINTS = [
   'Do not state numbers or degrees. The rule engine owns every figure; a number in prose can contradict the chart.',
   'Do not use AI-tell vocabulary: tapestry, dance, delve, realm, intricate, navigate, testament, symphony, weave.',
   'Do not predict a future event or give advice ("you will meet...", "you should..."). Describe a standing disposition, not a forecast.',
-  'Keep the entire entry under 480 characters (roughly two to three sentences) — longer output is rejected by the corpus lint pass regardless of quality.',
+  'Keep the entire entry between 40 and 1600 characters, typically two to three sentences unless the placement warrants more depth — shorter reads as a stub, longer stops being one placement\'s contribution to a report that stacks a dozen of these; either way is rejected by the corpus lint pass regardless of quality.',
 ];
 
 /** Builds the model-facing instruction block shared by every request, regardless of persona. */
@@ -46,14 +46,24 @@ export function buildNegativeConstraintsBlock() {
 }
 
 /**
- * The "3 gold-standard hand-written fragments" #56 asks for, now sourced
- * from the corpus's own `anchor: true` marking (#211) instead of a hardcoded
- * key list picked ad hoc per batch — the corpus itself says what's an
- * anchor, in whichever locale the request is for.
+ * The "3 gold-standard hand-written fragments" #56 originally asked for,
+ * sourced from the corpus's own `anchor: true` marking (#211) instead of a
+ * hardcoded key list picked ad hoc per batch — the corpus itself says what's
+ * an anchor, in whichever locale the request is for.
+ *
+ * Optional, not required (#368): originally this threw when a locale had no
+ * anchors, on the theory that every model needs a few-shot example to match
+ * house style against. `qwen2.5:14b`, used for a full from-scratch
+ * regeneration, was judged capable of reasoning to the same tone/length/depth
+ * constraints directly from the system instruction and negative constraints
+ * alone, with no example text needed — the user's own call. Returns
+ * `undefined` (not a thrown error) when a locale has no anchors, so
+ * `buildUserContent` can simply omit the section rather than every caller
+ * needing its own now-unnecessary "seed some anchors first" workaround.
  */
 export function buildAnchorsBlock(corpusEntries, locale, persona) {
   const anchors = corpusEntries.filter((entry) => entry.anchor === true && entry.locale === locale);
-  if (anchors.length === 0) throw new Error(`no anchor entries found for locale "${locale}"`);
+  if (anchors.length === 0) return undefined;
   // Anchors are always neutral-voiced (schema.ts forbids an anchor from declaring a persona), so
   // when a persona is generating, "match this tone" would fight the persona's own system prompt
   // above. Scope the instruction to what anchors actually establish across every voice — depth,
@@ -90,11 +100,11 @@ export function buildSystemInstruction({ persona, symbolismContext, locale, forc
 }
 
 export function buildUserContent({ placementDescription, corpusEntries, locale, persona }) {
+  const anchorsBlock = buildAnchorsBlock(corpusEntries, locale, persona);
   return [
     `TARGET PLACEMENT: ${placementDescription}`,
     '',
-    buildAnchorsBlock(corpusEntries, locale, persona),
-    '',
+    ...(anchorsBlock ? [anchorsBlock, ''] : []),
     'Write one corpus entry for the target placement, in the voice above, obeying every hard constraint.',
   ].join('\n');
 }

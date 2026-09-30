@@ -30,13 +30,19 @@ export interface LintIssue {
 }
 
 /**
- * Guesses at what a one-to-three-sentence report-section paragraph should span.
- * Too short reads as a stub; too long stops being one placement's contribution
- * to a report that stacks a dozen of these (#61). Both bounds are a starting
- * point for #63's review to tighten, not a fact derived from anything.
+ * MAX_LENGTH widened from 480 to 1600 (#368) to give room for an entry to
+ * roughly track astrologyapi.com's own observed interpretation length
+ * (~514-1574 chars across a small cached sample), without forcing every
+ * *existing* shipped entry (this project's own prior, deliberately terse
+ * two-to-three-sentence house style, averaging ~344 chars) to suddenly fail
+ * its own quality gate — raising MIN_LENGTH to match would have done exactly
+ * that, so it stays where it was. Too short still reads as a stub; too long
+ * still stops being one placement's contribution to a report that stacks a
+ * dozen of these (#61). Both bounds remain a starting point for #63's review
+ * to tighten, not a fact derived from anything.
  */
 export const MIN_LENGTH = 40;
-export const MAX_LENGTH = 480;
+export const MAX_LENGTH = 1600;
 
 /**
  * Absolute, no-way-out phrasing. Astrology describes tendencies, and an entry

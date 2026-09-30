@@ -23,7 +23,15 @@
  * at a time by design, so `--locale=en` and `--locale=nl` can run
  * concurrently or be resumed independently, per #56.
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama] [--force]
+ *
+ * `--force` (#368) turns this from a gap-filler into a full regeneration:
+ * every placement in scope is (re)generated, replacing its existing entry in
+ * place (same array index — never appended as a duplicate of the same key).
+ * Hand-written `anchor: true` entries are never touched by `--force`, even
+ * though they're otherwise ordinary corpus entries — they're the "3
+ * gold-standard fragments" reference examples, not something a batch run
+ * should be able to overwrite with its own output.
  *
  * `--persona` (a `tools/corpus-gen/personas.json` id) generates that
  * persona's voice for each placement instead of the neutral default;
@@ -82,6 +90,7 @@ const limit = Number(flag('limit', Infinity));
 const concurrency = Number(flag('concurrency', '3'));
 const delayMs = Number(flag('delay-ms', '200'));
 const skipFinalChecks = rawArgs.includes('--skip-final-checks');
+const force = rawArgs.includes('--force');
 
 const provider = flag('provider', 'gemini');
 if (provider !== 'gemini' && provider !== 'ollama')
@@ -108,24 +117,15 @@ try {
   if (error.code !== 'ENOENT') throw error;
   corpus = [];
 }
-// buildAnchorsBlock() (lib/prompt.mjs) requires at least one hand-written `anchor: true` entry
-// for this locale to few-shot every prompt against — #56's "3 gold-standard fragments". A
-// from-scratch corpus has none, and there's no way to conjure a hand-written example
-// mechanically (schema.ts requires anchor entries to be hand-written or human-reviewed), so
-// this has to come from somewhere real: either the corpus already has them, or a caller points
-// at a backup/git-restored file that does.
-if (corpus.filter((e) => e.anchor === true && e.locale === locale).length === 0) {
-  const seedAnchorsFrom = flag('seed-anchors-from');
-  if (!seedAnchorsFrom) {
-    throw new Error(
-      `no anchor entries (anchor: true) found for locale "${locale}" — 3 hand-written gold-standard examples ` +
-        `are required to prompt the model, and a from-scratch corpus has none.\n` +
-        `Point --seed-anchors-from=<path> at a corpus file that still has them (a backup, or a git-restored ` +
-        `copy), e.g.:\n` +
-        `  git show HEAD:src/interpretation/corpus/${locale}.json > /tmp/${locale}-anchors-source.json\n` +
-        `  npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=${locale} --provider=${provider} --seed-anchors-from=/tmp/${locale}-anchors-source.json`,
-    );
-  }
+// buildAnchorsBlock() (lib/prompt.mjs) originally required at least one hand-written `anchor:
+// true` entry per locale to few-shot every prompt against — #56's "3 gold-standard fragments".
+// Now optional (#368): anchors are used when present, but a from-scratch corpus (none) or a
+// model judged capable of reasoning to the house style without an example (the user's own call
+// for a full qwen2.5:14b regeneration) proceeds with no anchors and no seed file needed.
+// `--seed-anchors-from=<path>` still works if you *want* to prime a from-scratch corpus with
+// existing hand-written examples (a backup, or a git-restored copy) rather than going anchor-free.
+const seedAnchorsFrom = flag('seed-anchors-from');
+if (seedAnchorsFrom && corpus.filter((e) => e.anchor === true && e.locale === locale).length === 0) {
   const seedCorpus = JSON.parse(await readFile(resolve(seedAnchorsFrom), 'utf8'));
   const seedAnchors = seedCorpus.filter((e) => e.anchor === true && e.locale === locale);
   if (seedAnchors.length === 0) {
@@ -137,17 +137,31 @@ if (corpus.filter((e) => e.anchor === true && e.locale === locale).length === 0)
     `[${locale}/${scopeLabel}] seeded ${String(seedAnchors.length)} anchor entr${seedAnchors.length === 1 ? 'y' : 'ies'} from ${seedAnchorsFrom}`,
   );
 }
+if (corpus.filter((e) => e.anchor === true && e.locale === locale).length === 0) {
+  console.log(`[${locale}/${scopeLabel}] no anchor entries for this locale — generating with no few-shot example.`);
+}
 
-const existingKeys = new Set(corpus.filter((e) => e.persona === persona?.id).map((e) => e.key));
+// Maps a (persona-scoped) key to its position in `corpus`, so a `--force` regeneration replaces
+// the entry in place instead of pushing a second entry with the same key.
+const existingIndex = new Map();
+corpus.forEach((entry, i) => {
+  if (entry.persona === persona?.id) existingIndex.set(entry.key, i);
+});
 
 const allPlacements = buildPlacements();
 const pending = allPlacements
   .map((placement) => ({ placement, key: placementKey(placement) }))
-  .filter(({ key }) => !existingKeys.has(key))
+  .filter(({ key }) => {
+    const idx = existingIndex.get(key);
+    if (idx === undefined) return true; // genuinely missing — always generate
+    if (!force) return false; // already shipped, not forcing — gap-filler behavior
+    return corpus[idx].anchor !== true; // forcing, but never regenerate a hand-written anchor
+  })
   .slice(0, Number.isFinite(limit) ? limit : undefined);
 
 console.log(
-  `[${locale}/${scopeLabel}] provider: ${provider} (model: ${String(model)}) — restricted scope: ${String(allPlacements.length)} placements, ${String(existingKeys.size)} already shipped, ${String(pending.length)} to generate`,
+  `[${locale}/${scopeLabel}] provider: ${provider} (model: ${String(model)}) — restricted scope: ${String(allPlacements.length)} placements, ` +
+    `${String(existingIndex.size)} already shipped, ${String(pending.length)} to ${force ? 'regenerate' : 'generate'}${force ? ' (--force)' : ''}`,
 );
 if (pending.length === 0) {
   console.log(`[${locale}/${scopeLabel}] nothing to do.`);
@@ -232,7 +246,13 @@ await withConcurrency(pending, concurrency, async ({ placement, key }) => {
     const languageIssue = lintEntry(entry).find((issue) => issue.rule === 'language-mismatch');
     if (languageIssue) throw new Error(languageIssue.message);
 
-    corpus.push(entry);
+    const existing = existingIndex.get(key);
+    if (existing === undefined) {
+      corpus.push(entry);
+      existingIndex.set(key, corpus.length - 1);
+    } else {
+      corpus[existing] = entry;
+    }
     await persist();
     done += 1;
     if (useProgressBar) {

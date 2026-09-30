@@ -160,7 +160,7 @@ new/edited corpus entry:
   correct behavior; don't propose "fixing" the validator to accept the
   wrong order instead.
 - **`lint.ts`'s heuristics are the only content-quality gate** for tone —
-  length 40-480 chars, no fatalistic/absolute phrasing ("will definitely,"
+  length 40-1600 chars, no fatalistic/absolute phrasing ("will definitely,"
   "you must"), no medical/legal/financial claims, no gendered assumptions, no
   templated repetitive openings across the corpus. These are deliberately
   heuristic, not semantic — they won't catch an astrologically *wrong*
