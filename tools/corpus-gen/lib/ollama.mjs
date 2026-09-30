@@ -118,7 +118,8 @@ export async function embed({ model, baseUrl, input, maxRetries = 3 }) {
     if (response.ok) {
       const payload = await response.json();
       const vector = payload.embeddings?.[0];
-      if (!Array.isArray(vector)) throw new Error(`unexpected embed response shape: ${JSON.stringify(payload).slice(0, 500)}`);
+      if (!Array.isArray(vector))
+        throw new Error(`unexpected embed response shape: ${JSON.stringify(payload).slice(0, 500)}`);
       return vector;
     }
 

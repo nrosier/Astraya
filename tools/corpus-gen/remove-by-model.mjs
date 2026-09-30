@@ -62,7 +62,7 @@ function assertNoConcurrentGeneration(locale) {
     throw new Error(
       `a generate-batch.mjs process appears to be running for --locale=${locale} right now — ` +
         'removing entries while it runs risks a crash or a silently-resurrected entry on its next ' +
-        'write (see this file\'s own doc comment). Wait for it to finish, or stop it, first.',
+        "write (see this file's own doc comment). Wait for it to finish, or stop it, first.",
     );
   }
 }

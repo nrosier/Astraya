@@ -25,12 +25,12 @@ calls either at runtime — unaffected by this work (`test/no-runtime-llm-access
 Only 4 of the corpus's 9 categories have a matching astrologyapi.com prose
 endpoint:
 
-| corpus category | astrologyapi.com endpoint |
-|---|---|
-| `planet-in-sign` | `general_sign_report/tropical/{planet}` |
+| corpus category   | astrologyapi.com endpoint                |
+| ----------------- | ---------------------------------------- |
+| `planet-in-sign`  | `general_sign_report/tropical/{planet}`  |
 | `planet-in-house` | `general_house_report/tropical/{planet}` |
-| `sign-on-cusp` | `natal_house_cusp_report` |
-| `aspect-pair` | `natal_aspects_report` |
+| `sign-on-cusp`    | `natal_house_cusp_report`                |
+| `aspect-pair`     | `natal_aspects_report`                   |
 
 `dignity-state`, `nakshatra`, `pattern`, `synastry-aspect`, `transit-aspect`
 have no third-party prose endpoint and are out of scope. Bodies are
@@ -117,7 +117,7 @@ it wasn't warranted yet; early real runs of this benchmark turned up
 exactly that trigger.
 
 All three judges are independently non-fatal: a machine without Ollama
-running, or missing a pulled model, still gets whichever judges *are*
+running, or missing a pulled model, still gets whichever judges _are_
 available for a given placement — the empty ones just show `—` in the
 dashboard.
 
@@ -191,9 +191,9 @@ repeated runs incrementally cover more of it instead of re-paying for the
 same placement every time.
 
 A **skipped** result (the astrologyapi.com call failed, or its response
-shape couldn't be confidently parsed — see "Known risk" below) is *not*
+shape couldn't be confidently parsed — see "Known risk" below) is _not_
 treated as verified, and stays eligible for a plain re-run with no flag
-needed; only `--force` re-checks an already-*scored* placement.
+needed; only `--force` re-checks an already-_scored_ placement.
 
 ## What's persisted, and what never is
 
@@ -234,7 +234,7 @@ npx tsx --env-file=.env.local tools/corpus-gen/benchmark-batch.mjs --purge-third
 
 This only clears `thirdparty_cache`; `benchmark_results` (your accumulated
 scores/history) is untouched. A cache hit whose extraction previously
-failed is automatically re-parsed with the *current* extractor on the next
+failed is automatically re-parsed with the _current_ extractor on the next
 run (no new network call) rather than replaying the same failure forever —
 useful if you've just fixed a heuristic in `fetchThirdPartyText()`.
 
@@ -286,10 +286,10 @@ a browser. It shows:
 shapes were confirmed directly against a real account (a single string
 report field); `planets/tropical`/`house_cusps/tropical` (the chart-pool
 build) likewise. `natal_house_cusp_report`/`natal_aspects_report` were
-initially guessed wrong — both return their array *directly* as the
+initially guessed wrong — both return their array _directly_ as the
 top-level response, not wrapped in an object — and that's now fixed and
 confirmed against real responses too, but the extraction heuristics inside
-`fetchThirdPartyText()` (`benchmark-batch.mjs`) still guess at *which*
+`fetchThirdPartyText()` (`benchmark-batch.mjs`) still guess at _which_
 array item matches a given house/aspect-pair, since astrologyapi.com's own
 field names for that weren't documented anywhere this session could check.
 If you see repeated **needs review** skips for `sign-on-cusp`/`aspect-pair`

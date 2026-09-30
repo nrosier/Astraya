@@ -110,7 +110,9 @@ async function callAstrologyApi(apiKey, path, body) {
  * of silently coping if the vendor ever changes it. */
 function parsePlanetsTropical(json) {
   if (!Array.isArray(json)) {
-    throw new Error(`planets/tropical response shape not recognized — expected a bare array, got: ${JSON.stringify(json).slice(0, 300)}`);
+    throw new Error(
+      `planets/tropical response shape not recognized — expected a bare array, got: ${JSON.stringify(json).slice(0, 300)}`,
+    );
   }
   const planets = new Map();
   for (const raw of json) {
@@ -119,7 +121,9 @@ function parsePlanetsTropical(json) {
     planets.set(bodyKey, { longitude: raw.fullDegree, speed: raw.speed ?? 0 });
   }
   if (planets.size === 0) {
-    throw new Error(`planets/tropical had no entries matching a traditional planet — got names: ${json.map((p) => p.name).join(', ')}`);
+    throw new Error(
+      `planets/tropical had no entries matching a traditional planet — got names: ${json.map((p) => p.name).join(', ')}`,
+    );
   }
   return planets;
 }
@@ -127,14 +131,18 @@ function parsePlanetsTropical(json) {
 function parseHouseCuspsTropical(json) {
   const housesRaw = json?.houses;
   if (!Array.isArray(housesRaw)) {
-    throw new Error(`house_cusps/tropical response shape not recognized — expected a "houses" array, got top-level keys: ${Object.keys(json ?? {}).join(', ')}`);
+    throw new Error(
+      `house_cusps/tropical response shape not recognized — expected a "houses" array, got top-level keys: ${Object.keys(json ?? {}).join(', ')}`,
+    );
   }
   const cusps = new Array(13); // index 0 unused, matching HousePositions.cusps' own convention
   for (const raw of housesRaw) {
     if (typeof raw.house === 'number' && typeof raw.degree === 'number') cusps[raw.house] = raw.degree;
   }
   if (cusps.slice(1).some((c) => c === undefined)) {
-    throw new Error(`house_cusps/tropical did not yield all 12 cusps — got: ${JSON.stringify(housesRaw).slice(0, 300)}`);
+    throw new Error(
+      `house_cusps/tropical did not yield all 12 cusps — got: ${JSON.stringify(housesRaw).slice(0, 300)}`,
+    );
   }
   return cusps;
 }
@@ -207,7 +215,12 @@ export async function buildRealPlacements(apiKey) {
         bodyA: aspect.bodyA,
         bodyB: aspect.bodyB,
         aspectKey: aspect.aspect.key,
-        key: placementKey({ category: 'aspect-pair', aspect: aspect.aspect.key, bodyA: aspect.bodyA, bodyB: aspect.bodyB }),
+        key: placementKey({
+          category: 'aspect-pair',
+          aspect: aspect.aspect.key,
+          bodyA: aspect.bodyA,
+          bodyB: aspect.bodyB,
+        }),
         placement: { category: 'aspect-pair', aspect: aspect.aspect.key, bodyA: aspect.bodyA, bodyB: aspect.bodyB },
       });
     }

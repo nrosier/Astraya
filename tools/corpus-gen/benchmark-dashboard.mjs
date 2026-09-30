@@ -77,16 +77,26 @@ function statusOf(row) {
   if (row.similarity_score_llm !== null) normalized.push(row.similarity_score_llm / 3);
 
   const spread = normalized.length > 1 ? Math.max(...normalized) - Math.min(...normalized) : 0;
-  if (spread > 0.4) return { tag: 'warning', reason: `the similarity judges disagree sharply (spread ${spread.toFixed(2)})` };
+  if (spread > 0.4)
+    return { tag: 'warning', reason: `the similarity judges disagree sharply (spread ${spread.toFixed(2)})` };
 
   const avg = normalized.reduce((a, b) => a + b, 0) / normalized.length;
   return avg >= 0.5
-    ? { tag: 'good', reason: `mean normalized similarity ${avg.toFixed(2)} across ${String(normalized.length)} judge(s)` }
-    : { tag: 'bad', reason: `mean normalized similarity ${avg.toFixed(2)} across ${String(normalized.length)} judge(s)` };
+    ? {
+        tag: 'good',
+        reason: `mean normalized similarity ${avg.toFixed(2)} across ${String(normalized.length)} judge(s)`,
+      }
+    : {
+        tag: 'bad',
+        reason: `mean normalized similarity ${avg.toFixed(2)} across ${String(normalized.length)} judge(s)`,
+      };
 }
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  return String(value).replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+  );
 }
 
 function mean(values) {
@@ -352,9 +362,33 @@ function buildHtml(rows, cachedThirdParty) {
     ${statTile('mean sim (Laya)', layaSim.length ? `${fmt(mean(layaSim))} / 3` : '—')}
     ${statTile('mean sim (all-minilm)', fmt(mean(embedSim)))}
     ${statTile('mean sim (gemma4)', llmSim.length ? `${fmt(mean(llmSim))} / 3` : '—')}
-    ${statTile('agreement Laya/all-minilm (r)', fmt(pearson(pairedLayaEmbed.map((r) => r.similarity_score / 3), pairedLayaEmbed.map((r) => r.embedding_similarity))))}
-    ${statTile('agreement Laya/gemma4 (r)', fmt(pearson(pairedLayaLlm.map((r) => r.similarity_score / 3), pairedLayaLlm.map((r) => r.similarity_score_llm / 3))))}
-    ${statTile('agreement all-minilm/gemma4 (r)', fmt(pearson(pairedEmbedLlm.map((r) => r.embedding_similarity), pairedEmbedLlm.map((r) => r.similarity_score_llm / 3))))}
+    ${statTile(
+      'agreement Laya/all-minilm (r)',
+      fmt(
+        pearson(
+          pairedLayaEmbed.map((r) => r.similarity_score / 3),
+          pairedLayaEmbed.map((r) => r.embedding_similarity),
+        ),
+      ),
+    )}
+    ${statTile(
+      'agreement Laya/gemma4 (r)',
+      fmt(
+        pearson(
+          pairedLayaLlm.map((r) => r.similarity_score / 3),
+          pairedLayaLlm.map((r) => r.similarity_score_llm / 3),
+        ),
+      ),
+    )}
+    ${statTile(
+      'agreement all-minilm/gemma4 (r)',
+      fmt(
+        pearson(
+          pairedEmbedLlm.map((r) => r.embedding_similarity),
+          pairedEmbedLlm.map((r) => r.similarity_score_llm / 3),
+        ),
+      ),
+    )}
     ${statTile('mean grounded (Laya) — Astraya', fmt(meanAstraya))}
     ${statTile('mean grounded (Laya) — 3rd-party', fmt(meanThirdParty))}
     ${statTile('preference win rate — Astraya', winRate === undefined ? '—' : `${(winRate * 100).toFixed(0)}%`)}
@@ -454,6 +488,8 @@ const rows = allResults(db);
 const cachedThirdParty = allCachedThirdPartyText(db);
 db.close();
 
-console.log(`read ${String(rows.length)} result(s) from ${DB_PATH}, ${String(cachedThirdParty.size)} with a cached third-party text`);
+console.log(
+  `read ${String(rows.length)} result(s) from ${DB_PATH}, ${String(cachedThirdParty.size)} with a cached third-party text`,
+);
 await writeFile(outPath, buildHtml(rows, cachedThirdParty));
 console.log(`wrote dashboard to ${outPath}`);

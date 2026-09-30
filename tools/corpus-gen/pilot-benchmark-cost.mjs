@@ -83,11 +83,31 @@ function log(line = '') {
 }
 
 const REPORTS = [
-  { label: 'general_sign_report/tropical/sun', corpusCategory: 'planet-in-sign', path: 'general_sign_report/tropical/sun', body: { ...PERSON_A } },
-  { label: 'general_house_report/tropical/sun', corpusCategory: 'planet-in-house', path: 'general_house_report/tropical/sun', body: { ...PERSON_A, house_type: HOUSE_TYPE } },
-  { label: 'natal_house_cusp_report', corpusCategory: 'sign-on-cusp', path: 'natal_house_cusp_report', body: { ...PERSON_A, house_type: HOUSE_TYPE } },
+  {
+    label: 'general_sign_report/tropical/sun',
+    corpusCategory: 'planet-in-sign',
+    path: 'general_sign_report/tropical/sun',
+    body: { ...PERSON_A },
+  },
+  {
+    label: 'general_house_report/tropical/sun',
+    corpusCategory: 'planet-in-house',
+    path: 'general_house_report/tropical/sun',
+    body: { ...PERSON_A, house_type: HOUSE_TYPE },
+  },
+  {
+    label: 'natal_house_cusp_report',
+    corpusCategory: 'sign-on-cusp',
+    path: 'natal_house_cusp_report',
+    body: { ...PERSON_A, house_type: HOUSE_TYPE },
+  },
   { label: 'natal_aspects_report', corpusCategory: 'aspect-pair', path: 'natal_aspects_report', body: { ...PERSON_A } },
-  { label: 'natal_chart_interpretation', corpusCategory: '(whole-chart, reference only)', path: 'natal_chart_interpretation', body: { ...PERSON_A, house_type: HOUSE_TYPE } },
+  {
+    label: 'natal_chart_interpretation',
+    corpusCategory: '(whole-chart, reference only)',
+    path: 'natal_chart_interpretation',
+    body: { ...PERSON_A, house_type: HOUSE_TYPE },
+  },
 ];
 
 log('#368 pilot: astrologyapi.com natal prose-report probe (cost already known from dashboard billing breakdown)');

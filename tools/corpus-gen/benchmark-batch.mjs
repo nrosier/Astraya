@@ -268,7 +268,12 @@ async function astrayaTextFor(sample) {
     locale: 'en',
     forceLanguageDirective: provider === 'ollama',
   });
-  const userContent = buildUserContent({ placementDescription: description, corpusEntries: corpus, locale: 'en', persona: undefined });
+  const userContent = buildUserContent({
+    placementDescription: description,
+    corpusEntries: corpus,
+    locale: 'en',
+    persona: undefined,
+  });
   const result = await generateStructured({
     apiKey: process.env.GEMINI_API_KEY,
     model,
@@ -309,10 +314,16 @@ sampled = sampled.slice(0, Number.isFinite(limit) ? limit : undefined);
 
 console.log(
   `sampled ${String(sampled.length)} placement(s) across ${String(IN_SCOPE_CATEGORIES.length)} categories` +
-    (force ? ' (--force: re-checking regardless of prior results)' : ` — ${String(alreadyVerifiedCount)} already verified, skipped`),
+    (force
+      ? ' (--force: re-checking regardless of prior results)'
+      : ` — ${String(alreadyVerifiedCount)} already verified, skipped`),
 );
 if (sampled.length === 0) {
-  console.log(alreadyVerifiedCount > 0 ? 'nothing to do — everything in scope is already verified. Pass --force to re-check.' : 'nothing to do.');
+  console.log(
+    alreadyVerifiedCount > 0
+      ? 'nothing to do — everything in scope is already verified. Pass --force to re-check.'
+      : 'nothing to do.',
+  );
   process.exit(0);
 }
 
@@ -380,7 +391,9 @@ async function embeddingSignalsFor(facts, astrayaText, thirdPartyText) {
       groundedThirdParty: cosineSimilarity(thirdPartyVec, factsVec),
     };
   } catch (error) {
-    log(`${OLLAMA_EMBED_MODEL} judge failed (${error.message}) — continuing without it. Is Ollama running with "ollama pull ${OLLAMA_EMBED_MODEL}"?`);
+    log(
+      `${OLLAMA_EMBED_MODEL} judge failed (${error.message}) — continuing without it. Is Ollama running with "ollama pull ${OLLAMA_EMBED_MODEL}"?`,
+    );
     return {};
   }
 }
@@ -403,7 +416,7 @@ const LLM_JUDGE_RESPONSE_SCHEMA = {
 
 async function llmJudgeFor(facts, astrayaText, thirdPartyText) {
   const systemInstruction =
-    'You are an impartial astrology fact-checker. You are given the computed facts for one astrological placement and two independently written interpretations of it. Score each text\'s groundedness against the stated facts on a 0 (contradicts or is unrelated to the facts) to 1 (fully consistent with the facts) scale, independently of each other — do not compare the two texts for this part. Then score how similar the two texts are to each other in core meaning, regardless of which is more accurate, on a 0 (not similar at all) to 3 (identical meaning) scale. Respond only with the requested JSON.';
+    "You are an impartial astrology fact-checker. You are given the computed facts for one astrological placement and two independently written interpretations of it. Score each text's groundedness against the stated facts on a 0 (contradicts or is unrelated to the facts) to 1 (fully consistent with the facts) scale, independently of each other — do not compare the two texts for this part. Then score how similar the two texts are to each other in core meaning, regardless of which is more accurate, on a 0 (not similar at all) to 3 (identical meaning) scale. Respond only with the requested JSON.";
   const userContent = [
     `PLACEMENT FACTS: ${facts}`,
     '',
@@ -431,7 +444,9 @@ async function llmJudgeFor(facts, astrayaText, thirdPartyText) {
       similarityLabel: nearestSimilarityLabel(result.similarity_score),
     };
   } catch (error) {
-    log(`${OLLAMA_LLM_MODEL} judge failed (${error.message}) — continuing without it. Is Ollama running with "ollama pull ${OLLAMA_LLM_MODEL}"?`);
+    log(
+      `${OLLAMA_LLM_MODEL} judge failed (${error.message}) — continuing without it. Is Ollama running with "ollama pull ${OLLAMA_LLM_MODEL}"?`,
+    );
     return {};
   }
 }
@@ -448,7 +463,7 @@ log(
     "only facts, Astraya's own text, and the judges' scores are. It is cached temporarily on disk " +
     "(gitignored, never committed) so re-runs while iterating on the judges don't re-pay for the " +
     "same astrologyapi.com call — run with --purge-thirdparty-cache once that's no longer needed. " +
-    'The cached text itself is readable in the dashboard\'s per-row detail view.',
+    "The cached text itself is readable in the dashboard's per-row detail view.",
 );
 log();
 
@@ -517,7 +532,9 @@ for (const sample of sampled) {
     similarityLabelLlm: llmJudge.similarityLabel,
   };
 
-  log(`grounded (Laya)        — Astraya: ${answers.groundedAstrayaLaya.toFixed(4)}, third-party: ${answers.groundedThirdpartyLaya.toFixed(4)}`);
+  log(
+    `grounded (Laya)        — Astraya: ${answers.groundedAstrayaLaya.toFixed(4)}, third-party: ${answers.groundedThirdpartyLaya.toFixed(4)}`,
+  );
   log(
     answers.groundedAstrayaEmbedding !== undefined
       ? `grounded (${OLLAMA_EMBED_MODEL}) — Astraya: ${answers.groundedAstrayaEmbedding.toFixed(4)}, third-party: ${answers.groundedThirdpartyEmbedding.toFixed(4)}`
@@ -528,7 +545,9 @@ for (const sample of sampled) {
       ? `grounded (${OLLAMA_LLM_MODEL})    — Astraya: ${answers.groundedAstrayaLlm.toFixed(4)}, third-party: ${answers.groundedThirdpartyLlm.toFixed(4)}`
       : `grounded (${OLLAMA_LLM_MODEL})    — unavailable this run`,
   );
-  log(`similarity (Laya): ${answers.similarityLabelLaya} (score ${answers.similarityScoreLaya.toFixed(2)} of ${String(SIMILARITY_CRITERIA.length - 1)})`);
+  log(
+    `similarity (Laya): ${answers.similarityLabelLaya} (score ${answers.similarityScoreLaya.toFixed(2)} of ${String(SIMILARITY_CRITERIA.length - 1)})`,
+  );
   log(
     answers.similarityEmbedding !== undefined
       ? `similarity (${OLLAMA_EMBED_MODEL}, cosine): ${answers.similarityEmbedding.toFixed(4)}`
@@ -573,12 +592,16 @@ db.close();
 
 const scored = results.filter((r) => !r.skipped);
 log('SUMMARY');
-log(`${String(sampled.length)} sampled, ${String(scored.length)} scored, ${String(results.length - scored.length)} skipped`);
+log(
+  `${String(sampled.length)} sampled, ${String(scored.length)} scored, ${String(results.length - scored.length)} skipped`,
+);
 if (scored.length > 0) {
   const mean = (values) => values.reduce((a, b) => a + b, 0) / values.length;
 
   const meanSimilarityLaya = mean(scored.map((r) => r.answers.similarityScoreLaya));
-  log(`mean similarity (Laya): ${nearestSimilarityLabel(meanSimilarityLaya)} (score ${meanSimilarityLaya.toFixed(2)} of ${String(SIMILARITY_CRITERIA.length - 1)})`);
+  log(
+    `mean similarity (Laya): ${nearestSimilarityLabel(meanSimilarityLaya)} (score ${meanSimilarityLaya.toFixed(2)} of ${String(SIMILARITY_CRITERIA.length - 1)})`,
+  );
 
   const withEmbedding = scored.filter((r) => r.answers.similarityEmbedding !== undefined);
   log(
@@ -590,13 +613,17 @@ if (scored.length > 0) {
   const withLlm = scored.filter((r) => r.answers.similarityScoreLlm !== undefined);
   if (withLlm.length > 0) {
     const meanSimilarityLlm = mean(withLlm.map((r) => r.answers.similarityScoreLlm));
-    log(`mean similarity (${OLLAMA_LLM_MODEL}): ${nearestSimilarityLabel(meanSimilarityLlm)} (score ${meanSimilarityLlm.toFixed(2)} of ${String(SIMILARITY_CRITERIA.length - 1)})`);
+    log(
+      `mean similarity (${OLLAMA_LLM_MODEL}): ${nearestSimilarityLabel(meanSimilarityLlm)} (score ${meanSimilarityLlm.toFixed(2)} of ${String(SIMILARITY_CRITERIA.length - 1)})`,
+    );
   } else {
     log(`mean similarity (${OLLAMA_LLM_MODEL}): unavailable for every placement this run`);
   }
 
   const astrayaWins = scored.filter((r) => r.answers.preference === 'astraya').length;
-  log(`preference win rate (Laya) — Astraya: ${astrayaWins}/${scored.length}, third-party: ${scored.length - astrayaWins}/${scored.length}`);
+  log(
+    `preference win rate (Laya) — Astraya: ${astrayaWins}/${scored.length}, third-party: ${scored.length - astrayaWins}/${scored.length}`,
+  );
 }
 log(`\nresults persisted to ${DB_PATH} — run "npx tsx tools/corpus-gen/benchmark-dashboard.mjs" to view them.`);
 
