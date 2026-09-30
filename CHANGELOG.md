@@ -4,7 +4,7 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
-## [0.21.2] — 2026-09-30
+## [0.21.3] — 2026-09-30
 
 ### Fixed
 
