@@ -260,6 +260,8 @@ export function AdminPanel(): React.JSX.Element {
       {user?.isAdmin === true && (
         <p>
           <a href="#/admin/corpus-overrides">{t.corpusOverridesLink}</a>
+          {' · '}
+          <a href="#/admin/corpus-candidates">{t.corpusCandidatesLink}</a>
         </p>
       )}
 

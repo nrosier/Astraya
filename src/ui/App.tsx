@@ -49,6 +49,9 @@ const AdminPanel = lazy(async () => ({ default: (await import('./AdminPanel.js')
 const CorpusOverridesPanel = lazy(async () => ({
   default: (await import('./CorpusOverridesPanel.js')).CorpusOverridesPanel,
 }));
+const CorpusCandidatesPanel = lazy(async () => ({
+  default: (await import('./CorpusCandidatesPanel.js')).CorpusCandidatesPanel,
+}));
 const SharedChartView = lazy(async () => ({ default: (await import('./SharedChartView.js')).SharedChartView }));
 
 /**
@@ -274,6 +277,13 @@ function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.E
     return (
       <Stored>
         <CorpusOverridesPanel />
+      </Stored>
+    );
+  }
+  if (parsed.kind === 'corpus-candidates') {
+    return (
+      <Stored>
+        <CorpusCandidatesPanel />
       </Stored>
     );
   }

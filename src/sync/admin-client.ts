@@ -147,3 +147,54 @@ export async function exportCorpusOverrides(locale?: Locale): Promise<Blob> {
   if (!response.ok) throw new AdminError(await errorMessage(response), response.status);
   return response.blob();
 }
+
+/** Mirrors `server/corpus-candidates.ts`'s `CandidateSource`/`TriageSignal`/`CorpusCandidate` (#370). */
+export type CandidateSource = 'classical-seed' | 'llm-fill';
+export type TriageSignal = 'match' | 'mismatch' | 'no-baseline';
+export type CandidateStatus = 'pending' | 'accepted' | 'rejected';
+
+export interface CorpusCandidate {
+  readonly id: string;
+  readonly key: string;
+  readonly locale: Locale;
+  /** Absent means the neutral, persona-agnostic candidate. */
+  readonly persona: PersonaId | undefined;
+  readonly text: string;
+  readonly tier: CorpusTier;
+  readonly tags: readonly string[];
+  readonly source: CandidateSource;
+  readonly triageSignal: TriageSignal | undefined;
+  readonly triageScore: number | undefined;
+  readonly status: CandidateStatus;
+  readonly createdAt: string;
+  readonly decidedAt: string | undefined;
+  readonly decidedByUsername: string | undefined;
+}
+
+export async function listCorpusCandidates(
+  locale?: Locale,
+  status?: CandidateStatus,
+): Promise<readonly CorpusCandidate[]> {
+  const params = new URLSearchParams();
+  if (locale !== undefined) params.set('locale', locale);
+  if (status !== undefined) params.set('status', status);
+  const query = params.size > 0 ? `?${params.toString()}` : '';
+  const { candidates } = await call<{ candidates: readonly CorpusCandidate[] }>(`/api/admin/corpus-candidates${query}`);
+  return candidates;
+}
+
+export interface DecideCorpusCandidatesResult {
+  readonly decided: readonly string[];
+  readonly missing: readonly string[];
+}
+
+export async function decideCorpusCandidates(
+  ids: readonly string[],
+  decision: 'accept' | 'reject',
+): Promise<DecideCorpusCandidatesResult> {
+  return call('/api/admin/corpus-candidates', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids, decision }),
+  });
+}

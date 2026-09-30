@@ -209,6 +209,39 @@ const MIGRATIONS: readonly ((db: DatabaseSync) => void)[] = [
       CREATE INDEX interpretation_usage_user_created ON interpretation_usage(user_id, created_at);
     `);
   },
+  // 9: a pending-candidate queue for bulk-generated corpus text (#370), separate from
+  // `corpus_overrides` (migration 5) on purpose — an override is live and publicly visible the
+  // instant it's saved (#292's own resolved "every reader sees a correction immediately"
+  // decision), but a freshly-generated candidate must stay invisible to every reader until an
+  // admin accepts it. Reusing `corpus_overrides` for this would mean threading a visibility
+  // flag through the one public, unauthenticated read route every visitor hits; a separate
+  // table keeps that route untouched by construction — nothing here is ever read by it.
+  // `source` is part of the identity (unlike `corpus_overrides`'s `(key, locale, persona)`):
+  // a classical-seed candidate and an LLM-fill candidate for the same placement are meant to
+  // coexist as two rows, surfacing the collision for a reviewer to resolve rather than one
+  // silently overwriting the other.
+  (db) => {
+    db.exec(`
+      CREATE TABLE corpus_candidates (
+        id TEXT PRIMARY KEY,
+        key TEXT NOT NULL,
+        locale TEXT NOT NULL,
+        persona TEXT NOT NULL DEFAULT '',
+        text TEXT NOT NULL,
+        tier TEXT NOT NULL,
+        tags TEXT NOT NULL,
+        source TEXT NOT NULL,
+        triage_signal TEXT,
+        triage_score REAL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL,
+        decided_at TEXT,
+        decided_by TEXT REFERENCES users(id) ON DELETE CASCADE
+      );
+      CREATE UNIQUE INDEX corpus_candidates_identity ON corpus_candidates(key, locale, persona, source);
+      CREATE INDEX corpus_candidates_status ON corpus_candidates(status);
+    `);
+  },
 ];
 
 /** Migration steps whose table rebuild would otherwise break `REFERENCES` clauses pointing at the table being rebuilt. */
