@@ -586,4 +586,32 @@ describe('the OIDC callback path (#75)', () => {
       }
     }
   });
+
+  it('preserves a hash already set before the callback resolves, rather than dropping it (#372)', async () => {
+    // Simulates `HomeRedirect`'s own mount effect having already turned an empty hash into
+    // `#/people` in the same commit, before `SessionProvider`'s effect (which calls
+    // `consumeOidcCallback`) runs — real ordering the two of them race in `App.tsx`, not
+    // reproduced here since this file mounts `SessionProvider` alone. Overwriting the URL with
+    // just the base path used to erase this silently (`history.replaceState` fires no
+    // `hashchange`), leaving the app stuck on `HomeRedirect`'s screen until a manual reload.
+    const idToken = await fakeAuthentik.mintIdToken({
+      sub: 'authentik-subject-4',
+      nonce: 'nonce-4',
+      preferred_username: 'erin',
+    });
+    fakeAuthentik.registerCode('code-4', { idToken });
+    arriveAtCallback('code-4', 'state-4', 'state-4', 'nonce-4');
+    window.location.hash = '#/people';
+
+    const { container, root } = mount();
+    try {
+      await vi.waitFor(() => {
+        expect(latest?.user?.username).toBe('erin');
+      }, WAIT);
+      expect(window.location.pathname).toBe('/');
+      expect(window.location.hash).toBe('#/people');
+    } finally {
+      unmount(root, container);
+    }
+  });
 });

@@ -194,8 +194,17 @@ function validateChartData(payload: unknown): { chartData: ChartDataPayload } | 
     const { cusps, ascendant, midheaven } = houses as Record<string, unknown>;
     if (!Array.isArray(cusps) || cusps.length !== HOUSE_CUSP_COUNT) {
       errors.push(`chartData.houses.cusps must be an array of exactly ${String(HOUSE_CUSP_COUNT)} entries`);
-    } else if (!cusps.every((cusp) => isFiniteNumberInRange(cusp, 0, 360))) {
-      errors.push('chartData.houses.cusps entries must all be numbers in [0, 360)');
+    } else if (
+      // Index 0 is unused (see `HOUSE_CUSP_COUNT`'s own comment and `HousePositions.cusps`'s
+      // doc comment in `ephemeris/types.ts`) — `houseOf` (this route's only reader of
+      // `chartData.houses.cusps`, below) never looks at it, so it is never a real degree
+      // value and must not be held to the same [0, 360) requirement as indices 1..12. Checking
+      // it anyway rejected every single freeform request, always, regardless of chart (#372's
+      // sibling bug report): `toTier2ChartPayload` sends `HousePositions` verbatim, so
+      // `cusps[0]` was always this placeholder, never a real house cusp.
+      !cusps.slice(1).every((cusp) => isFiniteNumberInRange(cusp, 0, 360))
+    ) {
+      errors.push('chartData.houses.cusps entries 1..12 must all be numbers in [0, 360)');
     }
     if (!isFiniteNumberInRange(ascendant, 0, 360)) {
       errors.push('chartData.houses.ascendant must be a number in [0, 360)');

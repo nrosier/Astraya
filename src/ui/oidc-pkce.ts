@@ -99,7 +99,17 @@ export function consumeOidcCallback():
   sessionStorage.removeItem(PENDING_KEY);
   // `BASE_URL`, not a hardcoded `/`: under a `VITE_BASE_PATH` deployment the root is not
   // where the app lives, and replacing the URL with `/` would navigate out of it (#334).
-  history.replaceState(null, '', import.meta.env.BASE_URL);
+  //
+  // The current hash is appended, not dropped (#372): this runs from `SessionProvider`'s
+  // mount effect, which — because effects fire child-before-parent within one commit —
+  // always runs *after* `HomeRedirect`'s own mount effect has already turned this same
+  // callback path's empty hash into `#/people`. Replacing the URL with the bare base path
+  // silently discarded that redirect (no `hashchange` fires for a `history.replaceState`),
+  // leaving the app stuck on `HomeRedirect`'s "opening" screen — reachable only by a manual
+  // reload, which re-parses the (by then hash-less) URL fresh and lands correctly. Since only
+  // the one-time code/state in the query string needs clearing here, preserving whatever hash
+  // is already in place is exactly the fix — it doesn't matter what set it.
+  history.replaceState(null, '', import.meta.env.BASE_URL + window.location.hash);
 
   if (code === null || state === null || raw === null) return undefined;
   const pending = readPending(raw);

@@ -115,7 +115,11 @@ const VALID_CHART_DATA = {
     { body: MOON_ID, longitude: 100 },
   ],
   houses: {
-    cusps: [0, 10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340],
+    // Index 0 is `NaN`, matching real `HousePositions.cusps` (see `ephemeris/engine.ts`) —
+    // not a stand-in `0`, which would have made this fixture unable to catch #372's sibling
+    // bug (freeform mode rejecting every real chart because the validator checked this
+    // never-a-real-cusp placeholder too).
+    cusps: [Number.NaN, 10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340],
     ascendant: 10,
     midheaven: 280,
   },
@@ -347,6 +351,27 @@ describe('POST /api/interpretation/generate', () => {
         payload: {
           ...VALID_FREEFORM_BODY,
           chartData: { ...VALID_CHART_DATA, houses: { ...VALID_CHART_DATA.houses, cusps: [0, 10, 40] } },
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('accepts index 0 as NaN (the real, always-unused placeholder) but still rejects a bad real cusp with 400 (#372)', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: {
+          ...VALID_FREEFORM_BODY,
+          chartData: {
+            ...VALID_CHART_DATA,
+            houses: {
+              ...VALID_CHART_DATA.houses,
+              cusps: [Number.NaN, 10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 400],
+            },
+          },
         },
       });
       expect(response.statusCode).toBe(400);
