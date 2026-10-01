@@ -8014,5 +8014,2981 @@
       "model": "qwen2.5:14b",
       "generatedAt": "2026-10-01"
     }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:neptune",
+    "locale": "en",
+    "text": "You have a profound capacity for seeing beyond the surface to uncover hidden truths and intuitive insights. However, this can also lead to escapism or blurring the lines between reality and imagination.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:osculatingLilith",
+    "locale": "en",
+    "text": "You face intense inner challenges and transformations, often through confronting aspects of yourself that feel deeply hidden or misunderstood. This can lead to profound personal growth but may also bring periods of turmoil and disillusionment.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:pallas",
+    "locale": "en",
+    "text": "With Lilith and Pallas conjunct, you face the challenge of breaking free from oppressive structures while advocating for equitable solutions. This placement encourages you to confront power dynamics and work towards empowering others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:pluto",
+    "locale": "en",
+    "text": "Your deepest transformations occur where you confront and integrate your hidden fears and shadows. This process can be intensely powerful, pushing you to confront what you need to release or transform, but it requires courage to face these aspects of yourself.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:saturn",
+    "locale": "en",
+    "text": "You encounter challenges and restrictions where you feel compelled to confront your inner darkness and limitations, fostering a deep sense of discipline and mastery. However, this can also lead to a sense of heaviness and isolation if not balanced with support and understanding.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:sun",
+    "locale": "en",
+    "text": "With your Sun conjunct Interpolated Lilith, you possess a strong sense of personal sovereignty and a deep drive to confront and transcend your inner shadows. This placement can bring a powerful urge for transformation and a willingness to face difficult truths about yourself.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:trueNode",
+    "locale": "en",
+    "text": "Your deepest fears and shadows are closely tied to your life’s purpose and growth path. This conjunction invites you to confront and integrate these aspects, transforming your personal challenges into sources of empowerment and wisdom.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:uranus",
+    "locale": "en",
+    "text": "Your inner drive for independence and innovation is intense, often leading you to challenge societal norms and break free from constraints. However, this same drive can sometimes isolate you, as you may struggle with forming connections that feel authentic and supportive.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:venus",
+    "locale": "en",
+    "text": "You may find yourself drawn to relationships that challenge your sense of security and autonomy, requiring you to navigate complex dynamics where independence and intimacy intertwine. This conjunction can bring a transformative quality to your attractions and values, pushing you to confront and transcend deep-seated fears in your closest connections.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:vesta",
+    "locale": "en",
+    "text": "Your inner drive to focus on personal devotion and dedication is closely tied to your sense of independence and autonomy. This conjunction can bring a powerful sense of purpose, yet it may also create tension between your desire for solitude and your need for recognition and validation.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:jupiter",
+    "locale": "en",
+    "text": "You have a natural ability to grow and expand in partnerships, often finding confidence and opportunity through collaborative efforts. However, there's a risk of overextending yourself or becoming too reliant on others to define your success and growth.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:mars",
+    "locale": "en",
+    "text": "You approach relationships with a sense of purpose and determination, driven to assert your needs and pursue what you want. However, this can sometimes lead to conflicts or power struggles with others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:meanLilith",
+    "locale": "en",
+    "text": "You tend to confront relationships head-on, seeking clarity and independence within partnerships. This placement can bring a sharp awareness of power dynamics, but it also risks creating tension and conflict when seeking autonomy.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:meanNode",
+    "locale": "en",
+    "text": "Your conjunction of Juno with the Mean Node suggests a strong drive to establish committed partnerships and seek fulfillment through meaningful relationships. This placement can bring a focused approach to finding a balance between individual desires and collective goals, yet it may also bring challenges in navigating the expectations and responsibilities that come with deep commitments.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:mercury",
+    "locale": "en",
+    "text": "You have a natural ability to communicate your deepest desires and needs clearly and directly. This can enhance your relationships by fostering understanding and mutual respect, but it also requires careful consideration to avoid coming across as demanding or controlling.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:moon",
+    "locale": "en",
+    "text": "Your Moon-Juno conjunction nurtures a deep sense of partnership and emotional security within relationships. You seek fulfillment and comfort in close bonds, finding strength in mutual support and understanding.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:neptune",
+    "locale": "en",
+    "text": "Your Juno conjunction Neptune suggests a deep yearning for spiritual or idealistic partnerships. You are drawn to relationships that have a sense of mystery and transcendence, often involving a dissolution of personal boundaries. The challenge lies in maintaining clear communication and avoiding escapism or confusion in your connections.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:osculatingLilith",
+    "locale": "en",
+    "text": "You have a deep understanding of your boundaries and the need to maintain them, but you can also struggle with feeling stifled or trapped when they are too rigid. This placement encourages you to find a balance between independence and connection.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:pallas",
+    "locale": "en",
+    "text": "You have a natural ability to merge practical wisdom with diplomatic vision, making you skilled at finding fair solutions to complex problems. This conjunction can also lead to idealizing collaboration, sometimes overlooking the practical steps needed to achieve shared goals.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:pluto",
+    "locale": "en",
+    "text": "Your Juno conjunction Pluto brings a transformative quality to your relationships, where deep, intense connections can lead to significant personal growth. However, this placement also risks overwhelming intensity and power struggles.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:saturn",
+    "locale": "en",
+    "text": "Your relationship dynamics are marked by a strong sense of responsibility and commitment. You thrive in partnerships where there is mutual respect and a clear understanding of each other's roles and limitations. However, this can also lead to feelings of constraint and a tendency to take relationships too seriously, potentially stifling spontaneity and flexibility.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:sun",
+    "locale": "en",
+    "text": "Your core identity and sense of purpose are closely tied to your partnerships and the commitments you make. This conjunction enhances your ability to merge with others while still maintaining a strong sense of self. However, it can also lead to a risk of losing yourself in relationships, so finding a balance is key.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:trueNode",
+    "locale": "en",
+    "text": "Your Juno conjunction with the True Node suggests a deep, transformative partnership that can bring about significant personal growth. However, it may also mean you face challenges in balancing your own needs with those of others, potentially leading to frustration if mutual understanding and compromise are not achieved.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:uranus",
+    "locale": "en",
+    "text": "You have a strong drive for independence in your relationships, valuing freedom and novelty above all. This can make you resistant to traditional or predictable partnership dynamics, but it also allows you to break free when circumstances feel stifling.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:venus",
+    "locale": "en",
+    "text": "You have a natural ability to seek balance and harmony in relationships, valuing mutual respect and fairness. However, this can sometimes lead to a tendency to prioritize peace over personal needs, potentially causing resentment if your own desires and boundaries are not addressed.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:juno:vesta",
+    "locale": "en",
+    "text": "Your Juno conjunction with Vesta suggests a strong commitment to service and dedication to shared goals. You thrive in partnerships that involve shared purpose and mutual respect, where both parties feel a sense of duty and devotion to the cause. However, there can be a risk of neglecting personal needs in favor of service to others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:mars",
+    "locale": "en",
+    "text": "You have a strong drive to explore new opportunities and expand your horizons, fueled by a sense of confidence and adventure. This can lead to bold initiatives and ambitious undertakings, but it’s important to be mindful of overreaching or spreading yourself too thin.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:meanLilith",
+    "locale": "en",
+    "text": "With Jupiter conjunct the Mean Node of Lilith, you seek expansive growth in areas where you feel personally disenfranchised or marginalized. This placement encourages you to find confidence and meaning beyond conventional expectations, but it also risks overextending yourself in the pursuit of freedom and independence.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:meanNode",
+    "locale": "en",
+    "text": "Your Jupiter conjunction with the Mean Node suggests opportunities for growth and expansion in areas where you are already focused on long-term goals. This placement can bring confidence and a sense of purpose as you pursue your ambitions, yet it also requires vigilance to avoid overreaching and spreading yourself too thin.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:mercury",
+    "locale": "en",
+    "text": "Your Jupiter and Mercury conjunction enhances your ability to communicate expansive ideas and beliefs. You naturally find ways to share knowledge and inspire others with optimism and confidence. However, there's a risk of overextending yourself or spreading yourself too thin, diluting the impact of your message.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:moon",
+    "locale": "en",
+    "text": "Your Jupiter and Moon conjunction brings a natural optimism and expansiveness to your emotional life, enhancing your ability to find joy and fulfillment in experiences that broaden your horizons. However, this placement can also lead to overindulgence in escapism, where seeking comfort might overshadow practical responsibilities.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:neptune",
+    "locale": "en",
+    "text": "Your Jupiter and Neptune conjunction amplifies your ability to imagine and idealize, often leading to expansive visions that inspire others. Yet this same imagination can blur the lines between reality and illusion, making it hard to discern practical steps from dreams.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:osculatingLilith",
+    "locale": "en",
+    "text": "With Jupiter conjunct Lilith, you have a strong drive to seek meaning and growth in areas others might overlook or dismiss. This placement can bring a sense of purpose to unconventional or marginalized pursuits, giving you the confidence to champion causes that align with your inner truth. However, be cautious of overextending yourself or getting lost in idealistic pursuits that lack practical grounding.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:pallas",
+    "locale": "en",
+    "text": "You have a natural inclination toward growth and wisdom, combining Jupiter’s expansive optimism with Pallas’s strategic insight. This can lead to innovative solutions and broad intellectual horizons, but be mindful of overreaching or idealizing your goals beyond practical reach.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:pluto",
+    "locale": "en",
+    "text": "With Jupiter conjunct Pluto, you have the potential to transform and expand your life through intense, profound experiences. This placement can bring a powerful drive to seek deeper meaning and to break through limitations, often leading to significant personal growth. However, it can also risk overwhelming you with the intensity of change, potentially causing stress or burnout.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:saturn",
+    "locale": "en",
+    "text": "You seek stability and long-term growth in areas where you feel confident and capable. This placement can bring a disciplined approach to opportunities, helping you build lasting success. However, it may also lead to caution that hinders your ability to take risks and embrace new possibilities.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:sun",
+    "locale": "en",
+    "text": "Your sense of purpose and self-confidence are deeply intertwined, fostering a drive to expand your horizons and pursue meaningful growth. However, be cautious of overreaching or overlooking practical limits in your enthusiasm.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:trueNode",
+    "locale": "en",
+    "text": "With Jupiter conjunct your True Node, you have a natural inclination to seek growth and opportunity in areas that align with your soul’s purpose. This placement can bring a sense of expansive confidence and a desire to explore new horizons, but it also requires balancing optimism with practical steps to ensure meaningful progress.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:uranus",
+    "locale": "en",
+    "text": "You have a natural drive to explore new horizons and break free from established norms, fostering growth through innovation and unexpected opportunities. However, you must be cautious of overreaching and losing touch with practical realities.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:venus",
+    "locale": "en",
+    "text": "You have a natural ability to attract opportunities and grow through harmonious relationships. Your confidence and generosity enhance your appeal and open doors for mutual benefit. However, be mindful of overindulging or expanding at others' expense.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:jupiter:vesta",
+    "locale": "en",
+    "text": "You have a strong sense of purpose and dedication to your beliefs, often channeling your energy into projects that hold significant meaning. However, this focus can sometimes lead to neglecting other areas of life, causing imbalance and potential burnout.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:meanLilith",
+    "locale": "en",
+    "text": "You experience a powerful drive to confront and challenge boundaries, often feeling compelled to break through restrictions to assert your freedom. This can lead to intense confrontations, but also to profound personal transformation.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:meanNode",
+    "locale": "en",
+    "text": "You face challenges and opportunities through direct action and confrontation, often feeling the need to break free from restrictive situations. This can lead to significant personal growth, but also risks impatience and a tendency to clash with others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:mercury",
+    "locale": "en",
+    "text": "Mars and Mercury together energize your mind, making you direct and assertive in your communication. However, this combination can also lead to impatience and a tendency to speak before thinking.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:moon",
+    "locale": "en",
+    "text": "Your Mars and Moon conjunction creates a powerful blend of instinctive action and emotional drive. When you feel a strong impulse, it often comes with an urgent emotional need, making your reactions both forceful and deeply personal. However, this combination can also lead to impulsive decisions driven by raw emotion rather than clear-headed analysis.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:neptune",
+    "locale": "en",
+    "text": "Your Mars conjunction Neptune gives you a powerful drive to transcend the ordinary and pursue ideals that inspire others. However, this can also lead to losing yourself in grand visions, making it hard to focus on practical steps.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:osculatingLilith",
+    "locale": "en",
+    "text": "Your Mars conjunction with Lilith suggests a drive that is intense and often confrontational, pushing you to challenge the status quo and assert your independence. However, this energy can also lead to conflicts arising from a sense of being misunderstood or oppressed.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:pallas",
+    "locale": "en",
+    "text": "You approach challenges with a clear sense of purpose, combining your drive and initiative with strategic thinking and problem-solving skills. However, this combination can sometimes lead to impatience or frustration if your plans face unexpected obstacles or delays.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:pluto",
+    "locale": "en",
+    "text": "You have a powerful drive to transform and reinvent yourself, often through intense confrontations or by breaking down what no longer serves you. This energy can be transformative and compelling, but it also risks becoming obsessive or manipulative if not balanced with gentler approaches.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:saturn",
+    "locale": "en",
+    "text": "You have a strong drive to work hard and achieve your goals, often facing challenges with determination and discipline. However, this can also lead to feeling overwhelmed and burdened by the responsibilities you take on.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:sun",
+    "locale": "en",
+    "text": "Your Mars and Sun conjunction brings a strong sense of personal power and purpose, where your actions and will are closely aligned. This can be a source of intense drive and confidence, but it may also lead to impatience and a tendency to rush ahead without considering others' perspectives.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:trueNode",
+    "locale": "en",
+    "text": "Your Mars conjunction with the True Node suggests a powerful drive to align your actions with your life purpose. You are motivated to move forward in ways that feel meaningful and significant. The challenge is to balance this intensity with patience and reflection, to ensure your drive serves your goals rather than overwhelms them.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:uranus",
+    "locale": "en",
+    "text": "Mars in aspect with Uranus gives you a restless urge for sudden change and independence. You thrive on unpredictability and breaking free from constraints, but can struggle with impulsiveness and a tendency to act before considering the consequences.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:venus",
+    "locale": "en",
+    "text": "Your drive and desire blend seamlessly with your need for connection and harmony, making you naturally adept at turning attraction into action. The challenge lies in balancing assertiveness with gentleness, to avoid pushing too hard or neglecting your own needs in the process.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mars:vesta",
+    "locale": "en",
+    "text": "Your drive and commitment are closely tied, with Mars near Vesta, making you highly focused and disciplined in your pursuits. This alignment grants you the energy to dedicate yourself fully to what you find meaningful, yet it can also lead to overworking and neglecting other areas of life.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:meanNode",
+    "locale": "en",
+    "text": "You may find yourself drawn to confrontations and challenges that push you to evolve, often involving a sense of destiny or a broader purpose. However, this can also lead to a tendency to see others as obstacles rather than allies, potentially isolating you.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:mercury",
+    "locale": "en",
+    "text": "You have a keen awareness of hidden dynamics and underlying truths, often picking up on what others might miss or avoid. However, this insight can also make you feel disconnected from more superficial or surface-level conversations.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:moon",
+    "locale": "en",
+    "text": "You have a deep emotional connection to the unknown and the hidden aspects of life, often sensing and responding to what others might overlook. This can make you empathetic and intuitive, but also prone to feeling overwhelmed by unseen forces, leading to emotional turmoil.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:neptune",
+    "locale": "en",
+    "text": "Your conjunction of Mean Lilith and Neptune highlights a deep need to dissolve boundaries and merge with the larger world, often through imaginative or idealistic pursuits. This can bring profound insights and a sense of unity, but also risks escapism or losing yourself in illusions.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:osculatingLilith",
+    "locale": "en",
+    "text": "You experience a deep sense of inner authority and independence, often feeling compelled to break away from restrictive or oppressive dynamics. However, this can also lead to a tendency to isolate yourself, as you may struggle with trust and find it challenging to form lasting connections.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:pallas",
+    "locale": "en",
+    "text": "You possess a keen insight into power dynamics and can see through the illusions others might present. This sharp perception can also make you wary and guarded, as you are sensitive to manipulative or unfair practices.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:pluto",
+    "locale": "en",
+    "text": "Your Mean Lilith conjunction with Pluto intensifies your drive for transformation through confrontation and power struggles. This placement can bring deep, often hidden issues to the surface, requiring you to face them head-on for growth. However, it also risks creating intense conflicts and may lead to feeling overwhelmed or victimized if not managed carefully.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:saturn",
+    "locale": "en",
+    "text": "You experience a strong sense of responsibility and discipline, often feeling compelled to adhere to strict boundaries and limits. At the same time, this conjunction can bring challenges, such as feeling isolated or overly critical of yourself.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:sun",
+    "locale": "en",
+    "text": "You have a strong sense of personal power and independence, often feeling compelled to assert your authentic self and lead the way. However, this can also lead to confrontational or rebellious tendencies, where you may struggle with boundaries and the need to consider others' perspectives.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:trueNode",
+    "locale": "en",
+    "text": "Your inner drive and personal growth are intertwined with a quest for hidden knowledge and transformation. This conjunction brings a powerful urge to confront and transcend your deepest fears and limitations, often leading to profound personal evolution. However, it can also make you feel isolated or burdened by the weight of unresolved issues.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:uranus",
+    "locale": "en",
+    "text": "You experience sudden and powerful breaks from the past, often feeling driven to release what no longer serves you. This can lead to transformative insights but also to periods of instability as you navigate these changes.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:venus",
+    "locale": "en",
+    "text": "You have a natural ability to attract situations that challenge your sense of self-worth, pushing you to confront deeper issues of independence and vulnerability. This can lead to transformative relationships that require you to stand your ground while also being open to healing and growth.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanLilith:vesta",
+    "locale": "en",
+    "text": "You have a deep sense of purpose and dedication, often channeling your focus into areas that feel personally significant and transformative. However, this intensity can sometimes lead to isolation or a sense of being disconnected from others who do not share your singular vision.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:mercury",
+    "locale": "en",
+    "text": "Your life path and communication style are closely intertwined, enhancing your ability to articulate your goals and navigate your destiny. However, this connection can also make it challenging to separate your personal desires from broader life lessons.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:moon",
+    "locale": "en",
+    "text": "Your emotional life is deeply connected to your spiritual or karmic path, bringing a sense of purpose and meaning to your feelings. However, this connection can sometimes blur the line between personal needs and broader spiritual goals, leading to emotional exhaustion if not carefully managed.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:neptune",
+    "locale": "en",
+    "text": "Your soul’s path is intertwined with spiritual and imaginative pursuits, where you seek meaning beyond the tangible. However, this connection can blur boundaries, leading to a risk of escapism or confusion about what is real.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:osculatingLilith",
+    "locale": "en",
+    "text": "Your chart shows a conjunction between the Mean Node and Osculating Lilith, suggesting a deep sense of personal destiny intertwined with a quest for autonomy and liberation from restrictive patterns. This placement can empower you to break free from limiting influences and forge a path that aligns with your true self, yet it may also bring challenges in discerning what truly sets you free versus what feels like a restriction.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:pallas",
+    "locale": "en",
+    "text": "Your Mean Node conjunction with Pallas Athene suggests a natural ability to navigate complex situations with strategic wisdom and diplomacy. You excel at finding balanced solutions that integrate diverse perspectives, yet there's a risk of overthinking and delaying action due to a desire for perfection.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:pluto",
+    "locale": "en",
+    "text": "Your North Node conjunct Pluto suggests a profound drive for transformation and personal power. This placement can bring intense focus and the courage to confront and dissolve what no longer serves you, leading to significant personal growth. However, it also risks becoming too fixated on control and the darker aspects of power, potentially neglecting lighter, more collaborative paths.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:saturn",
+    "locale": "en",
+    "text": "Your past challenges and lessons converge with a sense of responsibility and discipline, shaping your path with a focus on long-term goals. However, this can sometimes lead to feelings of burden or restriction, making it important to balance tradition with personal growth.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:sun",
+    "locale": "en",
+    "text": "Your sense of purpose is closely tied to your instinctive desires and emotional needs. This alignment can make you feel driven and recognized when you pursue what feels meaningful to you, but it can also lead to confusion if your goals and emotions are at odds.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:trueNode",
+    "locale": "en",
+    "text": "Your inner and outer paths align closely, creating a sense of purposeful direction in life. This can manifest as a strong drive to fulfill a greater destiny, but it also demands self-awareness to avoid feeling overwhelmed by expectations.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:uranus",
+    "locale": "en",
+    "text": "Your life path is marked by unexpected changes and innovative ideas. This conjunction brings a unique ability to break free from tradition and embrace new possibilities, yet it can also lead to abrupt disruptions that challenge your sense of stability.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:venus",
+    "locale": "en",
+    "text": "Your chart shows your Venus aligning with your Mean Node, suggesting a strong pull toward relationships and values that resonate with your life's purpose. This can bring a sense of fulfillment and meaningful connection, but it also risks overlooking less aligned yet important bonds.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:meanNode:vesta",
+    "locale": "en",
+    "text": "Your dedication to your personal goals and spiritual pursuits is profound, yet you may struggle to balance this intensity with broader responsibilities or relationships. This placement highlights your ability to focus intently on what you hold sacred, but it also risks isolating you from everyday connections.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:moon",
+    "locale": "en",
+    "text": "Your Mercury conjunct Moon placement blends your instinctive emotional responses with your communication style, making you deeply intuitive and sensitive in how you exchange information. This allows you to convey feelings and needs clearly but can also make you overly receptive to others' emotions, potentially overwhelming your own sense of balance.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:neptune",
+    "locale": "en",
+    "text": "Your Mercury-Neptune conjunction enhances your imaginative and poetic communication style, allowing you to connect deeply with others through evocative language and creative expression. However, it can also lead to confusion or a tendency to lose yourself in abstract ideas, making it hard to convey concrete information clearly.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:osculatingLilith",
+    "locale": "en",
+    "text": "Your Mercury conjunction with Lilith sharpens your communication style, giving you the courage to speak truthfully and powerfully, even when it’s uncomfortable. This placement can also make you direct to the point of bluntness, potentially hurting others with your words.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:pallas",
+    "locale": "en",
+    "text": "Mercury conjoined with Pallas Athene enhances your ability to articulate strategic ideas and insights. You excel at combining logic and wisdom to solve problems and make reasoned decisions. However, there’s a risk of becoming overly critical or dismissive of ideas that don’t align with your vision.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:pluto",
+    "locale": "en",
+    "text": "Mercury conjunct Pluto in your chart gives you a penetrating mind that sees through surface appearances to the core of things. This depth allows you to uncover hidden truths and wield powerful insights, but it can also make you overly critical and secretive with your thoughts.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:saturn",
+    "locale": "en",
+    "text": "Your thinking is disciplined and thorough, with a keen eye for detail and a tendency to be cautious with information. The challenge can be to avoid being overly critical or holding back your ideas out of fear.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:sun",
+    "locale": "en",
+    "text": "Your Mercury-Sun conjunction highlights your clear and confident communication style. You express yourself with authority and conviction, making it easy for others to understand your ideas and intentions. However, this placement can also lead to a tendency to overlook alternative perspectives, potentially making you less open to new information or differing viewpoints.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:trueNode",
+    "locale": "en",
+    "text": "You have a natural ability to connect with and convey significant ideas, often acting as a messenger for something larger than yourself. However, there’s a risk of getting caught up in what others expect you to communicate rather than speaking from your own voice.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:uranus",
+    "locale": "en",
+    "text": "You have a mind that craves novelty and independence, always seeking new ideas and ways of thinking. This can lead to brilliant insights but also to scattered attention and a reluctance to follow through on commitments.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:venus",
+    "locale": "en",
+    "text": "You have a natural gift for expressing affection and connecting with others through conversation. This placement enhances your ability to find common ground and make others feel understood, but it can also lead to being overly accommodating or glossing over conflicts to maintain harmony.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:mercury:vesta",
+    "locale": "en",
+    "text": "Your Mercury-Vesta conjunction highlights your dedication to focused, purposeful communication. You excel at conveying ideas with clarity and precision, often in service to a greater cause or goal. However, be mindful of becoming too absorbed in your work, potentially neglecting broader social or emotional needs.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:neptune",
+    "locale": "en",
+    "text": "Your Moon conjunction Neptune imbues you with a deep, imaginative sensitivity that blurs the lines between reality and fantasy. This placement can make you highly empathetic and attuned to the emotions of others, yet also prone to losing yourself in abstract dreams and illusions.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:osculatingLilith",
+    "locale": "en",
+    "text": "You feel a deep connection to your inner self and the darker, hidden aspects of your nature. This can bring profound intuition and a strong sense of personal truth, but also challenges in balancing emotions and finding external support.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:pallas",
+    "locale": "en",
+    "text": "Your Moon conjunction with Pallas Athene suggests a blend of emotional intuition and strategic reasoning. You feel deeply and naturally seek practical solutions to nurture emotional well-being. This balance can make you a wise and empathetic guide, but be cautious of overthinking and distancing yourself too much from your instinctive feelings.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:pluto",
+    "locale": "en",
+    "text": "Your Moon conjunction Pluto brings a deep emotional intensity and a profound need for transformation. This placement can make you highly intuitive and perceptive about others' emotions, but it can also lead to feelings of overwhelm and a tendency to absorb others' pain.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:saturn",
+    "locale": "en",
+    "text": "Your emotional responses are shaped by a need for stability and security, often leading to a cautious and disciplined approach to feelings. However, this can also result in suppressing emotions or feeling weighed down by past experiences.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:sun",
+    "locale": "en",
+    "text": "Your Moon and Sun conjunction creates a strong sense of inner harmony and a clear identity that feels deeply personal and emotionally grounded. However, this can also lead to a tendency to be overly self-reliant, potentially neglecting the support you need from others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:trueNode",
+    "locale": "en",
+    "text": "Your Moon conjunct True Node placement suggests a deep connection between your emotional needs and your life purpose. You instinctively sense when your actions align with your greater path, often finding emotional fulfillment in pursuing meaningful goals.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:uranus",
+    "locale": "en",
+    "text": "You experience emotional freedom and unpredictability, often feeling pulled between instinctive comfort and sudden, liberating changes. This placement gifts you with innovative and spontaneous expression but can also lead to emotional volatility and a struggle to find lasting security.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:venus",
+    "locale": "en",
+    "text": "Your Moon-Venus conjunction brings a natural harmony between your emotional needs and what you find attractive or valuable. You seek comfort and pleasure that also nourish your sense of self-worth and connection with others. The challenge is to balance the desire for peace and pleasure with deeper emotional needs and personal values.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:moon:vesta",
+    "locale": "en",
+    "text": "Your Moon-Vesta conjunction suggests a deep connection between your emotional needs and your sense of duty or commitment. You find fulfillment and security in dedicating yourself to meaningful causes or relationships. However, be mindful of neglecting your own emotional well-being in the process.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:neptune:osculatingLilith",
+    "locale": "en",
+    "text": "You have a deep capacity for empathy and imagination, often blurring the boundaries between reality and fantasy. However, this can also lead to a risk of self-deception or escapism, as you seek solace in idealized visions.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:neptune:pallas",
+    "locale": "en",
+    "text": "Your Neptune conjunction with Pallas Athene blends imagination and wisdom, allowing you to see beyond conventional ideas to create visionary solutions. However, this can also lead to getting lost in idealistic fantasies that obscure practical realities.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:neptune:pluto",
+    "locale": "en",
+    "text": "Neptune conjunct Pluto in your chart amplifies your capacity for deep, transformative change through emotional and spiritual experiences. This placement can also blur the lines between reality and illusion, leading to periods of intense confusion or disillusionment.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:neptune:saturn",
+    "locale": "en",
+    "text": "You navigate the blurred lines between reality and illusion with both discipline and sensitivity. Your strength lies in bringing structure to intangible ideas, but be cautious of becoming overly rigid or losing touch with your imaginative side.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:neptune:sun",
+    "locale": "en",
+    "text": "Your identity is deeply intertwined with your imagination and idealism, bringing a sense of mystery and spiritual yearning to your life. However, this can sometimes blur the lines between reality and illusion, leading to confusion or escapism.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:neptune:trueNode",
+    "locale": "en",
+    "text": "You have a deep capacity for empathy and imagination, often blurring the lines between reality and the ideal. This can lead to a risk of self-deception or losing touch with practical necessities.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:neptune:uranus",
+    "locale": "en",
+    "text": "You experience sudden, transformative shifts in your imagination and idealism, often feeling drawn to innovative or visionary ideas that challenge conventional boundaries. This can lead to moments of profound insight, but also to confusion or disillusionment if you lose touch with reality.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:neptune:venus",
+    "locale": "en",
+    "text": "Your Neptune-Venus conjunction brings a deep, imaginative sense of beauty and romance. You are drawn to idealistic, dreamy expressions of love and art, but be cautious of losing touch with reality in your pursuit of these ideals.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:neptune:vesta",
+    "locale": "en",
+    "text": "Your Neptune-Vesta conjunction suggests a deep connection between your spiritual pursuits and your sense of duty and service. You may find fulfillment in helping others through compassionate, imaginative work, but be mindful of blurring boundaries between your own needs and those of others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:osculatingLilith:pallas",
+    "locale": "en",
+    "text": "You experience a blend of inner wisdom and strategic insight, combining the clarity of what you truly need with the practical vision to pursue it. This can lead to a tendency to be overly critical or dismissive of paths that don't align with your core values.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:osculatingLilith:pluto",
+    "locale": "en",
+    "text": "You experience profound transformation through intense, often hidden processes that require facing your deepest fears and letting go of what no longer serves you. This can lead to powerful renewal, but may also bring periods of feeling overwhelmed and trapped by unseen forces.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:osculatingLilith:saturn",
+    "locale": "en",
+    "text": "With Lilith conjunct Saturn, you face challenges and limitations where you feel most vulnerable and suppressed. This placement pushes you to confront your shadows and transform them through discipline and responsibility. While it can be a source of deep resilience, it also risks becoming overly restrictive and self-critical.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:osculatingLilith:sun",
+    "locale": "en",
+    "text": "Your core identity and personal will are intertwined with a drive for independence and a sense of empowerment that comes from standing up for yourself. This can give you the strength to break free from constraints, but it also risks isolating you if you push others away too forcefully.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:osculatingLilith:trueNode",
+    "locale": "en",
+    "text": "You encounter intense, transformative experiences that challenge your inner truths and push you toward personal evolution. This can be a powerful catalyst for growth, but it also risks overwhelming you with its intensity and disruptive nature.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:osculatingLilith:uranus",
+    "locale": "en",
+    "text": "You experience sudden, disruptive forces that challenge your sense of control and independence. This can lead to liberating breakthroughs, but also to feelings of disorientation and loss.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:osculatingLilith:venus",
+    "locale": "en",
+    "text": "You have a natural ability to see and address imbalances in relationships, often helping others find the strength to stand up for themselves. However, this placement can also lead to a tendency to overlook your own needs in the process, potentially leaving you feeling drained or neglected.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:osculatingLilith:vesta",
+    "locale": "en",
+    "text": "You have a deep sense of purpose that guides your dedication to personal values and commitments. However, this can sometimes lead to a sense of isolation if you feel too disconnected from others who do not share your intense focus.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pallas:pluto",
+    "locale": "en",
+    "text": "Your Pallas conjunction Pluto placement imparts a profound capacity for transformative insight and strategic power. This combination can drive you to confront deep-rooted issues head-on, breaking down barriers to achieve radical change and innovation.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pallas:saturn",
+    "locale": "en",
+    "text": "You bring a disciplined approach to problem-solving and strategic planning, often finding strength in your methodical and persistent methods. However, you may at times struggle with rigidity, making it hard to adapt to new or unexpected situations.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pallas:sun",
+    "locale": "en",
+    "text": "Your inner wisdom and sense of purpose are closely linked, guiding you to integrate thoughtful strategy with your personal identity. This conjunction can empower you to act with clarity and conviction, but it also risks overthinking and delaying action due to a quest for perfection.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pallas:trueNode",
+    "locale": "en",
+    "text": "With Pallas Athena conjoined your True Node, you have a strong inclination to integrate wisdom and strategic thinking into your life path. This placement encourages you to seek harmony and balance while pursuing your goals, often through cooperative efforts and partnerships. However, be mindful of the risk of overthinking and analysis paralysis, which can stall progress if not balanced with decisive action.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pallas:uranus",
+    "locale": "en",
+    "text": "Your Pallas conjunction with Uranus suggests a natural talent for innovative problem-solving and a drive to break free from traditional approaches. This placement can also make you resistant to conventional advice, sometimes leading to isolation if you’re not careful.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pallas:venus",
+    "locale": "en",
+    "text": "Your sense of value and what you find attractive is closely tied to your strategic goals and intellectual insights. You see harmony in combining practical wisdom with aesthetic or relational beauty.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pallas:vesta",
+    "locale": "en",
+    "text": "Your Pallas and Vesta conjunction highlights your dedication to refining and focusing your talents and skills. You excel when you can channel your energy into disciplined, purposeful work, often finding fulfillment in serving a higher cause or ideal. However, this alignment can also make you overly focused on duty, potentially neglecting personal needs and relaxation.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pluto:saturn",
+    "locale": "en",
+    "text": "You face deep, transformative challenges where responsibility and power intersect, pushing you to confront what needs to be dismantled before renewal can begin. The natural pitfall is feeling overwhelmed by the intensity and persistence required for such change.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pluto:sun",
+    "locale": "en",
+    "text": "Pluto conjunct your Sun intensifies your core identity, making transformation and rebirth essential parts of your life journey. This placement can drive you to confront and overcome deep-seated fears and limitations, often through powerful, sometimes painful experiences. Be wary of becoming too controlling or secretive with others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pluto:trueNode",
+    "locale": "en",
+    "text": "You experience transformative changes through intense, often hidden processes that force you to confront and let go of what no longer serves you. This can lead to profound personal growth but also periods of feeling overwhelmed or lost.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pluto:uranus",
+    "locale": "en",
+    "text": "You experience sudden, transformative changes that challenge the status quo, bringing intense personal growth and renewal through disruption. Be wary of feeling overwhelmed by these shifts, which can sometimes lead to instability or resistance.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pluto:venus",
+    "locale": "en",
+    "text": "You have a deep, transformative capacity for intimacy that can reshape your relationships and values. However, this can also lead to intense possessiveness or a fear of vulnerability.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:pluto:vesta",
+    "locale": "en",
+    "text": "You have a deep, transformative drive to dedicate yourself to causes that feel essential and sacred. This can lead to intense focus and the ability to see through superficial distractions, but it also risks becoming overly absorbed in work or responsibilities to the point of neglecting personal well-being.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:saturn:sun",
+    "locale": "en",
+    "text": "You carry a sense of responsibility and discipline that shapes your identity and sense of purpose. This can foster maturity and mastery, yet it also risks becoming a heavy burden, leading to feelings of constraint or undue pressure.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:saturn:trueNode",
+    "locale": "en",
+    "text": "You face challenges and responsibilities that push you to grow and master yourself, often through perseverance in the face of obstacles. Yet, this can also bring feelings of restriction and a struggle to let go of past burdens.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:saturn:uranus",
+    "locale": "en",
+    "text": "Saturn conjunct Uranus brings a blend of discipline and disruption in your life. You face challenges that push you to break old patterns and embrace new ideas, fostering innovation through structured effort. However, this combination can also create tension between tradition and rebellion, making it hard to find a stable path forward.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:saturn:venus",
+    "locale": "en",
+    "text": "You have a strong sense of responsibility when it comes to relationships and material possessions, valuing commitment and long-term security. However, this placement can also lead to feeling burdened by obligations, potentially making it hard to enjoy the present moment.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:saturn:vesta",
+    "locale": "en",
+    "text": "You bring a disciplined focus to your work and duties, often feeling a deep sense of responsibility and commitment. However, this can also lead to overworking and neglecting other areas of life that need attention.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:sun:trueNode",
+    "locale": "en",
+    "text": "Your Sun conjunct True Node placement suggests a strong sense of purpose and destiny, guiding you to fulfill a unique role in life. However, it can also create pressure to meet high expectations, both your own and others’.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:sun:uranus",
+    "locale": "en",
+    "text": "Your Sun conjunct Uranus placement highlights your unique identity and original spirit. You are driven to break free from conventions and forge your own path, embracing sudden changes as opportunities for growth. However, this independence can sometimes lead to feeling isolated if you struggle to connect with others who don’t share your radical vision.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:sun:venus",
+    "locale": "en",
+    "text": "Your Sun-Venus conjunction highlights your core identity through what you find attractive and valuable. This placement gifts you a natural harmony and pleasure in expressing yourself, making you charming and appealing to others. However, it can also lead to a tendency to seek approval or validation through relationships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:sun:vesta",
+    "locale": "en",
+    "text": "With the Sun conjunct Vesta, your sense of purpose is deeply tied to dedication and service. You find fulfillment in committing yourself wholeheartedly to meaningful tasks and feeling that your efforts are making a difference.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:trueNode:uranus",
+    "locale": "en",
+    "text": "You have a strong drive for innovation and unpredictability, often feeling compelled to break free from established patterns and expectations. This can lead to sudden and transformative changes in your life, but it also risks alienating those who prefer stability and routine.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:trueNode:venus",
+    "locale": "en",
+    "text": "You naturally seek harmony and balance in your relationships, valuing connection and mutual understanding. However, you may sometimes avoid conflict, prioritizing peace over honest expression.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:trueNode:vesta",
+    "locale": "en",
+    "text": "Your True Node conjunction with Vesta highlights a deep drive to dedicate yourself to a higher purpose or cause. You find fulfillment in focused, disciplined work that serves a greater good, often at the expense of personal desires and comfort. Be mindful of avoiding burnout by neglecting your own needs.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:uranus:venus",
+    "locale": "en",
+    "text": "Your Uranus conjunction Venus brings a unique blend of creativity and independence in your relationships and aesthetic preferences. This placement can inspire originality and freedom in how you connect with others and seek beauty, but it can also lead to sudden changes or unconventional approaches that others find challenging to follow.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:uranus:vesta",
+    "locale": "en",
+    "text": "Your drive for personal freedom and innovation is closely tied to your sense of duty and focus. You find fulfillment in breaking conventional norms while dedicating yourself to causes that inspire genuine change.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:venus:vesta",
+    "locale": "en",
+    "text": "You find value and harmony in dedication and commitment, often channeling your affection and resources toward meaningful causes rather than just personal desires. This can lead to a sense of fulfillment but may also mean neglecting immediate pleasures or relationships that don't align with your higher goals.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:chiron",
+    "locale": "en",
+    "text": "You have a natural ability to nurture and heal others, bridging the gap between care and understanding. This connection can help you and those around you find balance and recovery, but it’s important to guard against taking on too much responsibility, which can lead to burnout.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:interpolatedLilith",
+    "locale": "en",
+    "text": "You have a tendency to nurture and care for others while also setting personal boundaries, balancing your instinctive need to protect and provide with a sense of independence. This placement can help you find a harmonious way to support those around you without losing sight of your own needs.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:juno",
+    "locale": "en",
+    "text": "You balance nurturing and relational needs with a sense of personal responsibility and fairness. This placement encourages you to care for others while also maintaining your own boundaries, fostering a healthy give-and-take in relationships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:jupiter",
+    "locale": "en",
+    "text": "You find a balance between nurturing care and expansive growth, bringing a supportive presence to areas where you seek opportunities and meaning beyond the immediate. The challenge lies in ensuring your generosity does not lead to overextension, compromising your own well-being.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:mars",
+    "locale": "en",
+    "text": "You have a natural ability to nurture and support others while also pursuing your goals with drive and assertiveness. This placement balances your caring nature with your competitive spirit, allowing you to advocate for yourself while still being considerate of others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:meanLilith",
+    "locale": "en",
+    "text": "You have a tendency to nurture and care for others in ways that can sometimes clash with your need for independence and autonomy. Balancing your supportive nature with personal boundaries is key to maintaining both your well-being and your relationships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:meanNode",
+    "locale": "en",
+    "text": "You have a tendency to nurture and care for others just before pivotal moments of growth and change, helping them to transition smoothly while also learning to let go of attachment. This placement encourages balancing support with independence, fostering personal growth and resilience.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:mercury",
+    "locale": "en",
+    "text": "You have a natural ability to connect practical concerns with the information you gather, allowing you to address needs efficiently. However, this can also lead to overlooking emotional subtleties or dismissing intuitive insights.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:moon",
+    "locale": "en",
+    "text": "You have a natural ability to care for others and nurture their needs, which complements your instinctive emotional responses. However, be mindful of not neglecting your own care in the process.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:neptune",
+    "locale": "en",
+    "text": "You have a natural ability to merge practical needs with a sense of idealism and compassion, helping you navigate complex emotional landscapes with sensitivity. However, this placement can also lead to feeling overwhelmed by the abstract or losing touch with concrete goals.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:osculatingLilith",
+    "locale": "en",
+    "text": "You have a natural ability to nurture and care for others, even in situations that feel challenging or unconventional. However, you may sometimes struggle to balance your instinctive need to protect and provide with the unique demands of these situations, potentially leading to frustration or a sense of imbalance.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:pallas",
+    "locale": "en",
+    "text": "You have a natural ability to balance your nurturing instincts with strategic planning, allowing you to support others while also advancing your goals. However, there’s a risk of becoming overly detached or neglecting your own needs in the process.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:pluto",
+    "locale": "en",
+    "text": "You have a capacity for nurturing transformation in your life, finding ways to rebuild and renew through practical efforts. However, this can also lead to feeling overwhelmed by the intensity and hidden depths of what needs to be addressed.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:saturn",
+    "locale": "en",
+    "text": "You find satisfaction in disciplined effort and nurturing responsibilities, balancing your care for others with a steady approach to growth. However, you may struggle to fully embrace spontaneous acts of kindness or to let go of rigid structures that protect you.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:sun",
+    "locale": "en",
+    "text": "You have a natural ability to nurture yourself and your environment, fostering growth and care in subtle yet effective ways. This connection can also sometimes lead to a tendency to overlook your own needs in favor of others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:trueNode",
+    "locale": "en",
+    "text": "You find fulfillment in nurturing and caring for others, yet you also feel a pull toward personal growth and exploration. This balance helps you integrate your instinctive need to nurture with your sense of direction and purpose.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:uranus",
+    "locale": "en",
+    "text": "Ceres in your chart semisextiles Uranus, blending your nurturing instincts with a desire for freedom and innovation. This placement encourages you to support others in unique ways, while also safeguarding your independence and personal growth.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:venus",
+    "locale": "en",
+    "text": "You have a tendency to balance your practical needs with your desires for connection and harmony. This placement encourages you to care for yourself while also valuing nurturing others, though it can sometimes lead to neglecting your own needs in favor of pleasing others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:ceres:vesta",
+    "locale": "en",
+    "text": "You find a sense of purpose in balancing nurturing acts with acts of service and devotion. This placement can help you harmonize your care for others with your own needs and responsibilities, fostering a more sustainable approach to giving. However, be cautious of neglecting either aspect, as overemphasizing one can leave the other feeling neglected.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:interpolatedLilith",
+    "locale": "en",
+    "text": "You carry a wound that yearns for healing and understanding, inviting you to explore the hidden aspects of yourself and the world. This placement can make you sensitive to injustices and compels you to seek a deeper, more compassionate approach to your challenges.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:juno",
+    "locale": "en",
+    "text": "You may find a gentle but persistent tension between your wounds and your commitments, urging you to address unresolved issues within the context of your relationships. This placement can help you navigate healing through partnership, while also risking that you might neglect your own needs in the process.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:jupiter",
+    "locale": "en",
+    "text": "You have a tendency to bridge the gap between your personal wounds and broader opportunities for growth. This placement can help you transform your challenges into wisdom that benefits others, yet it also risks making you overly idealistic, leading you to neglect your own needs in the process.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:mars",
+    "locale": "en",
+    "text": "You carry a deep sense of personal healing and empowerment, where addressing past wounds can fuel your drive and action. However, this placement can also lead to overidentifying with your struggles, potentially hindering your forward momentum.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:meanLilith",
+    "locale": "en",
+    "text": "You have a unique sensitivity to areas where you feel wounded or excluded, prompting you to seek healing and integration in these parts of your life. However, this can also make you wary of fully engaging until you feel ready to confront these wounds.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:meanNode",
+    "locale": "en",
+    "text": "Your Chiron semisextile to the Mean Node suggests a wound or challenge involving personal growth and direction. You may find healing through aligning your deeper life purpose with your path forward, integrating your pain into a greater sense of meaning and progress.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:mercury",
+    "locale": "en",
+    "text": "You have a natural inclination to bridge understanding and healing, bringing a unique perspective to communication and learning. However, this placement can also lead to a sense of being caught between worlds, making it challenging to find a clear path forward.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:moon",
+    "locale": "en",
+    "text": "You carry a wound that affects your emotional responses and instincts, yet this also gives you a deep empathy for others who feel unseen or misunderstood. While this can lead to emotional overextension, it also provides a unique perspective on healing and compassion.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:neptune",
+    "locale": "en",
+    "text": "You have a unique capacity to heal through understanding the unseen and the spiritual, bringing clarity to those who seek it. However, this can also lead to feeling disconnected from tangible reality, making it hard to ground your insights and bring them into practical action.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:osculatingLilith",
+    "locale": "en",
+    "text": "You carry a sense of woundedness that you can address through personal healing and growth. This placement invites you to explore and mend deep emotional wounds, fostering a greater understanding of your own pain and the pain of others. However, be cautious of becoming overly self-involved or neglecting your need for community support.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:pallas",
+    "locale": "en",
+    "text": "You have a unique blend of wisdom and healing, often drawn to situations where you can bridge understanding and practical action. Yet, there’s a risk of feeling like an outsider, struggling to fully integrate your insights into your daily life.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:pluto",
+    "locale": "en",
+    "text": "With Chiron semisextile Pluto, you have a unique opportunity to heal deep wounds by confronting hidden power dynamics. This aspect can make you acutely aware of transformative moments that require sacrifice and release, allowing you to integrate pain into a profound sense of purpose.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:saturn",
+    "locale": "en",
+    "text": "You carry a wound that pushes you to face challenges and take responsibility seriously. This can lead to valuable lessons but also to feeling burdened by your struggles.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:sun",
+    "locale": "en",
+    "text": "You carry a wound or limitation that pushes you to grow and seek healing, yet this very struggle can sometimes isolate you from your core self and purpose.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:trueNode",
+    "locale": "en",
+    "text": "You experience a gentle yet persistent tension between your personal wounds and your path ahead, prompting you to address past hurts while moving forward. This placement encourages healing through guided action, balancing the need to understand your scars with the urge to pursue your destiny.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:uranus",
+    "locale": "en",
+    "text": "You carry a wound that challenges your need for freedom and independence. This placement can spark healing through sudden breakthroughs, but it may also lead to frustration when you feel constrained by unresolved issues.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:venus",
+    "locale": "en",
+    "text": "You have a unique approach to relationships and value, blending personal growth with a healing touch. While this can bring understanding and compassion to your connections, there’s a risk of carrying unresolved wounds into how you give and receive affection.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:chiron:vesta",
+    "locale": "en",
+    "text": "You carry a wound related to your sense of duty and commitment, yet this tension also fuels your drive to heal and transform. While you may struggle with feeling inadequate or unsupported in your responsibilities, you have the potential to become a powerful guide for others facing similar challenges.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:juno",
+    "locale": "en",
+    "text": "You have a natural ability to challenge and redefine boundaries in your relationships, often pushing for greater autonomy and equality. However, this same drive can sometimes lead to conflict when others feel you are pulling away or being too independent.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:jupiter",
+    "locale": "en",
+    "text": "You have a natural ability to see beyond current limitations and find innovative solutions, often guiding others toward new opportunities. However, this can also lead to overlooking practical details, potentially causing delays or setbacks.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:mars",
+    "locale": "en",
+    "text": "You have a natural ability to confront and challenge what feels restrictive, pushing boundaries with courage and determination. However, this can sometimes lead to impulsive actions that lack careful consideration.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:meanLilith",
+    "locale": "en",
+    "text": "You have a natural ability to recognize and navigate intense, transformative situations, often seeing through the surface to uncover deeper truths. However, this can also make you prone to becoming too absorbed in hidden dynamics, potentially at the expense of more immediate, practical concerns.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:meanNode",
+    "locale": "en",
+    "text": "You may find yourself drawn to confrontations that push you to grow and redefine your boundaries, often aligning with pivotal moments in your life. However, be mindful of becoming too focused on these clashes, which can isolate you from supportive connections.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:mercury",
+    "locale": "en",
+    "text": "You have a unique ability to see through the surface of situations and communicate insights that others might miss, fostering clarity and depth in your conversations. However, this can also lead to a tendency to overanalyze or critique, potentially straining your interactions with those who prefer a more straightforward exchange.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:moon",
+    "locale": "en",
+    "text": "Your intuitive side seeks independence, inviting you to trust your instincts while also exploring new paths that challenge your comfort zone. This placement can enhance your ability to follow inner guidance, yet it may also lead to periods of feeling disconnected or uncertain.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:neptune",
+    "locale": "en",
+    "text": "You have a unique ability to sense and articulate the intangible, merging the mystical with clear insight. This can help you navigate the subtle currents of emotion and illusion, but be cautious of getting lost in ambiguity or avoiding direct confrontation.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:osculatingLilith",
+    "locale": "en",
+    "text": "You have a natural ability to create space for fresh perspectives, often bridging areas where rigid thinking had taken hold. However, this can also lead to a tendency to overlook the practical steps needed to make your ideas a reality.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:pallas",
+    "locale": "en",
+    "text": "Your intuitive insights and subtle perceptions can lead to creative solutions, as you navigate the tension between your inner wisdom and strategic thinking. Be cautious of overthinking or becoming too detached from practical actions.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:pluto",
+    "locale": "en",
+    "text": "You have a deep, transformative drive to confront what others might avoid, revealing hidden truths and fostering radical change. This can be incredibly powerful, but it also risks overwhelming yourself and others with intensity.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:saturn",
+    "locale": "en",
+    "text": "You have a natural ability to confront and challenge your limitations, often leading to personal growth through disciplined effort. However, this can also result in feeling overwhelmed or overly critical of yourself when facing obstacles.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:sun",
+    "locale": "en",
+    "text": "You have a natural ability to confront and transform your inner shadows, which can lead to profound personal growth. However, this process may sometimes feel unsettling or disruptive as you face aspects of yourself that you’d rather avoid.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:trueNode",
+    "locale": "en",
+    "text": "You have a drive to seek out new beginnings and transformative experiences, often feeling pulled toward paths that challenge your comfort zone. This can lead to growth but also to periods of instability as you navigate these changes.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:uranus",
+    "locale": "en",
+    "text": "You have a natural inclination to challenge established norms and disrupt the status quo, often driven by a desire for independence and personal freedom. However, this can sometimes lead to sudden changes that leave you feeling disconnected or isolated.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:venus",
+    "locale": "en",
+    "text": "You have a natural ability to identify and address hidden imbalances in relationships, which can lead to deeper, more authentic connections. However, this placement may also bring challenges in fully expressing your needs and boundaries.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:interpolatedLilith:vesta",
+    "locale": "en",
+    "text": "You have a tendency to confront personal shadows and hidden desires while also focusing on your responsibilities and dedications. This dynamic can lead to transformative insights but may also cause internal tension between your private fears and your disciplined pursuits.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:jupiter",
+    "locale": "en",
+    "text": "You find harmony in seeking opportunities that align with your values and relationships. Your natural tendency is to expand your social and professional networks through meaningful connections, blending personal growth with supportive alliances. However, be mindful of the risk of becoming overly idealistic, leading to unrealistic expectations in partnerships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:mars",
+    "locale": "en",
+    "text": "You have a drive to pursue partnerships and relationships that challenge you to grow and assert yourself. This can inspire you to take initiative in collaborations, but it may also lead to conflicts if you feel the need to compete or prove yourself within these bonds.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:meanNode",
+    "locale": "en",
+    "text": "You find yourself drawn to partnerships where there’s a slight but noticeable difference in your goals and perspectives, fostering a dynamic that encourages growth through small, steady adjustments. The challenge lies in maintaining patience and understanding as you navigate these subtle but important distinctions.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:meanLilith",
+    "locale": "en",
+    "text": "You have a natural ability to recognize and balance the duality within relationships, seeing both the light and the shadow sides. However, this can sometimes lead to a tendency to overlook your own needs in favor of understanding others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:mercury",
+    "locale": "en",
+    "text": "You have a tendency to approach relationships with a clear, communicative mind, valuing honest dialogue and mutual understanding. However, this can sometimes lead to a focus on minor details at the expense of the bigger picture, potentially causing unnecessary tension in partnerships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:moon",
+    "locale": "en",
+    "text": "You may find that your need for partnership and harmony (Juno) subtly influences your emotional responses and instincts (Moon). This can help you balance your feelings with a sense of fairness and cooperation, yet it might also lead you to suppress your emotions or overlook your own needs in favor of maintaining peace in relationships.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:neptune",
+    "locale": "en",
+    "text": "You have a natural ability to blend personal aspirations with a sense of the greater good, fostering harmonious connections that feel meaningful and expansive. However, this can sometimes blur your own boundaries, making it hard to distinguish your needs from those around you.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:osculatingLilith",
+    "locale": "en",
+    "text": "You experience partnerships with a mix of clarity and intuition, often finding small but significant differences that encourage independent growth. While this can lead to misunderstandings, it also fosters a deeper understanding of your own needs and boundaries.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:pallas",
+    "locale": "en",
+    "text": "You naturally seek partnerships and collaborations where there is a clear division of roles and responsibilities. This placement balances your desire for cooperation with a need for individual space and clarity. However, it can lead to minor misunderstandings or delays when you or your partner fail to communicate your needs clearly.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:pluto",
+    "locale": "en",
+    "text": "You have a natural ability to seek deep transformation in your relationships, pushing past surface issues to uncover what truly needs to change. However, this intensity can sometimes be overwhelming, making it challenging to maintain healthy boundaries.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:saturn",
+    "locale": "en",
+    "text": "You bring a disciplined approach to relationships, focusing on long-term commitment and responsibility. However, this can sometimes lead to feeling overly constrained or lacking spontaneity in partnership.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:sun",
+    "locale": "en",
+    "text": "Your Juno semisextile Sun suggests a natural ability to balance partnership dynamics with your sense of self. You can blend cooperation with personal identity without losing yourself in relationships. However, there's a risk of feeling disconnected from your inner needs when focusing too much on partnerships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:trueNode",
+    "locale": "en",
+    "text": "You have a natural inclination to balance personal needs with collective goals, fostering a sense of partnership that seeks mutual growth. However, this placement can also lead to occasional tensions between your own desires and the broader responsibilities you feel toward others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:uranus",
+    "locale": "en",
+    "text": "You have a natural tendency to seek independence and freedom in your relationships, which can inspire creativity and innovation. However, this placement may also create challenges if you feel constrained by traditional expectations or need too much space, potentially leading to instability.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:venus",
+    "locale": "en",
+    "text": "You find balance between partnership dynamics and personal values, fostering a sense of fairness and mutual respect. However, this placement can also lead to minor disagreements over differing needs and expectations in relationships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:juno:vesta",
+    "locale": "en",
+    "text": "You have a natural inclination to balance your personal relationships with your sense of duty and commitment. This placement encourages you to integrate your need for partnership with your dedication to solitary pursuits or personal goals, fostering a harmonious blend of giving and self-care.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:mars",
+    "locale": "en",
+    "text": "Your Jupiter semisextile Mars suggests you seek growth and opportunity while also pursuing desires with assertiveness. This placement balances a drive to expand your horizons with the confidence to take decisive action. However, it can also lead to overreaching, where you may feel pulled to take on too much at once.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:meanLilith",
+    "locale": "en",
+    "text": "You have a tendency to seek growth and opportunity in areas where personal freedom and autonomy are also important. This can bring expansive experiences, but it may also lead to conflicts when your desire for expansion clashes with your need for independence.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:meanNode",
+    "locale": "en",
+    "text": "You have a tendency to seek growth and opportunity in ways that align with your future direction, yet this can sometimes lead to impatience or a sense of urgency as you push forward without fully considering immediate obstacles. This placement gifts you with the confidence to move toward your goals, but it also risks overlooking necessary steps along the way.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:mercury",
+    "locale": "en",
+    "text": "You have a natural ability to connect expansive ideas with practical communication, bridging vision and everyday expression. Yet, there's a risk of overthinking opportunities or getting caught up in too many details, which can hinder your ability to take decisive action.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:moon",
+    "locale": "en",
+    "text": "Your Jupiter semisextile Moon placement brings a sense of optimism and growth to your emotional life. You seek expansion and new opportunities, yet may sometimes struggle to balance your instinctive needs with your aspirations for broader horizons.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:neptune",
+    "locale": "en",
+    "text": "Your Jupiter semisextile Neptune placement suggests a capacity for blending expansive growth with imaginative idealism, allowing you to envision broader possibilities while also grounding them in practical reality. However, this combination can sometimes lead to over-idealizing goals or getting lost in unrealistic dreams.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:osculatingLilith",
+    "locale": "en",
+    "text": "You have a disposition that seeks growth and meaning in areas where you must also face personal challenges and inner conflicts. This placement encourages you to broaden your horizons while navigating the complexities of your own needs and desires.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:pallas",
+    "locale": "en",
+    "text": "Your Jupiter semisextile Pallas suggests a capacity for growth and opportunity in areas where you seek to balance personal beliefs with practical wisdom. However, it can also lead to a tendency to overlook the details and practical steps needed to realize your aspirations.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:pluto",
+    "locale": "en",
+    "text": "You have a drive to expand your world by confronting deep, transformative issues. This placement can bring opportunities for profound growth through facing challenges that force you to let go of old patterns. However, there’s a risk of feeling overwhelmed by intensity, leading to stress or burnout if you push too hard without balance.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:saturn",
+    "locale": "en",
+    "text": "You have a natural ability to turn challenges into opportunities, seeing how discipline and growth go hand in hand. The challenge is to avoid overthinking and doubting your path, which can slow down your progress.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:sun",
+    "locale": "en",
+    "text": "You have a natural inclination to seek growth and opportunity in ways that align with your core identity. This placement can bring a sense of purpose and confidence as you pursue your goals, yet it may also lead to overreaching or feeling overwhelmed if you try to take on too much at once.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:trueNode",
+    "locale": "en",
+    "text": "Your Jupiter semisextile True Node suggests a drive to grow and explore beyond your immediate circumstances, yet this expansion may sometimes feel constrained by your personal goals and responsibilities. Embrace the opportunities that come your way while staying mindful of your long-term aspirations.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:uranus",
+    "locale": "en",
+    "text": "You have a natural inclination to seek new opportunities and expand your horizons in innovative ways. However, this drive can sometimes lead to impulsive decisions that overlook long-term consequences.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:venus",
+    "locale": "en",
+    "text": "Your Jupiter semisextile Venus placement suggests a natural inclination to seek growth and opportunity while valuing harmony and pleasure. This combination can help you find expansive experiences that also bring joy, yet it may also challenge you to balance your aspirations with your desire for comfort and ease.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:jupiter:vesta",
+    "locale": "en",
+    "text": "You have a drive to grow and expand in areas where you feel a sense of duty or service. This blend can inspire you to find meaning in your commitments and pursue opportunities that align with your values, yet it can also create tension if you feel pulled between personal growth and your responsibilities.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:meanLilith",
+    "locale": "en",
+    "text": "Your Mars semisextile to Mean Lilith suggests a drive to confront and challenge what feels restrictive or oppressive. This placement gives you the strength to stand up against obstacles that hinder your freedom and autonomy. However, it can also lead to impulsively picking fights or feeling overly defensive when minor issues arise.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:meanNode",
+    "locale": "en",
+    "text": "You have a drive that pushes you toward new beginnings and fresh starts, encouraging you to take initiative in areas where you sense potential for growth. However, this can also lead to impatience and a tendency to jump into situations before fully considering the consequences.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:mercury",
+    "locale": "en",
+    "text": "Your drive and communication work in tandem, allowing you to express your desires clearly and take quick action. However, this placement can also lead to impulsiveness, where you might speak before thinking things through thoroughly.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:moon",
+    "locale": "en",
+    "text": "Your Mars semisextile Moon placement suggests a tendency to act on impulses before fully processing your emotional needs. While this can lead to spontaneous and decisive action, it may also result in neglecting your instinctive desires and feelings.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:neptune",
+    "locale": "en",
+    "text": "Your drive and desire (Mars) gently aligns with your imagination and idealism (Neptune), allowing you to channel your energy toward visionary goals and creative pursuits. However, this connection can sometimes lead to losing focus or becoming overwhelmed by abstract ideals, making it hard to follow through with practical action.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:osculatingLilith",
+    "locale": "en",
+    "text": "You approach challenges with a focused determination, yet you also have a knack for spotting subtle opportunities that others might miss. Your drive is tempered by a sensitivity to unseen forces, encouraging a balance between assertiveness and intuition.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:pallas",
+    "locale": "en",
+    "text": "Your Mars semisextile to Pallas Athene encourages assertiveness in pursuit of strategic goals, blending drive with wisdom. Yet there’s a risk of overthinking actions, delaying needed initiative.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:pluto",
+    "locale": "en",
+    "text": "Your drive to act is closely tied to deep transformations and power dynamics, pushing you to break through barriers and face what needs to change. This can make you intensely focused and relentless in your pursuit of change, but also risk turning your efforts into a source of tension or conflict.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:saturn",
+    "locale": "en",
+    "text": "Your drive to act and your sense of responsibility are in a gentle tension, encouraging you to take initiative while also considering long-term consequences. This balance can help you make practical, thoughtful decisions, but it may sometimes slow you down when you need to act quickly.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:sun",
+    "locale": "en",
+    "text": "Your drive and will are in harmony, giving you the initiative to act on your goals without hesitation. However, this can sometimes lead to impulsive decisions that lack careful consideration.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:trueNode",
+    "locale": "en",
+    "text": "You are driven to act independently and pursue your goals with a sense of purpose, often finding small but significant opportunities for growth and success. However, this placement can also lead to impatience and a tendency to overlook the bigger picture in favor of immediate action.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:uranus",
+    "locale": "en",
+    "text": "Your Mars semisextile Uranus placement grants you a burst of unconventional energy and courage to break free from routine. However, it can also lead to impulsive actions that disrupt stability without clear direction.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:venus",
+    "locale": "en",
+    "text": "Your Mars semisextile Venus suggests a natural ability to balance assertiveness with cooperation. You can pursue your goals while considering others' needs, fostering harmonious relationships. However, you may struggle to find the right balance, sometimes feeling torn between your drive and your desire for connection.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:mars:vesta",
+    "locale": "en",
+    "text": "You have a drive that is focused and disciplined, often channeling your energy into dedicated tasks and responsibilities. This can lead to a tendency to become overly absorbed in your work, potentially neglecting other aspects of your life.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:meanLilith:meanNode",
+    "locale": "en",
+    "text": "You may find yourself caught between personal freedom and collective responsibilities, often feeling a tension between your independent nature and the paths you must follow. This placement can inspire you to break free from oppressive situations while also encouraging a deeper understanding of your role in larger communities.",
+    "tier": "nuance",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:meanLilith:mercury",
+    "locale": "en",
+    "text": "You have a natural ability to see through surface-level details to uncover deeper truths, often revealing hidden aspects of situations or people. However, this insight can sometimes lead you to be overly critical or skeptical of others' intentions.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:semisextile:meanLilith:moon",
+    "locale": "en",
+    "text": "You have a strong instinct to confront and challenge what feels emotionally safe, encouraging you to grow through facing your fears and insecurities. This can lead to moments of discomfort or anxiety as you push beyond familiar emotional boundaries.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
   }
 ]
