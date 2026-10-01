@@ -71,6 +71,7 @@ import { fileURLToPath } from 'node:url';
 import { buildLanguageQualityPrompt, LANGUAGE_QUALITY_RESPONSE_SCHEMA } from './lib/language-quality.mjs';
 import { buildBatchRequest, submitBatch, pollBatch, extractBatchResults } from './lib/gemini-batch.mjs';
 import { writeCorpus } from './lib/write-corpus.mjs';
+import { estimateCostCentsForCall, formatCents } from './lib/cost-estimate.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FLAG_TAG = 'language-quality-flagged-by-judge';
@@ -143,6 +144,8 @@ let good = 0;
 let fixed = 0;
 let flagged = 0;
 let failed = 0;
+let usageIn = 0;
+let usageOut = 0;
 const lock = { writing: Promise.resolve() };
 
 async function persist() {
@@ -215,6 +218,8 @@ if (useBatch) {
       console.error(`[${locale}] FAILED ${entry.key}: ${result.error.message}`);
       continue;
     }
+    usageIn += result.usage?.promptTokenCount ?? 0;
+    usageOut += (result.usage?.candidatesTokenCount ?? 0) + (result.usage?.thoughtsTokenCount ?? 0);
     await applyVerdict(entry, index, result.result);
   }
 } else {
@@ -231,6 +236,10 @@ if (useBatch) {
         userContent,
         responseSchema: LANGUAGE_QUALITY_RESPONSE_SCHEMA,
         maxRetries: 5,
+        onUsage: (usage) => {
+          usageIn += usage?.promptTokenCount ?? 0;
+          usageOut += (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0);
+        },
       });
       await applyVerdict(entry, index, result);
     } catch (error) {
@@ -244,3 +253,18 @@ console.log(
   `\n[${locale}] language-quality check complete: ${String(candidates.length)} checked — ` +
     `${String(good)} good, ${String(fixed)} fixed, ${String(flagged)} flagged, ${String(failed)} failed`,
 );
+{
+  const costCents = estimateCostCentsForCall({
+    provider,
+    model,
+    tier: useBatch ? 'batch' : 'standard',
+    promptTokens: usageIn,
+    outputTokens: usageOut,
+  });
+  console.log(
+    `[${locale}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — ` +
+      (costCents === undefined
+        ? `cost unknown (no pricing on file for ${model})`
+        : `est. cost: ${formatCents(costCents)}`),
+  );
+}
