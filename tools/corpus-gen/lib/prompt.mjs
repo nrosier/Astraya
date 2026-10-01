@@ -34,7 +34,7 @@ export const NEGATIVE_CONSTRAINTS = [
   'Do not state numbers or degrees. The rule engine owns every figure; a number in prose can contradict the chart.',
   'Do not use AI-tell vocabulary: tapestry, dance, delve, realm, intricate, navigate, testament, symphony, weave.',
   'Do not predict a future event or give advice ("you will meet...", "you should..."). Describe a standing disposition, not a forecast.',
-  "Keep the entire entry between 40 and 1600 characters, typically two to three sentences unless the placement warrants more depth — shorter reads as a stub, longer stops being one placement's contribution to a report that stacks a dozen of these; either way is rejected by the corpus lint pass regardless of quality.",
+  "Keep the entire entry between 40 and 60 words, across 1 to 3 sentences, unless the placement warrants more depth — shorter reads as a stub, longer stops being one placement's contribution to a report that stacks a dozen of these. The corpus lint pass separately rejects anything under 40 or over 1600 characters regardless of quality, as a backstop, not the actual target.",
 ];
 
 /** Builds the model-facing instruction block shared by every request, regardless of persona. */
