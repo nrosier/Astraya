@@ -12,7 +12,7 @@ import { houseOf } from '../astrology/emphasis.js';
 import { midpointOf } from '../astrology/midpoints.js';
 import { degreesInSign, signOf } from '../astrology/signs.js';
 import { formatCoordinate } from '../ui/format.js';
-import type { ChartData } from './chart-compute.js';
+import { housesAreDefined, type ChartData } from './chart-compute.js';
 import type { Aspect } from '../astrology/aspects.js';
 import type { Locale } from '../interpretation/schema.js';
 import type { BodyPosition, Degrees } from '../ephemeris/types.js';
@@ -134,6 +134,13 @@ export function positionRows(
   options: PointVisibilityOptions = {},
   includeAngles = false,
 ): readonly PositionRow[] {
+  // #378: `data.houses` is always populated (see this function's own doc comment below) but not
+  // always geometrically valid — a known birth time at a latitude the chosen house system has no
+  // solution for still produces cusps, just `NaN` ones. `houseOf` throws on those (no finite cusp
+  // ever compares as containing anything), so skip it rather than let every row crash the whole
+  // table; omitting `house` entirely (not setting it to `undefined` — `exactOptionalPropertyTypes`
+  // treats those differently) renders as "—", the same as the Ascendant/Midheaven rows.
+  const housesUsable = housesAreDefined(data.houses);
   const bodyRows = visiblePositions(data.positions, options).map((position) => {
     const body = bodyById(position.body);
     const key = body?.key ?? String(position.body);
@@ -144,7 +151,7 @@ export function positionRows(
       longitude: position.longitude,
       speed: position.longitudeSpeed,
       retrograde: position.retrograde,
-      house: houseOf(position.longitude, data.houses.cusps),
+      ...(housesUsable ? { house: houseOf(position.longitude, data.houses.cusps) } : {}),
       ...degreeParts(position.longitude),
     };
   });

@@ -75,6 +75,28 @@ export interface ChartData {
 }
 
 /**
+ * Whether `houses` is actually usable, distinct from `Person.timeAccuracy !== 'unknown'` (#378):
+ * a *known* birth time at a latitude where the chosen house system has no solution (e.g. inside a
+ * polar circle with Placidus) still produces a `HousePositions` — one whose cusps/angles are
+ * `NaN`, per `engine.ts`'s own handling of that case — rather than throwing or returning
+ * `undefined`. `cusps[0]` is excluded from the check: it is always unused/`NaN` by design (see
+ * `HousePositions.cusps`'s own doc comment), not a signal of this failure.
+ *
+ * Every caller that renders anything built on houses (a position's house via `houseOf`, the
+ * Ascendant-based report sections, the wheel) needs this check *in addition to* `timeAccuracy`,
+ * not instead of it — `timeAccuracy === 'unknown'` is caught before a chart is even computed, so
+ * `houses` is never consulted at all in that case; this check is for the chart that *was*
+ * computed, from a real time, but came back without a geometrically valid house division.
+ */
+export function housesAreDefined(houses: HousePositions): boolean {
+  return (
+    Number.isFinite(houses.ascendant) &&
+    Number.isFinite(houses.midheaven) &&
+    houses.cusps.slice(1).every((cusp) => Number.isFinite(cusp))
+  );
+}
+
+/**
  * Computes a chart's positions, houses, aspects, dignities, sect and the two
  * classical derived points from a birth moment.
  *

@@ -18,6 +18,8 @@ const en = {
   harmonicNumberLabel: 'Harmonic number',
   harmonicLabel: (n: string) => `Harmonic ${n}`,
   invalidHarmonicNumber: 'Enter a whole number of 1 or more.',
+  housesUndefined:
+    'The underlying natal chart’s houses have no valid solution — this person’s birth place falls at a latitude the chosen house system can’t resolve. Try a different house system in Extended settings on their chart page, or a location further from the poles.',
 };
 
 const nl: typeof en = {
@@ -37,6 +39,8 @@ const nl: typeof en = {
   harmonicNumberLabel: 'Harmonisch getal',
   harmonicLabel: (n: string) => `Harmonisch ${n}`,
   invalidHarmonicNumber: 'Voer een geheel getal van 1 of meer in.',
+  housesUndefined:
+    'De huizen van de onderliggende natale horoscoop hebben geen geldige oplossing — de geboorteplaats van deze persoon valt op een breedtegraad die het gekozen huizensysteem niet kan oplossen. Probeer een ander huizensysteem bij Uitgebreide instellingen op de horoscooppagina, of een locatie verder van de polen.',
 };
 
 export const harmonicViewMessages = { en, nl };

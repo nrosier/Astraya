@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { computeComposite, type CompositeData } from '../domain/composite.js';
+import { housesAreDefined } from '../domain/chart-compute.js';
 import { ChartDataView } from './ChartView.js';
 import { ReportView } from './ReportView.js';
 import { compositeViewMessages } from './CompositeView.messages.js';
@@ -138,7 +139,14 @@ export function CompositeView({ personId }: { personId: string }): React.JSX.Ele
         />
       )}
 
-      {partnerId !== '' && load.kind === 'ready' && <ReportView chart={load.data} />}
+      {partnerId !== '' && load.kind === 'ready' && !housesAreDefined(load.data.houses) && (
+        <p className="warning" role="alert">
+          {t.housesUndefined}
+        </p>
+      )}
+      {partnerId !== '' && load.kind === 'ready' && housesAreDefined(load.data.houses) && (
+        <ReportView chart={load.data} />
+      )}
     </main>
   );
 }

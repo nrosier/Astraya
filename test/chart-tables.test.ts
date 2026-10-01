@@ -153,6 +153,18 @@ describe('positionRows (#44)', () => {
     expect(positionRows(data).map((row) => row.bodyKey)).toEqual(['sun', 'moon']);
     expect(positionRows(data, {}, false).map((row) => row.bodyKey)).toEqual(['sun', 'moon']);
   });
+
+  it('omits house (not NaN, not undefined-but-present) instead of throwing when houses have no valid solution (#378)', () => {
+    const degenerateHouses: HousePositions = { ...HOUSES, cusps: HOUSES.cusps.map(() => Number.NaN) };
+    const degenerate: ChartData = { ...data, houses: degenerateHouses };
+
+    expect(() => positionRows(degenerate)).not.toThrow();
+    const rows = positionRows(degenerate);
+    expect(rows.map((row) => row.bodyKey)).toEqual(['sun', 'moon']);
+    for (const row of rows) {
+      expect('house' in row).toBe(false);
+    }
+  });
 });
 
 describe('houseCuspRows (#44)', () => {

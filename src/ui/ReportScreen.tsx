@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useEphemerisProvider } from './EphemerisProviderContext.js';
-import { computeChartData, type ChartData } from '../domain/chart-compute.js';
+import { computeChartData, housesAreDefined, type ChartData } from '../domain/chart-compute.js';
 import { momentKey } from '../time/encode.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { reportScreenMessages } from './ReportScreen.messages.js';
@@ -96,7 +96,12 @@ export function ReportScreen({ personId }: { personId: string }): React.JSX.Elem
           {t.error(load.message)}
         </p>
       )}
-      {load.kind === 'ready' && (
+      {load.kind === 'ready' && !housesAreDefined(load.data.houses) && (
+        <p className="warning" role="alert">
+          {t.housesUndefined(person.displayName || t.thisPerson)}
+        </p>
+      )}
+      {load.kind === 'ready' && housesAreDefined(load.data.houses) && (
         <>
           {load.data.houses.warning !== undefined && (
             <p className="warning" role="alert">

@@ -44,7 +44,7 @@ import {
   type PointVisibilityOptions,
   type PositionRow,
 } from '../domain/chart-tables.js';
-import { computeChartData, type ChartData } from '../domain/chart-compute.js';
+import { computeChartData, housesAreDefined, type ChartData } from '../domain/chart-compute.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import { encodeChartShareLink } from '../domain/chart-share.js';
 import { momentKey } from '../time/encode.js';
@@ -407,8 +407,17 @@ export function ChartDataView({
 
   const pointVisibility = toPointVisibilityOptions(extendedSettings);
 
+  // #378: `showHouses` alone (passed in from `person.timeAccuracy`) isn't enough — a *known*
+  // birth time at a latitude where the chosen house system has no solution still produces
+  // `HousePositions`, just one whose cusps/angles are `NaN` (see `housesAreDefined`'s own doc
+  // comment). `housesComputed` stays `true` before `load` is ready so it never itself suppresses
+  // anything ahead of data actually arriving; `housesRenderable` is what every house-dependent
+  // render below should gate on instead of the raw `showHouses` prop.
+  const housesComputed = load.kind !== 'ready' || housesAreDefined(load.data.houses);
+  const housesRenderable = showHouses && housesComputed;
+
   const sheet = useMemo(() => {
-    if (load.kind !== 'ready' || !showHouses) return undefined;
+    if (load.kind !== 'ready' || !housesRenderable) return undefined;
     return renderChartSheetSvg(
       chartSheetInput(
         load.data,
@@ -421,7 +430,7 @@ export function ChartDataView({
         signWedgeStyle: toSignWedgeStyle(extendedSettings),
       },
     );
-  }, [load, showHouses, displayName, metaLines, extendedSettings, t]);
+  }, [load, housesRenderable, displayName, metaLines, extendedSettings, t]);
 
   useEffect(() => {
     if (!printAll) return undefined;
@@ -474,7 +483,7 @@ export function ChartDataView({
       });
   };
 
-  const tabs: readonly TabKey[] = showHouses
+  const tabs: readonly TabKey[] = housesRenderable
     ? TAB_ORDER
     : TAB_ORDER.filter((tab) => tab !== 'houses' && tab !== 'derived');
 
@@ -496,6 +505,7 @@ export function ChartDataView({
   return (
     <>
       {!showHouses && <p className="hint">{t.housesUnknownHint(displayName || t.thisPerson)}</p>}
+      {showHouses && !housesComputed && <p className="hint">{t.housesUndefinedHint(displayName || t.thisPerson)}</p>}
 
       {load.kind === 'loading' && <p className="status">{t.calculating}</p>}
 
@@ -590,7 +600,7 @@ export function ChartDataView({
             <div className="chart-print-all">
               {tabs.map((tab) => (
                 <div key={tab}>
-                  {renderTableTab(tab, load.data, displayName, pointVisibility, showHouses, t, locale)}
+                  {renderTableTab(tab, load.data, displayName, pointVisibility, housesRenderable, t, locale)}
                 </div>
               ))}
             </div>
@@ -622,7 +632,7 @@ export function ChartDataView({
                 aria-labelledby={`chart-tab-${activeTab}`}
                 tabIndex={0}
               >
-                {renderTableTab(activeTab, load.data, displayName, pointVisibility, showHouses, t, locale)}
+                {renderTableTab(activeTab, load.data, displayName, pointVisibility, housesRenderable, t, locale)}
               </div>
             </>
           )}

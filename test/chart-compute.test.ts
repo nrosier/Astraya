@@ -7,7 +7,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { bodyById, bodyByKey } from '../src/astrology/bodies.js';
-import { computeChartData, computeChartDataAtJd } from '../src/domain/chart-compute.js';
+import { computeChartData, computeChartDataAtJd, housesAreDefined } from '../src/domain/chart-compute.js';
+import type { HousePositions } from '../src/ephemeris/types.js';
 import { julianDayFor } from '../src/time/julian.js';
 import { resolveMoment } from '../src/time/resolve.js';
 import type { BirthMomentInput } from '../src/time/types.js';
@@ -157,5 +158,40 @@ describe('computeChartData (#44)', () => {
     expect(viaJd.houses.ascendant).toBeCloseTo(viaMoment.houses.ascendant, 9);
     expect(viaJd.positions).toEqual(viaMoment.positions);
     expect(viaJd.sect).toBe(viaMoment.sect);
+  });
+});
+
+describe('housesAreDefined (#378)', () => {
+  const VALID: HousePositions = {
+    cusps: [Number.NaN, 10, 40, 70, 100, 130, 160, 190, 220, 250, 280, 310, 340],
+    ascendant: 10,
+    midheaven: 280,
+    armc: 278,
+    vertex: 55,
+    equatorialAscendant: 12,
+    coAscendantKoch: 15,
+    coAscendantMunkasey: 16,
+    polarAscendant: 17,
+    system: 'P',
+  };
+
+  it('is true for a normal chart, ignoring cusps[0] (always NaN by design)', () => {
+    expect(housesAreDefined(VALID)).toBe(true);
+  });
+
+  it('is false when a house system has no solution at this latitude (NaN cusps, engine.ts’s own shape)', () => {
+    const degenerate: HousePositions = { ...VALID, cusps: VALID.cusps.map(() => Number.NaN) };
+    expect(housesAreDefined(degenerate)).toBe(false);
+  });
+
+  it('is false when only the ascendant or midheaven is NaN, even if every cusp is finite', () => {
+    expect(housesAreDefined({ ...VALID, ascendant: Number.NaN })).toBe(false);
+    expect(housesAreDefined({ ...VALID, midheaven: Number.NaN })).toBe(false);
+  });
+
+  it('is false when just one real cusp (not index 0) is NaN', () => {
+    const oneBadCusp = [...VALID.cusps];
+    oneBadCusp[7] = Number.NaN;
+    expect(housesAreDefined({ ...VALID, cusps: oneBadCusp })).toBe(false);
   });
 });

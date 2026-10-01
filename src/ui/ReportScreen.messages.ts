@@ -10,6 +10,8 @@ const en = {
   personPageLink: 'person page',
   needsKnownTime: (name: string) =>
     `The interpretation leans on houses and angles, so it needs a known birth time. ${name}’s birth time is unknown — the same reason their chart has no houses.`,
+  housesUndefined: (name: string) =>
+    `The interpretation leans on houses and angles, but the chosen house system has no valid solution for ${name}’s birth place at this exact time — try a different house system in Extended settings on the chart page, or a location further from the poles.`,
 
   heading: (name: string) => `${name}’s interpretation`,
   calculating: 'Calculating…',
@@ -25,6 +27,8 @@ const nl: typeof en = {
   personPageLink: 'persoonspagina',
   needsKnownTime: (name: string) =>
     `De interpretatie steunt op huizen en hoeken, dus is een bekende geboortetijd nodig. De geboortetijd van ${name} is onbekend — dezelfde reden waarom hun horoscoop geen huizen heeft.`,
+  housesUndefined: (name: string) =>
+    `De interpretatie steunt op huizen en hoeken, maar het gekozen huizensysteem heeft geen geldige oplossing voor de geboorteplaats van ${name} op dit exacte moment — probeer een ander huizensysteem bij Uitgebreide instellingen op de horoscooppagina, of een locatie verder van de polen.`,
 
   heading: (name: string) => `Interpretatie van ${name}`,
   calculating: 'Berekenen…',

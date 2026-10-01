@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { VARGA_PRESETS } from '../astrology/harmonics.js';
 import { computeHarmonic, type HarmonicData } from '../domain/harmonic.js';
+import { housesAreDefined } from '../domain/chart-compute.js';
 import { momentKey } from '../time/encode.js';
 import { ChartDataView } from './ChartView.js';
 import { ReportView } from './ReportView.js';
@@ -140,7 +141,12 @@ export function HarmonicView({ personId }: { personId: string }): React.JSX.Elem
         <ChartDataView load={load} displayName={displayName} showHouses metaLines={[label]} />
       )}
 
-      {nValid && load.kind === 'ready' && <ReportView chart={load.data} />}
+      {nValid && load.kind === 'ready' && !housesAreDefined(load.data.houses) && (
+        <p className="warning" role="alert">
+          {t.housesUndefined}
+        </p>
+      )}
+      {nValid && load.kind === 'ready' && housesAreDefined(load.data.houses) && <ReportView chart={load.data} />}
     </main>
   );
 }

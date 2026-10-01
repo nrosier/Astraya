@@ -53,6 +53,9 @@ const en = {
   housesUnknownHint: (name: string) =>
     `The birth time for ${name} is unknown, so houses, angles and the Ascendant-based derived points cannot be calculated — they are not shown below. Positions, aspects and dignities are still meaningful, though the Moon’s sign may be uncertain.`,
 
+  housesUndefinedHint: (name: string) =>
+    `The chosen house system has no valid solution for ${name}’s birth place at this exact time, so houses, angles and the Ascendant-based derived points are not shown below. This is different from an unknown birth time — try a different house system in Extended settings, or a location further from the poles. Positions, aspects and dignities are still meaningful.`,
+
   calculating: 'Calculating…',
   chartError: (message: string) => `The chart could not be calculated. ${message}`,
 
@@ -127,6 +130,9 @@ const nl: typeof en = {
 
   housesUnknownHint: (name: string) =>
     `De geboortetijd van ${name} is onbekend, dus huizen, hoeken en de op de Ascendant gebaseerde afgeleide punten kunnen niet worden berekend — ze worden hieronder niet getoond. Posities, aspecten en waardigheden blijven zinvol, al kan het teken van de Maan onzeker zijn.`,
+
+  housesUndefinedHint: (name: string) =>
+    `Het gekozen huizensysteem heeft geen geldige oplossing voor de geboorteplaats van ${name} op dit exacte moment, dus huizen, hoeken en de op de Ascendant gebaseerde afgeleide punten worden hieronder niet getoond. Dit is iets anders dan een onbekende geboortetijd — probeer een ander huizensysteem bij Uitgebreide instellingen, of een locatie verder van de polen. Posities, aspecten en waardigheden blijven zinvol.`,
 
   calculating: 'Berekenen…',
   chartError: (message: string) => `De horoscoop kon niet worden berekend. ${message}`,

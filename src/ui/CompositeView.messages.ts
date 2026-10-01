@@ -19,6 +19,8 @@ const en = {
 
   personALabel: 'Person A',
   personBLabel: 'Person B',
+  housesUndefined:
+    'The composite’s houses have no valid solution — one of the two charts falls at a latitude the chosen house system can’t resolve. Try a different house system in Extended settings on either person’s chart page, or a location further from the poles.',
 };
 
 const nl: typeof en = {
@@ -39,6 +41,8 @@ const nl: typeof en = {
 
   personALabel: 'Persoon A',
   personBLabel: 'Persoon B',
+  housesUndefined:
+    'De huizen van de composiet hebben geen geldige oplossing — een van de twee horoscopen valt op een breedtegraad die het gekozen huizensysteem niet kan oplossen. Probeer een ander huizensysteem bij Uitgebreide instellingen op de horoscooppagina van een van beiden, of een locatie verder van de polen.',
 };
 
 export const compositeViewMessages = { en, nl };
