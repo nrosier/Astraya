@@ -108,6 +108,13 @@ const GENDERED_WORDS = ['he', 'she', 'him', 'her', 'his', 'hers', 'himself', 'he
  * words is almost certainly written in the wrong language outright, rather than just
  * missing a stylistic marker — a single wrong-language entry otherwise sails through
  * every other rule here unnoticed, since none of them are locale-aware.
+ *
+ * Deliberately excludes words that are also common, identically-spelled words in the
+ * *other* locale — "is", "in", "of" (English and Dutch), "met", "van" (English "met"/"van"
+ * as in "met a friend", "delivery van") — since those would let a response in the wrong
+ * language slip past undetected (qwen2.5:14b English-for-Dutch output, observed, routinely
+ * contains "is"/"in" and so passed this check before this list was pared down). Each locale
+ * keeps well over a dozen genuinely exclusive words, so dropping these costs no real coverage.
  */
 const COMMON_WORDS_BY_LOCALE: Record<Locale, readonly string[]> = {
   en: [
@@ -115,9 +122,6 @@ const COMMON_WORDS_BY_LOCALE: Record<Locale, readonly string[]> = {
     ' a ',
     ' an ',
     ' to ',
-    ' of ',
-    ' in ',
-    ' is ',
     ' and ',
     ' with ',
     ' that ',
@@ -135,19 +139,15 @@ const COMMON_WORDS_BY_LOCALE: Record<Locale, readonly string[]> = {
     ' de ',
     ' het ',
     ' een ',
-    ' is ',
     ' niet ',
     ' en ',
     ' je ',
-    ' met ',
-    ' van ',
     ' dat ',
     ' kan ',
     ' wordt ',
     ' aan ',
     ' op ',
     ' te ',
-    ' in ',
     ' voor ',
     ' naar ',
     ' zijn ',

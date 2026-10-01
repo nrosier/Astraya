@@ -23,7 +23,17 @@
  * at a time by design, so `--locale=en` and `--locale=nl` can run
  * concurrently or be resumed independently, per #56.
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama] [--force]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama] [--force] [--max-language-retries=N]
+ *
+ * `--max-language-retries` (default 4): a response that fails lint's own
+ * `language-mismatch` rule (text in the wrong locale entirely) is re-requested
+ * from the same model against the same prompt, rather than accepted or given
+ * up on after one draw — qwen2.5:14b in particular only *sometimes* ignores
+ * the locale directive in its system prompt, so another sample at the same
+ * (non-zero) temperature has a real chance of landing in the right language.
+ * A key still wrong after every retry counts as failed, same as any other bad
+ * response, and leaves whatever was already at that key (if anything)
+ * untouched.
  *
  * `--force` (#368) turns this from a gap-filler into a full regeneration:
  * every placement in scope is (re)generated, replacing its existing entry in
@@ -91,6 +101,7 @@ const concurrency = Number(flag('concurrency', '3'));
 const delayMs = Number(flag('delay-ms', '200'));
 const skipFinalChecks = rawArgs.includes('--skip-final-checks');
 const force = rawArgs.includes('--force');
+const MAX_LANGUAGE_RETRIES = Number(flag('max-language-retries', '4'));
 
 const provider = flag('provider', 'gemini');
 if (provider !== 'gemini' && provider !== 'ollama')
@@ -211,40 +222,54 @@ await withConcurrency(pending, concurrency, async ({ placement, key }) => {
   const userContent = buildUserContent({ placementDescription: description, corpusEntries: corpus, locale, persona });
 
   try {
-    const result = await generateStructured({
-      apiKey: process.env.GEMINI_API_KEY,
-      model,
-      baseUrl,
-      temperature: Number(process.env.GEMINI_TEMPERATURE ?? '0.75'),
-      systemInstruction,
-      userContent,
-      responseSchema: CORPUS_ENTRY_RESPONSE_SCHEMA,
-      maxRetries: 5,
-      onUsage: (usage) => {
-        usageIn += usage?.promptTokenCount ?? 0;
-        usageOut += usage?.candidatesTokenCount ?? 0;
-      },
-    });
-
-    const entry = {
-      key,
-      locale,
-      text: result.text,
-      tier: result.tier,
-      tags: placement.category === 'dignity-state' ? [placement.state] : [],
-      ...(persona ? { persona: persona.id } : {}),
-      provenance: {
-        source: 'generated',
+    let entry;
+    let languageIssue;
+    let attempt = 0;
+    do {
+      attempt += 1;
+      const result = await generateStructured({
+        apiKey: process.env.GEMINI_API_KEY,
         model,
-        generatedAt: new Date().toISOString().slice(0, 10),
-      },
-    };
+        baseUrl,
+        temperature: Number(process.env.GEMINI_TEMPERATURE ?? '0.75'),
+        systemInstruction,
+        userContent,
+        responseSchema: CORPUS_ENTRY_RESPONSE_SCHEMA,
+        maxRetries: 5,
+        onUsage: (usage) => {
+          usageIn += usage?.promptTokenCount ?? 0;
+          usageOut += usage?.candidatesTokenCount ?? 0;
+        },
+      });
 
-    // Caught below and counted as a failed key, same as any other bad response —
-    // a model that ignores the locale in its own system prompt otherwise sails
-    // through untouched, since none of this file's other checks are locale-aware.
-    const languageIssue = lintEntry(entry).find((issue) => issue.rule === 'language-mismatch');
-    if (languageIssue) throw new Error(languageIssue.message);
+      entry = {
+        key,
+        locale,
+        text: result.text,
+        tier: result.tier,
+        tags: placement.category === 'dignity-state' ? [placement.state] : [],
+        ...(persona ? { persona: persona.id } : {}),
+        provenance: {
+          source: 'generated',
+          model,
+          generatedAt: new Date().toISOString().slice(0, 10),
+        },
+      };
+
+      languageIssue = lintEntry(entry).find((issue) => issue.rule === 'language-mismatch');
+      if (languageIssue && attempt < MAX_LANGUAGE_RETRIES) {
+        if (useProgressBar) process.stdout.write('\n');
+        console.error(
+          `[${locale}/${scopeLabel}] ${key}: attempt ${String(attempt)}/${String(MAX_LANGUAGE_RETRIES)} came back in the wrong language — regenerating`,
+        );
+      }
+    } while (languageIssue && attempt < MAX_LANGUAGE_RETRIES);
+
+    // Still wrong after every retry: caught below and counted as a failed key, same as any
+    // other bad response. A single bad draw from a model that only *sometimes* ignores the
+    // locale in its own system prompt (qwen2.5:14b, observed) would otherwise sail through
+    // untouched, since none of this file's other checks are locale-aware.
+    if (languageIssue) throw new Error(`${languageIssue.message} (still wrong after ${String(MAX_LANGUAGE_RETRIES)} attempts)`);
 
     const existing = existingIndex.get(key);
     if (existing === undefined) {
