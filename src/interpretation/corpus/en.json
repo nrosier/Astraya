@@ -7906,5 +7906,53 @@
       "model": "qwen2.5:14b",
       "generatedAt": "2026-10-01"
     }
+  },
+  {
+    "key": "aspect-pair:conjunction:chiron:venus",
+    "locale": "en",
+    "text": "Your Chiron conjunction with Venus highlights areas where you experience deep wounds related to love and value. This placement can also empower you to heal and transform these wounds, becoming a source of wisdom and empathy for others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:chiron:vesta",
+    "locale": "en",
+    "text": "You have a profound capacity for healing and dedication, often focusing on areas where you feel a deep personal wound or calling. This conjunction can drive you to serve others with a sense of mission, channeling your pain into something meaningful and transformative. However, it can also lead to overworking and neglecting your own needs.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:juno",
+    "locale": "en",
+    "text": "Your inner drive to seek independence and challenge traditional roles is intertwined with a need for partnership and mutual support. This combination can create a dynamic where you push for personal freedom while also valuing balanced, cooperative relationships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:jupiter",
+    "locale": "en",
+    "text": "Your Jupiter conjunct Intergraded Lilith placement brings a unique blend of expansive confidence and the courage to challenge societal norms. You have the strength to break through limitations and embrace opportunities that others might fear, but be wary of overextending yourself or neglecting emotional depths in pursuit of growth.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
   }
 ]
