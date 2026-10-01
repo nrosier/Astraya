@@ -96,7 +96,16 @@ export function ReportScreen({ personId }: { personId: string }): React.JSX.Elem
           {t.error(load.message)}
         </p>
       )}
-      {load.kind === 'ready' && <ReportView chart={load.data} />}
+      {load.kind === 'ready' && (
+        <>
+          {load.data.houses.warning !== undefined && (
+            <p className="warning" role="alert">
+              {load.data.houses.warning}
+            </p>
+          )}
+          <ReportView chart={load.data} />
+        </>
+      )}
     </main>
   );
 }
