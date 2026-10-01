@@ -40,6 +40,10 @@ function flag(name, fallback) {
   const found = rawArgs.find((arg) => arg.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : fallback;
 }
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log('Usage: npx tsx tools/corpus-gen/benchmark-dashboard.mjs [--out=FILE]');
+  process.exit(0);
+}
 const outPath = resolve(flag('out', join(root, 'tools', 'corpus-gen', '.data', 'benchmark-dashboard.html')));
 
 const IN_SCOPE_CATEGORIES = ['planet-in-sign', 'planet-in-house', 'sign-on-cusp', 'aspect-pair'];

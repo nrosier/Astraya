@@ -16,6 +16,11 @@ function git(...args) {
   return execFileSync('git', args, { encoding: 'utf8' }).trim();
 }
 
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  console.log('Usage: npm run changelog:draft [-- <since-ref>]\nDefaults to the range since the most recent tag.');
+  process.exit(0);
+}
+
 const explicit = process.argv[2];
 let since = explicit;
 if (since === undefined) {

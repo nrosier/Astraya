@@ -106,6 +106,13 @@ function flag(name, fallback) {
   const found = rawArgs.find((arg) => arg.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : fallback;
 }
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log(
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/benchmark-batch.mjs [--sample-size=N] [--limit=N] [--provider=gemini|ollama] [--force] [--out=FILE]\n' +
+      '   or: npx tsx --env-file=.env.local tools/corpus-gen/benchmark-batch.mjs --purge-thirdparty-cache',
+  );
+  process.exit(0);
+}
 
 const sampleSize = Number(flag('sample-size', '3'));
 const limit = Number(flag('limit', Infinity));

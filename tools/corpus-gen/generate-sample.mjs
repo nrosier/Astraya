@@ -34,6 +34,15 @@ import { SIGNS } from '../../src/astrology/signs.ts';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const rawArgs = process.argv.slice(2);
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log(
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs <personaId|neutral> [category] [body] [signOrHouse] [--locale=en|nl] [--provider=gemini|ollama]\n' +
+      '   e.g.: npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs traditionalist planet-in-sign jupiter 8\n' +
+      '         npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs mystic planet-in-sign moon 5 --locale=nl\n' +
+      '         npx tsx --env-file=.env.local tools/corpus-gen/generate-sample.mjs neutral planet-in-sign moon 5 --provider=ollama',
+  );
+  process.exit(0);
+}
 const localeFlag = rawArgs.find((arg) => arg.startsWith('--locale='));
 const locale = localeFlag ? localeFlag.slice('--locale='.length) : 'en';
 if (locale !== 'en' && locale !== 'nl') throw new Error(`--locale must be "en" or "nl", got "${locale}"`);

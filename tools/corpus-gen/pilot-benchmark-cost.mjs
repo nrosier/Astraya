@@ -48,6 +48,10 @@ function flag(name, fallback) {
   const found = rawArgs.find((arg) => arg.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : fallback;
 }
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log('Usage: npx tsx --env-file=.env.local tools/corpus-gen/pilot-benchmark-cost.mjs [--out=FILE]');
+  process.exit(0);
+}
 const outPath = flag('out');
 
 const apiKey = process.env.ASTROLOGYAPI_API_KEY;

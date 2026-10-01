@@ -94,6 +94,12 @@ function flag(name, fallback) {
   const found = rawArgs.find((arg) => arg.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : fallback;
 }
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log(
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama] [--force] [--max-language-retries=N]',
+  );
+  process.exit(0);
+}
 const locale = flag('locale');
 if (locale !== 'en' && locale !== 'nl') throw new Error('--locale=en|nl is required');
 const limit = Number(flag('limit', Infinity));

@@ -87,6 +87,12 @@ function flag(name, fallback) {
   const found = rawArgs.find((arg) => arg.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : fallback;
 }
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log(
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/language-quality-batch.mjs --locale=nl [--provider=gemini|ollama] [--model=<name>] [--limit=N] [--concurrency=N]',
+  );
+  process.exit(0);
+}
 
 // Not restricted to a fixed `en|nl` allowlist like generate-batch.mjs's own locale check — this
 // script's rubric (lib/language-quality.mjs) is written to work for any locale from the start,

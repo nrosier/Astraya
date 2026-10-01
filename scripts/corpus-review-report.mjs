@@ -45,6 +45,10 @@ function flag(name, fallback) {
   const found = rawArgs.find((arg) => arg.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : fallback;
 }
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log('Usage: node scripts/corpus-review-report.mjs [--locale=en|nl] [--persona=<id>]');
+  process.exit(0);
+}
 const locale = flag('locale', 'en');
 if (locale !== 'en' && locale !== 'nl') throw new Error(`--locale must be "en" or "nl", got "${locale}"`);
 const personaFlag = flag('persona');

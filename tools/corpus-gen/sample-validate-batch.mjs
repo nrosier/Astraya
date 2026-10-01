@@ -118,6 +118,12 @@ function flag(name, fallback) {
   const found = rawArgs.find((arg) => arg.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : fallback;
 }
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log(
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/sample-validate-batch.mjs --category=synastry-aspect [--locale=nl] [--sample-size=18] [--provider=ollama|gemini] [--judge-provider=gemini|ollama] [--seed=N] [--out=FILE]',
+  );
+  process.exit(0);
+}
 
 const category = flag('category');
 if (!category) throw new Error('--category=<corpus category> is required, e.g. --category=synastry-aspect');

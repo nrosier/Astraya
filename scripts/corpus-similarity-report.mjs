@@ -17,6 +17,15 @@ import { findNearDuplicates, formatSimilarityReport } from '../src/interpretatio
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  console.log(
+    'Usage: node scripts/corpus-similarity-report.mjs                print to stdout\n' +
+      '   or: node scripts/corpus-similarity-report.mjs --out FILE      also write to FILE\n' +
+      '   or: node scripts/corpus-similarity-report.mjs --threshold 0.6 override the default',
+  );
+  process.exit(0);
+}
+
 // dedupe.ts only ever imports schema.ts as types, which Node's type-stripping
 // erases entirely — so it loads standalone. index.ts does not: it imports
 // loader.js (loader.ts, under the .js-specifier convention this project's

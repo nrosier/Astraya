@@ -39,6 +39,10 @@ function flag(name, fallback) {
   const found = rawArgs.find((arg) => arg.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : fallback;
 }
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log('Usage: npx tsx tools/corpus-gen/remove-by-model.mjs --locale=en --model=<model-name> [--persona=<id>] [--apply]');
+  process.exit(0);
+}
 
 const locale = flag('locale');
 if (locale !== 'en' && locale !== 'nl') throw new Error('--locale=en|nl is required');

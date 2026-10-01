@@ -44,6 +44,12 @@ function flag(name, fallback) {
   const found = rawArgs.find((arg) => arg.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : fallback;
 }
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log(
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/classical-triage-batch.mjs [--provider=gemini|ollama] [--limit=N] [--concurrency=N]',
+  );
+  process.exit(0);
+}
 
 const locale = 'en';
 const limit = Number(flag('limit', Infinity));
