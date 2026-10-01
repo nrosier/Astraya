@@ -7834,5 +7834,77 @@
       "model": "qwen2.5:14b",
       "generatedAt": "2026-10-01"
     }
+  },
+  {
+    "key": "aspect-pair:conjunction:chiron:pallas",
+    "locale": "en",
+    "text": "You have a unique ability to blend practical wisdom with visionary insight, often guiding others toward a more balanced and harmonious path. However, this conjunction can also bring up feelings of not quite fitting in, as you may struggle with reconciling your idealistic goals with the practical realities of the world.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:chiron:saturn",
+    "locale": "en",
+    "text": "You carry a deep sense of responsibility and healing where past limitations are confronted and transformed. Your challenge is to avoid feeling overly burdened by these limitations and to find the strength to let go of what no longer serves you.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:chiron:pluto",
+    "locale": "en",
+    "text": "Chiron conjunction Pluto suggests a profound journey of healing through transformation. You may encounter deep wounds that require radical change and release, ultimately leading to a powerful sense of renewal and strength.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:chiron:sun",
+    "locale": "en",
+    "text": "You carry a wound that shapes your sense of self, influencing how you see your identity and purpose. This can give you a unique perspective and the ability to empathize deeply with others who face similar challenges, but it also risks making you overly self-critical or holding yourself back due to past pain.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:chiron:trueNode",
+    "locale": "en",
+    "text": "You have a unique path where personal wounds and collective healing intersect, offering you the chance to bridge gaps and guide others through their own struggles. Yet, this same position can make it challenging to fully heal yourself, as your focus naturally shifts to helping others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:chiron:uranus",
+    "locale": "en",
+    "text": "With Chiron conjunct Uranus, you experience wounds and challenges that push you to break free from the status quo and embrace radical change. This placement can be a catalyst for innovation and healing through unexpected breakthroughs, but it also carries the risk of feeling perpetually restless and ungrounded.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
   }
 ]
