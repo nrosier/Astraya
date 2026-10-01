@@ -4,12 +4,17 @@
  * hand-rebuilding it — the exact duplication risk that made earlier /tmp
  * validation prototypes drift from what the real batch runner covers.
  */
-import { buildSymbolismContext, planetSymbolism, signSymbolism } from '../../../src/interpretation/symbolism.ts';
+import {
+  buildSymbolismContext,
+  planetSymbolism,
+  signSymbolism,
+  symbolismScopeFor,
+} from '../../../src/interpretation/symbolism.ts';
 import { BODIES } from '../../../src/astrology/bodies.ts';
 import { SIGNS } from '../../../src/astrology/signs.ts';
 import { ASPECTS } from '../../../src/astrology/aspects.ts';
 
-export { buildSymbolismContext, BODIES, SIGNS, ASPECTS };
+export { buildSymbolismContext, symbolismScopeFor, BODIES, SIGNS, ASPECTS };
 
 export const HOUSES = Array.from({ length: 12 }, (_, i) => i + 1);
 export const SIGN_INDICES = SIGNS.map((s) => s.index);

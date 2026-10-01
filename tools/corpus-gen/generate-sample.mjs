@@ -25,7 +25,12 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildSystemInstruction, buildUserContent } from './lib/prompt.mjs';
 import { CORPUS_ENTRY_RESPONSE_SCHEMA, placementKey } from '../../src/interpretation/schema.ts';
-import { buildSymbolismContext, planetSymbolism, signSymbolism } from '../../src/interpretation/symbolism.ts';
+import {
+  buildSymbolismContext,
+  planetSymbolism,
+  signSymbolism,
+  symbolismScopeFor,
+} from '../../src/interpretation/symbolism.ts';
 import { lintEntry } from '../../src/interpretation/lint.ts';
 import { findNearDuplicates } from '../../src/interpretation/dedupe.ts';
 import { BODIES } from '../../src/astrology/bodies.ts';
@@ -89,7 +94,7 @@ const placementDescription =
 
 const systemInstruction = buildSystemInstruction({
   persona,
-  symbolismContext: buildSymbolismContext(locale),
+  symbolismContext: buildSymbolismContext(locale, symbolismScopeFor(placement)),
   locale,
   forceLanguageDirective: provider === 'ollama',
 });

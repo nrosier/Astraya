@@ -77,7 +77,7 @@ import { fileURLToPath } from 'node:url';
 import { buildSystemInstruction, buildUserContent } from './lib/prompt.mjs';
 import { buildBatchRequest, submitBatch, pollBatch, extractBatchResults } from './lib/gemini-batch.mjs';
 import { writeCorpus } from './lib/write-corpus.mjs';
-import { buildPlacements, placementDescription, buildSymbolismContext } from './lib/placements.mjs';
+import { buildPlacements, placementDescription, buildSymbolismContext, symbolismScopeFor } from './lib/placements.mjs';
 import { CORPUS_ENTRY_RESPONSE_SCHEMA, placementKey } from '../../src/interpretation/schema.ts';
 import { lintCorpus, lintEntry } from '../../src/interpretation/lint.ts';
 import { findNearDuplicates } from '../../src/interpretation/dedupe.ts';
@@ -232,15 +232,17 @@ async function persist() {
   await lock.writing;
 }
 
-// Constant across every item in this run — locale/persona/provider don't vary per placement — so
-// built once rather than redundantly inside each item's own call (both the per-item and the
-// --batch path reuse this; --batch also needs it serialized once per request body, below).
-const systemInstruction = buildSystemInstruction({
-  persona,
-  symbolismContext: buildSymbolismContext(locale),
-  locale,
-  forceLanguageDirective: provider === 'ollama',
-});
+// Built per placement, not hoisted once: #379 made the symbolism half of this placement-scoped
+// (only the relevant body/sign's symbolism, not every planet and sign on every request), so this
+// now varies per item exactly like userContent already does.
+function systemInstructionFor(placement) {
+  return buildSystemInstruction({
+    persona,
+    symbolismContext: buildSymbolismContext(locale, symbolismScopeFor(placement)),
+    locale,
+    forceLanguageDirective: provider === 'ollama',
+  });
+}
 
 function buildEntry({ key, placement, text, tier }) {
   return {
@@ -287,7 +289,7 @@ async function runBatchRounds() {
     const requests = remaining.map(({ placement, key }) =>
       buildBatchRequest({
         key,
-        systemInstruction,
+        systemInstruction: systemInstructionFor(placement),
         userContent: buildUserContent({
           placementDescription: placementDescription(placement),
           corpusEntries: corpus,
@@ -345,14 +347,21 @@ async function runBatchRounds() {
         continue;
       }
 
-      const entry = buildEntry({ key: item.key, placement: item.placement, text: result.result.text, tier: result.result.tier });
+      const entry = buildEntry({
+        key: item.key,
+        placement: item.placement,
+        text: result.result.text,
+        tier: result.result.tier,
+      });
       const languageIssue = lintEntry(entry).find((issue) => issue.rule === 'language-mismatch');
       if (languageIssue) {
         if (round < MAX_LANGUAGE_RETRIES) {
           nextRemaining.push(item);
         } else {
           failed += 1;
-          console.error(`[${locale}/${scopeLabel}] FAILED ${item.key}: ${languageIssue.message} (still wrong after ${String(MAX_LANGUAGE_RETRIES)} rounds)`);
+          console.error(
+            `[${locale}/${scopeLabel}] FAILED ${item.key}: ${languageIssue.message} (still wrong after ${String(MAX_LANGUAGE_RETRIES)} rounds)`,
+          );
         }
         continue;
       }
@@ -372,6 +381,7 @@ if (useBatch) {
   await runBatchRounds();
 } else {
   await withConcurrency(pending, concurrency, async ({ placement, key }) => {
+    const systemInstruction = systemInstructionFor(placement);
     const userContent = buildUserContent({
       placementDescription: placementDescription(placement),
       corpusEntries: corpus,
@@ -415,7 +425,8 @@ if (useBatch) {
       // other bad response. A single bad draw from a model that only *sometimes* ignores the
       // locale in its own system prompt (qwen2.5:14b, observed) would otherwise sail through
       // untouched, since none of this file's other checks are locale-aware.
-      if (languageIssue) throw new Error(`${languageIssue.message} (still wrong after ${String(MAX_LANGUAGE_RETRIES)} attempts)`);
+      if (languageIssue)
+        throw new Error(`${languageIssue.message} (still wrong after ${String(MAX_LANGUAGE_RETRIES)} attempts)`);
 
       await acceptEntry(key, entry);
       done += 1;

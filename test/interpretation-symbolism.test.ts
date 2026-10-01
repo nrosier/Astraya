@@ -10,6 +10,7 @@ import {
   signSymbolism,
   SIGN_SYMBOLISM,
   SIGN_SYMBOLISM_NL,
+  symbolismScopeFor,
   VOICE_GUIDE,
   VOICE_GUIDE_NL,
 } from '../src/interpretation/symbolism.js';
@@ -122,5 +123,62 @@ describe('Dutch symbolism sheets (#211)', () => {
 
   it('produces different text than the English context', () => {
     expect(buildSymbolismContext('nl')).not.toBe(buildSymbolismContext('en'));
+  });
+});
+
+describe('placement-scoped symbolism (#379)', () => {
+  it('symbolismScopeFor returns just the relevant body/sign per category', () => {
+    expect(symbolismScopeFor({ category: 'planet-in-sign', body: 'saturn', sign: 9 })).toEqual({
+      bodyKeys: ['saturn'],
+      signIndices: [9],
+    });
+    expect(symbolismScopeFor({ category: 'planet-in-house', body: 'mars', house: 5 })).toEqual({ bodyKeys: ['mars'] });
+    expect(symbolismScopeFor({ category: 'sign-on-cusp', sign: 3, house: 7 })).toEqual({ signIndices: [3] });
+    expect(symbolismScopeFor({ category: 'dignity-state', body: 'jupiter', state: 'exalted' })).toEqual({
+      bodyKeys: ['jupiter'],
+    });
+    expect(symbolismScopeFor({ category: 'aspect-pair', bodyA: 'venus', bodyB: 'mars', aspect: 'trine' })).toEqual({
+      bodyKeys: ['venus', 'mars'],
+    });
+    expect(symbolismScopeFor({ category: 'synastry-aspect', bodyA: 'moon', bodyB: 'sun', aspect: 'square' })).toEqual({
+      bodyKeys: ['moon', 'sun'],
+    });
+  });
+
+  it('a bodyKeys scope includes only that planet, no sign section, but keeps the voice rules', () => {
+    const context = buildSymbolismContext('en', { bodyKeys: ['saturn'] });
+    expect(context).toContain('Saturn');
+    expect(context).toContain('discipline');
+    expect(context).not.toContain('Mars:');
+    expect(context).not.toContain('SIGN SYMBOLISM');
+    for (const rule of VOICE_GUIDE) expect(context).toContain(rule);
+  });
+
+  it('a signIndices scope includes only that sign, no planet section', () => {
+    const context = buildSymbolismContext('en', { signIndices: [0] });
+    expect(context).toContain('Aries');
+    expect(context).not.toContain('Taurus');
+    expect(context).not.toContain('PLANET SYMBOLISM');
+  });
+
+  it('an empty scope ({}) includes neither table but still carries the voice rules', () => {
+    const context = buildSymbolismContext('en', {});
+    expect(context).not.toContain('PLANET SYMBOLISM');
+    expect(context).not.toContain('SIGN SYMBOLISM');
+    expect(context).toContain('VOICE AND TONE RULES');
+  });
+
+  it('scoping works the same way for Dutch, with Dutch names', () => {
+    const context = buildSymbolismContext('nl', { bodyKeys: ['saturn'] });
+    expect(context).toContain('Saturnus');
+    expect(context).not.toContain('Mars:');
+    expect(context).not.toContain('TEKENSYMBOLIEK');
+  });
+
+  it('omitting scope entirely still means every planet and sign (unchanged default)', () => {
+    const scoped = buildSymbolismContext('en', { bodyKeys: ['saturn'] });
+    const unscoped = buildSymbolismContext('en');
+    expect(unscoped.length).toBeGreaterThan(scoped.length);
+    expect(unscoped).toContain('Mars:');
   });
 });

@@ -318,15 +318,81 @@ const PLANET_BODY_KEYS = new Set(
 );
 
 /**
- * Assembles the full symbolism reference as plain text, ready to be
- * injected into #56's generation prompt, in the given locale's own tables
- * and section headers — a Dutch generation request should read as Dutch
+ * Which bodies'/signs' symbolism a given placement actually needs — the
+ * other 9 planets or 11 signs contribute nothing to generating *this*
+ * placement's entry. `undefined` for either half of the return value means
+ * "no bodies/signs are relevant" (e.g. `sign-on-cusp` has no relevant
+ * planet), not "show everything" — that's `buildSymbolismContext`'s own
+ * default when called with no scope argument at all, a different case (see
+ * its own doc comment).
+ */
+export interface SymbolismScope {
+  readonly bodyKeys?: readonly string[];
+  readonly signIndices?: readonly number[];
+}
+
+/**
+ * Loose on purpose: a real `Placement` (tools/corpus-gen/lib/placements.mjs, plain JS) has other
+ * category-specific fields (`house`, `state`, `aspect`, ...) this function never reads — the index
+ * signature lets a real placement object pass through without TS's excess-property check
+ * complaining about fields that are simply irrelevant here, rather than this function needing to
+ * know every placement category's full shape.
+ */
+export interface PlacementLike {
+  readonly category: string;
+  readonly body?: string;
+  readonly sign?: number;
+  readonly bodyA?: string;
+  readonly bodyB?: string;
+  readonly [key: string]: unknown;
+}
+
+/** #379: restricts `buildSymbolismContext` to one placement's own relevant bodies/signs. */
+export function symbolismScopeFor(placement: PlacementLike): SymbolismScope {
+  switch (placement.category) {
+    case 'planet-in-sign':
+      return {
+        bodyKeys: placement.body !== undefined ? [placement.body] : [],
+        signIndices: placement.sign !== undefined ? [placement.sign] : [],
+      };
+    case 'planet-in-house':
+    case 'dignity-state':
+      return { bodyKeys: placement.body !== undefined ? [placement.body] : [] };
+    case 'sign-on-cusp':
+      return { signIndices: placement.sign !== undefined ? [placement.sign] : [] };
+    case 'aspect-pair':
+    case 'synastry-aspect':
+    case 'transit-aspect':
+      return { bodyKeys: [placement.bodyA, placement.bodyB].filter((key): key is string => key !== undefined) };
+    default:
+      return {};
+  }
+}
+
+/**
+ * Assembles the symbolism reference as plain text, ready to be injected
+ * into #56's generation prompt, in the given locale's own tables and
+ * section headers — a Dutch generation request should read as Dutch
  * throughout, not English scaffolding around Dutch fragments. Verifies its
  * own coverage at build time — a `BODIES` entry added without a matching
  * symbolism sheet, or a symbolism sheet for a body that doesn't exist,
- * throws rather than silently shipping an incomplete prompt.
+ * throws rather than silently shipping an incomplete prompt. That
+ * validation always runs against the *full* tables, before any scoping, so
+ * a caller passing a narrow `scope` still catches a genuinely out-of-sync
+ * sheet rather than silently hiding it behind an unrelated filter.
+ *
+ * `scope` omitted entirely (not even `{}`) means every planet and sign, the
+ * original #54/#56 behavior still used by `generate-sample.mjs`'s own
+ * no-placement demo mode and this file's own tests. Passing a `scope` (even
+ * `{}`, from a placement category with no relevant body or sign at all)
+ * restricts the context to just that — #379: those two tables otherwise
+ * repeat, for all 10 planets and 12 signs, every single request, the
+ * handful that are actually relevant to the one placement a given request
+ * is for (already named, with their own core gloss, in that same request's
+ * `TARGET PLACEMENT` line — see `buildUserContent`), at measured cost of
+ * roughly 45% of the whole prompt.
  */
-export function buildSymbolismContext(locale: Locale = 'en'): string {
+export function buildSymbolismContext(locale: Locale = 'en', scope?: SymbolismScope): string {
   const planetTable = locale === 'nl' ? PLANET_SYMBOLISM_NL : PLANET_SYMBOLISM;
   const signTable = locale === 'nl' ? SIGN_SYMBOLISM_NL : SIGN_SYMBOLISM;
   const voiceGuide = locale === 'nl' ? VOICE_GUIDE_NL : VOICE_GUIDE;
@@ -345,23 +411,24 @@ export function buildSymbolismContext(locale: Locale = 'en'): string {
     );
   }
 
-  const planetLines = planetTable.map((entry) => {
+  const scopedPlanetTable =
+    scope === undefined ? planetTable : planetTable.filter((entry) => scope.bodyKeys?.includes(entry.key));
+  const scopedSignTable =
+    scope === undefined ? signTable : signTable.filter((entry) => scope.signIndices?.includes(entry.index));
+
+  const planetLines = scopedPlanetTable.map((entry) => {
     const name = BODY_NAMES[locale][entry.key] ?? BODIES.find((body) => body.key === entry.key)?.name ?? entry.key;
     return `- ${name}: ${entry.core} (${entry.keywords.join(', ')})`;
   });
-  const signLines = signTable.map((entry) => {
+  const signLines = scopedSignTable.map((entry) => {
     const name = SIGN_NAMES[locale][entry.index] ?? SIGNS[entry.index]?.name ?? String(entry.index);
     return `- ${name}: ${entry.core} (${entry.keywords.join(', ')})`;
   });
 
   const headers = SECTION_HEADERS[locale];
   return [
-    headers.planet,
-    ...planetLines,
-    '',
-    headers.sign,
-    ...signLines,
-    '',
+    ...(planetLines.length > 0 ? [headers.planet, ...planetLines, ''] : []),
+    ...(signLines.length > 0 ? [headers.sign, ...signLines, ''] : []),
     headers.voice,
     ...voiceGuide.map((rule) => `- ${rule}`),
   ].join('\n');
