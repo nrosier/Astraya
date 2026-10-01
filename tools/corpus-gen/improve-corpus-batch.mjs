@@ -16,11 +16,14 @@
  * trail for a run; nothing is held onto needing a second pass once a record has been decided.
  *
  * Also updates tools/corpus-gen/eval-tracking/<locale>.json (lib/eval-tracking.mjs), the state
- * evaluate-corpus-batch.mjs reads to decide what still needs checking: UNCHANGED is treated as
- * equally resolved as a clean verdict (the second model looked at the complaint and still
- * doesn't see a problem, same as not finding one in the first place) and marks the entry clean.
- * IMPROVED increments its evaluationCount instead — the entry was actually rewritten, so it is
- * still worth a fresh look next time, up to evaluate-corpus-batch.mjs's own `--evaluation-limit`.
+ * evaluate-corpus-batch.mjs reads to decide what still needs checking: every verdict here —
+ * IMPROVED or UNCHANGED — consumes one feedback-loop iteration (`evaluationCount += 1`). An
+ * UNCHANGED verdict is Gemini declining ChatGPT's complaint, not confirming the entry clean, so
+ * it does *not* mark the entry clean — the two models disagreeing is exactly the "not clean"
+ * outcome #63's acceptance criteria expects a small residual percentage of once the loop
+ * exhausts (`--evaluation-limit`, default 2), not something resolved on the first disagreement.
+ * `clean` is only ever set by evaluate-corpus-batch.mjs's own judge actually agreeing an entry is
+ * correct, never by this script declining a rewrite.
  *
  * Prints an estimated total cost on completion, from each result's own token usage
  * (`usageMetadata`, including `thoughtsTokenCount` — Gemini bills thinking tokens as output,
@@ -179,29 +182,27 @@ for (const { record, corpusIndex } of requests) {
   if (verdict === 'IMPROVED') {
     improved += 1;
     const entry = corpus[corpusIndex];
-    corpus[corpusIndex] = { ...entry, text, tags: [...entry.tags, IMPROVED_TAG] };
-    upsertTracking(tracking, {
-      key: record.key,
-      persona: record.persona,
-      locale,
-      clean: false,
-      evaluationCount: (existingTracking?.evaluationCount ?? 0) + 1,
-      updatedAt: now,
-    });
+    // An entry can be rewritten more than once across evaluation-loop rounds (#381's
+    // --evaluation-limit) — `includes` guards against the tag piling up a duplicate per round.
+    const tags = entry.tags.includes(IMPROVED_TAG) ? entry.tags : [...entry.tags, IMPROVED_TAG];
+    corpus[corpusIndex] = { ...entry, text, tags };
   } else {
     unchanged += 1;
-    // UNCHANGED means the reviewing model looked at the complaint and still doesn't see a real
-    // problem — treated the same as evaluate-corpus-batch.mjs's own `correct: true` verdict, not
-    // as "still flagged, try again later."
-    upsertTracking(tracking, {
-      key: record.key,
-      persona: record.persona,
-      locale,
-      clean: true,
-      evaluationCount: existingTracking?.evaluationCount ?? 0,
-      updatedAt: now,
-    });
   }
+  // Either verdict consumes one feedback-loop iteration: an UNCHANGED verdict is Gemini declining
+  // ChatGPT's complaint, not confirming the entry clean — the two models disagreeing is exactly
+  // the "not clean" case #63's acceptance criteria expects a small residual percentage of after
+  // the loop exhausts, not something to wave through as resolved on the first disagreement.
+  // `clean` is only ever set by evaluate-corpus-batch.mjs's own judge actually agreeing the entry
+  // is correct — never by a rewrite being declined here.
+  upsertTracking(tracking, {
+    key: record.key,
+    persona: record.persona,
+    locale,
+    clean: false,
+    evaluationCount: (existingTracking?.evaluationCount ?? 0) + 1,
+    updatedAt: now,
+  });
   removeFeedback(feedback, record);
 }
 

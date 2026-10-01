@@ -12,14 +12,14 @@
  * improve-corpus-batch.mjs for the half that acts on this file.
  *
  * Tracks per-entry evaluation-loop state in tools/corpus-gen/eval-tracking/<locale>.json
- * (lib/eval-tracking.mjs): an entry judged clean here, or left UNCHANGED by
- * improve-corpus-batch.mjs, is skipped on every future run — re-checking something already
- * judged fine just re-pays for the same judgment. An entry rewritten (IMPROVED) by
- * improve-corpus-batch.mjs stays eligible until it has been rewritten `--evaluation-limit`
- * times (default 2), then it is left alone even if still flagged, so the loop can't run forever
- * on an entry the two models keep disagreeing about. `--force` bypasses this tracking entirely
- * and re-evaluates everything selected by `--locale`/`--persona`/`--limit`, same as before this
- * tracking existed.
+ * (lib/eval-tracking.mjs): an entry judged clean *here* is skipped on every future run —
+ * re-checking something this script's own judge already found fine just re-pays for the same
+ * judgment. A flagged entry stays eligible for re-checking through improve-corpus-batch.mjs's
+ * review (whether that review rewrites it or declines to) until it has gone through
+ * `--evaluation-limit` rounds (default 2) without this script ever agreeing it's clean — then
+ * it is left alone, flagged or not, so the loop can't run forever on an entry the two models
+ * keep disagreeing about. `--force` bypasses this tracking entirely and re-evaluates everything
+ * selected by `--locale`/`--persona`/`--limit`, same as before this tracking existed.
  *
  * Prints an estimated total cost on completion, from each result's own token usage and
  * lib/cost-estimate.mjs's batch-tier pricing table — an estimate for visibility, not a billing

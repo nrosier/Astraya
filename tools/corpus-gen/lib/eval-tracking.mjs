@@ -6,17 +6,16 @@
  * between runs.
  *
  * Two independent reasons an entry stops being re-evaluated:
- * - `clean: true` — either evaluate-corpus-batch.mjs's own judge said this entry is correct, or
- *   improve-corpus-batch.mjs's judge reviewed a flagged entry and decided no rewrite was
- *   warranted (`UNCHANGED`) — the latter is treated as equally resolved, not as "still flagged."
- * - `evaluationCount >= limit` — the entry has been rewritten (`IMPROVED`) as many times as the
- *   feedback loop is allowed to run (default 2, see evaluate-corpus-batch.mjs's
- *   `--evaluation-limit`), so it stops being re-queued even though it was never judged clean.
- *
- * `evaluationCount` only increments on an actual rewrite (`IMPROVED`), not on every evaluation —
- * a flagged-then-left-unchanged entry becomes `clean` instead, which already stops
- * re-evaluation on its own; counting that path too would double up two independent stop
- * conditions for no benefit.
+ * - `clean: true` — evaluate-corpus-batch.mjs's own judge said this entry is correct. Set *only*
+ *   there, never by improve-corpus-batch.mjs: a `verdict: 'UNCHANGED'` there means Gemini
+ *   declined ChatGPT's complaint, not that the entry is confirmed fine — the two models
+ *   disagreeing is a real "not clean" outcome, not a resolution, and #63's acceptance criteria
+ *   treats it as exactly that (a small accepted residual, once the loop below exhausts).
+ * - `evaluationCount >= limit` — the entry has gone through this many rounds of
+ *   improve-corpus-batch.mjs (`IMPROVED` *or* `UNCHANGED` — either verdict consumes one
+ *   iteration) without ever reaching `clean`, as many times as the feedback loop is allowed to
+ *   run (default 2, see evaluate-corpus-batch.mjs's `--evaluation-limit`), so it stops being
+ *   re-queued even though the two models never agreed.
  */
 import { readFile, writeFile } from 'node:fs/promises';
 
