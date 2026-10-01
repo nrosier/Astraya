@@ -15,12 +15,24 @@
  * file once processed — reasoning is printed to the console as it happens, which is the audit
  * trail for a run; nothing is held onto needing a second pass once a record has been decided.
  *
+ * Also updates tools/corpus-gen/eval-tracking/<locale>.json (lib/eval-tracking.mjs), the state
+ * evaluate-corpus-batch.mjs reads to decide what still needs checking: UNCHANGED is treated as
+ * equally resolved as a clean verdict (the second model looked at the complaint and still
+ * doesn't see a problem, same as not finding one in the first place) and marks the entry clean.
+ * IMPROVED increments its evaluationCount instead — the entry was actually rewritten, so it is
+ * still worth a fresh look next time, up to evaluate-corpus-batch.mjs's own `--evaluation-limit`.
+ *
+ * Prints an estimated total cost on completion, from each result's own token usage
+ * (`usageMetadata`, including `thoughtsTokenCount` — Gemini bills thinking tokens as output,
+ * confirmed against a real response) and lib/cost-estimate.mjs's batch-tier pricing table — an
+ * estimate for visibility, not a billing record.
+ *
  * Always batch mode (Gemini), reusing lib/gemini-batch.mjs — the same client
  * generate-batch.mjs's own --batch and language-quality-batch.mjs's --batch already use.
  *
  *   npx tsx --env-file=.env.local tools/corpus-gen/improve-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>]
  */
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildSystemInstruction } from './lib/prompt.mjs';
@@ -30,6 +42,8 @@ import { buildSymbolismContext, symbolismScopeFor, factsDescription } from './li
 import { parsePlacementKey } from '../../src/interpretation/schema.ts';
 import { writeCorpus } from './lib/write-corpus.mjs';
 import { readFeedback, writeFeedback, removeFeedback } from './lib/corpus-feedback.mjs';
+import { readTracking, writeTracking, findTracking, upsertTracking } from './lib/eval-tracking.mjs';
+import { estimateBatchCostCents, formatCents } from './lib/cost-estimate.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const IMPROVED_TAG = 'improved-via-feedback-loop';
@@ -62,6 +76,9 @@ if (feedback.length === 0) {
 const corpusPath = join(root, 'src', 'interpretation', 'corpus', `${locale}.json`);
 const corpus = JSON.parse(await readFile(corpusPath, 'utf8'));
 const indexByIdentity = new Map(corpus.map((entry, i) => [`${entry.key}\u0000${entry.persona ?? 'neutral'}`, i]));
+
+const trackingPath = join(root, 'tools', 'corpus-gen', 'eval-tracking', `${locale}.json`);
+const tracking = await readTracking(trackingPath);
 
 const personas = JSON.parse(await readFile(join(root, 'tools', 'corpus-gen', 'personas.json'), 'utf8')).personas;
 
@@ -140,6 +157,8 @@ const byKey = new Map(results.map((r) => [r.key, r]));
 let improved = 0;
 let unchanged = 0;
 let failed = 0;
+let totalCostCents = 0;
+let costUnknown = false;
 for (const { record, corpusIndex } of requests) {
   const result = byKey.get(record.key);
   if (result === undefined || result.error) {
@@ -149,23 +168,56 @@ for (const { record, corpusIndex } of requests) {
   }
   const { verdict, reasoning, text } = result.result;
   console.log(`[${locale}] ${verdict} ${record.key}: ${reasoning}`);
+  // Gemini bills thinking tokens as output, confirmed against a real response's own usageMetadata
+  // (totalTokenCount = promptTokenCount + candidatesTokenCount + thoughtsTokenCount).
+  const outputTokens = (result.usage?.candidatesTokenCount ?? 0) + (result.usage?.thoughtsTokenCount ?? 0);
+  const costCents = estimateBatchCostCents(model, result.usage?.promptTokenCount, outputTokens);
+  if (costCents === undefined) costUnknown = true;
+  else totalCostCents += costCents;
+  const existingTracking = findTracking(tracking, record);
+  const now = new Date().toISOString();
   if (verdict === 'IMPROVED') {
     improved += 1;
     const entry = corpus[corpusIndex];
     corpus[corpusIndex] = { ...entry, text, tags: [...entry.tags, IMPROVED_TAG] };
+    upsertTracking(tracking, {
+      key: record.key,
+      persona: record.persona,
+      locale,
+      clean: false,
+      evaluationCount: (existingTracking?.evaluationCount ?? 0) + 1,
+      updatedAt: now,
+    });
   } else {
     unchanged += 1;
+    // UNCHANGED means the reviewing model looked at the complaint and still doesn't see a real
+    // problem — treated the same as evaluate-corpus-batch.mjs's own `correct: true` verdict, not
+    // as "still flagged, try again later."
+    upsertTracking(tracking, {
+      key: record.key,
+      persona: record.persona,
+      locale,
+      clean: true,
+      evaluationCount: existingTracking?.evaluationCount ?? 0,
+      updatedAt: now,
+    });
   }
   removeFeedback(feedback, record);
 }
 
 await writeCorpus(corpusPath, corpus);
 await writeFeedback(feedbackPath, feedback);
+await mkdir(dirname(trackingPath), { recursive: true });
+await writeTracking(trackingPath, tracking);
 
 console.log(
   `\n[${locale}] improvement pass complete: ${String(requests.length)} reviewed — ` +
     `${String(improved)} improved, ${String(unchanged)} left unchanged, ${String(failed)} failed, ${String(skipped.length)} skipped`,
 );
 console.log(
+  `[${locale}] estimated cost: ${formatCents(totalCostCents)}${costUnknown ? ` (+ unknown — no batch pricing on file for model ${String(model)})` : ''}`,
+);
+console.log(
   `[${locale}] ${String(feedback.length)} record${feedback.length === 1 ? '' : 's'} remaining in ${feedbackPath}`,
 );
+console.log(`[${locale}] tracking written to ${trackingPath}`);

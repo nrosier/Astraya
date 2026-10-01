@@ -11,11 +11,25 @@
  * — this script is read-only against src/interpretation/corpus/<locale>.json; see
  * improve-corpus-batch.mjs for the half that acts on this file.
  *
+ * Tracks per-entry evaluation-loop state in tools/corpus-gen/eval-tracking/<locale>.json
+ * (lib/eval-tracking.mjs): an entry judged clean here, or left UNCHANGED by
+ * improve-corpus-batch.mjs, is skipped on every future run — re-checking something already
+ * judged fine just re-pays for the same judgment. An entry rewritten (IMPROVED) by
+ * improve-corpus-batch.mjs stays eligible until it has been rewritten `--evaluation-limit`
+ * times (default 2), then it is left alone even if still flagged, so the loop can't run forever
+ * on an entry the two models keep disagreeing about. `--force` bypasses this tracking entirely
+ * and re-evaluates everything selected by `--locale`/`--persona`/`--limit`, same as before this
+ * tracking existed.
+ *
+ * Prints an estimated total cost on completion, from each result's own token usage and
+ * lib/cost-estimate.mjs's batch-tier pricing table — an estimate for visibility, not a billing
+ * record.
+ *
  * Always batch mode (OpenAI only) — there is no per-item synchronous path here the way
  * generate-batch.mjs's --batch is one of two modes, since the whole point of this feature is to
  * run the ChatGPT side cheaply at corpus scale.
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>] [--evaluation-limit=N] [--force]
  */
 import { readFile, mkdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -25,6 +39,14 @@ import { buildBatchRequest, submitBatch, pollBatch, extractBatchResults } from '
 import { factsDescription } from './lib/placements.mjs';
 import { parsePlacementKey } from '../../src/interpretation/schema.ts';
 import { readFeedback, writeFeedback, upsertFeedback } from './lib/corpus-feedback.mjs';
+import {
+  readTracking,
+  writeTracking,
+  findTracking,
+  upsertTracking,
+  isEvaluationExhausted,
+} from './lib/eval-tracking.mjs';
+import { estimateBatchCostCents, formatCents } from './lib/cost-estimate.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -35,7 +57,7 @@ function flag(name, fallback) {
 }
 if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
   console.log(
-    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>]',
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>] [--evaluation-limit=N] [--force]',
   );
   process.exit(0);
 }
@@ -45,21 +67,31 @@ if (!locale) throw new Error('--locale=<locale> is required');
 const limit = Number(flag('limit', Infinity));
 const model = flag('model', 'gpt-6-luna');
 const personaFilter = flag('persona'); // omit to check every persona, including neutral
+const evaluationLimit = Number(flag('evaluation-limit', 2));
+const force = rawArgs.includes('--force');
 
 const corpusPath = join(root, 'src', 'interpretation', 'corpus', `${locale}.json`);
 const corpus = JSON.parse(await readFile(corpusPath, 'utf8'));
 
-const candidates = corpus
+const trackingPath = join(root, 'tools', 'corpus-gen', 'eval-tracking', `${locale}.json`);
+const tracking = await readTracking(trackingPath);
+
+const selected = corpus
   .filter((entry) => personaFilter === undefined || (entry.persona ?? 'neutral') === personaFilter)
   .map((entry) => {
     const placement = parsePlacementKey(entry.key);
     return placement === undefined ? undefined : { entry, placement };
   })
-  .filter((item) => item !== undefined)
-  .slice(0, Number.isFinite(limit) ? limit : undefined);
+  .filter((item) => item !== undefined);
+
+const eligible = force
+  ? selected
+  : selected.filter((item) => !isEvaluationExhausted(findTracking(tracking, item.entry), evaluationLimit));
+const alreadyResolved = selected.length - eligible.length;
+const candidates = eligible.slice(0, Number.isFinite(limit) ? limit : undefined);
 
 console.log(
-  `[${locale}] model: ${model} — ${String(candidates.length)} entries to evaluate${personaFilter ? ` (persona=${personaFilter})` : ''}`,
+  `[${locale}] model: ${model} — ${String(candidates.length)} entries to evaluate${personaFilter ? ` (persona=${personaFilter})` : ''}${alreadyResolved > 0 ? ` (${String(alreadyResolved)} already resolved, skipped)` : ''}`,
 );
 if (candidates.length === 0) {
   console.log(`[${locale}] nothing to do.`);
@@ -113,6 +145,8 @@ const feedback = await readFeedback(feedbackPath);
 let flagged = 0;
 let clean = 0;
 let failed = 0;
+let totalCostCents = 0;
+let costUnknown = false;
 candidates.forEach(({ entry }, index) => {
   const result = byCustomId.get(String(index));
   if (result === undefined) {
@@ -125,6 +159,11 @@ candidates.forEach(({ entry }, index) => {
     console.error(`[${locale}] FAILED ${entry.key}: ${result.error.message}`);
     return;
   }
+  const costCents = estimateBatchCostCents(model, result.usage?.prompt_tokens, result.usage?.completion_tokens);
+  if (costCents === undefined) costUnknown = true;
+  else totalCostCents += costCents;
+  const existingTracking = findTracking(tracking, entry);
+  const now = new Date().toISOString();
   if (result.result.correct === false) {
     flagged += 1;
     upsertFeedback(feedback, {
@@ -133,18 +172,40 @@ candidates.forEach(({ entry }, index) => {
       locale: entry.locale,
       originalText: entry.text,
       issues: result.result.issues,
-      flaggedAt: new Date().toISOString(),
+      flaggedAt: now,
+    });
+    upsertTracking(tracking, {
+      key: entry.key,
+      persona: entry.persona,
+      locale: entry.locale,
+      clean: false,
+      evaluationCount: existingTracking?.evaluationCount ?? 0,
+      updatedAt: now,
     });
     console.log(`[${locale}] FLAGGED ${entry.key}: ${result.result.issues.join(' / ')}`);
   } else {
     clean += 1;
+    upsertTracking(tracking, {
+      key: entry.key,
+      persona: entry.persona,
+      locale: entry.locale,
+      clean: true,
+      evaluationCount: existingTracking?.evaluationCount ?? 0,
+      updatedAt: now,
+    });
   }
 });
 
 await mkdir(dirname(feedbackPath), { recursive: true });
 await writeFeedback(feedbackPath, feedback);
+await mkdir(dirname(trackingPath), { recursive: true });
+await writeTracking(trackingPath, tracking);
 
 console.log(
   `\n[${locale}] evaluation complete: ${String(candidates.length)} checked — ${String(clean)} clean, ${String(flagged)} flagged, ${String(failed)} failed`,
 );
+console.log(
+  `[${locale}] estimated cost: ${formatCents(totalCostCents)}${costUnknown ? ` (+ unknown — no batch pricing on file for model ${model})` : ''}`,
+);
 console.log(`[${locale}] feedback written to ${feedbackPath}`);
+console.log(`[${locale}] tracking written to ${trackingPath}`);

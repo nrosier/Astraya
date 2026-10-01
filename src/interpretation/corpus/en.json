@@ -26,9 +26,9 @@
   {
     "key": "planet-in-sign:sun:2",
     "locale": "en",
-    "text": "Your vitality centers on gathering perspectives and building a life defined by constant mental adaptation rather than fixed conclusions. You process boundaries by talking through them, using rapid information exchange to maintain your autonomy and keep situations open-ended. When faced with deep dependence or forced finality, you risk scattering your focus or retreating into endless intellectual loops to avoid settling on a single path.",
+    "text": "Your vitality centers on gathering diverse perspectives and building a life defined by constant mental adaptation rather than fixed conclusions. You process boundaries by talking through them, using rapid information exchange to maintain your autonomy and keep situations open-ended. When faced with absolute finality or rigid structures, you risk scattering your focus across too many simultaneous directions to avoid settling on a single path.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50,9 +50,9 @@
   {
     "key": "planet-in-sign:sun:4",
     "locale": "en",
-    "text": "Your vitality centers on building a life where personal expression leaves a distinct, recognizable mark on the world. This drive seeks validation through outward impact, requiring your efforts to be witnessed and acknowledged by others to feel fully real. When external conditions withhold recognition or demand quiet compliance, this impulse risks tipping into a rigid demand for center stage, converting natural generosity into a fragile dependence on constant applause.",
+    "text": "Your vitality centers on building a life where personal expression leaves a distinct, recognizable mark on the world. This drive seeks validation through outward impact, requiring your efforts to be witnessed and acknowledged by others to feel fully real. When external conditions withhold recognition or demand quiet compliance, this impulse risks tipping into a stubborn insistence on overriding context, converting natural generosity into friction with any environment that fails to reflect your contributions.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -62,9 +62,9 @@
   {
     "key": "planet-in-sign:sun:5",
     "locale": "en",
-    "text": "Your core purpose centers on refining systems and rendering practical use through careful attention to detail. You establish your independence by mastering functional tasks and solving concrete problems independently. When faced with unpredictable external limits or messy dependencies, this drive frequently hardens into an insistence on absolute control over your environment.",
+    "text": "Your core purpose centers on refining systems and rendering practical use through careful attention to detail. You establish your independence by mastering functional tasks and solving concrete problems autonomously. When faced with unpredictable external limits or messy dependencies, this drive frequently shifts into an over-involvement in minor corrections to restore predictability.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -122,9 +122,9 @@
   {
     "key": "planet-in-sign:sun:10",
     "locale": "en",
-    "text": "Your core purpose centers on collective advancement and objective ideals, building an identity through radical independence and intellectual frameworks rather than personal attachments. You manage boundaries by maintaining a cool distance, ensuring your autonomy remains intact against external demands for emotional conformity. The shadow of this approach appears when collective ideals clash with individual realities, turning a healthy detachment into emotional isolation from the very people you aim to serve.",
+    "text": "Your core purpose centers on collective advancement and objective ideals, building an identity through radical independence and intellectual frameworks rather than personal attachments. You manage boundaries by maintaining a cool perspective, ensuring your autonomy remains intact against external demands for conformity. The shadow of this approach appears when abstract blueprints clash with messy human realities, turning a functional impartiality into an ideological rigidity that overlooks the very people you aim to serve.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -134,9 +134,9 @@
   {
     "key": "planet-in-sign:sun:11",
     "locale": "en",
-    "text": "Your core purpose centers on absorbing the moods and currents of the surrounding world, shaping a fluid identity that dissolves hard distinctions between self and other. You establish your sense of self through porous openness, adapting effortlessly to whatever environment surrounds you. This porousness creates tension when external structures demand rigid definitions, leaving you vulnerable to losing your footing entirely within shared spaces.",
+    "text": "Your core purpose centers on building an identity through profound receptivity, shaping a self that responds directly to the unspoken currents of the surrounding world. You maintain your direction by absorbing ambient moods, letting your boundaries remain flexible rather than fixed. This adaptive openness creates functional friction when external environments demand rigid categorizations, as rigid structures struggle to account for your shifting perspective.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -278,9 +278,9 @@
   {
     "key": "planet-in-sign:moon:11",
     "locale": "en",
-    "text": "You process the world through a porous openness, absorbing the unspoken moods and currents of any environment before you consciously register them. This deep capacity for unspoken connection relies on fluid edges to maintain safety, seeking refuge in quiet spaces rather than direct confrontation. When external demands require rigid definitions or hard boundaries, this receptive stance often blurs your sense of self, turning the simple act of differentiation into an exhausting exercise in holding back the tide.",
+    "text": "You seek a deep, wordless connection to your surroundings, relying on fluid emotional boundaries to feel secure in your internal world. This receptive orientation manages external demands by dissolving hard lines, letting feelings merge with the immediate environment rather than resisting them. When situations require sharp definitions or immediate self-assertion, that porous default struggles to maintain its own center, creating tension between total surrender to the external atmosphere and the need for distinct emotional footing.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -482,9 +482,9 @@
   {
     "key": "planet-in-sign:venus:4",
     "locale": "en",
-    "text": "You approach connection through grand gestures and a deep desire to be genuinely witnessed in what you cherish. Your relational style relies on mutual admiration and vibrant generosity to build trust and shared meaning. When attention feels scarce or unreciprocated, you may retreat into quiet pride or demand constant reassurance to validate your worth.",
+    "text": "You approach connection through generous warmth and an inherent drive to be vividly witnessed in what you value. Your relational style relies on mutual admiration and expressive devotion to build shared meaning. When appreciation falters or reciprocity runs thin, a rigid expectation of uncritical praise can create distance instead of closeness.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -506,9 +506,9 @@
   {
     "key": "planet-in-sign:venus:6",
     "locale": "en",
-    "text": "You seek connection through mutual polish, shared aesthetic symmetry, and a quiet insistence on absolute fairness in every exchange. This drive operates by carefully weighing perspectives to keep the peace, smoothing over friction before it can fully form. When forced to choose without consensus or confronted by raw discord, you risk losing your own footing entirely in the frantic pursuit of keeping everyone else pleased.",
+    "text": "You seek connection through mutual polish, shared aesthetic symmetry, and a quiet insistence on absolute fairness in every exchange. This drive operates by carefully weighing perspectives to keep the peace, smoothing over friction before it can fully form. When confronted by unresolvable discord or forced to act without consensus, you risk stalling entirely while attempting to satisfy opposing demands at once.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
