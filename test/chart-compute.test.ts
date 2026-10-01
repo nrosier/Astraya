@@ -89,6 +89,16 @@ describe('computeChartData (#44)', () => {
     expect(keys).not.toContain('meanNode');
   });
 
+  it('switches to interpolated Lilith when asked (#380)', async () => {
+    const engine = await getEngine();
+    const data = await computeChartData(MOMENT, engine, { lilithVariant: 'interpolated' });
+    const keys = data.positions.map((position) => bodyById(position.body)?.key);
+
+    expect(keys).toContain('interpolatedLilith');
+    expect(keys).not.toContain('meanLilith');
+    expect(keys).not.toContain('osculatingLilith');
+  });
+
   it('excludes Chiron, Lilith and the Nodes from aspects by default, though they are still positioned (#52)', async () => {
     const engine = await getEngine();
     const data = await computeChartData(MOMENT, engine);

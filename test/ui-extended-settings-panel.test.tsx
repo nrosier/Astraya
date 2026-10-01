@@ -165,4 +165,33 @@ describe('ExtendedSettingsPanel', () => {
     });
     container.remove();
   });
+
+  it('selects the Interpolated Lilith radio and redraws with it set (#380)', async () => {
+    const onRedraw = vi.fn();
+    const { container, root } = await mount(fakeProvider(), onRedraw);
+
+    const interpolatedRadio = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="radio"]')).find(
+      (radio) =>
+        radio.name === 'extended-settings-lilith' &&
+        (radio.closest('label')?.textContent ?? '').includes('Interpolated'),
+    );
+    expect(interpolatedRadio).not.toBeUndefined();
+    act(() => {
+      interpolatedRadio?.click();
+    });
+
+    const redrawButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Redraw',
+    );
+    act(() => {
+      redrawButton?.click();
+    });
+
+    expect(onRedraw).toHaveBeenCalledWith({ ...DEFAULT_EXTENDED_SETTINGS, lilithVariant: 'interpolated' });
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

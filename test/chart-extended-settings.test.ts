@@ -44,6 +44,11 @@ describe('toChartCalculationOptions', () => {
     expect(options.nodeVariant).toBe('true');
   });
 
+  it('passes the interpolated Lilith variant through too (#380)', () => {
+    const settings = withOverrides({ lilithVariant: 'interpolated' });
+    expect(toChartCalculationOptions(settings).lilithVariant).toBe('interpolated');
+  });
+
   it('builds an orbConfig from DEFAULT_ORB_CONFIG with only scalePercent/enabledMinorAspects overridden', () => {
     const settings = withOverrides({ orbScalePercent: 50, enabledMinorAspects: ['quincunx'] });
     const options = toChartCalculationOptions(settings);

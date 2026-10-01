@@ -255,6 +255,17 @@ export function ExtendedSettingsPanel({
               }}
             />{' '}
             {t.true}
+          </label>{' '}
+          <label>
+            <input
+              type="radio"
+              name="extended-settings-lilith"
+              checked={draft.lilithVariant === 'interpolated'}
+              onChange={() => {
+                patch({ lilithVariant: 'interpolated' });
+              }}
+            />{' '}
+            {t.interpolated}
           </label>
         </div>
         <div role="radiogroup" aria-label={t.lunarNodeModelAriaLabel}>

@@ -48,7 +48,7 @@ export interface ChartCalculationOptions {
   readonly zodiac?: Zodiac;
   readonly orbConfig?: OrbConfig;
   /** Which Lilith model `data.positions` carries; the other two are dropped. Default 'mean'. */
-  readonly lilithVariant?: 'mean' | 'true';
+  readonly lilithVariant?: 'mean' | 'true' | 'interpolated';
   /** Which lunar-node model `data.positions` carries; the other is dropped. Default 'mean'. */
   readonly nodeVariant?: 'mean' | 'true';
   /**
@@ -113,7 +113,12 @@ export async function computeChartDataAtJd(
   // BODIES always carries every Lilith and Node model at once; collapse each
   // down to the one the caller asked for (default 'mean' for both) rather
   // than showing all three Liliths and both Nodes simultaneously.
-  const lilithKey = options.lilithVariant === 'true' ? 'osculatingLilith' : 'meanLilith';
+  const lilithKey =
+    options.lilithVariant === 'true'
+      ? 'osculatingLilith'
+      : options.lilithVariant === 'interpolated'
+        ? 'interpolatedLilith'
+        : 'meanLilith';
   const nodeKey = options.nodeVariant === 'true' ? 'trueNode' : 'meanNode';
   const bodies = BODIES.filter((body) => {
     if (body.category === 'lilith') return body.key === lilithKey;

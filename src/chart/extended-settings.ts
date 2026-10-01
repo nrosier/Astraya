@@ -23,7 +23,7 @@ export interface ExtendedSettings {
   readonly orbScalePercent: number;
   /** Minor-aspect keys to consider; empty means every minor aspect is off. */
   readonly enabledMinorAspects: readonly string[];
-  readonly lilithVariant: 'mean' | 'true';
+  readonly lilithVariant: 'mean' | 'true' | 'interpolated';
   readonly nodeVariant: 'mean' | 'true';
   readonly fortuneVisible: boolean;
   readonly vertexVisible: boolean;
