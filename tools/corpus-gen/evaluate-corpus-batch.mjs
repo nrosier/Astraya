@@ -76,7 +76,9 @@ const requests = candidates.map(({ entry, placement }, index) => {
     model,
     systemInstruction,
     userContent,
-    temperature: 0,
+    // No temperature override: gpt-6-luna (this script's own default) rejects anything but its
+    // own default (1) — see openai-batch.mjs's buildBatchRequest doc comment, found via a real
+    // batch job's error file, not guessed.
     responseSchema: EVALUATION_RESPONSE_SCHEMA,
     schemaName: 'evaluation',
   });

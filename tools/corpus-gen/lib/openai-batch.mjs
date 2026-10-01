@@ -62,7 +62,13 @@ export function buildBatchRequest({
     url: '/v1/chat/completions',
     body: {
       model,
-      temperature,
+      // Omitted entirely when undefined, not sent as 0 — confirmed against a real batch job
+      // (#381): gpt-6-luna (this script's own default model) rejects any explicit temperature
+      // other than its own default (1) with a 400, "Only the default (1) value is supported."
+      // Newer/reasoning-tier models commonly drop temperature control; older ones (gpt-4o-mini,
+      // for instance) still take it, so this stays a caller-supplied option, just never
+      // defaulted to a value that silently breaks the models that don't accept it.
+      ...(temperature === undefined ? {} : { temperature }),
       messages: [
         { role: 'system', content: systemInstruction },
         { role: 'user', content: userContent },
@@ -120,26 +126,8 @@ export async function pollBatch({ apiKey, baseUrl, batchId, intervalMs = 15000, 
   }
 }
 
-/**
- * Normalizes a finished batch job's results into one `{ customId, result, usage }` or
- * `{ customId, error }` per request, keyed by each request's own `custom_id` — the API's own
- * docs say output line order is not guaranteed to match input order.
- */
-export async function extractBatchResults({ apiKey, baseUrl, batch }) {
-  if (batch.status !== 'completed') {
-    throw new Error(
-      `batch job ended in status ${String(batch.status)}, not completed: ${JSON.stringify(batch.errors ?? {}).slice(0, 500)}`,
-    );
-  }
-  if (batch.output_file_id === null || batch.output_file_id === undefined) {
-    return []; // every request errored — see error_file_id, surfaced by the caller if it checks
-  }
-  const response = await fetchWithRetry(
-    `${baseUrl || DEFAULT_BASE_URL}/v1/files/${batch.output_file_id}/content`,
-    { headers: { Authorization: `Bearer ${apiKey}` } },
-    3,
-  );
-  const text = await response.text();
+/** Parses one JSONL results file's lines (output or error — both use the same per-line shape, confirmed against a real failed batch: a per-request error surfaces as `response.status_code` != 200 with the API's own error body, not as the line's own top-level `error` field, which OpenAI reserves for a request that couldn't even be attempted). */
+function parseResultLines(text) {
   return text
     .split('\n')
     .filter((line) => line.trim() !== '')
@@ -163,4 +151,37 @@ export async function extractBatchResults({ apiKey, baseUrl, batch }) {
         return { customId, error: parseError };
       }
     });
+}
+
+async function downloadFile({ apiKey, baseUrl, fileId }) {
+  const response = await fetchWithRetry(
+    `${baseUrl || DEFAULT_BASE_URL}/v1/files/${fileId}/content`,
+    { headers: { Authorization: `Bearer ${apiKey}` } },
+    3,
+  );
+  return response.text();
+}
+
+/**
+ * Normalizes a finished batch job's results into one `{ customId, result, usage }` or
+ * `{ customId, error }` per request, keyed by each request's own `custom_id` — the API's own
+ * docs say output line order is not guaranteed to match input order. Reads both
+ * `output_file_id` (succeeded requests) and `error_file_id` (failed ones — e.g. every request
+ * rejected with the same 400, the exact real case that motivated reading this file at all rather
+ * than silently returning nothing for an all-failed batch) when either is present.
+ */
+export async function extractBatchResults({ apiKey, baseUrl, batch }) {
+  if (batch.status !== 'completed') {
+    throw new Error(
+      `batch job ended in status ${String(batch.status)}, not completed: ${JSON.stringify(batch.errors ?? {}).slice(0, 500)}`,
+    );
+  }
+  const results = [];
+  if (batch.output_file_id !== null && batch.output_file_id !== undefined) {
+    results.push(...parseResultLines(await downloadFile({ apiKey, baseUrl, fileId: batch.output_file_id })));
+  }
+  if (batch.error_file_id !== null && batch.error_file_id !== undefined) {
+    results.push(...parseResultLines(await downloadFile({ apiKey, baseUrl, fileId: batch.error_file_id })));
+  }
+  return results;
 }
