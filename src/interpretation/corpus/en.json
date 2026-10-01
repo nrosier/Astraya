@@ -7954,5 +7954,65 @@
       "model": "qwen2.5:14b",
       "generatedAt": "2026-10-01"
     }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:mars",
+    "locale": "en",
+    "text": "Your inner drive is marked by a powerful blend of assertiveness and intensity. This combination can fuel bold initiatives and transformative breakthroughs, but it also risks confrontation and impatience with obstacles.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:meanLilith",
+    "locale": "en",
+    "text": "Your innermost desires and fears are closely intertwined, creating a profound sense of personal power and transformation. This conjunction can also bring challenges in recognizing and expressing your true needs without causing harm to others.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:meanNode",
+    "locale": "en",
+    "text": "Your chart shows a conjunction between Lilith and the Moon's Node, suggesting a powerful alignment of personal liberation and destiny. This placement can bring transformative breakthroughs, but it also carries the risk of feeling overwhelmed by the intensity of change.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:mercury",
+    "locale": "en",
+    "text": "With Lilith conjunct Mercury, you have a sharp, penetrating way of communicating that can cut through illusions and expose hidden truths. However, this placement can also make you prone to being overly critical and sharp-tongued, potentially hurting others with your words.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
+  },
+  {
+    "key": "aspect-pair:conjunction:interpolatedLilith:moon",
+    "locale": "en",
+    "text": "Your Moon, symbolizing your emotional needs and instincts, is conjunct Interpolated Lilith, suggesting a deep connection to hidden or marginalized aspects of yourself. This placement highlights your sensitivity to injustice and your intuitive understanding of shadows and hidden dynamics in relationships.",
+    "tier": "core",
+    "tags": [],
+    "provenance": {
+      "source": "generated",
+      "model": "qwen2.5:14b",
+      "generatedAt": "2026-10-01"
+    }
   }
 ]
