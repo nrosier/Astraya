@@ -19,6 +19,8 @@ const en = {
   tier2ModeLabel: 'Interpretation mode',
   tier2ModeGrounded: 'Restyle reviewed text — sends only the placements above',
   tier2ModeFreeform: 'AI-written from your full chart — sends your exact positions, houses, and aspects',
+  tier2ModeSynthesis:
+    'AI-written synthesis — reasons across your whole chart at once, not placement by placement; sends your exact positions, houses, and aspects',
   customPromptLabel: 'Style, tone, and focus instructions',
   customPromptPlaceholder: 'e.g. warm and encouraging, focused on career growth',
   guardrailIssueLength: 'Keep this between 1 and 500 characters.',
@@ -54,6 +56,8 @@ const nl: typeof en = {
   tier2ModeGrounded: 'Herschrijf beoordeelde tekst — verstuurt alleen de bovenstaande plaatsingen',
   tier2ModeFreeform:
     'Door AI geschreven vanuit je volledige horoscoop — verstuurt je exacte posities, huizen en aspecten',
+  tier2ModeSynthesis:
+    'Door AI geschreven synthese — redeneert tegelijk over je volledige horoscoop, niet per plaatsing; verstuurt je exacte posities, huizen en aspecten',
   customPromptLabel: 'Instructies voor stijl, toon en focus',
   customPromptPlaceholder: 'bijv. warm en aanmoedigend, gericht op carrièregroei',
   guardrailIssueLength: 'Houd dit tussen 1 en 500 tekens.',

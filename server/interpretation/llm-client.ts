@@ -28,7 +28,7 @@ export function loadTier2Config(env: NodeJS.ProcessEnv = process.env): Tier2Conf
     apiKey,
     model:
       env.ASTRAYA_INTERPRETATION_MODEL === undefined || env.ASTRAYA_INTERPRETATION_MODEL === ''
-        ? 'gemini-2.5-flash'
+        ? 'gemini-3.8-flash'
         : env.ASTRAYA_INTERPRETATION_MODEL,
     baseUrl:
       env.ASTRAYA_INTERPRETATION_BASE_URL === undefined || env.ASTRAYA_INTERPRETATION_BASE_URL === ''
@@ -187,14 +187,15 @@ export async function generateTier2Text(
 }
 
 /**
- * Approximate Gemini 2.5 Flash pricing (USD per 1M tokens, text-only) —
- * verify against https://ai.google.dev/gemini-api/docs/pricing before
- * relying on this for a real budget; it exists to give the daily-cap check
- * in `server/interpretation/usage.ts` a real number to compare against, not
- * to be an exact invoice.
+ * Approximate Gemini 3.8 Flash pricing (USD per 1M tokens, text-only,
+ * standard tier through 2026-12-31) — verify against
+ * https://ai.google.dev/gemini-api/docs/pricing before relying on this for a
+ * real budget; it exists to give the daily-cap check in
+ * `server/interpretation/usage.ts` a real number to compare against, not to
+ * be an exact invoice.
  */
-const INPUT_COST_PER_1M_CENTS = 7.5;
-const OUTPUT_COST_PER_1M_CENTS = 30;
+const INPUT_COST_PER_1M_CENTS = 75;
+const OUTPUT_COST_PER_1M_CENTS = 375;
 
 export function estimateCostCents(promptTokens: number, outputTokens: number): number {
   return (promptTokens * INPUT_COST_PER_1M_CENTS + outputTokens * OUTPUT_COST_PER_1M_CENTS) / 1_000_000;

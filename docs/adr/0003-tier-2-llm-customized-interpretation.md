@@ -29,9 +29,9 @@ its own "AI-Customized" sub-tab alongside "Standard", gated by
 never-persisted consent checkbox: consent authorizes one specific request,
 not a standing preference.
 
-**Tier 2 has two modes, chosen per request by the reader — `'grounded'`
-(the default) and `'freeform'` — and only `'grounded'` carries the
-guarantee below in full.**
+**Tier 2 has three modes, chosen per request by the reader — `'grounded'`
+(the default), `'freeform'`, and `'synthesis'` — and only `'grounded'`
+carries the guarantee below in full.**
 
 **In grounded mode, the client never sends birth data, chart data, or
 interpretation prose.** It sends `placementKeys` (`report.ts`'s
@@ -61,6 +61,18 @@ checks on every longitude/separation/orb) — the same anti-injection
 discipline `validateKey` applies to grounded mode's placement keys, just
 applied to a richer payload. Freeform mode does not get grounded mode's
 "never originates content" guarantee; it is not offered as if it did.
+
+**In synthesis mode (#377), the client sends the same `chartData` as
+freeform mode, but the task is fixed rather than reader-directed: reason
+across the whole chart's placements together — where they reinforce each
+other, where they create tension, what unified pattern emerges — instead of
+restyling or originating per a free-text instruction.** This is why
+synthesis mode carries no `customPrompt` field at all; #377 investigated
+this as a two-stage "synthesis, then refinement" pipeline, but refinement
+turned out to already be grounded mode's own job (restyling already-
+reviewed text), so synthesis is the one genuinely new capability. It shares
+freeform mode's `validateChartData`/privacy tradeoff and does not carry the
+"never originates content" guarantee either.
 
 **`customPrompt` is the one field that structural guarantee doesn't cover.**
 Free-form style/tone/focus instructions can't be made structurally incapable

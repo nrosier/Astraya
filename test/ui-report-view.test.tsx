@@ -832,6 +832,36 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     container.remove();
   });
 
+  it('sends chartData with no customPrompt once synthesis mode is selected, and hides the prompt textarea (#377)', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      consentCheckbox(container).click();
+      modeRadio(container, reportViewMessages.en.tier2ModeSynthesis).click();
+      await Promise.resolve();
+    });
+
+    expect(panelOf(container).querySelector('textarea')).toBeNull();
+
+    act(() => {
+      generateButton(container).click();
+    });
+
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.tier2-result')).not.toBeNull();
+    });
+
+    expect(lastGenerateRequest).toMatchObject({ mode: 'synthesis' });
+    expect(lastGenerateRequest).not.toHaveProperty('placementKeys');
+    expect(lastGenerateRequest).not.toHaveProperty('customPrompt');
+    expect(lastGenerateRequest).toHaveProperty('chartData', toTier2ChartPayload(makeChart()));
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('renders the mode toggle labels in the active locale', async () => {
     const { container, root } = await mountSignedIn();
 

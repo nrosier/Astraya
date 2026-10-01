@@ -4,7 +4,7 @@
  * docs/adr/0003-tier-2-llm-customized-interpretation.md for the full
  * architecture — this file is the route itself.
  *
- * Two modes:
+ * Three modes:
  * - `'grounded'` (default, unchanged since #360): the client sends
  *   `placementKeys` (from `report.ts`'s `reportPlacementKeys`) rather than
  *   birth data or chart-derived text; each key is re-resolved against this
@@ -19,6 +19,15 @@
  *   below re-derives and closed-set-checks every numeric id/key, the same
  *   reason `validateKey` does for grounded mode: untrusted client data must
  *   never reach the third-party prompt unchecked.
+ * - `'synthesis'` (#377): same `chartData` validation and fact-building as
+ *   `'freeform'`, but with a fixed task — reason across the whole chart's
+ *   placements together rather than restyling/originating per a
+ *   reader-supplied instruction — so it carries no `customPrompt` field at
+ *   all. #377 investigated this as a two-stage "synthesis + refinement"
+ *   pipeline; refinement turned out to already be covered by `'grounded'`
+ *   mode (restyle already-reviewed text) and unnecessary as a second chained
+ *   call on top of synthesis's own output, so this is the one new mode that
+ *   capability actually needed.
  *
  * `customPrompt` is the one free-text field neither mode's structural
  * constraint covers, so it is run through `checkCustomPrompt` here —
@@ -50,10 +59,10 @@ function isLocale(value: unknown): value is Locale {
   return typeof value === 'string' && (CORPUS_LOCALES as readonly string[]).includes(value);
 }
 
-type Mode = 'grounded' | 'freeform';
+type Mode = 'grounded' | 'freeform' | 'synthesis';
 
 function isMode(value: unknown): value is Mode {
-  return value === 'grounded' || value === 'freeform';
+  return value === 'grounded' || value === 'freeform' || value === 'synthesis';
 }
 
 interface GenerateBody {
@@ -109,6 +118,22 @@ const FREEFORM_SYSTEM_INSTRUCTION = [
   'never one long undivided paragraph.',
 ].join(' ');
 
+const SYNTHESIS_SYSTEM_INSTRUCTION = [
+  'You are a psychologically grounded astrologer writing a synthesized reading',
+  'of a whole natal chart from a list of grounded chart facts — exact placements,',
+  'houses, and aspects, already computed and correct. You are given several of',
+  "this chart's placements and aspects at once. Do not describe each one",
+  'independently in its own section — reason across them together, the way a',
+  'human astrologer integrating a whole chart would: note where placements',
+  'reinforce each other, where they create internal tension, and what unified',
+  'pattern of personality emerges from the combination. Stay strictly within the',
+  'facts given to you — do not invent placements, aspects, dates, or claims not',
+  'present in them. Do not give medical, legal, or financial advice, and do not',
+  'use fatalistic or absolute ("you will never...") phrasing. Organize your',
+  'response into 2 to 4 short thematic sections, each with a brief heading and a',
+  '1 to 3 sentence body — never one long undivided paragraph.',
+].join(' ');
+
 // A real report has a few dozen placements at most; this is a generous ceiling against
 // a request padded with junk entries to inflate token usage/cost per call.
 const MAX_PLACEMENT_KEYS = 200;
@@ -143,6 +168,19 @@ function buildUserContent(facts: readonly string[], customPrompt: string, locale
     '',
     'Grounded facts (do not add facts beyond these):',
     ...facts.map((fact) => `- ${fact}`),
+  ].join('\n');
+}
+
+/** Synthesis mode's user content — unlike `buildUserContent`, there is no reader-supplied style instruction: the task itself is fixed (`SYNTHESIS_SYSTEM_INSTRUCTION`). */
+function buildSynthesisUserContent(facts: readonly string[], locale: Locale): string {
+  const language = locale === 'nl' ? 'Dutch' : 'English';
+  return [
+    `Write in ${language}.`,
+    '',
+    'Computed placements and aspects (do not add facts beyond these):',
+    ...facts.map((fact) => `- ${fact}`),
+    '',
+    'Write the synthesized reading.',
   ].join('\n');
 }
 
@@ -298,21 +336,24 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
       // this isn't a breaking change for any caller that predates freeform mode.
       const mode: Mode | undefined = rawMode === undefined ? 'grounded' : isMode(rawMode) ? rawMode : undefined;
       if (mode === undefined) {
-        return reply.code(400).send({ error: "mode must be 'grounded' or 'freeform'" });
+        return reply.code(400).send({ error: "mode must be 'grounded', 'freeform', or 'synthesis'" });
       }
 
-      if (typeof customPrompt !== 'string') {
-        return reply.code(400).send({ error: 'customPrompt must be a string' });
+      // Synthesis mode is a fixed task with no reader-supplied style instruction, so it carries
+      // no `customPrompt` field at all — unlike grounded/freeform, which both require one.
+      if (mode !== 'synthesis') {
+        if (typeof customPrompt !== 'string') {
+          return reply.code(400).send({ error: 'customPrompt must be a string' });
+        }
+        const guardrailIssues = checkCustomPrompt(customPrompt);
+        if (guardrailIssues.length > 0) {
+          return reply
+            .code(400)
+            .send({ error: `customPrompt failed: ${guardrailIssues.map((issue) => issue.message).join('; ')}` });
+        }
       }
       if (!isLocale(locale)) {
         return reply.code(400).send({ error: `locale must be one of ${CORPUS_LOCALES.join(', ')}` });
-      }
-
-      const guardrailIssues = checkCustomPrompt(customPrompt);
-      if (guardrailIssues.length > 0) {
-        return reply
-          .code(400)
-          .send({ error: `customPrompt failed: ${guardrailIssues.map((issue) => issue.message).join('; ')}` });
       }
 
       let facts: string[];
@@ -349,7 +390,7 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
           return reply.code(400).send({ error: `chartData is invalid: ${validated.errors.join('; ')}` });
         }
         facts = buildFreeformFacts(validated.chartData);
-        systemInstruction = FREEFORM_SYSTEM_INSTRUCTION;
+        systemInstruction = mode === 'synthesis' ? SYNTHESIS_SYSTEM_INSTRUCTION : FREEFORM_SYSTEM_INSTRUCTION;
       }
 
       const config = loadTier2Config();
@@ -374,7 +415,10 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
         return reply.code(503).send({ error: 'Daily usage limit reached for this deployment. Try again tomorrow.' });
       }
 
-      const userContent = buildUserContent(facts, customPrompt, locale);
+      const userContent =
+        mode === 'synthesis'
+          ? buildSynthesisUserContent(facts, locale)
+          : buildUserContent(facts, customPrompt as string, locale);
 
       let result;
       try {

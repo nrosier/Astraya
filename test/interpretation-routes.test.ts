@@ -397,6 +397,52 @@ describe('POST /api/interpretation/generate', () => {
     });
   });
 
+  describe('synthesis mode (#377)', () => {
+    const VALID_SYNTHESIS_BODY = { mode: 'synthesis', chartData: VALID_CHART_DATA, locale: 'en' };
+
+    it('generates text from the given chart facts with no customPrompt required', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: VALID_SYNTHESIS_BODY,
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json<{ sections: { heading: string; body: string }[] }>().sections).toEqual([
+        { heading: 'Overview', body: 'A restyled interpretation.' },
+      ]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('still rejects invalid chartData with 400, same as freeform mode', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: {
+          ...VALID_SYNTHESIS_BODY,
+          chartData: { ...VALID_CHART_DATA, positions: [{ body: SUN_ID, longitude: 400 }] },
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('still rejects an unknown locale with 400', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: { ...VALID_SYNTHESIS_BODY, locale: 'fr' },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
   /** Mirrors the malformed-body cases above: a guardrail-rejected prompt is a 400, caught before any model call. */
   it('rejects a guardrail-failing customPrompt with 400 and never calls the model', async () => {
     const cookie = await signIn(app);
