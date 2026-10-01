@@ -81,6 +81,7 @@ import { buildPlacements, placementDescription, buildSymbolismContext, symbolism
 import { CORPUS_ENTRY_RESPONSE_SCHEMA, placementKey } from '../../src/interpretation/schema.ts';
 import { lintCorpus, lintEntry } from '../../src/interpretation/lint.ts';
 import { findNearDuplicates } from '../../src/interpretation/dedupe.ts';
+import { estimateCostCentsForCall, formatCents } from './lib/cost-estimate.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -339,7 +340,9 @@ async function runBatchRounds() {
       }
       if (result.usage) {
         usageIn += result.usage.promptTokenCount ?? 0;
-        usageOut += result.usage.candidatesTokenCount ?? 0;
+        // Gemini bills thinking tokens as output, confirmed against a real response's own
+        // usageMetadata (totalTokenCount = promptTokenCount + candidatesTokenCount + thoughtsTokenCount).
+        usageOut += (result.usage.candidatesTokenCount ?? 0) + (result.usage.thoughtsTokenCount ?? 0);
       }
       if (result.error) {
         failed += 1;
@@ -406,7 +409,7 @@ if (useBatch) {
           maxRetries: 5,
           onUsage: (usage) => {
             usageIn += usage?.promptTokenCount ?? 0;
-            usageOut += usage?.candidatesTokenCount ?? 0;
+            usageOut += (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0);
           },
         });
 
@@ -452,20 +455,20 @@ if (useBatch) {
 
 console.log(`\n[${locale}/${scopeLabel}] batch complete: ${String(done)} written, ${String(failed)} failed`);
 
-if (provider === 'ollama') {
+{
+  const costCents = estimateCostCentsForCall({
+    provider,
+    model,
+    tier: useBatch ? 'batch' : 'standard',
+    promptTokens: usageIn,
+    outputTokens: usageOut,
+  });
+  const costNote =
+    costCents === undefined
+      ? `cost unknown (no pricing on file for ${model})`
+      : `est. cost at ${provider === 'ollama' ? 'local' : useBatch ? 'Batch-tier' : 'Standard-tier'} rates: ${formatCents(costCents)}`;
   console.log(
-    `[${locale}/${scopeLabel}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — $0.00 (local model)`,
-  );
-} else {
-  // Batch API processing is Google's own documented 50% of standard interactive-API pricing for
-  // the same model — see lib/gemini-batch.mjs's own doc comment.
-  const batchDiscount = useBatch ? 0.5 : 1;
-  const inputCostPerM = 0.3 * batchDiscount;
-  const outputCostPerM = 2.5 * batchDiscount;
-  const cost = (usageIn / 1_000_000) * inputCostPerM + (usageOut / 1_000_000) * outputCostPerM;
-  console.log(
-    `[${locale}/${scopeLabel}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — ` +
-      `est. cost at ${useBatch ? 'Batch-tier (50% off Standard)' : 'Standard-tier'} rates: $${cost.toFixed(2)}`,
+    `[${locale}/${scopeLabel}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — ${costNote}`,
   );
 }
 

@@ -30,6 +30,7 @@ import { factsDescription as sharedFactsDescription } from './lib/placements.mjs
 import { categoryOfKey, parsePlacementKey } from '../../src/interpretation/schema.ts';
 import { BODIES } from '../../src/astrology/bodies.ts';
 import { ASPECTS } from '../../src/astrology/aspects.ts';
+import { estimateCostCentsForCall, formatCents } from './lib/cost-estimate.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FLAG_TAG = 'unverified-flagged-by-judge';
@@ -112,6 +113,8 @@ if (candidates.length === 0) {
 
 let flagged = 0;
 let failed = 0;
+let usageIn = 0;
+let usageOut = 0;
 const lock = { writing: Promise.resolve() };
 
 async function persist() {
@@ -142,6 +145,10 @@ await withConcurrency(candidates, concurrency, async ({ entry, index }) => {
       userContent,
       responseSchema: VERIFICATION_RESPONSE_SCHEMA,
       maxRetries: 5,
+      onUsage: (usage) => {
+        usageIn += usage?.promptTokenCount ?? 0;
+        usageOut += (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0);
+      },
     });
 
     if (result.grounded === false) {
@@ -159,3 +166,12 @@ await withConcurrency(candidates, concurrency, async ({ entry, index }) => {
 console.log(
   `\n[${locale}] verification complete: ${String(candidates.length)} checked, ${String(flagged)} newly flagged, ${String(failed)} failed`,
 );
+{
+  const costCents = estimateCostCentsForCall({ provider, model, promptTokens: usageIn, outputTokens: usageOut });
+  console.log(
+    `[${locale}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — ` +
+      (costCents === undefined
+        ? `cost unknown (no pricing on file for ${model})`
+        : `est. cost: ${formatCents(costCents)}`),
+  );
+}
