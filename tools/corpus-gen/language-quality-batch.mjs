@@ -56,12 +56,20 @@
  * the corpus and will periodically overwrite the file from it, discarding
  * (or in the worst case, conflicting with) whatever this script just wrote.
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/language-quality-batch.mjs --locale=nl [--provider=gemini|ollama] [--model=<name>] [--limit=N] [--concurrency=N]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/language-quality-batch.mjs --locale=nl [--provider=gemini|ollama] [--model=<name>] [--limit=N] [--concurrency=N] [--batch]
+ *
+ * `--batch` (Gemini only, same restriction as generate-batch.mjs's own flag of the same name)
+ * submits every candidate's judge request as one inline Gemini Batch API job instead of one HTTP
+ * call per entry, at Google's 50%-of-standard-rate batch pricing. Unlike generate-batch.mjs's
+ * `--batch`, there is no multi-round retry here — a GOOD/FIXED/BAD verdict is accepted as-is in
+ * either mode, there is nothing to re-request. `--concurrency` is ignored under `--batch` for the
+ * same reason it is in generate-batch.mjs: one submission, not N parallel callers.
  */
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildLanguageQualityPrompt, LANGUAGE_QUALITY_RESPONSE_SCHEMA } from './lib/language-quality.mjs';
+import { buildBatchRequest, submitBatch, pollBatch, extractBatchResults } from './lib/gemini-batch.mjs';
 import { writeCorpus } from './lib/write-corpus.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -89,7 +97,7 @@ function flag(name, fallback) {
 }
 if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
   console.log(
-    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/language-quality-batch.mjs --locale=nl [--provider=gemini|ollama] [--model=<name>] [--limit=N] [--concurrency=N]',
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/language-quality-batch.mjs --locale=nl [--provider=gemini|ollama] [--model=<name>] [--limit=N] [--concurrency=N] [--batch]',
   );
   process.exit(0);
 }
@@ -101,10 +109,14 @@ const locale = flag('locale');
 if (!locale) throw new Error('--locale=<locale> is required');
 const limit = Number(flag('limit', Infinity));
 const concurrency = Number(flag('concurrency', '3'));
+const useBatch = rawArgs.includes('--batch');
 
 const provider = flag('provider', 'gemini');
 if (provider !== 'gemini' && provider !== 'ollama')
   throw new Error(`--provider must be "gemini" or "ollama", got "${provider}"`);
+if (useBatch && provider !== 'gemini') {
+  throw new Error("--batch requires --provider=gemini — Gemini's Batch API has no Ollama equivalent");
+}
 const { generateStructured } = await import(provider === 'ollama' ? './lib/ollama.mjs' : './lib/gemini.mjs');
 // Deliberately not process.env.GEMINI_MODEL — see this file's own doc comment on why flash-lite
 // is pinned here specifically, independent of whatever other scripts have that env var set to.
@@ -138,39 +150,95 @@ async function persist() {
   await lock.writing;
 }
 
-await withConcurrency(candidates, concurrency, async ({ entry, index }) => {
-  const { systemInstruction, userContent } = buildLanguageQualityPrompt({ entryText: entry.text, locale: entry.locale });
+/** Applies one judge verdict to `corpus[index]`, persists if it changed anything, updates counts. */
+async function applyVerdict(entry, index, result) {
+  if (result.verdict === 'FIXED') {
+    corpus[index] = { ...entry, text: result.correctedText, tags: [...entry.tags, CORRECTED_TAG] };
+    await persist();
+    fixed += 1;
+    console.log(`[${locale}] FIXED ${entry.key}: ${result.issues.join(' / ')}`);
+  } else if (result.verdict === 'BAD') {
+    corpus[index] = { ...entry, tags: [...entry.tags, FLAG_TAG] };
+    await persist();
+    flagged += 1;
+    console.log(`[${locale}] FLAGGED ${entry.key}: ${result.issues.join(' / ')}`);
+  } else {
+    good += 1;
+  }
+}
 
-  try {
-    const result = await generateStructured({
-      apiKey: process.env.GEMINI_API_KEY,
-      model,
-      baseUrl,
-      temperature: 0,
+if (useBatch) {
+  const requests = candidates.map(({ entry, index }) => {
+    const { systemInstruction, userContent } = buildLanguageQualityPrompt({ entryText: entry.text, locale: entry.locale });
+    return buildBatchRequest({
+      key: String(index), // corpus array index — unique per entry regardless of persona, unlike entry.key
       systemInstruction,
       userContent,
+      temperature: 0,
       responseSchema: LANGUAGE_QUALITY_RESPONSE_SCHEMA,
-      maxRetries: 5,
     });
+  });
 
-    if (result.verdict === 'FIXED') {
-      corpus[index] = { ...entry, text: result.correctedText, tags: [...entry.tags, CORRECTED_TAG] };
-      await persist();
-      fixed += 1;
-      console.log(`[${locale}] FIXED ${entry.key}: ${result.issues.join(' / ')}`);
-    } else if (result.verdict === 'BAD') {
-      corpus[index] = { ...entry, tags: [...entry.tags, FLAG_TAG] };
-      await persist();
-      flagged += 1;
-      console.log(`[${locale}] FLAGGED ${entry.key}: ${result.issues.join(' / ')}`);
-    } else {
-      good += 1;
+  console.log(`\n[${locale}] submitting ${String(requests.length)} request${requests.length === 1 ? '' : 's'} as one batch job...`);
+  const submitted = await submitBatch({
+    apiKey: process.env.GEMINI_API_KEY,
+    baseUrl,
+    model,
+    displayName: `astraya-language-quality-${locale}-${String(Date.now())}`,
+    requests,
+  });
+  console.log(`[${locale}] ${submitted.name} — polling...`);
+
+  let lastState;
+  const finished = await pollBatch({
+    apiKey: process.env.GEMINI_API_KEY,
+    baseUrl,
+    name: submitted.name,
+    onPoll: (state) => {
+      if (state !== lastState) {
+        lastState = state;
+        console.log(`[${locale}] ${String(state)}`);
+      }
+    },
+  });
+
+  const byKey = new Map(extractBatchResults(finished).map((r) => [r.key, r]));
+  for (const { entry, index } of candidates) {
+    const result = byKey.get(String(index));
+    if (result === undefined) {
+      failed += 1;
+      console.error(`[${locale}] FAILED ${entry.key}: no result came back for this entry`);
+      continue;
     }
-  } catch (error) {
-    failed += 1;
-    console.error(`[${locale}] FAILED ${entry.key}: ${error.message}`);
+    if (result.error) {
+      failed += 1;
+      console.error(`[${locale}] FAILED ${entry.key}: ${result.error.message}`);
+      continue;
+    }
+    await applyVerdict(entry, index, result.result);
   }
-});
+} else {
+  await withConcurrency(candidates, concurrency, async ({ entry, index }) => {
+    const { systemInstruction, userContent } = buildLanguageQualityPrompt({ entryText: entry.text, locale: entry.locale });
+
+    try {
+      const result = await generateStructured({
+        apiKey: process.env.GEMINI_API_KEY,
+        model,
+        baseUrl,
+        temperature: 0,
+        systemInstruction,
+        userContent,
+        responseSchema: LANGUAGE_QUALITY_RESPONSE_SCHEMA,
+        maxRetries: 5,
+      });
+      await applyVerdict(entry, index, result);
+    } catch (error) {
+      failed += 1;
+      console.error(`[${locale}] FAILED ${entry.key}: ${error.message}`);
+    }
+  });
+}
 
 console.log(
   `\n[${locale}] language-quality check complete: ${String(candidates.length)} checked — ` +
