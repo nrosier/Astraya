@@ -154,8 +154,9 @@ export const VOICE_GUIDE: readonly string[] = [
   'Write in second person, addressing the chart’s owner directly.',
   'State the placement’s meaning plainly before qualifying it — lead with the claim, not the hedge.',
   'Avoid fatalism: describe a tendency or a pull, never a certainty or a verdict.',
+  'Describe each placement as a psychological drive or dilemma, not a fixed trait or trope, and let it land anywhere on that drive’s spectrum — a response to limits can mean rigid over-control just as easily as resisting authority outright. Frame its shadow side as a functional tension with the situation (discomfort with dependence, friction with authority), not an emotional symptom (harsh self-criticism, exhausting burden) or a verdict on either side.',
   'Do not repeat the placement’s name back verbatim as the entry’s first words (e.g. do not open with "Mars in Aries...").',
-  'Keep each entry to one to three sentences; depth comes from precision, not length.',
+  'Depth comes from precision, not length — don’t pad a short, exact entry just to fill the length target.',
   'Never use disclaimers, hedging about astrology’s validity, or references to the entry being AI-generated.',
 ];
 
@@ -286,8 +287,9 @@ export const VOICE_GUIDE_NL: readonly string[] = [
   'Schrijf in de tweede persoon, spreek de eigenaar van de horoscoop direct aan.',
   'Zeg de betekenis van de plaatsing eerst gewoon voordat je nuanceert — leid met de bewering, niet met het voorbehoud.',
   'Vermijd fatalisme: beschrijf een neiging of een drang, nooit een zekerheid of een oordeel.',
+  'Beschrijf elke plaatsing als een psychologische drijfveer of dilemma, geen vaste trek of cliché, en laat die drijfveer overal op haar spectrum kunnen uitkomen — een reactie op beperkingen kan net zo goed starre overcontrole zijn als het volledig afwijzen van gezag. Omschrijf de schaduwzijde als een functionele spanning met de situatie (ongemak bij afhankelijkheid, wrijving met gezag), geen emotioneel symptoom (harde zelfkritiek, uitputtende last) of oordeel over een van beide.',
   'Herhaal de naam van de plaatsing niet letterlijk als de eerste woorden van de tekst (bijv. begin niet met "Mars in Ram...").',
-  'Houd elke tekst tot één tot drie zinnen; diepgang komt van precisie, niet van lengte.',
+  'Diepgang komt van precisie, niet van lengte — vul een korte, precieze tekst niet op om de lengte te halen.',
   'Gebruik nooit disclaimers, twijfel over de geldigheid van astrologie, of verwijzingen naar het feit dat de tekst door AI is gegenereerd.',
 ];
 

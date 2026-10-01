@@ -9,14 +9,29 @@
  * The voice for a persona-less ("neutral") entry — the default a reader gets
  * before choosing a persona, and the fallback every persona-specific lookup
  * lands on when its own voice has nothing for this placement yet (#211). Not
- * one of `personas.json`'s five flavors: no character, no signature style —
- * matches the tone #55's hand-written exemplars already established (name
- * the strength a placement gives, then its natural pitfall, without
- * dramatizing either).
+ * one of `personas.json`'s five flavors: no character, no signature style.
+ *
+ * Three-part structure (gift / mechanism / shadow dilemma), not the earlier
+ * plain "gift then pitfall" framing: a cross-check against ChatGPT's own
+ * interpretation of the same placements (closing #368) found Gemini's
+ * output defaulting to vivid emotional symptoms for the shadow side
+ * ("harsh self-criticism", "exhausting burden") where ChatGPT's reads as a
+ * functional tension instead ("establishing your own terms", "tension
+ * between self-direction and obligation"). Gemini's own self-diagnosis,
+ * cross-checked against the actual prompt: the old framing gave the model
+ * nothing to anchor the shadow to except "pitfall," so under a tight word
+ * budget it reached for a dramatic symptom instead of naming the underlying
+ * tension. Naming the mechanism explicitly closes that gap; see
+ * VOICE_GUIDE's "functional tension, not emotional symptom" rule
+ * (src/interpretation/symbolism.ts) for the matching tone guardrail.
+ * NEGATIVE_CONSTRAINTS' own word-count line widened from 40–60 to a 50–80
+ * *target* (not a hard ceiling, deliberately — flagged as too strict a
+ * reading of this same advice) for the same reason: three balanced parts
+ * need more room than two did.
  */
 export const NEUTRAL_SYSTEM_PROMPT = {
-  en: "You are a psychologically grounded, even-handed astrologer writing the default entry in an interpretation corpus — the text every reader sees before picking a more particular voice. Address the chart's owner directly, in the second person, as every other voice in this corpus does. Describe the placement's standing disposition: name the strength or gift it gives first, then its natural pitfall or shadow, in plain, warm-but-precise prose, without dramatizing either side. Adopt no persona or signature style of your own — this is the chart speaking, not a character.",
-  nl: 'Je bent een psychologisch onderlegde, evenwichtige astroloog die de standaardtekst schrijft in een interpretatiecorpus — de tekst die elke lezer ziet voordat die een specifiekere stem kiest. Spreek de eigenaar van de horoscoop rechtstreeks aan, in de tweede persoon, zoals elke andere stem in dit corpus dat doet. Beschrijf de blijvende aanleg van de stand: noem eerst de kracht of de gave die ze geeft, dan de natuurlijke valkuil of schaduwzijde, in heldere, warme maar precieze taal, zonder een van beide te dramatiseren. Neem geen eigen persona of stijl aan — dit is de horoscoop die spreekt, niet een personage.',
+  en: "You are a psychologically grounded, even-handed astrologer writing the default entry in an interpretation corpus — the text every reader sees before picking a more particular voice. Describe the placement's standing disposition by balancing three things: the core drive or gift it inherently builds toward, the functional mechanism — how that drive navigates boundaries, control or independence — and the shadow dilemma that surfaces when it meets an external limit or dependence. Write in plain, warm-but-precise prose, without dramatizing either side. Adopt no persona or signature style of your own — this is the chart speaking, not a character.",
+  nl: 'Je bent een psychologisch onderlegde, evenwichtige astroloog die de standaardtekst schrijft in een interpretatiecorpus — de tekst die elke lezer ziet voordat die een specifiekere stem kiest. Beschrijf de blijvende aanleg van de stand door drie dingen in evenwicht te brengen: de kerndrijfveer of gave waar de plaatsing vanzelf naar toe bouwt, het functionele mechanisme — hoe die drijfveer omgaat met grenzen, controle of onafhankelijkheid — en het schaduwdilemma dat ontstaat zodra ze een externe beperking of afhankelijkheid tegenkomt. Schrijf in heldere, warme maar precieze taal, zonder een van beide te dramatiseren. Neem geen eigen persona of stijl aan — dit is de horoscoop die spreekt, niet een personage.',
 };
 
 /**
@@ -33,8 +48,9 @@ export const NEGATIVE_CONSTRAINTS = [
   'Do not use astrological jargon that duplicates what the chart data already states: cosmic, alignment, transit, energies, vibration, native, or the placement’s own terms (the planet name, sign name, house number).',
   'Do not state numbers or degrees. The rule engine owns every figure; a number in prose can contradict the chart.',
   'Do not use AI-tell vocabulary: tapestry, dance, delve, realm, intricate, navigate, testament, symphony, weave.',
+  'Do not reduce a placement to its most common stereotype: Saturn to perfectionism or workaholism, Mars to anger or aggression, Venus to vanity or romance, Mercury or Gemini to anxious chatter.',
   'Do not predict a future event or give advice ("you will meet...", "you should..."). Describe a standing disposition, not a forecast.',
-  "Keep the entire entry between 40 and 60 words, across 1 to 3 sentences, unless the placement warrants more depth — shorter reads as a stub, longer stops being one placement's contribution to a report that stacks a dozen of these. The corpus lint pass separately rejects anything under 40 or over 1600 characters regardless of quality, as a backstop, not the actual target.",
+  "Aim for 50 to 80 words, across 2 to 3 sentences — a target, not a hard ceiling: go a little longer only when the placement genuinely needs the room for a balanced, unrushed sentence, never by default, and never toward paragraph length. Shorter reads as a stub; too long stops being one placement's contribution to a report that stacks a dozen of these. The corpus lint pass separately rejects anything under 40 or over 1600 characters regardless of quality, as a backstop, not the actual target.",
 ];
 
 /** Builds the model-facing instruction block shared by every request, regardless of persona. */
