@@ -23,7 +23,7 @@
  * at a time by design, so `--locale=en` and `--locale=nl` can run
  * concurrently or be resumed independently, per #56.
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama] [--force] [--max-language-retries=N]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama] [--force] [--max-language-retries=N] [--batch]
  *
  * `--max-language-retries` (default 4): a response that fails lint's own
  * `language-mismatch` rule (text in the wrong locale entirely) is re-requested
@@ -34,6 +34,18 @@
  * A key still wrong after every retry counts as failed, same as any other bad
  * response, and leaves whatever was already at that key (if anything)
  * untouched.
+ *
+ * `--batch` (Gemini only — `--provider=ollama` has no batch equivalent) submits every pending
+ * placement as one inline Gemini Batch API job instead of one HTTP call per placement, at
+ * Google's own 50%-of-standard-rate batch pricing. `--concurrency`/`--delay-ms` are meaningless
+ * under `--batch` (there is exactly one submission, not N parallel callers) and are ignored.
+ * `--max-language-retries` still applies, just reshaped for an async job: each "retry" above is a
+ * whole further batch round submitted for only the keys still wrong after the previous round, not
+ * a same-request retry — Gemini rarely needs more than round 1 for this (see
+ * lib/gemini-batch.mjs's own doc comment), so in practice this costs nothing extra. A batch round
+ * can take anywhere from under a minute to Google's documented "usually well under 24 hours, up
+ * to a 48-hour hard expiry" — this command blocks and polls for the whole wait, same as the
+ * non-batch path blocks for its own (much shorter) wall-clock run.
  *
  * `--force` (#368) turns this from a gap-filler into a full regeneration:
  * every placement in scope is (re)generated, replacing its existing entry in
@@ -63,6 +75,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildSystemInstruction, buildUserContent } from './lib/prompt.mjs';
+import { buildBatchRequest, submitBatch, pollBatch, extractBatchResults } from './lib/gemini-batch.mjs';
 import { writeCorpus } from './lib/write-corpus.mjs';
 import { buildPlacements, placementDescription, buildSymbolismContext } from './lib/placements.mjs';
 import { CORPUS_ENTRY_RESPONSE_SCHEMA, placementKey } from '../../src/interpretation/schema.ts';
@@ -96,7 +109,7 @@ function flag(name, fallback) {
 }
 if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
   console.log(
-    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama] [--force] [--max-language-retries=N]',
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/generate-batch.mjs --locale=en [--persona=<id>] [--limit=N] [--concurrency=N] [--delay-ms=N] [--skip-final-checks] [--provider=gemini|ollama] [--force] [--max-language-retries=N] [--batch]',
   );
   process.exit(0);
 }
@@ -108,10 +121,14 @@ const delayMs = Number(flag('delay-ms', '200'));
 const skipFinalChecks = rawArgs.includes('--skip-final-checks');
 const force = rawArgs.includes('--force');
 const MAX_LANGUAGE_RETRIES = Number(flag('max-language-retries', '4'));
+const useBatch = rawArgs.includes('--batch');
 
 const provider = flag('provider', 'gemini');
 if (provider !== 'gemini' && provider !== 'ollama')
   throw new Error(`--provider must be "gemini" or "ollama", got "${provider}"`);
+if (useBatch && provider !== 'gemini') {
+  throw new Error("--batch requires --provider=gemini — Gemini's Batch API has no Ollama equivalent");
+}
 const { generateStructured } = await import(provider === 'ollama' ? './lib/ollama.mjs' : './lib/gemini.mjs');
 const model = provider === 'ollama' ? process.env.OLLAMA_MODEL || 'gemma4' : process.env.GEMINI_MODEL;
 const baseUrl = provider === 'ollama' ? process.env.OLLAMA_BASE_URL : process.env.GEMINI_BASE_URL;
@@ -215,95 +232,212 @@ async function persist() {
   await lock.writing;
 }
 
+// Constant across every item in this run — locale/persona/provider don't vary per placement — so
+// built once rather than redundantly inside each item's own call (both the per-item and the
+// --batch path reuse this; --batch also needs it serialized once per request body, below).
+const systemInstruction = buildSystemInstruction({
+  persona,
+  symbolismContext: buildSymbolismContext(locale),
+  locale,
+  forceLanguageDirective: provider === 'ollama',
+});
+
+function buildEntry({ key, placement, text, tier }) {
+  return {
+    key,
+    locale,
+    text,
+    tier,
+    tags: placement.category === 'dignity-state' ? [placement.state] : [],
+    ...(persona ? { persona: persona.id } : {}),
+    provenance: {
+      source: 'generated',
+      model,
+      generatedAt: new Date().toISOString().slice(0, 10),
+    },
+  };
+}
+
+/** Writes a successfully-generated entry into `corpus` in place (or appends it) and persists. */
+async function acceptEntry(key, entry) {
+  const existing = existingIndex.get(key);
+  if (existing === undefined) {
+    corpus.push(entry);
+    existingIndex.set(key, corpus.length - 1);
+  } else {
+    corpus[existing] = entry;
+  }
+  await persist();
+}
+
 const startedAt = Date.now();
 
-await withConcurrency(pending, concurrency, async ({ placement, key }) => {
-  const description = placementDescription(placement);
-  const systemInstruction = buildSystemInstruction({
-    persona,
-    symbolismContext: buildSymbolismContext(locale),
-    locale,
-    forceLanguageDirective: provider === 'ollama',
-  });
-  const userContent = buildUserContent({ placementDescription: description, corpusEntries: corpus, locale, persona });
-
-  try {
-    let entry;
-    let languageIssue;
-    let attempt = 0;
-    do {
-      attempt += 1;
-      const result = await generateStructured({
-        apiKey: process.env.GEMINI_API_KEY,
-        model,
-        baseUrl,
-        temperature: Number(process.env.GEMINI_TEMPERATURE ?? '0.75'),
-        systemInstruction,
-        userContent,
-        responseSchema: CORPUS_ENTRY_RESPONSE_SCHEMA,
-        maxRetries: 5,
-        onUsage: (usage) => {
-          usageIn += usage?.promptTokenCount ?? 0;
-          usageOut += usage?.candidatesTokenCount ?? 0;
-        },
-      });
-
-      entry = {
+/**
+ * Batch path for --batch: each round submits one inline Gemini Batch job for every item still
+ * remaining (every item, on round 1), waits for it, and routes each result into either `corpus`
+ * (good) or the next round's remaining set (language-mismatched, rounds left) or a logged failure
+ * (language-mismatched, no rounds left — or any other per-item error the API itself reported).
+ * Mirrors the non-batch path's own retry-until-correct-language loop, just reshaped so a "retry"
+ * is a further batch round instead of a same-request retry — see this file's own header comment
+ * on why that reshaping costs effectively nothing extra against Gemini in practice.
+ */
+async function runBatchRounds() {
+  let remaining = pending;
+  for (let round = 1; round <= MAX_LANGUAGE_RETRIES && remaining.length > 0; round += 1) {
+    const requests = remaining.map(({ placement, key }) =>
+      buildBatchRequest({
         key,
-        locale,
-        text: result.text,
-        tier: result.tier,
-        tags: placement.category === 'dignity-state' ? [placement.state] : [],
-        ...(persona ? { persona: persona.id } : {}),
-        provenance: {
-          source: 'generated',
-          model,
-          generatedAt: new Date().toISOString().slice(0, 10),
-        },
-      };
+        systemInstruction,
+        userContent: buildUserContent({
+          placementDescription: placementDescription(placement),
+          corpusEntries: corpus,
+          locale,
+          persona,
+        }),
+        temperature: Number(process.env.GEMINI_TEMPERATURE ?? '0.75'),
+        responseSchema: CORPUS_ENTRY_RESPONSE_SCHEMA,
+      }),
+    );
 
-      languageIssue = lintEntry(entry).find((issue) => issue.rule === 'language-mismatch');
-      if (languageIssue && attempt < MAX_LANGUAGE_RETRIES) {
-        if (useProgressBar) process.stdout.write('\n');
-        console.error(
-          `[${locale}/${scopeLabel}] ${key}: attempt ${String(attempt)}/${String(MAX_LANGUAGE_RETRIES)} came back in the wrong language — regenerating`,
+    console.log(
+      `\n[${locale}/${scopeLabel}] batch round ${String(round)}/${String(MAX_LANGUAGE_RETRIES)}: submitting ${String(requests.length)} request${requests.length === 1 ? '' : 's'}...`,
+    );
+    const submitted = await submitBatch({
+      apiKey: process.env.GEMINI_API_KEY,
+      baseUrl,
+      model,
+      displayName: `astraya-corpus-${locale}-${scopeLabel}-round${String(round)}-${String(Date.now())}`,
+      requests,
+    });
+    console.log(`[${locale}/${scopeLabel}] batch round ${String(round)}: ${submitted.name} — polling...`);
+
+    let lastState;
+    const finished = await pollBatch({
+      apiKey: process.env.GEMINI_API_KEY,
+      baseUrl,
+      name: submitted.name,
+      onPoll: (state) => {
+        if (state !== lastState) {
+          lastState = state;
+          console.log(`[${locale}/${scopeLabel}] batch round ${String(round)}: ${String(state)}`);
+        }
+      },
+    });
+
+    const results = extractBatchResults(finished);
+    const byKey = new Map(results.map((r) => [r.key, r]));
+    const nextRemaining = [];
+
+    for (const item of remaining) {
+      const result = byKey.get(item.key);
+      if (result === undefined) {
+        failed += 1;
+        console.error(`[${locale}/${scopeLabel}] FAILED ${item.key}: no result came back for this key`);
+        continue;
+      }
+      if (result.usage) {
+        usageIn += result.usage.promptTokenCount ?? 0;
+        usageOut += result.usage.candidatesTokenCount ?? 0;
+      }
+      if (result.error) {
+        failed += 1;
+        console.error(`[${locale}/${scopeLabel}] FAILED ${item.key}: ${result.error.message}`);
+        continue;
+      }
+
+      const entry = buildEntry({ key: item.key, placement: item.placement, text: result.result.text, tier: result.result.tier });
+      const languageIssue = lintEntry(entry).find((issue) => issue.rule === 'language-mismatch');
+      if (languageIssue) {
+        if (round < MAX_LANGUAGE_RETRIES) {
+          nextRemaining.push(item);
+        } else {
+          failed += 1;
+          console.error(`[${locale}/${scopeLabel}] FAILED ${item.key}: ${languageIssue.message} (still wrong after ${String(MAX_LANGUAGE_RETRIES)} rounds)`);
+        }
+        continue;
+      }
+
+      await acceptEntry(item.key, entry);
+      done += 1;
+    }
+
+    console.log(
+      `[${locale}/${scopeLabel}] batch round ${String(round)} complete: ${String(done)} written so far, ${String(failed)} failed so far, ${String(nextRemaining.length)} going to the next round`,
+    );
+    remaining = nextRemaining;
+  }
+}
+
+if (useBatch) {
+  await runBatchRounds();
+} else {
+  await withConcurrency(pending, concurrency, async ({ placement, key }) => {
+    const userContent = buildUserContent({
+      placementDescription: placementDescription(placement),
+      corpusEntries: corpus,
+      locale,
+      persona,
+    });
+
+    try {
+      let entry;
+      let languageIssue;
+      let attempt = 0;
+      do {
+        attempt += 1;
+        const result = await generateStructured({
+          apiKey: process.env.GEMINI_API_KEY,
+          model,
+          baseUrl,
+          temperature: Number(process.env.GEMINI_TEMPERATURE ?? '0.75'),
+          systemInstruction,
+          userContent,
+          responseSchema: CORPUS_ENTRY_RESPONSE_SCHEMA,
+          maxRetries: 5,
+          onUsage: (usage) => {
+            usageIn += usage?.promptTokenCount ?? 0;
+            usageOut += usage?.candidatesTokenCount ?? 0;
+          },
+        });
+
+        entry = buildEntry({ key, placement, text: result.text, tier: result.tier });
+
+        languageIssue = lintEntry(entry).find((issue) => issue.rule === 'language-mismatch');
+        if (languageIssue && attempt < MAX_LANGUAGE_RETRIES) {
+          if (useProgressBar) process.stdout.write('\n');
+          console.error(
+            `[${locale}/${scopeLabel}] ${key}: attempt ${String(attempt)}/${String(MAX_LANGUAGE_RETRIES)} came back in the wrong language — regenerating`,
+          );
+        }
+      } while (languageIssue && attempt < MAX_LANGUAGE_RETRIES);
+
+      // Still wrong after every retry: caught below and counted as a failed key, same as any
+      // other bad response. A single bad draw from a model that only *sometimes* ignores the
+      // locale in its own system prompt (qwen2.5:14b, observed) would otherwise sail through
+      // untouched, since none of this file's other checks are locale-aware.
+      if (languageIssue) throw new Error(`${languageIssue.message} (still wrong after ${String(MAX_LANGUAGE_RETRIES)} attempts)`);
+
+      await acceptEntry(key, entry);
+      done += 1;
+      if (useProgressBar) {
+        renderProgress();
+      } else if (done % 10 === 0 || done === pending.length) {
+        const elapsedMin = (Date.now() - startedAt) / 60000;
+        const rate = done / elapsedMin;
+        console.log(
+          `[${locale}/${scopeLabel}] ${String(done)}/${String(pending.length)} written (${elapsedMin.toFixed(1)} min elapsed, ${rate.toFixed(1)}/min) — last: ${key}`,
         );
       }
-    } while (languageIssue && attempt < MAX_LANGUAGE_RETRIES);
-
-    // Still wrong after every retry: caught below and counted as a failed key, same as any
-    // other bad response. A single bad draw from a model that only *sometimes* ignores the
-    // locale in its own system prompt (qwen2.5:14b, observed) would otherwise sail through
-    // untouched, since none of this file's other checks are locale-aware.
-    if (languageIssue) throw new Error(`${languageIssue.message} (still wrong after ${String(MAX_LANGUAGE_RETRIES)} attempts)`);
-
-    const existing = existingIndex.get(key);
-    if (existing === undefined) {
-      corpus.push(entry);
-      existingIndex.set(key, corpus.length - 1);
-    } else {
-      corpus[existing] = entry;
+    } catch (error) {
+      failed += 1;
+      if (useProgressBar) process.stdout.write('\n');
+      console.error(`[${locale}/${scopeLabel}] FAILED ${key}: ${error.message}`);
+      if (useProgressBar) renderProgress();
     }
-    await persist();
-    done += 1;
-    if (useProgressBar) {
-      renderProgress();
-    } else if (done % 10 === 0 || done === pending.length) {
-      const elapsedMin = (Date.now() - startedAt) / 60000;
-      const rate = done / elapsedMin;
-      console.log(
-        `[${locale}/${scopeLabel}] ${String(done)}/${String(pending.length)} written (${elapsedMin.toFixed(1)} min elapsed, ${rate.toFixed(1)}/min) — last: ${key}`,
-      );
-    }
-  } catch (error) {
-    failed += 1;
-    if (useProgressBar) process.stdout.write('\n');
-    console.error(`[${locale}/${scopeLabel}] FAILED ${key}: ${error.message}`);
-    if (useProgressBar) renderProgress();
-  }
 
-  if (delayMs > 0) await sleep(delayMs);
-});
+    if (delayMs > 0) await sleep(delayMs);
+  });
+}
 
 console.log(`\n[${locale}/${scopeLabel}] batch complete: ${String(done)} written, ${String(failed)} failed`);
 
@@ -312,11 +446,15 @@ if (provider === 'ollama') {
     `[${locale}/${scopeLabel}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — $0.00 (local model)`,
   );
 } else {
-  const inputCostPerM = 0.3;
-  const outputCostPerM = 2.5;
+  // Batch API processing is Google's own documented 50% of standard interactive-API pricing for
+  // the same model — see lib/gemini-batch.mjs's own doc comment.
+  const batchDiscount = useBatch ? 0.5 : 1;
+  const inputCostPerM = 0.3 * batchDiscount;
+  const outputCostPerM = 2.5 * batchDiscount;
   const cost = (usageIn / 1_000_000) * inputCostPerM + (usageOut / 1_000_000) * outputCostPerM;
   console.log(
-    `[${locale}/${scopeLabel}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — est. cost at Standard-tier rates: $${cost.toFixed(2)}`,
+    `[${locale}/${scopeLabel}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — ` +
+      `est. cost at ${useBatch ? 'Batch-tier (50% off Standard)' : 'Standard-tier'} rates: $${cost.toFixed(2)}`,
   );
 }
 

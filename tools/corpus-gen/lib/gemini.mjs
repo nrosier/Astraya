@@ -10,11 +10,16 @@
  * paid-tier model) that retrying will not fix.
  */
 
-const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com';
+export const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com';
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
-/** Gemini's Schema type wants upper-case type names; schema.ts's is lower-case JSON Schema. */
-function toGeminiSchema(schema) {
+/**
+ * Gemini's Schema type wants upper-case type names; schema.ts's is lower-case JSON Schema.
+ * Exported for gemini-batch.mjs, which builds the same per-request generationConfig shape but
+ * can't reuse generateStructured() itself — a batch request/response is a different shape top
+ * to bottom (submit-many/poll/retrieve-many vs one request/one response).
+ */
+export function toGeminiSchema(schema) {
   if (Array.isArray(schema)) return schema.map(toGeminiSchema);
   if (schema === null || typeof schema !== 'object') return schema;
   const out = {};
