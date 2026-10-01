@@ -198,3 +198,26 @@ export async function decideCorpusCandidates(
     body: JSON.stringify({ ids, decision }),
   });
 }
+
+/** Mirrors `server/interpretation/usage.ts`'s `UserUsageSummary`, plus the last-24h figure the route adds alongside it. */
+export interface InterpretationUsageSummary {
+  readonly userId: string;
+  readonly username: string;
+  readonly requestCount: number;
+  readonly promptTokens: number;
+  readonly outputTokens: number;
+  readonly costCents: number;
+  readonly lastUsedAt: string;
+  readonly costCentsLast24h: number;
+}
+
+export interface InterpretationUsageReport {
+  readonly users: readonly InterpretationUsageSummary[];
+  readonly totalCostCentsLast24h: number;
+  readonly caps: { readonly userDailyCapCents: number; readonly totalDailyCapCents: number };
+}
+
+/** Admin-only Tier 2 (#360) cost visibility (#382) — never the generated interpretation text itself, only usage/cost. */
+export async function getInterpretationUsage(): Promise<InterpretationUsageReport> {
+  return call('/api/admin/interpretation-usage');
+}

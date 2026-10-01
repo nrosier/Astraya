@@ -648,3 +648,67 @@ describe('POST /api/interpretation/generate', () => {
     });
   });
 });
+
+describe('GET /api/admin/interpretation-usage (#382)', () => {
+  function recordUsageRow(uid: string, costCents: number): void {
+    const raw = new DatabaseSync(dbPath);
+    raw
+      .prepare(
+        'INSERT INTO interpretation_usage (user_id, prompt_tokens, output_tokens, cost_cents, created_at) VALUES (?, ?, ?, ?, ?)',
+      )
+      .run(uid, 10, 20, costCents, new Date().toISOString());
+    raw.close();
+  }
+
+  it('rejects an unauthenticated request with 401', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/admin/interpretation-usage' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('rejects a signed-in non-admin user with 403', async () => {
+    await signIn(app); // provisions the first (admin) account, not used for this request
+    const { sessionId: bobCookie } = await createAndLoginUser(app, 'bob', 'correct-horse-battery-2');
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/admin/interpretation-usage',
+      cookies: { [SESSION_COOKIE]: bobCookie },
+    });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('returns per-user usage, excluding a user with no usage, ordered by cost descending, with the configured caps', async () => {
+    const adminCookie = await signIn(app); // /api/setup's first account is always an admin
+    const { userId: bobId } = await createAndLoginUser(app, 'bob', 'correct-horse-battery-2');
+    await createAndLoginUser(app, 'carol', 'correct-horse-battery-3'); // never uses Tier 2 — must not appear below
+
+    const raw = new DatabaseSync(dbPath);
+    const aliceId = (raw.prepare('SELECT id FROM users WHERE username = ?').get('alice') as { id: string }).id;
+    raw.close();
+    recordUsageRow(aliceId, 5);
+    recordUsageRow(bobId, 50);
+
+    process.env.ASTRAYA_INTERPRETATION_USER_DAILY_CENTS = '42';
+    process.env.ASTRAYA_INTERPRETATION_TOTAL_DAILY_CENTS = '420';
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/admin/interpretation-usage',
+      cookies: { [SESSION_COOKIE]: adminCookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json<{
+      users: { username: string; requestCount: number; costCents: number; costCentsLast24h: number }[];
+      totalCostCentsLast24h: number;
+      caps: { userDailyCapCents: number; totalDailyCapCents: number };
+    }>();
+
+    expect(body.users.map((u) => u.username)).toEqual(['bob', 'alice']);
+    expect(body.users.find((u) => u.username === 'bob')).toMatchObject({
+      requestCount: 1,
+      costCents: 50,
+      costCentsLast24h: 50,
+    });
+    expect(body.totalCostCentsLast24h).toBe(55);
+    expect(body.caps).toEqual({ userDailyCapCents: 42, totalDailyCapCents: 420 });
+  });
+});

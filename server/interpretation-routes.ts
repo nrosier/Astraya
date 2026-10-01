@@ -43,9 +43,15 @@
  */
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Database } from './db.ts';
-import { requireUser } from './auth/identity.ts';
+import { requireUser, requireAdmin } from './auth/identity.ts';
 import { loadTier2Config, generateTier2Text, estimateCostCents } from './interpretation/llm-client.ts';
-import { recordUsage, userCostCentsSince, totalCostCentsSince } from './interpretation/usage.ts';
+import {
+  recordUsage,
+  userCostCentsSince,
+  totalCostCentsSince,
+  usageByUser,
+  costCentsSinceByUser,
+} from './interpretation/usage.ts';
 import { checkCustomPrompt } from '../src/interpretation/prompt-guardrail.ts';
 import { CORPUS_LOCALES, parsePlacementKey, validateKey, type Locale } from '../src/interpretation/schema.ts';
 import { resolvePlacementText } from '../src/interpretation/compose.ts';
@@ -437,6 +443,31 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
       });
 
       return reply.send({ sections: result.sections });
+    },
+  );
+
+  // Admin-only (#382): the two daily caps above already read interpretation_usage before every
+  // call, but nothing before this let anyone — admin or otherwise — actually look at it. All-time
+  // per-user totals plus each user's own last-24h spend (to compare against the per-user cap) and
+  // the two configured cap values themselves, so an admin can see how close an account or this
+  // deployment is to being throttled, not just that it happened after the fact in a 503.
+  app.get(
+    '/api/admin/interpretation-usage',
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (_request, reply) => {
+      const costCentsLast24hByUser = costCentsSinceByUser(db);
+      const users = usageByUser(db).map((user) => ({
+        ...user,
+        costCentsLast24h: costCentsLast24hByUser.get(user.userId) ?? 0,
+      }));
+      return reply.send({
+        users,
+        totalCostCentsLast24h: totalCostCentsSince(db),
+        caps: {
+          userDailyCapCents: envCapCents('ASTRAYA_INTERPRETATION_USER_DAILY_CENTS', 50),
+          totalDailyCapCents: envCapCents('ASTRAYA_INTERPRETATION_TOTAL_DAILY_CENTS', 500),
+        },
+      });
     },
   );
 }

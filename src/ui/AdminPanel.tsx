@@ -17,6 +17,7 @@ import {
   disableUser,
   enableUser,
   getDeletionImpact,
+  getInterpretationUsage,
   listUsers,
   promoteUser,
   resetPassword,
@@ -27,8 +28,12 @@ import { adminPanelMessages } from './AdminPanel.messages.js';
 import { useMessages } from './messages.js';
 import { useSession } from './session-context.js';
 import { sharedMessages } from './shared.messages.js';
-import type { AdminUser, DeletionImpact } from '../sync/admin-client.js';
+import type { AdminUser, DeletionImpact, InterpretationUsageReport } from '../sync/admin-client.js';
 import type { OidcConfig } from '../sync/auth-client.js';
+
+function formatCost(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
 
 function describeImpact(impact: DeletionImpact, t: typeof adminPanelMessages.en): string {
   if (impact.kind === 'counted') {
@@ -176,6 +181,7 @@ export function AdminPanel(): React.JSX.Element {
   const [busyUserId, setBusyUserId] = useState<string>();
   const [passwordLink, setPasswordLink] = useState<{ userId: string; url: string }>();
   const [pendingDelete, setPendingDelete] = useState<PendingDelete>();
+  const [usage, setUsage] = useState<InterpretationUsageReport>();
   const t = useMessages(adminPanelMessages);
   const shared = useMessages(sharedMessages);
 
@@ -190,6 +196,9 @@ export function AdminPanel(): React.JSX.Element {
     });
     void getOidcConfig()
       .then(setOidcConfig)
+      .catch(() => undefined);
+    void getInterpretationUsage()
+      .then(setUsage)
       .catch(() => undefined);
   }, []);
 
@@ -337,6 +346,53 @@ export function AdminPanel(): React.JSX.Element {
             </table>
           </div>
         </div>
+      )}
+
+      <h2>{t.usageHeading}</h2>
+      {usage === undefined ? (
+        <p className="status">{t.loadingUsage}</p>
+      ) : usage.users.length === 0 ? (
+        <p className="hint">{t.usageEmpty}</p>
+      ) : (
+        <>
+          <div className="data-table">
+            <div className="data-table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t.usageUserColumn}</th>
+                    <th>{t.usageRequestsColumn}</th>
+                    <th>{t.usageTokensColumn}</th>
+                    <th>{t.usageCostColumn}</th>
+                    <th>{t.usageCostLast24hColumn}</th>
+                    <th>{t.usageLastUsedColumn}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usage.users.map((row) => (
+                    <tr key={row.userId}>
+                      <td>{row.username}</td>
+                      <td>{row.requestCount}</td>
+                      <td>
+                        {row.promptTokens} / {row.outputTokens}
+                      </td>
+                      <td>{formatCost(row.costCents)}</td>
+                      <td>{formatCost(row.costCentsLast24h)}</td>
+                      <td>{row.lastUsedAt}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p className="hint">
+            {t.usageCapsNote(
+              formatCost(usage.caps.userDailyCapCents),
+              formatCost(usage.caps.totalDailyCapCents),
+              formatCost(usage.totalCostCentsLast24h),
+            )}
+          </p>
+        </>
       )}
     </main>
   );
