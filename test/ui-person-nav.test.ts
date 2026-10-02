@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { newId } from '../src/domain/id.js';
-import { activeTabKey, isTabEnabled, PERSON_TABS } from '../src/ui/person-nav.js';
+import { activeTabKey, familyForTab, isTabEnabled, PERSON_TAB_FAMILIES, PERSON_TABS } from '../src/ui/person-nav.js';
 import type { Route } from '../src/ui/route.js';
 
 const ID = newId('p');
@@ -71,5 +71,44 @@ describe('PERSON_TABS', () => {
       'periodic-transit': `#/periodic-transit/${ID}`,
       astrocartography: `#/astrocartography/${ID}`,
     });
+  });
+});
+
+describe('PERSON_TAB_FAMILIES (#398)', () => {
+  it('keeps the three fixed tabs and astrocartography out of every family', () => {
+    const grouped = new Set(PERSON_TAB_FAMILIES.flatMap((family) => family.members));
+    expect(grouped.has('birth-record')).toBe(false);
+    expect(grouped.has('chart')).toBe(false);
+    expect(grouped.has('report')).toBe(false);
+    expect(grouped.has('astrocartography')).toBe(false);
+  });
+
+  it('places every other tab in exactly one family', () => {
+    const groupable = PERSON_TABS.filter(
+      (tab) =>
+        tab.key !== 'birth-record' && tab.key !== 'chart' && tab.key !== 'report' && tab.key !== 'astrocartography',
+    );
+    for (const tab of groupable) {
+      const matches = PERSON_TAB_FAMILIES.filter((family) => family.members.includes(tab.key));
+      expect(matches).toHaveLength(1);
+    }
+  });
+});
+
+describe('familyForTab (#398)', () => {
+  it('returns the family a grouped tab belongs to', () => {
+    expect(familyForTab('profections')).toBe('progressions-directions');
+    expect(familyForTab('transit')).toBe('transits-forecast');
+    expect(familyForTab('periodic-transit')).toBe('transits-forecast');
+    expect(familyForTab('synastry')).toBe('relationship-charts');
+    expect(familyForTab('composite')).toBe('relationship-charts');
+    expect(familyForTab('harmonic')).toBe('chart-variants');
+  });
+
+  it('returns undefined for the three fixed tabs and astrocartography', () => {
+    expect(familyForTab('birth-record')).toBeUndefined();
+    expect(familyForTab('chart')).toBeUndefined();
+    expect(familyForTab('report')).toBeUndefined();
+    expect(familyForTab('astrocartography')).toBeUndefined();
   });
 });

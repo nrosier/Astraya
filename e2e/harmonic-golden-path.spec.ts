@@ -42,6 +42,7 @@ test('a person with a known birth time gets a Harmonic screen with a wheel and d
     latitude: '51.5072',
     longitude: '-0.1276',
   });
+  await page.getByRole('button', { name: 'Chart Variants', exact: true }).click();
   await page.getByRole('link', { name: 'Harmonic', exact: true }).click();
   await expect(page.getByRole('heading', { name: /harmonic/i, level: 1 })).toBeVisible();
 
@@ -69,6 +70,7 @@ test('a custom harmonic number renders its own chart', async ({ page }) => {
     latitude: '51.5072',
     longitude: '-0.1276',
   });
+  await page.getByRole('button', { name: 'Chart Variants', exact: true }).click();
   await page.getByRole('link', { name: 'Harmonic', exact: true }).click();
   await page.getByLabel('Divisional chart').selectOption({ label: 'Custom harmonic…' });
   await page.getByLabel('Harmonic number').fill('5');
@@ -84,6 +86,7 @@ test('a person with an unknown birth time is told a harmonic chart needs one', a
     longitude: '-74.006',
   });
 
+  await page.getByRole('button', { name: 'Chart Variants', exact: true }).click();
   await page.getByRole('link', { name: 'Harmonic', exact: true }).click();
   await expect(page.getByText(/needs a real Ascendant/)).toBeVisible();
 });

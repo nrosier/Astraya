@@ -128,6 +128,7 @@ test('the profections screen (#168) has no automatically detectable accessibilit
     latitude: '51.5072',
     longitude: '-0.1276',
   });
+  await page.getByRole('button', { name: 'Progressions & Directions', exact: true }).click();
   await page.getByRole('link', { name: 'Profections', exact: true }).click();
   await expect(page.getByRole('cell', { name: 'Year' })).toBeVisible();
 
@@ -146,6 +147,7 @@ test('the transit screen (#172) has no automatically detectable accessibility vi
     latitude: '51.5072',
     longitude: '-0.1276',
   });
+  await page.getByRole('button', { name: 'Transits & Forecast', exact: true }).click();
   await page.getByRole('link', { name: 'Transits', exact: true }).click();
   await expect(page.locator('div.chart-wheel')).toBeVisible();
 
@@ -175,6 +177,7 @@ test('the synastry screen (#172) has no automatically detectable accessibility v
 
   await page.getByRole('link', { name: '← People' }).click();
   await page.getByRole('link').filter({ hasText: 'Ada Lovelace' }).click();
+  await page.getByRole('button', { name: 'Relationship Charts', exact: true }).click();
   await page.getByRole('link', { name: 'Synastry', exact: true }).click();
   await page.getByLabel('Compare with').selectOption({ label: 'Charles Babbage' });
   await expect(page.locator('div.chart-wheel')).toBeVisible();
@@ -205,6 +208,7 @@ test('the composite screen (#169) has no automatically detectable accessibility 
 
   await page.getByRole('link', { name: '← People' }).click();
   await page.getByRole('link').filter({ hasText: 'Ada Lovelace' }).click();
+  await page.getByRole('button', { name: 'Relationship Charts', exact: true }).click();
   await page.getByRole('link', { name: 'Composite', exact: true }).click();
   await page.getByLabel('Compose with').selectOption({ label: 'Charles Babbage' });
   await expect(page.locator('div.chart-wheel')).toBeVisible();
@@ -224,6 +228,7 @@ test('the harmonic screen (#170) has no automatically detectable accessibility v
     latitude: '51.5072',
     longitude: '-0.1276',
   });
+  await page.getByRole('button', { name: 'Chart Variants', exact: true }).click();
   await page.getByRole('link', { name: 'Harmonic', exact: true }).click();
   await expect(page.locator('div.chart-wheel')).toBeVisible();
 
@@ -244,6 +249,7 @@ test('the periodic transit forecast screen (#207) has no automatically detectabl
     latitude: '51.5072',
     longitude: '-0.1276',
   });
+  await page.getByRole('button', { name: 'Transits & Forecast', exact: true }).click();
   await page.getByRole('link', { name: 'Forecast', exact: true }).click();
   await expect(page.getByText(/Solar return for \d{4}/)).toBeVisible();
 

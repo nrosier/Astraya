@@ -38,6 +38,40 @@ export const PERSON_TABS: readonly PersonTab[] = [
   { key: 'astrocartography', buildHref: (id) => `#/astrocartography/${id}` },
 ];
 
+/**
+ * Groups the tabs beyond the three fixed ones (`birth-record`/`chart`/`report`) and the
+ * standalone `astrocartography` into astrologically-sensible families with subtabs (#398), so the
+ * top-level bar doesn't keep growing linearly as more techniques get wired in. Grouping and
+ * reasoning: a real astrologer's own navigation habits, not engineering convenience —
+ * "Transits & Forecast" is "what is the real sky doing against this chart"; "Progressions &
+ * Directions" is "advance the chart by its own symbolic rule"; "Relationship Charts" is "how do
+ * two people's charts interact"; "Chart Variants" is "a different lens on this one birth moment".
+ * `astrocartography` is deliberately NOT in any family — it's spatial, not a different lens on
+ * the same chart data, with its own distinct vocabulary and practitioner audience.
+ */
+export type PersonTabFamilyKey =
+  'transits-forecast' | 'progressions-directions' | 'relationship-charts' | 'chart-variants';
+
+export interface PersonTabFamily {
+  readonly key: PersonTabFamilyKey;
+  readonly members: readonly PersonTabKey[];
+}
+
+// Order within a family is the order subtabs render in. Future techniques (planetary return,
+// secondary/minor progression, solar arc directions, draconic) slot in as additional members
+// here once built, rather than becoming new top-level items.
+export const PERSON_TAB_FAMILIES: readonly PersonTabFamily[] = [
+  { key: 'transits-forecast', members: ['transit', 'periodic-transit'] },
+  { key: 'progressions-directions', members: ['profections'] },
+  { key: 'relationship-charts', members: ['synastry', 'composite'] },
+  { key: 'chart-variants', members: ['harmonic'] },
+];
+
+/** Which family (if any) a tab belongs to — `undefined` for the three fixed tabs and `astrocartography`. */
+export function familyForTab(key: PersonTabKey): PersonTabFamilyKey | undefined {
+  return PERSON_TAB_FAMILIES.find((family) => family.members.includes(key))?.key;
+}
+
 /** Which tab a parsed route corresponds to, or `null` for a route with no tab (e.g. `home`, `about`). */
 export function activeTabKey(route: Route): PersonTabKey | null {
   switch (route.kind) {

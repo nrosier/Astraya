@@ -44,6 +44,7 @@ test('a person with a known birth time gets a Forecast screen with all four tier
     longitude: '-0.1276',
   });
 
+  await page.getByRole('button', { name: 'Transits & Forecast', exact: true }).click();
   await page.getByRole('link', { name: 'Forecast', exact: true }).click();
   await expect(page.getByRole('heading', { name: /forecast/i, level: 1 })).toBeVisible();
 
@@ -69,6 +70,7 @@ test('changing the "as of" date recalculates the forecast', async ({ page }) => 
     longitude: '-0.1276',
   });
 
+  await page.getByRole('button', { name: 'Transits & Forecast', exact: true }).click();
   await page.getByRole('link', { name: 'Forecast', exact: true }).click();
   const before = await page.getByText(/Solar return for \d{4}/).textContent();
 
@@ -87,6 +89,7 @@ test('a person with an unknown birth time is told a forecast needs one', async (
     longitude: '-74.006',
   });
 
+  await page.getByRole('button', { name: 'Transits & Forecast', exact: true }).click();
   await page.getByRole('link', { name: 'Forecast', exact: true }).click();
   await expect(page.getByText(/needs a known birth time/)).toBeVisible();
 });

@@ -3,12 +3,13 @@
  * `person-nav.ts`'s `PERSON_TABS` (that module has no access to the current locale, so
  * `PersonNav.tsx` looks labels up here by `tab.key`).
  */
-import type { PersonTabKey } from './person-nav.js';
+import type { PersonTabFamilyKey, PersonTabKey } from './person-nav.js';
 
 const en = {
   chartTypesAriaLabel: 'Chart types',
   disabledTabSuffix: (label: string) => `${label} — complete the birth record first`,
   completeBirthRecordHint: 'Complete the birth record to unlock the other tabs.',
+  subtabsAriaLabel: (familyLabel: string) => `${familyLabel} subtabs`,
 
   tabLabels: {
     'birth-record': 'Birth record',
@@ -22,12 +23,20 @@ const en = {
     'periodic-transit': 'Forecast',
     astrocartography: 'Astrocartography',
   } satisfies Record<PersonTabKey, string>,
+
+  familyLabels: {
+    'transits-forecast': 'Transits & Forecast',
+    'progressions-directions': 'Progressions & Directions',
+    'relationship-charts': 'Relationship Charts',
+    'chart-variants': 'Chart Variants',
+  } satisfies Record<PersonTabFamilyKey, string>,
 };
 
 const nl: typeof en = {
   chartTypesAriaLabel: 'Horoscooptypes',
   disabledTabSuffix: (label: string) => `${label} — voltooi eerst de geboortegegevens`,
   completeBirthRecordHint: 'Vul de geboortegegevens in om de overige tabs te ontgrendelen.',
+  subtabsAriaLabel: (familyLabel: string) => `Subtabs van ${familyLabel}`,
 
   tabLabels: {
     'birth-record': 'Geboortegegevens',
@@ -41,6 +50,13 @@ const nl: typeof en = {
     'periodic-transit': 'Prognose',
     astrocartography: 'Astrocartografie',
   } satisfies Record<PersonTabKey, string>,
+
+  familyLabels: {
+    'transits-forecast': 'Transits & prognose',
+    'progressions-directions': 'Progressies & directies',
+    'relationship-charts': 'Relatiehoroscopen',
+    'chart-variants': 'Horoscoopvarianten',
+  } satisfies Record<PersonTabFamilyKey, string>,
 };
 
 export const personNavMessages = { en, nl };

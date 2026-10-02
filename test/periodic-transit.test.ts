@@ -123,4 +123,48 @@ describe('computePeriodicTransitForecast (#207)', () => {
     expect(forecast.yearly.solarReturn.year).toBe(2020);
     expect(forecast.yearly.solarReturn.houses.cusps).toHaveLength(13);
   });
+
+  it('ties the yearly tier to a real demibirthday chart at the Sun opposite its natal longitude', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+    const dayJd = natalJd + 365.2425 * 30;
+    const periods = await periodsFor(dayJd);
+
+    const forecast = await computePeriodicTransitForecast(NATAL, periods, engine);
+    const [natalSun] = await engine.positions(natalJd, [SE.SE_SUN]);
+    const demiSun = forecast.yearly.demibirthday.positions.find((p) => p.body === SE.SE_SUN);
+    if (natalSun === undefined || demiSun === undefined) throw new Error('unreachable: index within bounds');
+
+    expect(angularSeparation(demiSun.longitude, (natalSun.longitude + 180) % 360)).toBeLessThan(0.01);
+    expect(forecast.yearly.demibirthday.year).toBe(2020);
+  });
+
+  it('ties the monthly tier to a real progressed lunar return at or before the month start', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+    const dayJd = natalJd + 365.2425 * 30;
+    const periods = await periodsFor(dayJd);
+
+    const forecast = await computePeriodicTransitForecast(NATAL, periods, engine);
+    expect(forecast.monthly.progressedLunarReturn.targetJd).toBe(periods.monthFromJd);
+    expect(forecast.monthly.progressedLunarReturn.returnJd).toBeLessThanOrEqual(periods.monthFromJd);
+    expect(forecast.monthly.progressedLunarReturn.houses.cusps).toHaveLength(13);
+  });
+
+  it('ties the weekly tier to real lunar returns landing within the window, if any', async () => {
+    const engine = await getEngine();
+    const natalJd = await julianDayFor(engine, resolveMoment(NATAL));
+    const dayJd = natalJd + 365.2425 * 30;
+    const periods = await periodsFor(dayJd);
+
+    const forecast = await computePeriodicTransitForecast(NATAL, periods, engine);
+    for (const lunarReturn of forecast.weekly.lunarReturns.returns) {
+      expect(lunarReturn.returnJd).toBeGreaterThanOrEqual(forecast.weekly.fromJd);
+      expect(lunarReturn.returnJd).toBeLessThanOrEqual(forecast.weekly.toJd);
+      const [transitingMoon] = await engine.positions(lunarReturn.returnJd, [SE.SE_MOON]);
+      const [natalMoon] = await engine.positions(natalJd, [SE.SE_MOON]);
+      if (transitingMoon === undefined || natalMoon === undefined) throw new Error('unreachable: index within bounds');
+      expect(angularSeparation(transitingMoon.longitude, natalMoon.longitude)).toBeLessThan(0.01);
+    }
+  });
 });

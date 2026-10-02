@@ -32,17 +32,26 @@ const en = {
   weeklyHeading: 'Weekly',
   exactThisWeekCaption: 'Exact this week',
   noAspectsWeek: 'No aspects go exact this week.',
+  lunarReturnSentence: (date: string, sign: string) => `Lunar return: ${date}, Ascendant in ${sign}.`,
+  lunarReturnContactsCaption: 'Lunar return contacts to the natal chart',
+  noLunarReturnWeek: 'No lunar return lands this week.',
 
   monthlyHeading: 'Monthly',
   sunInThisMonth: (signHouse: string, from: string, to: string) =>
     `Sun in ${signHouse} this month, from ${from} to ${to}.`,
   exactThisMonthCaption: 'Exact this month',
   noAspectsMonth: 'No aspects go exact this month.',
+  progressedLunarReturnSentence: (date: string, sign: string) =>
+    `Progressed lunar return: ${date}, Ascendant in ${sign}.`,
+  progressedLunarReturnContactsCaption: 'Progressed lunar return contacts to the natal chart',
 
   yearlyHeading: 'Yearly',
   solarReturnSentence: (year: string, date: string, sign: string) =>
     `Solar return for ${year}: ${date}, Ascendant in ${sign}.`,
   solarReturnContactsCaption: 'Solar return contacts to the natal chart',
+  demibirthdaySentence: (year: string, date: string, sign: string) =>
+    `Demibirthday for ${year}: ${date}, Ascendant in ${sign}.`,
+  demibirthdayContactsCaption: 'Demibirthday contacts to the natal chart',
 
   exactLabel: 'Exact',
   forecastLabel: 'Forecast',
@@ -87,17 +96,26 @@ const nl: typeof en = {
   weeklyHeading: 'Wekelijks',
   exactThisWeekCaption: 'Exact deze week',
   noAspectsWeek: 'Er worden deze week geen aspecten exact.',
+  lunarReturnSentence: (date: string, sign: string) => `Lunar return: ${date}, Ascendant in ${sign}.`,
+  lunarReturnContactsCaption: 'Contacten van de lunar return met de natale horoscoop',
+  noLunarReturnWeek: 'Er valt deze week geen lunar return.',
 
   monthlyHeading: 'Maandelijks',
   sunInThisMonth: (signHouse: string, from: string, to: string) =>
     `Zon in ${signHouse} deze maand, van ${from} tot ${to}.`,
   exactThisMonthCaption: 'Exact deze maand',
   noAspectsMonth: 'Er worden deze maand geen aspecten exact.',
+  progressedLunarReturnSentence: (date: string, sign: string) =>
+    `Progressed lunar return: ${date}, Ascendant in ${sign}.`,
+  progressedLunarReturnContactsCaption: 'Contacten van de progressed lunar return met de natale horoscoop',
 
   yearlyHeading: 'Jaarlijks',
   solarReturnSentence: (year: string, date: string, sign: string) =>
     `Solar return voor ${year}: ${date}, Ascendant in ${sign}.`,
   solarReturnContactsCaption: 'Contacten van de solar return met de natale horoscoop',
+  demibirthdaySentence: (year: string, date: string, sign: string) =>
+    `Demibirthday voor ${year}: ${date}, Ascendant in ${sign}.`,
+  demibirthdayContactsCaption: 'Contacten van de demibirthday met de natale horoscoop',
 
   exactLabel: 'Exact',
   forecastLabel: 'Vooruitzicht',

@@ -44,6 +44,7 @@ test('a person with a known birth time gets a Transit screen with a bi-wheel and
     longitude: '-0.1276',
   });
 
+  await page.getByRole('button', { name: 'Transits & Forecast', exact: true }).click();
   await page.getByRole('link', { name: 'Transits', exact: true }).click();
   await expect(page.getByRole('heading', { name: /transits/i })).toBeVisible();
   await expect(page.locator('div.chart-wheel')).toBeVisible();
@@ -66,6 +67,7 @@ test('a person with an unknown birth time is told transits need one', async ({ p
     longitude: '-74.006',
   });
 
+  await page.getByRole('button', { name: 'Transits & Forecast', exact: true }).click();
   await page.getByRole('link', { name: 'Transits', exact: true }).click();
   await expect(page.getByText(/needs a known birth time/)).toBeVisible();
 });

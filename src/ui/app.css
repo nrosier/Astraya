@@ -1148,6 +1148,7 @@ label.stacked textarea:focus-visible {
 .person-tabs {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 0.2rem;
   padding: 0.6rem 0.6rem 0;
 }
@@ -1178,6 +1179,93 @@ label.stacked textarea:focus-visible {
    `button:disabled` uses elsewhere, layered on top of the plain (inactive) tab look. */
 .person-tab.disabled,
 .person-tab.disabled:hover {
+  opacity: 0.55;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+/* A family of subtabs (#398) — a native <details> standing in for one `.person-tab`, so it sits
+   in the same flex row and gets the same "fused into the panel below" active treatment as a
+   plain tab when the family containing the current route is open. `position: relative` anchors
+   the subtab dropdown (`.person-subtabs` below) to this element rather than the whole nav row. */
+.person-tab-family {
+  position: relative;
+}
+
+.person-tab-family > summary {
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--muted);
+  font-weight: 550;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+/* Removes the browser's own disclosure marker so the custom caret below is the only one. */
+.person-tab-family > summary::-webkit-details-marker {
+  display: none;
+}
+
+.person-tab-family > summary::after {
+  content: ' \25BE';
+  font-size: 0.75em;
+  color: var(--muted);
+}
+
+.person-tab-family:hover > summary {
+  color: var(--fg);
+}
+
+.person-tab-family[open] > summary {
+  background: var(--bg);
+  color: var(--fg);
+  margin-bottom: -1px;
+}
+
+/* The revealed subtabs — a small dropdown anchored under the summary, not pushed into normal
+   flow, so the main tab row's height doesn't shift depending on which family is open. */
+.person-subtabs {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 100%;
+  padding: 0.3rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 20%);
+}
+
+.person-subtab {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.9em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.person-subtab:hover:not(.active) {
+  color: var(--fg);
+  background: var(--surface-hover);
+}
+
+.person-subtab.active {
+  background: var(--surface-hover);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.person-subtab.disabled,
+.person-subtab.disabled:hover {
   opacity: 0.55;
   color: var(--muted);
   cursor: not-allowed;

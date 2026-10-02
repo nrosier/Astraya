@@ -254,6 +254,10 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
 
   const data = load.kind === 'ready' ? load.data : undefined;
   const returnAscendantSign = data !== undefined ? Math.floor((data.yearly.solarReturn.houses.cusps[1] ?? 0) / 30) : 0;
+  const demibirthdayAscendantSign =
+    data !== undefined ? Math.floor((data.yearly.demibirthday.houses.cusps[1] ?? 0) / 30) : 0;
+  const progressedLunarReturnAscendantSign =
+    data !== undefined ? Math.floor((data.monthly.progressedLunarReturn.houses.cusps[1] ?? 0) / 30) : 0;
 
   return (
     <main className="shell">
@@ -337,6 +341,36 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
             ) : (
               <p>{t.noAspectsWeek}</p>
             )}
+            {data.weekly.lunarReturns.returns.length > 0 ? (
+              data.weekly.lunarReturns.returns.map((lunarReturn, index) => {
+                const ascendantSign = Math.floor((lunarReturn.houses.cusps[1] ?? 0) / 30);
+                return (
+                  <div key={`${String(lunarReturn.returnJd)}-${String(index)}`}>
+                    <p>
+                      {t.lunarReturnSentence(
+                        formatUtc(lunarReturn.returnJd),
+                        SIGNS[ascendantSign]?.name ?? t.signFallback(String(ascendantSign)),
+                      )}
+                    </p>
+                    {lunarReturn.contacts.length > 0 && (
+                      <SortableTable
+                        caption={t.lunarReturnContactsCaption}
+                        columns={contactColumns(t)}
+                        rows={contactRows(lunarReturn.contacts)}
+                        getRowKey={(row) => row.key}
+                        downloadFilename={deriveExportFilename(
+                          person.displayName,
+                          `forecast-weekly-lunar-return-${String(index)}`,
+                          'csv',
+                        )}
+                      />
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <p>{t.noLunarReturnWeek}</p>
+            )}
           </section>
 
           <section>
@@ -359,6 +393,26 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
             ) : (
               <p>{t.noAspectsMonth}</p>
             )}
+            <p>
+              {t.progressedLunarReturnSentence(
+                formatUtc(data.monthly.progressedLunarReturn.returnJd),
+                SIGNS[progressedLunarReturnAscendantSign]?.name ??
+                  t.signFallback(String(progressedLunarReturnAscendantSign)),
+              )}
+            </p>
+            {data.monthly.progressedLunarReturn.contacts.length > 0 && (
+              <SortableTable
+                caption={t.progressedLunarReturnContactsCaption}
+                columns={contactColumns(t)}
+                rows={contactRows(data.monthly.progressedLunarReturn.contacts)}
+                getRowKey={(row) => row.key}
+                downloadFilename={deriveExportFilename(
+                  person.displayName,
+                  'forecast-monthly-progressed-lunar-return',
+                  'csv',
+                )}
+              />
+            )}
           </section>
 
           <section>
@@ -377,6 +431,22 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
                 rows={contactRows(data.yearly.solarReturn.contacts)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-yearly-return', 'csv')}
+              />
+            )}
+            <p>
+              {t.demibirthdaySentence(
+                String(data.yearly.demibirthday.year),
+                formatUtc(data.yearly.demibirthday.demibirthdayJd),
+                SIGNS[demibirthdayAscendantSign]?.name ?? t.signFallback(String(demibirthdayAscendantSign)),
+              )}
+            </p>
+            {data.yearly.demibirthday.contacts.length > 0 && (
+              <SortableTable
+                caption={t.demibirthdayContactsCaption}
+                columns={contactColumns(t)}
+                rows={contactRows(data.yearly.demibirthday.contacts)}
+                getRowKey={(row) => row.key}
+                downloadFilename={deriveExportFilename(person.displayName, 'forecast-yearly-demibirthday', 'csv')}
               />
             )}
           </section>

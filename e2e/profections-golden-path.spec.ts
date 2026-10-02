@@ -44,6 +44,7 @@ test('a person with a known birth time gets a Profections screen with a Year/Mon
     longitude: '-0.1276',
   });
 
+  await page.getByRole('button', { name: 'Progressions & Directions', exact: true }).click();
   await page.getByRole('link', { name: 'Profections', exact: true }).click();
   await expect(page.getByRole('heading', { name: /profections/i, level: 1 })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'Year' })).toBeVisible();
@@ -65,6 +66,7 @@ test('a person with an unknown birth time is told profections need one', async (
     longitude: '-74.006',
   });
 
+  await page.getByRole('button', { name: 'Progressions & Directions', exact: true }).click();
   await page.getByRole('link', { name: 'Profections', exact: true }).click();
   await expect(page.getByText(/need a known birth time/)).toBeVisible();
 });

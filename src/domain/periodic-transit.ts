@@ -27,11 +27,13 @@
  *   also the resolution `report.ts`'s file doc promised for M7 #61's
  *   deferred "current timing from progressions and the year's solar return"
  *   item: superseded, not carried forward — the progressions half of that
- *   note already has its own dedicated screen (`SecondaryProgressionView.tsx`,
- *   M6), and forcing a solar return's cross-chart contacts into `ChartData`'s
- *   shape (which `report.ts` correctly declined to do, since a return has no
- *   `dignities`/`sect` of its own) is exactly what this separate forecast
- *   pipeline exists to avoid needing.
+ *   note is computed (`domain/secondary-progression.ts`) but, per #398's
+ *   audit, has no dedicated screen yet (`SecondaryProgressionView.tsx` does
+ *   not exist). Forcing a solar return's cross-chart contacts into
+ *   `ChartData`'s shape (which `report.ts` correctly declined to do, since a
+ *   return has no `dignities`/`sect` of its own) is exactly what this
+ *   separate forecast pipeline exists to avoid needing, independent of when
+ *   a progressions screen gets built.
  *
  * No text lives here. Like `computeChartData`/`computeTransit`, this module
  * produces structured events keyed by `BodyId`; turning an event into a
@@ -46,6 +48,9 @@ import { houseOf } from '../astrology/emphasis.js';
 import { findStations, type StationEvent } from '../astrology/stations.js';
 import { findExactTransitAspects, type TransitAspectEvent } from '../astrology/transit-events.js';
 import { computeChartData, type ChartCalculationOptions, type ChartData } from './chart-compute.js';
+import { computeDemibirthday, type DemibirthdayData } from './demibirthday.js';
+import { computeLunarReturns, type LunarReturnsData } from './lunar-returns.js';
+import { computeProgressedLunarReturn, type ProgressedLunarReturnData } from './progressed-lunar-return.js';
 import { computeSolarReturn, type SolarReturnData, type SolarReturnOptions } from './solar-return.js';
 import type { BodyId, BodyPosition, EphemerisProvider, GeoPosition, JulianDayUT } from '../ephemeris/types.js';
 import type { BirthMomentInput } from '../time/types.js';
@@ -96,6 +101,8 @@ export interface WeeklyTransitForecast {
   readonly toJd: JulianDayUT;
   /** Exact aspects (Sun and the eight planets, natal chart in full) within the window, in chronological order. */
   readonly events: readonly TransitAspectEvent[];
+  /** Every lunar return (the Moon returns roughly every ~27.3 days) landing within the window. */
+  readonly lunarReturns: LunarReturnsData;
 }
 
 export interface MonthlyTransitForecast {
@@ -104,10 +111,14 @@ export interface MonthlyTransitForecast {
   readonly events: readonly TransitAspectEvent[];
   /** The transiting Sun's natal sign/house at `fromJd`, standing for the month as a whole. */
   readonly sun: { readonly sign: number; readonly house: number };
+  /** The most recent progressed lunar return at or before `fromJd` — roughly monthly, like a solar return but for the Moon's progressed motion. */
+  readonly progressedLunarReturn: ProgressedLunarReturnData;
 }
 
 export interface YearlyTransitForecast {
   readonly solarReturn: SolarReturnData;
+  /** The year's demibirthday: when the Sun reaches the point exactly opposite its natal longitude. */
+  readonly demibirthday: DemibirthdayData;
 }
 
 export interface PeriodicTransitForecast {
@@ -157,7 +168,9 @@ export async function computePeriodicTransitForecast(
   const weekToJd = dayJd + 7;
   const zodiacOption = options.zodiac === undefined ? {} : { zodiac: options.zodiac };
 
-  const solarReturnOptions: SolarReturnOptions = {
+  // Shared by every return-shaped tier below (solar return, demibirthday, progressed lunar
+  // return, lunar returns) — all four take the exact same `{place?, houseSystem?, zodiac?}` shape.
+  const returnOptions: SolarReturnOptions = {
     ...(options.solarReturnPlace === undefined ? {} : { place: options.solarReturnPlace }),
     ...(options.houseSystem === undefined ? {} : { houseSystem: options.houseSystem }),
     ...zodiacOption,
@@ -177,6 +190,9 @@ export async function computePeriodicTransitForecast(
     stationsToday,
     moonExactToday,
     solarReturn,
+    demibirthday,
+    progressedLunarReturn,
+    lunarReturns,
   ] = await Promise.all([
     provider.positions(dayJd, [MOON_ID]),
     findExactTransitAspects(provider, WEEKLY_MONTHLY_BODY_IDS, natalMap, weekFromJd, weekToJd, zodiacOption),
@@ -190,7 +206,10 @@ export async function computePeriodicTransitForecast(
       ...zodiacOption,
       sampleStepDays: 0.1,
     }),
-    computeSolarReturn(natalMoment, year, provider, solarReturnOptions, orbConfig),
+    computeSolarReturn(natalMoment, year, provider, returnOptions, orbConfig),
+    computeDemibirthday(natalMoment, year, provider, returnOptions, orbConfig),
+    computeProgressedLunarReturn(natalMoment, monthFromJd, provider, returnOptions, orbConfig),
+    computeLunarReturns(natalMoment, weekFromJd, weekToJd, provider, returnOptions, orbConfig),
   ]);
 
   const moonPosition = moonPositions[0];
@@ -222,14 +241,15 @@ export async function computePeriodicTransitForecast(
       exactToday,
       stationsToday,
     },
-    weekly: { fromJd: weekFromJd, toJd: weekToJd, events: weeklyResolved },
+    weekly: { fromJd: weekFromJd, toJd: weekToJd, events: weeklyResolved, lunarReturns },
     monthly: {
       fromJd: monthFromJd,
       toJd: monthToJd,
       events: monthlyResolved,
       sun: { sign: signOf(sunPosition.longitude), house: houseOfNatal(sunPosition.longitude, natal) },
+      progressedLunarReturn,
     },
-    yearly: { solarReturn },
+    yearly: { solarReturn, demibirthday },
   };
 }
 

@@ -53,6 +53,7 @@ test('two people with known birth times get a Synastry screen with a bi-wheel an
 
   await page.getByRole('link', { name: '← People' }).click();
   await page.getByRole('link').filter({ hasText: 'Ada Lovelace' }).click();
+  await page.getByRole('button', { name: 'Relationship Charts', exact: true }).click();
   await page.getByRole('link', { name: 'Synastry', exact: true }).click();
   await expect(page.getByRole('heading', { name: /synastry/i })).toBeVisible();
 
@@ -85,6 +86,7 @@ test('a person with an unknown birth time is told synastry needs one', async ({ 
     longitude: '-74.006',
   });
 
+  await page.getByRole('button', { name: 'Relationship Charts', exact: true }).click();
   await page.getByRole('link', { name: 'Synastry', exact: true }).click();
   await expect(page.getByText(/needs a complete birth record with a known time/)).toBeVisible();
 });

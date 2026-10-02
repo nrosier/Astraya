@@ -27,9 +27,11 @@
  * `computeSolarReturn` for its yearly tier, plus its own daily/weekly/monthly
  * tiers of exact transit-to-natal aspects (`astrology/transit-events.ts`) and
  * fast-planet stations (`astrology/stations.ts`). "Progressions" half of the
- * old note already has its own dedicated screen (`SecondaryProgressionView.
- * tsx`, M6) and needed no new work. This module (`report.ts`) stays exactly
- * the pure, `ChartData`-only function its own doc above describes.
+ * old note is computed (`domain/secondary-progression.ts`'s own doc comment
+ * says so explicitly) but — per #398's audit — has no dedicated screen yet;
+ * `SecondaryProgressionView.tsx` does not exist. This module (`report.ts`)
+ * stays exactly the pure, `ChartData`-only function its own doc above
+ * describes regardless of when/whether that view gets built.
  *
  * "Nodes and Chiron axis" covers the True Node and Chiron, each with their
  * own `BODIES` entry and computed position. The South Node does not: it has
