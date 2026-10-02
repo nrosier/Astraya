@@ -127,13 +127,19 @@ console.log(
 const submitted = await submitBatch({ apiKey: process.env.OPENAI_API_KEY, requests });
 console.log(`[${locale}] batch ${submitted.id} — polling...`);
 
-let lastStatus;
+// Logs on every poll where the status OR the done/failed counts changed — not just status, which
+// would otherwise silently swallow every real progress update for however long a batch spends
+// `in_progress` (confirmed empirically: a real 4,832-request job printed exactly one
+// `in_progress (0/4832...)` line, then jumped straight to `finalizing`, hiding whatever real
+// incremental progress OpenAI's own request_counts was reporting on every poll in between).
+let lastKey;
 const finished = await pollBatch({
   apiKey: process.env.OPENAI_API_KEY,
   batchId: submitted.id,
   onPoll: (status, counts) => {
-    if (status !== lastStatus) {
-      lastStatus = status;
+    const key = `${status}:${String(counts?.completed)}:${String(counts?.failed)}`;
+    if (key !== lastKey) {
+      lastKey = key;
       console.log(
         `[${locale}] ${status}${counts ? ` (${String(counts.completed)}/${String(counts.total)} done, ${String(counts.failed)} failed)` : ''}`,
       );
