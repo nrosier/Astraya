@@ -213,17 +213,17 @@ function AppShell(): React.JSX.Element {
     // `Stored` — otherwise every navigation would reopen the database and restart sync.
     //
     // Account and sync status are global, not tied to any one screen (#137): both sit
-    // together top-right, on every route including the landing page, as the app's
-    // persistent "am I signed in, and where is my data" controls (#230) — previously
-    // split across both top corners, which left sign-in state and sync status saying
-    // the same thing twice in two places.
+    // together down the left edge, on every route including the landing page, as the
+    // app's persistent "am I signed in, and where is my data" controls (#230) —
+    // previously split across both top corners, which left sign-in state and sync
+    // status saying the same thing twice in two places.
     <SessionProvider>
-      {/* Ordered before `screen` so tab order matches the fixed top-of-viewport
-          position these render at (#69) — a keyboard user reaches them first,
-          same as sighted users see them first. `AccountPanel` sits right next to
+      {/* Ordered before `screen` so tab order matches the fixed left-edge position
+          these render at (#69) — a keyboard user reaches them first, same as
+          sighted users see them first. `AccountPanel` sits right next to
           `SyncBadge` (#230): sign-in/out is the thing that changes the sync badge's
-          state, so it belongs beside it rather than on the opposite side of the bar. */}
-      <div className="topbar-right">
+          state, so it belongs beside it rather than further down the column. */}
+      <div className="sidebar-left">
         {/* Only shown while loading or on failure (#234) — once ready, the ephemeris is an
             implementation detail again. A silent failure here is precisely the bug class
             this project is built to avoid, so it stays visible on every route, not just a

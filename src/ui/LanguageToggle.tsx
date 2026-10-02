@@ -18,7 +18,7 @@ export function LanguageToggle(): React.JSX.Element {
   return (
     <button
       type="button"
-      className="topbar-pill theme-toggle language-toggle"
+      className="sidebar-pill theme-toggle language-toggle"
       onClick={() => {
         const index = CORPUS_LOCALES.indexOf(locale);
         setLocale(CORPUS_LOCALES[(index + 1) % CORPUS_LOCALES.length] ?? locale);
