@@ -48758,9 +48758,9 @@
   {
     "key": "aspect-pair:quintile:ceres:pallas",
     "locale": "en",
-    "text": "You possess an instinctive capacity to merge practical sustenance with strategic foresight, turning everyday care into a structured plan. This drive builds practical solutions by letting tangible support inform broader intellectual blueprints. The underlying tension emerges when rigid planning conflicts with immediate physical needs, pulling you between analytical detachment and hands-on cultivation.",
+    "text": "You possess an instinctive capacity to merge practical sustenance with strategic foresight, turning everyday care into a structured plan. This drive builds practical solutions by letting tangible support inform broader intellectual blueprints. The underlying tension emerges when creative problem-solving drifts too far into abstract formulation, creating a subtle disconnect between inventive designs and the actual physical support required.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -48770,9 +48770,9 @@
   {
     "key": "aspect-pair:quintile:ceres:pluto",
     "locale": "en",
-    "text": "You possess an instinctive capacity to regenerate structures that have fallen into decay, utilizing deep resourcefulness to revive what others abandon. This drive operates by uncovering hidden leverage points, allowing you to reestablish security through precise interventions rather than brute force. When encountering rigid external controls, this dynamic can curdle into a fixation on absolute mastery, turning the necessary process of recovery into an exhaustive struggle for total autonomy.",
+    "text": "You possess an instinctive capacity to regenerate systems of care that have fallen into decay, utilizing deep resourcefulness to revive what others abandon. This drive operates by uncovering hidden leverage points, allowing you to reestablish security through precise interventions rather than brute force. When encountering rigid external limits on how you support others, this dynamic can curdle into a compulsive demand for total transparency, turning the necessary process of recovery into an exhaustive audit of everyone involved.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -48794,9 +48794,9 @@
   {
     "key": "aspect-pair:quintile:ceres:sun",
     "locale": "en",
-    "text": "Your vitality finds a natural channel for practical support, effortlessly joining personal purpose with daily care. You build independence by creating useful routines that sustain your central goals without relying on outside approval. When external demands clash with personal needs, this drive can harden into an insistence on solving every practical problem alone.",
+    "text": "Your vitality finds a natural channel for practical support, effortlessly joining personal purpose with daily care. You build autonomy by creating useful routines that sustain your central goals without relying on outside approval. When external demands clash with personal needs, this drive can harden into an insistence on managing every material detail entirely by yourself.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -48818,9 +48818,9 @@
   {
     "key": "aspect-pair:quintile:ceres:uranus",
     "locale": "en",
-    "text": "You cultivate care through radical experimentation, finding unexpected ways to nurture growth by discarding rigid traditions. This inventive approach builds deep security through freedom rather than routine, allowing you to support others without binding them. When external structures demand predictable conformity, the tension reveals a sudden impatience with conventional safety, pushing you to disrupt well-worn models just to keep room for fresh possibilities.",
+    "text": "You cultivate care through radical experimentation, finding unexpected ways to nurture growth by discarding rigid traditions. This inventive approach builds deep security through freedom rather than routine, allowing you to support others without binding them. When external structures demand predictable conformity, the tension reveals an insistence on preserving creative autonomy, redirecting well-worn models whenever they fail to leave room for fresh possibilities.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -48890,9 +48890,9 @@
   {
     "key": "aspect-pair:quintile:chiron:mars",
     "locale": "en",
-    "text": "You channel physical urgency through an ingenious problem-solving lens, finding unexpected technical workarounds when direct effort stalls. This pairing builds toward an adaptive mastery of initiative, letting you turn sudden friction into a precise opening for action. When external resistance blocks your path, the challenge exposes a tendency to overcomplicate simple pursuits rather than trusting straightforward momentum.",
+    "text": "You approach physical assertion with acute sensitivity to potential injury or rejection, learning to bypass direct confrontation through inventive technical solutions. This pairing builds toward an adaptive mastery of initiative, letting you turn sudden friction into a precise opening for action. When external resistance blocks your path, the challenge exposes a tendency to overcomplicate simple pursuits rather than trusting straightforward momentum.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -48902,9 +48902,9 @@
   {
     "key": "aspect-pair:quintile:chiron:meanLilith",
     "locale": "en",
-    "text": "You possess an instinctive capacity to bridge profound vulnerability with unfiltered autonomy, turning places of personal wounding into sources of sharp self-possession. This balance operates by using acute self-awareness to protect personal boundaries without retreating from shared friction. The underlying tension arises when external demands pressure you to choose between healing connection and absolute independence, creating a recurring dilemma around how to remain intact while engaging with authority.",
+    "text": "You possess an inventive capacity to bridge profound vulnerability with unfiltered autonomy, turning places of personal wounding into sources of sharp self-possession. This integration operates by using acute self-awareness to protect personal boundaries while actively engaging with shared friction. The underlying tension surfaces when external conditions demand a compromise between mending relational bonds and preserving absolute independence, inviting creative synthesis where standard resolution fails.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -49202,9 +49202,9 @@
   {
     "key": "aspect-pair:quintile:interpolatedLilith:trueNode",
     "locale": "en",
-    "text": "You possess an inventive capacity to bridge raw, unfiltered impulses with your overarching sense of personal direction, finding unconventional workarounds where others see strict boundaries. This configuration builds toward a seamless synthesis of instinctual autonomy and long-range purpose, allowing you to carve out singular paths without defaulting to outright rebellion or compliance. The underlying tension surfaces whenever external systems demand total conformity, tempting you to retreat entirely into isolated self-reliance rather than engaging with shared frameworks.",
+    "text": "You possess an inventive capacity to bridge raw impulses with your overarching sense of personal direction, finding unconventional workarounds where others see strict boundaries. This configuration builds toward a seamless synthesis of instinctual autonomy and long-range purpose, allowing you to carve out singular paths without defaulting to outright rebellion or compliance. The underlying tension surfaces whenever shared frameworks require predictable uniformity, sparking friction between your unconventional methods and the cooperative structures expected by others.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -49322,9 +49322,9 @@
   {
     "key": "aspect-pair:quintile:juno:neptune",
     "locale": "en",
-    "text": "You build commitments around shared ideals, blending practical partnership with a strong pull toward poetic or imaginative unity. This drive approaches shared boundaries by seeking unspoken consensus, preferring fluid understanding over rigid definitions. When facing practical limits, you risk projecting perfect outcomes onto everyday flaws, creating friction between actual conditions and your idealized expectations.",
+    "text": "You construct bonds through an imaginative synthesis, finding inventive ways to fuse practical partnership with an expansive, idealized vision. This drive approaches shared boundaries by creatively dissolving rigid structures to discover unspoken harmony. When meeting external limits, you risk substituting constructed perfection for actual conditions, creating friction between everyday realities and your imaginative ideals.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -49358,9 +49358,9 @@
   {
     "key": "aspect-pair:quintile:juno:pluto",
     "locale": "en",
-    "text": "You forge deep interpersonal bonds by seeking absolute honesty and mutual evolution, using shared vulnerability to transform how you connect with others. This drive handles commitment by probing beneath surface compromises to find profound psychological truth, requiring total authenticity from close partners. The shadow dilemma surfaces when this intensity meets ordinary relational friction, turning standard disagreements into high-stakes struggles over control and absolute surrender.",
+    "text": "You find innovative ways to unite deep commitment with profound personal transformation, using quiet ingenuity to bridge intimacy and radical change. This drive handles closeness by spotting clever, unconventional methods to restructure shared bonds without forcing overt power struggles. The shadow dilemma surfaces when this inventive intensity treats ordinary relational pacing as an obstacle to be bypassed, creating sudden friction over how quickly deep changes must unfold.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -49538,9 +49538,9 @@
   {
     "key": "aspect-pair:quintile:jupiter:pluto",
     "locale": "en",
-    "text": "You possess an instinctive talent for recognizing how deep structural shifts create room for broader understanding and personal expansion. By linking a drive for meaning with a capacity to overhaul underlying systems, you find resourceful ways to turn systemic bottlenecks into moments of profound development. When facing rigid boundaries or fixed authorities, you may struggle between a desire for grand possibility and the absolute necessity of tearing down what no longer functions.",
+    "text": "You possess an instinctive talent for recognizing how deep structural shifts create room for broader understanding and personal expansion. By linking a drive for meaning with a capacity to overhaul underlying systems, you find resourceful ways to turn systemic bottlenecks into moments of profound development. When facing rigid boundaries or fixed authorities, you may encounter tension between a desire for grand possibility and the necessity of confronting what no longer functions.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -49754,9 +49754,9 @@
   {
     "key": "aspect-pair:quintile:mars:uranus",
     "locale": "en",
-    "text": "You forge an unorthodox path toward your goals by combining raw willpower with sudden, inventive shifts in direction. This orientation pursues objectives through calculated departures from standard procedure, finding unexpected openings where routine efforts stall. When faced with rigid structures or forced cooperation, this drive can trigger abrupt friction, preferring radical autonomy over steady compromise.",
+    "text": "You forge an unorthodox path toward your goals by combining raw willpower with sudden, inventive shifts in direction. This orientation pursues objectives through calculated departures from standard procedure, finding unexpected openings where routine efforts stall. When faced with rigid structures, this drive invents clever workarounds, preferring nimble self-direction over conventional coordination.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -49934,9 +49934,9 @@
   {
     "key": "aspect-pair:quintile:meanNode:mercury",
     "locale": "en",
-    "text": "You possess an inventive facility for turning abstract ideas into practical applications by bridging distant concepts with unusual ease. Your thinking organizes complex inputs into creative solutions that bypass standard boundaries through sheer resourcefulness. When faced with rigid structures, this adaptive problem-solving can slip into overcomplicating simple choices just to preserve your preferred method of independent inquiry.",
+    "text": "Your mental processing actively gravitates toward unconventional connections, building an evolutionary habit of translating abstract concepts into resourceful solutions. This perceptive style naturally bypasses standard boundaries through inventive problem-solving. When meeting rigid external frameworks, this growth direction can slip into overcomplicating simple choices merely to protect your preferred method of independent inquiry.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50234,9 +50234,9 @@
   {
     "key": "aspect-pair:quintile:moon:pluto",
     "locale": "en",
-    "text": "You possess an instinctive capacity to metabolize emotional crises into quiet authority, finding solid ground precisely where others lose purchase. This drive operates by quietly mastering internal extremes rather than suppressing them, allowing you to anchor situations through sheer depth of focus. When forced into rigid containment, this same intensity can calcify into absolute withdrawal, mistaking emotional self-sufficiency for genuine connection.",
+    "text": "You possess an instinctive capacity to synthesize emotional crises through a specialized, creative clarity, finding solid ground precisely where others lose purchase. This drive operates by intentionally shaping internal extremes rather than merely enduring them, allowing you to anchor situations through focused psychological craftsmanship. When forced into rigid containment, this same intensity can calcify into absolute withdrawal, mistaking self-contained mastery for genuine connection.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50246,9 +50246,9 @@
   {
     "key": "aspect-pair:quintile:moon:saturn",
     "locale": "en",
-    "text": "You possess an innate ability to structure your inner world, finding steady comfort through practical routines and quiet self-reliance. This configuration builds an emotional security that depends on personal capability rather than external reassurance. When faced with outside demands or unexpected restriction, you occasionally respond by withdrawing into self-sufficiency, creating a noticeable distance between your internal feelings and the demands of others.",
+    "text": "You possess a distinct knack for translating emotional needs into neat, workable systems, finding comfort through calculated self-reliance rather than chance. This configuration builds security by turning limitation into a puzzle to solve with clever personal resourcefulness. When external demands press too hard, you tend to withdraw into meticulously managed independence, keeping personal feelings safely apart from outside friction.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50258,9 +50258,9 @@
   {
     "key": "aspect-pair:quintile:moon:sun",
     "locale": "en",
-    "text": "You possess an innate capacity to bridge internal intention with immediate emotional reality, finding clever methods to unite what you consciously aim for with what you instinctively require. This integrative knack allows you to construct practical workarounds when personal desires pull against automatic habits. Yet this facility can create friction when external structures demand absolute conformity, leaving you searching for inventive exits rather than accepting standard boundaries.",
+    "text": "You possess an innate capacity to bridge internal intention with immediate emotional reality, finding clever methods to unite what you consciously aim for with what you instinctively require. This integrative knack allows you to construct practical workarounds when personal desires pull against automatic habits. Yet this facility can create internal friction when neat resolutions fail to account for messy complexities, leaving you seeking clever adjustments rather than accepting ambiguity.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50306,9 +50306,9 @@
   {
     "key": "aspect-pair:quintile:moon:vesta",
     "locale": "en",
-    "text": "You find deep comfort in carving out intentional rituals and quiet focus, transforming everyday routines into sanctuaries of steady reassurance. This instinct builds security by anchoring your emotional life to purposeful dedication and self-reliance. When outside demands or interruptions disrupt this carefully built sanctuary, you risk retreating into rigid self-sufficiency, treating necessary interdependence as a threat to your inner equilibrium.",
+    "text": "You find deep comfort in inventing intentional rituals and quiet focus, transforming everyday routines into bespoke sanctuaries of steady reassurance. This instinct builds security by anchoring your emotional life to purposeful dedication and creative self-reliance. When outside demands or interruptions disrupt this carefully built sanctuary, you risk retreating into rigid self-sufficiency, treating necessary interdependence as a threat to your inner equilibrium.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50426,9 +50426,9 @@
   {
     "key": "aspect-pair:quintile:osculatingLilith:pallas",
     "locale": "en",
-    "text": "You possess an instinctive capacity to forge unconventional strategies by uniting raw personal conviction with precise mental structuring. This aptitude allows you to construct inventive solutions when conventional methods stall against rigid boundaries. The underlying friction emerges when your independent approach conflicts with established protocols, testing your ability to balance unorthodox problem-solving with collaborative structure.",
+    "text": "You possess an instinctive capacity to forge unconventional strategies by uniting raw personal conviction with precise mental structuring. This aptitude allows you to construct inventive solutions when standard methods stall against rigid boundaries. The creative synthesis emerges effortlessly when you lean into unorthodox problem-solving while honoring structural support.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50642,9 +50642,9 @@
   {
     "key": "aspect-pair:quintile:pluto:uranus",
     "locale": "en",
-    "text": "You possess an innate capacity to reinvent established structures through sudden, radical breakthroughs that clear out stagnant systems. This drive operates by dismantling old paradigms before any external pressure forces the issue, ensuring complete autonomy over structural evolution. The shadow emerges when this compulsion for sweeping overhaul meets a situation requiring steady maintenance, where the refusal to accept temporary stagnation creates unnecessary friction with collective stability.",
+    "text": "You possess an innate talent for synthesizing radical innovation with deep structural transformation, generating ingenious solutions when conventional methods stall. This drive operates by proactively redesigning systems from the ground up, maintaining total creative autonomy over how change unfolds. The shadow emerges when this inventive impulse meets rigid procedures, where an impatience with routine maintenance triggers unnecessary friction against standard operational frameworks.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50750,9 +50750,9 @@
   {
     "key": "aspect-pair:quintile:sun:uranus",
     "locale": "en",
-    "text": "You approach identity through a lens of distinct originality, naturally forging unconventional paths where others see only fixed boundaries. This drive seeks autonomy by continuously inventing clever workarounds and singular methods to bypass standard expectations. When met with rigid external structures, the tension often produces sudden detachment or an abrupt insistence on total self-reliance, keeping familiar routines at arm's length.",
+    "text": "You construct your core identity through an inventive impulse that naturally finds clever, singular solutions where standard paths feel too confining. This drive builds autonomy by designing alternative methods rather than fighting rules, turning unconventional ideas into functional realities. When external limits push back, this creative momentum can suddenly pivot into sharp detachment, prioritizing self-invented freedom over familiar compromises.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50774,9 +50774,9 @@
   {
     "key": "aspect-pair:quintile:sun:vesta",
     "locale": "en",
-    "text": "You build a life around absolute devotion to a chosen craft, finding purpose through intense, singular focus. This drive operates by carving out protected space, keeping external distractions at bay to preserve your inner dedication. When outside demands or shared priorities interrupt that concentration, you risk viewing standard cooperation as an interruption rather than a necessary part of sustaining what you value.",
+    "text": "You anchor your identity in mastering a specialized craft, turning deliberate talent into an instrument of personal purpose. This drive operates by engineering brilliant, unconventional solutions that bridge your inner devotion with outward contribution. When external demands force you to compromise that singular focus, you risk treating standard cooperation as a threat to your autonomy rather than a collaborative bridge.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50810,9 +50810,9 @@
   {
     "key": "aspect-pair:quintile:trueNode:vesta",
     "locale": "en",
-    "text": "You naturally discover inventive methods to blend personal development with concentrated dedication, turning focused effort into a reliable vehicle for self-discovery. This approach builds a bridge between individual growth and deep commitment, allowing you to find clever workarounds when standard paths feel restrictive. The tension surfaces when structural demands clash with your need for autonomous exploration, occasionally creating friction between what you aim to achieve and how you choose to invest your daily devotion.",
+    "text": "You naturally discover inventive methods to blend personal evolution with concentrated dedication, turning focused effort into a reliable vehicle for self-discovery. This approach builds a bridge between individual development and deep commitment, allowing you to find clever workarounds when standard paths feel restrictive. The tension surfaces when rigid external expectations demand standard procedures, creating friction with your impulse to innovate personal methods of devotion.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50906,9 +50906,9 @@
   {
     "key": "aspect-pair:biquintile:ceres:mars",
     "locale": "en",
-    "text": "Your capacity to nurture is actively forged through direct action, finding inventive methods to protect what matters without relying on brute force. You build practical forms of support by pairing tender stewardship with sharp initiative, turning everyday care into a decisive project. This integration faces tension when external demands force you to choose between aggressive self-preservation and the vulnerable labor of tending to others.",
+    "text": "Your capacity to nurture is actively forged through direct action, finding inventive methods to protect what matters without relying on brute force. You build practical forms of support by pairing tender stewardship with sharp initiative, turning everyday care into a decisive project. This integration occasionally meets friction when external limits require you to invent entirely new ways to reconcile the impulse for self-preservation with the vulnerable labor of tending to others.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50990,9 +50990,9 @@
   {
     "key": "aspect-pair:biquintile:ceres:pallas",
     "locale": "en",
-    "text": "You possess an instinctive capacity to merge practical care with strategic vision, discovering inventive methods to support growth while keeping structural clarity intact. This capability builds toward a seamless union of nurturing support and intellectual planning, allowing you to build functional systems out of everyday needs. The inherent tension surfaces when external demands require you to choose between rigid oversight and flexible sustenance, creating friction whenever structured planning clashes with organic development.",
+    "text": "You possess an instinctive capacity to merge practical care with strategic vision, discovering inventive methods to support growth while keeping structural clarity intact. This capability builds toward a seamless union of nurturing support and intellectual planning, allowing you to synthesize functional systems out of everyday needs. The inherent challenge surfaces when external conditions force an artificial choice between systematic oversight and organic development, interrupting your unique capacity for creative integration.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51002,9 +51002,9 @@
   {
     "key": "aspect-pair:biquintile:ceres:pluto",
     "locale": "en",
-    "text": "You possess an instinctive capacity to rebuild personal structures by deeply examining what no longer serves your growth. This drive manages vulnerability through quiet resilience, finding inventive ways to reclaim authority when faced with structural endings. The shadow surfaces as an intense resistance to surrender, creating friction whenever external demands require you to relinquish control over your environment.",
+    "text": "You hold an instinctive capacity to sustain others by radically transforming how you offer emotional nourishment and support. This drive handles vulnerability through quiet resilience, finding inventive ways to reclaim authority when old caretaking structures break down. The shadow surfaces as an intense resistance to surrender, creating friction whenever external demands require you to relinquish control over how you tend to what matters.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51050,9 +51050,9 @@
   {
     "key": "aspect-pair:biquintile:ceres:uranus",
     "locale": "en",
-    "text": "You cultivate care through unconventional methods, finding unexpected ways to nurture growth while protecting your personal autonomy. When traditional expectations demand conformity, you invent practical workarounds that keep you securely independent. This approach creates friction whenever shared systems require rigid predictability, as your instinctive urge for sudden modernization resists standardization.",
+    "text": "You cultivate care through unconventional methods, finding unexpected ways to nurture growth while protecting your personal autonomy. When traditional expectations demand conformity, you invent practical workarounds that keep you securely independent. This creative drive bridges nurturing impulses with sudden insights, transforming standard approaches into inventive frameworks.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51110,9 +51110,9 @@
   {
     "key": "aspect-pair:biquintile:chiron:jupiter",
     "locale": "en",
-    "text": "You bridge vulnerability and philosophical perspective by turning personal trials into reliable frameworks for insight. This configuration builds an inventive workaround where old hurts clarify larger horizons, allowing you to mentor others effectively. The tension surfaces when broad optimism tries to outpace lingering sensitivity, creating friction between the desire for boundless growth and the reality of tender spots that require patient attention.",
+    "text": "You bridge vulnerability and philosophical perspective by turning personal trials into reliable frameworks for insight. This configuration builds an inventive workaround where old hurts clarify larger horizons, allowing you to mentor others effectively. The shadow dilemma surfaces when the urge for boundless conceptual growth quietly outpaces the tender spots that still require patient, quiet attention.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51218,9 +51218,9 @@
   {
     "key": "aspect-pair:biquintile:chiron:pluto",
     "locale": "en",
-    "text": "You hold an instinctive capacity to forge creative solutions out of deep personal vulnerability and structural breakdown. This drive operates by uncovering hidden leverage points within painful stalemates, turning systemic collapse into an unexpected resource for renewal. When faced with rigid external control or deep-seated dependencies, the shadow emerges as an obsessive need to master every variable, risking total exhaustion rather than allowing any space to remain unexamined or unresolved.",
+    "text": "You hold an instinctive capacity to forge creative solutions out of deep personal vulnerability and structural breakdown. This drive operates by uncovering hidden leverage points within painful stalemates, turning systemic collapse into an unexpected resource for renewal. When faced with rigid external control or deep-seated dependencies, the shadow emerges as friction between total surrender to necessary change and the defensive impulse to force an outcome entirely on your own terms.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51242,9 +51242,9 @@
   {
     "key": "aspect-pair:biquintile:chiron:sun",
     "locale": "en",
-    "text": "Your core purpose naturally fuses with a quiet capacity to mend old fractures, turning personal vulnerability into a specialized skill for understanding vulnerability in others. You build autonomy by quietly observing where systems fail, forging practical workarounds that bypass conventional roadblocks entirely. When external authority demands rigid conformity, you tend to withdraw into self-reliance, risking isolation rather than risking vulnerability to outside rules you did not author.",
+    "text": "Your core purpose naturally fuses with a quiet capacity to mend old fractures, turning personal vulnerability into a specialized skill for understanding pain in yourself and others. You build autonomy by translating private friction into creative insight, forging unique bridges where standard paths fall short. When external expectations demand simple conformity, you risk intellectual isolation rather than reducing your complex lived experience to conventional terms.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51350,9 +51350,9 @@
   {
     "key": "aspect-pair:biquintile:interpolatedLilith:mercury",
     "locale": "en",
-    "text": "Your intellectual focus naturally seeks out unacknowledged perspectives and fringe ideas, building a capacity for sharp analytical discovery. This perspective processes raw facts through an unconventional lens, bypassing standard assumptions to locate hidden structural flaws or overlooked patterns. When rigid expectations or established consensus demand conformity, this drive risks becoming isolated in specialized conclusions that remain difficult to translate for a broader audience.",
+    "text": "Your intellectual focus naturally seeks out unacknowledged perspectives and fringe ideas, building a capacity for inventive analytical discovery. This perspective processes raw facts through an unconventional lens, forging creative bridges between disparate data points to uncover hidden structural flaws. When rigid expectations or established consensus demand conformity, this drive risks becoming isolated in specialized conclusions that remain difficult to translate for a broader audience.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51386,9 +51386,9 @@
   {
     "key": "aspect-pair:biquintile:interpolatedLilith:pallas",
     "locale": "en",
-    "text": "You possess an instinctive knack for fashioning clever, unconventional solutions from the raw edges of exclusion or nonconformity. By joining an acute sense of what has been overlooked with a sharp eye for systemic strategy, you build inventive frameworks that bypass standard rules entirely. The inherent tension arises when these brilliant workarounds clash with rigid institutional boundaries, forcing a choice between total autonomy and assimilation.",
+    "text": "You possess an instinctive knack for fashioning clever, unconventional solutions from the raw edges of exclusion or nonconformity. By joining an acute sense of what has been overlooked with a sharp eye for systemic strategy, you build inventive frameworks that bypass standard rules entirely. The inherent tension arises when these sharp workarounds complicate collaborative execution, leaving you isolated within the very structures you seek to improve.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51494,9 +51494,9 @@
   {
     "key": "aspect-pair:biquintile:juno:mars",
     "locale": "en",
-    "text": "Your capacity for commitment finds its momentum through direct physical engagement, pairing personal loyalty with decisive action. You build partnerships by translating shared objectives into immediate, purposeful milestones while keeping autonomy intact. When external demands threaten that hard-won independence, this drive can trigger sharp resistance or sudden withdrawal rather than collaborative problem-solving.",
+    "text": "Your capacity for commitment finds its momentum through direct physical engagement, skillfully weaving personal loyalty with decisive action. You build partnerships by translating shared objectives into immediate, purposeful milestones while keeping autonomy intact. When external demands threaten that hard-won independence, this drive can trigger strategic detachment or creative friction rather than collaborative problem-solving.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51530,9 +51530,9 @@
   {
     "key": "aspect-pair:biquintile:juno:mercury",
     "locale": "en",
-    "text": "You forge lasting commitments through mental clarity, linking intellectual exchange directly to long-term relational promises. This drive builds a stable bridge between daily dialogue and enduring partnership, handling shared obligations by talking through boundaries before they harden. When faced with rigid external demands, the underlying tension can turn into over-intellectualizing agreements, treating human connection like a puzzle to be solved rather than lived.",
+    "text": "You forge lasting commitments through inventive mental connections, linking intellectual exchange directly to long-term relational promises in unconventional ways. This drive builds an imaginative bridge between daily dialogue and enduring partnership, handling shared obligations by reframing boundaries before they harden. When faced with rigid external demands, the underlying tension can turn into over-intellectualizing agreements, treating human connection like a puzzle to be solved rather than lived.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51590,9 +51590,9 @@
   {
     "key": "aspect-pair:biquintile:juno:pluto",
     "locale": "en",
-    "text": "You forge deep psychological commitments by radically transforming how you share power and intimacy with others. This drive seeks profound unity by dismantling superficial boundaries, turning vulnerability into a catalyst for mutual reinvention. The shadow surfaces when intense attachments encounter structural limits, creating a quiet standoff between the desire for absolute depth and the necessity of keeping distinct personal autonomy.",
+    "text": "You forge deep psychological commitments by discovering unconventional, highly inventive ways to intertwine power and intimacy with others. This drive seeks profound unity by reshaping structural limits through subtle, precise recalibrations rather than direct force. The shadow surfaces when intense attachments encounter rigid external boundaries, creating a quiet standoff between the desire for absolute depth and the necessity of preserving distinct personal autonomy.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51758,9 +51758,9 @@
   {
     "key": "aspect-pair:biquintile:jupiter:pallas",
     "locale": "en",
-    "text": "You approach problem solving by turning abstract ideas into practical blueprints for growth. This combination bridges big picture thinking with tactical design, allowing you to build conceptual frameworks that are immediately useful. The friction arises when your grand vision collides with rigid structural limitations, testing your ability to scale ambition down to what can be realistically constructed.",
+    "text": "You approach problem solving by turning abstract possibilities into practical blueprints for growth. This combination bridges big picture thinking with tactical design, allowing you to build conceptual frameworks that are immediately useful. The challenge arises when your expansive vision meets the precise constraints of a specific project, testing your ability to scale ambition down to what can be meticulously constructed.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51818,9 +51818,9 @@
   {
     "key": "aspect-pair:biquintile:jupiter:uranus",
     "locale": "en",
-    "text": "You naturally bridge bold visions with sudden breakthroughs, forging inventive paths where routine frameworks fall short. This drive operates by spotting unconventional possibilities and restructuring old boundaries to allow immediate, independent progress. When faced with rigid expectations or forced conformity, the tension surfaces as an abrupt resistance to anything that feels like artificial restriction.",
+    "text": "You naturally synthesize expansive visions with sudden insights, building inventive frameworks where conventional models fall short. This drive operates by spotting uncommon opportunities and reshaping existing structures to support fresh, independent development. When meeting rigid expectations, the tension surfaces as an intellectual friction with any system that attempts to prematurely finalize what should remain open.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51842,9 +51842,9 @@
   {
     "key": "aspect-pair:biquintile:jupiter:vesta",
     "locale": "en",
-    "text": "You bridge expansive vision with focused devotion, uniting broad possibilities with dedicated follow-through. This combination allows you to build meaningful frameworks by anchoring your larger beliefs into precise, daily commitments. The friction surfaces when the need for constant growth clashes with strict routines, tempting you to overcomplicate simple goals just to keep the process moving forward.",
+    "text": "You cleverly bridge expansive vision with focused devotion, uniting broad possibilities through skilled, idiosyncratic methods. This combination allows you to build meaningful frameworks by anchoring larger beliefs into precise, deliberate commitments. The friction surfaces when the drive for constant growth clashes with strict operational boundaries, tempting you to overcomplicate simple goals just to keep the process moving forward.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51890,9 +51890,9 @@
   {
     "key": "aspect-pair:biquintile:mars:moon",
     "locale": "en",
-    "text": "You possess an instinctive capacity to merge immediate gut reactions with direct, purposeful action, forging inventive ways to pursue what you want without sacrificing emotional security. This blend allows you to channel sudden impulses into productive outlets with surprising precision. Yet, friction arises when external demands require you to choose between acting swiftly and tending to internal safety, pulling you between the urge to push forward and the need to pause.",
+    "text": "You possess an instinctive capacity to link immediate gut responses with purposeful drive, discovering unconventional methods to pursue what you want while keeping emotional needs fully intact. This configuration allows you to channel sudden impulses into inventive outlets with surprising precision. Yet, tension surfaces when rigid external expectations demand standard procedures, making it challenging to maintain that idiosyncratic synthesis between your feelings and your momentum.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51950,9 +51950,9 @@
   {
     "key": "aspect-pair:biquintile:mars:saturn",
     "locale": "en",
-    "text": "You possess an innate capacity to fuse bold initiative with steady discipline, creating methodical approaches that turn raw impulse into lasting structure. This drive pursues goals by pacing exertion against external boundaries, building sustainable momentum without forcing premature outcomes. When encountering rigid external limits, you may slip into an over-engineered caution that stalls progress, trading effective execution for excessive preparation until the original spark of motivation risks fading entirely.",
+    "text": "You possess an innate capacity to bridge bold initiative with steady discipline through unconventional methods, finding unexpected angles to turn raw impulse into lasting structure. This drive pursues goals by adapting exertion to external boundaries, building momentum through strategic recalibration rather than brute force. When encountering rigid external limits, you may slip into over-analyzed workarounds that stall progress, trading effective execution for excessive calculation until the original spark of motivation risks fading entirely.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52166,9 +52166,9 @@
   {
     "key": "aspect-pair:biquintile:meanNode:mercury",
     "locale": "en",
-    "text": "You possess an innate capacity to synthesize disparate facts into inventive, highly specific concepts that bypass conventional lines of thought. This mechanism operates by identifying unexpected conceptual links, allowing you to bridge gaps where standard frameworks stall. When faced with rigid external structures or fixed protocols, this inventive drive risks becoming isolated, speaking a private language that struggles to find common ground with collective consensus.",
+    "text": "Your growth pulls you toward synthesizing disparate facts into inventive, highly specific concepts that bypass conventional lines of thought. This developmental mechanism operates by identifying unexpected conceptual links, allowing you to bridge gaps where standard frameworks stall. When faced with rigid external structures or fixed protocols, this evolving drive risks becoming isolated, speaking a private language that struggles to find common ground with collective consensus.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52226,9 +52226,9 @@
   {
     "key": "aspect-pair:biquintile:meanNode:pluto",
     "locale": "en",
-    "text": "You possess an instinctive capacity to unearth hidden patterns and redirect your life trajectory through profound personal reinvention. This drive operates by probing beneath surface assumptions to dismantle outdated structures, clearing space for structural renewal. The underlying tension emerges when external limits demand compliance, causing friction between the necessity of absolute control and the required surrender to shared circumstances.",
+    "text": "You possess an inventive capacity to weave profound personal reinvention directly into your forward path, finding creative solutions where others only see dead ends. This drive operates by quietly reframing deep psychological truths into practical methods for moving forward, bypassing conventional routes entirely. The underlying tension emerges when rigid external systems demand conformity, causing friction between your unconventional methods of evolution and the standard paths expected by the collective.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52478,9 +52478,9 @@
   {
     "key": "aspect-pair:biquintile:moon:saturn",
     "locale": "en",
-    "text": "You find security through steady structure and quiet endurance, anchoring your emotional world with reliable routines. This dynamic shapes an instinctive talent for turning emotional restraint into practical safety, building quiet shelters against uncertainty. When strict boundaries or external demands interfere with your need for comfort, you may withdraw into rigid self-reliance rather than risk depending on unpredictable support.",
+    "text": "You naturally discover inventive ways to blend emotional safety with steady discipline, finding quiet paths to anchor your inner world. This configuration builds a subtle skill for turning practical limits into protective frameworks that support long-term stability. When external demands clash with your need for comfort, you may craft intricate barriers of self-reliance to avoid depending on unpredictable support.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52514,9 +52514,9 @@
   {
     "key": "aspect-pair:biquintile:moon:uranus",
     "locale": "en",
-    "text": "You find comfort in sudden shifts of perspective, building an emotional foundation that adapts quickly when familiar routines dissolve. This disposition manages boundaries by keeping a restless distance from rigid expectations, refusing to settle into predictable patterns of security. When faced with deep dependence, the core tension surfaces as an abrupt withdrawal, preferring sudden freedom over the slow friction of shared compromise.",
+    "text": "You find comfort in inventing unconventional ways to process feelings, building an emotional foundation that resourcefully integrates sudden shifts rather than relying on traditional habits. This disposition manages boundaries by keeping your inner life adaptable and playfully distinct from predictable expectations. When confronted with deep dependence, the core tension emerges as a creative search for unexpected room to breathe rather than submitting to routine compromises.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52538,9 +52538,9 @@
   {
     "key": "aspect-pair:biquintile:moon:vesta",
     "locale": "en",
-    "text": "You find security through an instinctive devotion to what feels purposeful and enduring, quietly synthesizing personal needs with dedicated focus. This drive operates by carving out deliberate spaces for meaningful commitment, allowing emotional safety to emerge from steady, self-directed stewardship rather than fleeting comfort. When external demands clash with this private sanctuary, the tension manifests as an uncompromising refusal to compromise core routines for the sake of mere convenience.",
+    "text": "You find security by skillfully bridging inner emotional needs with focused, purposeful devotion, turning personal care into an intentional craft. This drive operates by quietly arranging routine around meaningful commitments, allowing stability to emerge from precise, self-directed stewardship. When external demands disrupt this careful integration, the tension surfaces as an unyielding resistance to casual interruptions that threaten your carefully built sense of sanctuary.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52670,9 +52670,9 @@
   {
     "key": "aspect-pair:biquintile:osculatingLilith:pluto",
     "locale": "en",
-    "text": "You possess an instinctive fluency with hidden motives and structural change, allowing you to catalyze deep renewal by confronting what has outlived its purpose. This drive operates through calculated interventions that reshape control dynamics without requiring direct confrontation. A functional tension arises when absolute honesty collides with systems built on convenience, occasionally forcing a choice between radical reinvention and quiet complicity.",
+    "text": "You possess an inventive capacity to restructure power dynamics and hidden motives through unconventional means, allowing you to catalyze deep renewal by bypassing traditional rules. This drive operates by spotting oblique angles for intervention that reshape control without direct confrontation. A functional tension arises when unconventional clarity collides with systems built on rigid convention, occasionally forcing a choice between radical reinvention and quiet complicity.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52754,9 +52754,9 @@
   {
     "key": "aspect-pair:biquintile:pallas:pluto",
     "locale": "en",
-    "text": "You possess an innate capacity to perceive the hidden architecture of power and leverage it toward profound structural reinvention. This talent operates by stripping away superficial layers to expose systemic vulnerabilities, allowing you to reconstruct complex situations from their foundations. When external constraints demand total surrender of control, the shadow emerges as an obsessive need to master every variable, risking friction with forces that resist dismantling.",
+    "text": "You possess an inventive capacity to perceive systemic leverage points and design unexpected structural solutions. This talent operates by mapping hidden patterns and orchestrating precise interventions from behind the scenes. When external limits demand total compliance, the shadow emerges as an over-engineered fixation on controlling variables, creating friction with environments that resist strategic redesign.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52766,9 +52766,9 @@
   {
     "key": "aspect-pair:biquintile:pallas:saturn",
     "locale": "en",
-    "text": "You possess an innate capacity to construct durable frameworks through patient, calculated design. This drive operates by establishing clear boundaries and long-term structures that manage external constraints effectively. The inherent tension surfaces when rigid adherence to rules conflicts with the need for flexibility, creating friction around authority and control.",
+    "text": "You hold an acute capacity to synthesize complex patterns into precise, strategic blueprints that stand the test of time. This drive operates by mapping intricate structural relationships to anticipate structural flaws before they materialize. The inherent tension surfaces when abstract master plans struggle to adapt to unforeseen practical constraints.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52802,9 +52802,9 @@
   {
     "key": "aspect-pair:biquintile:pallas:uranus",
     "locale": "en",
-    "text": "You possess an inventive capacity to synthesize unconventional solutions by spotting patterns that standard methods miss entirely. This drive handles boundaries by quietly dismantling rigid frameworks through sudden flashes of insight rather than direct confrontation. The underlying tension surfaces when complete autonomy collides with collaborative necessity, creating friction whenever collective structures demand conformity over original invention.",
+    "text": "You possess an inventive capacity to synthesize unconventional solutions by spotting patterns that standard methods miss entirely. This drive handles boundaries by quietly translating abstract insights into practical frameworks without relying on direct confrontation. The underlying tension surfaces when conceptual independence collides with rigid operational standards, creating friction whenever collective procedures demand conformity instead of original integration.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52850,9 +52850,9 @@
   {
     "key": "aspect-pair:biquintile:pluto:sun",
     "locale": "en",
-    "text": "You possess an innate capacity to reinvent your core purpose through quiet, calculated adaptations rather than sudden upheavals. This drive operates by quietly dismantling outdated foundations and reorganizing personal focus behind the scenes. When external structures demand conformity, the tension surfaces as an insistence on total autonomy, risking isolation when sharing control feels too costly.",
+    "text": "You possess an innate capacity to reinvent your core purpose through unconventional, inventive adjustments rather than direct confrontation. This drive operates by quietly dismantling outdated foundations and reorganizing personal focus behind the scenes through lateral solutions. When external structures demand conformity, the tension surfaces as an insistence on total autonomy, risking isolation when sharing control feels too costly.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52946,9 +52946,9 @@
   {
     "key": "aspect-pair:biquintile:saturn:venus",
     "locale": "en",
-    "text": "You bring a deliberate structural care to your affection and shared resources, finding lasting value through quiet commitment rather than fleeting ease. This approach builds stability by tying emotional connection to practical obligation and mutual trust. When external demands or scarcity intervene, this drive can harden into rigid caution, measuring worth strictly by what endures rather than what feels good in the moment.",
+    "text": "You cultivate affection through a clever, unconventional synthesis of emotional warmth and strict practical demand, discovering lasting value by designing quiet forms of commitment that bypass ordinary social scripts. This drive builds stability through inventive personal rules that tie shared resources to unique principles. When external scarcity intervenes, this drive can harden into rigid caution, measuring worth strictly by idiosyncratic standards rather than immediate ease.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52982,9 +52982,9 @@
   {
     "key": "aspect-pair:biquintile:sun:uranus",
     "locale": "en",
-    "text": "You build a distinct personal identity through an innate capacity to reinvent your focus whenever standard routines begin to flatten your vitality. This drive handles structure by constantly carving out unconventional pathways, balancing the need for stability with a restless urge for sudden breakthrough. When external demands enforce rigid conformity, this tension sparks friction between preserving your autonomy and adapting to collective expectations.",
+    "text": "You forge a distinct personal identity through an eccentric creative focus, continuously reshaping your core purpose by pursuing specialized, unconventional insights. This drive handles structure by inventing parallel tracks that bypass standard expectations without needing to tear them down. When external limits demand predictable conformity, this tension surfaces as an awkward friction between your idiosyncratic methods and the collective desire for ordinary standardization.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -53018,9 +53018,9 @@
   {
     "key": "aspect-pair:biquintile:trueNode:uranus",
     "locale": "en",
-    "text": "You find your stride by continually reinventing the path forward through sudden bursts of creative insight and unconventional solutions. This drive operates by shaking off outdated structures whenever external limits start to restrict your personal autonomy. The underlying tension surfaces when the need for radical freedom clashes with steady collaboration, creating friction whenever collective expectations demand conformity.",
+    "text": "You find your stride by discovering unexpected connections between unconventional ideas and long-term aims, bridging sudden flashes of originality with deliberate growth. This drive operates by integrating radical departures from routine into a coherent personal direction rather than simply rejecting authority. The shadow tension surfaces when innovative leaps struggle to find a practical framework, creating friction between the desire for unique expression and the need for structured momentum.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -53054,9 +53054,9 @@
   {
     "key": "aspect-pair:biquintile:uranus:venus",
     "locale": "en",
-    "text": "You bridge unconventional invention with relational warmth, crafting fresh approaches to affection and shared resources that bypass standard conventions entirely. This drive experiments freely with independence by treating connection as an evolving puzzle rather than a fixed structure. When established expectations demand conformity, this synthesis risks sudden detachment, substituting sudden detachment for the gradual labor of mutual adaptation.",
+    "text": "You bridge unconventional invention with relational warmth, crafting fresh approaches to affection and shared resources that bypass standard conventions entirely. This drive experiments freely with independence by treating connection as an evolving puzzle rather than a fixed structure. When established expectations demand conformity, this synthesis risks forcing premature breakthroughs, mistaking abrupt creative departures for genuine mutual adaptation.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -53066,9 +53066,9 @@
   {
     "key": "aspect-pair:biquintile:uranus:vesta",
     "locale": "en",
-    "text": "You possess an instinctive knack for fusing radical independence with dedicated focus, creating inventive workarounds that bypass traditional rules without discarding your core commitments. This pairing builds toward a unique capacity to modernize what is sacred or established by finding clever structural loop-holes. The internal friction arises when your impulse for sudden departure clashes with your own deeply held devotion to a specific project or principle.",
+    "text": "You possess an instinctive capacity to fuse radical independence with dedicated focus, building inventive methods that modernize established structures without discarding your core commitments. This pairing works by finding clever functional alternatives to outdated rules, keeping devotion alive through constant renewal. The shadow dilemma arises when your demand for absolute autonomy collides with the very projects you have chosen to serve, creating tension between the need for freedom and the pull of profound dedication.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -53138,9 +53138,9 @@
   {
     "key": "synastry-aspect:quintile:ceres:mars",
     "locale": "en",
-    "text": "Your drive to assert physical boundaries meets a supportive attentiveness in the other, creating an inventive rhythm where action and care reinforce each other without friction. This pairing finds clever workarounds for competing priorities, turning potential impasses into collaborative momentum. When external limits demand compromise, the underlying tension can stall progress if mutual pacing falls out of sync, turning deliberate cooperation into hesitant standing ground.",
+    "text": "Your practical attentiveness to physical care meets an assertive drive in the other, creating an inventive rhythm where nurturing support and action reinforce each other without friction. This pairing finds clever workarounds for competing priorities, turning potential impasses into collaborative momentum. When external limits demand compromise, the underlying tension can stall progress if mutual pacing falls out of sync, turning deliberate cooperation into hesitant standing ground.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -53306,9 +53306,9 @@
   {
     "key": "synastry-aspect:quintile:ceres:vesta",
     "locale": "en",
-    "text": "You forge a practical bridge between personal care and shared dedication, turning mutual support into a reliable framework for daily devotion. This dynamic builds a steady rhythm of nurture that protects individual focus while strengthening joint commitments. Friction arises when external demands disrupt this careful equilibrium, forcing a choice between preserving personal autonomy and maintaining the shared structure.",
+    "text": "You invent resourceful methods to unite personal care with shared dedication, finding clever solutions that turn mutual support into a reliable framework for daily devotion. This dynamic builds a steady rhythm of nurture that protects individual focus while strengthening joint commitments. Friction arises when external demands disrupt this careful equilibrium, forcing a choice between preserving personal autonomy and maintaining the shared structure.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -53522,9 +53522,9 @@
   {
     "key": "synastry-aspect:quintile:chiron:vesta",
     "locale": "en",
-    "text": "Your shared focus bridges personal vulnerability with quiet devotion, creating a distinct capacity to mend old wounds through deliberate, shared labor. This dynamic builds a steady rhythm where mutual vulnerability transforms into practical support, finding unexpected ease in handling sensitive repair work together. When external pressures mount, the bond risks over-functioning, substituting endless diligence for genuine rest and leaving little room for unstructured relief.",
+    "text": "Your dynamic applies inventive resourcefulness to personal vulnerability, turning tender sensitivities into creative outlets for focused devotion. This pairing invents unconventional methods to bridge old hurts with steady, purposeful attention, finding clever bridges where standard approaches stall. When external pressures mount, the connection risks over-engineering its solutions, substituting intricate busyness for simple rest.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -53594,9 +53594,9 @@
   {
     "key": "synastry-aspect:quintile:interpolatedLilith:moon",
     "locale": "en",
-    "text": "You find an unusual private ease in sharing unspoken vulnerabilities, building an immediate sense of emotional safety that bypasses ordinary social defenses. This dynamic enables a rare mutual permission to express wild or unconventional feelings without fear of rejection. When external pressures challenge this closeness, however, the bond can foster an isolated protectiveness that resists outside influence or shared accountability.",
+    "text": "You build an inventive, private ease in sharing unspoken vulnerabilities, consciously shaping a creative sense of emotional safety that bypasses ordinary social defenses. This dynamic enables a rare mutual permission to express wild or unconventional feelings without fear of rejection. When external pressures challenge this closeness, however, the bond can foster an isolated protectiveness that resists outside influence or shared accountability.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -53846,9 +53846,9 @@
   {
     "key": "synastry-aspect:quintile:juno:sun",
     "locale": "en",
-    "text": "You find a natural facility for blending personal autonomy with mutual commitment, generating inventive solutions where shared goals meet individual purpose. This dynamic creates a distinct capacity to collaborate without losing distinction, producing practical frameworks that support both people simultaneously. The underlying tension surfaces when external demands threaten this equilibrium, occasionally prompting a rigid insistence on maintaining absolute control over the joint direction.",
+    "text": "You find a natural facility for blending personal autonomy with mutual commitment, generating inventive solutions where shared goals meet individual purpose. This dynamic creates a distinct capacity to collaborate without losing distinction, producing practical frameworks that support both people simultaneously. The underlying tension surfaces when external demands disrupt this equilibrium, occasionally prompting a detached insistence on intellectualizing the shared path rather than adapting to shifting relational conditions.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -53858,9 +53858,9 @@
   {
     "key": "synastry-aspect:quintile:juno:trueNode",
     "locale": "en",
-    "text": "You forge an unusual common ground where personal commitment and future direction effortlessly align through inventive problem-solving. This dynamic creates a shared momentum that effortlessly sidesteps conventional hurdles by finding clever, unexpected angles for mutual growth. The internal tension arises when your joint focus becomes so self-contained that it inadvertently isolates you both from broader community contexts and external perspectives.",
+    "text": "You forge an unusual common ground where personal commitment and future direction effortlessly align through inventive problem-solving. This dynamic creates a shared momentum that sidesteps conventional hurdles by finding clever, unexpected angles for mutual growth. The internal tension arises when this cleverness becomes an end in itself, leading you both to bypass stable, long-term foundations in favor of perpetual reinvention.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54002,9 +54002,9 @@
   {
     "key": "synastry-aspect:quintile:jupiter:pluto",
     "locale": "en",
-    "text": "You share an uncommon knack for turning ambition into deep, systemic renewal, building shared confidence by tackling underlying structures rather than surface details. This joint drive handles boundaries by quietly reshaping them, merging personal authority with a broader vision for growth without forcing open conflict. Friction arises when your combined momentum demands total overhaul while external conditions require patience, leading to mutual exhaustion over how much control is enough.",
+    "text": "You share an uncommon knack for turning ambition into deep, systemic renewal, building shared confidence by tackling underlying structures rather than surface details. This joint drive handles boundaries by quietly reshaping them, merging personal authority with a broader vision for growth without forcing open conflict. Friction arises when combined momentum demands total overhaul while external conditions require patience, creating a structural clash between unchecked expansion and uncompromising control.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54026,9 +54026,9 @@
   {
     "key": "synastry-aspect:quintile:jupiter:sun",
     "locale": "en",
-    "text": "You naturally spark inventive growth and renewed purpose in one another, turning shared perspectives into practical tools for creative problem solving. This connection builds mutual confidence through unexpected intellectual syntheses that neither of you generates alone. The challenge arises when these clever solutions bypass messy emotional groundwork, substituting abstract theory for the patient labor of meeting basic daily limits.",
+    "text": "You naturally spark inventive growth and renewed purpose in one another, turning shared perspectives into practical tools for creative problem solving. This connection builds mutual confidence through unexpected intellectual syntheses that neither of you generates alone. The tension surfaces when these clever solutions prioritize theoretical possibilities over the concrete realities required to sustain them.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54086,9 +54086,9 @@
   {
     "key": "synastry-aspect:quintile:mars:meanLilith",
     "locale": "en",
-    "text": "You bring an inventive, unconventional spark to shared ambitions, effortlessly finding alternative routes where others hit walls. This dynamic generates a shared momentum that thrives on autonomy, carving out mutual space outside conventional expectations. When external constraints or institutional rules demand conformity, this shared drive can pivot into sharp resistance, preferring complete separation over compromise.",
+    "text": "You channel physical drive through unconventional channels, discovering precise leverage points where standard methods stall. This spark builds joint momentum by treating outside rules as creative design problems rather than permanent walls. When external demands insist on strict conformity, this dynamic can tense up against institutional structures, struggling to find middle ground when autonomy feels compromised.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54242,9 +54242,9 @@
   {
     "key": "synastry-aspect:quintile:mars:vesta",
     "locale": "en",
-    "text": "You bring a sharp, self-directed momentum into shared spaces, matching fierce personal initiative with a quiet dedication to what matters most. This drive finds its footing by turning raw willpower into practical devotion, uniting independent action with focused stewardship. When external constraints or heavy demands arise, this spark can curdle into rigid stubbornness, treating shared expectations as an interruption rather than a collaborative bridge.",
+    "text": "You bring an inventive, self-directed momentum into shared spaces, matching clever personal initiative with a quiet devotion to what matters most. This drive finds its footing by turning raw willpower into practical devotion, uniting independent action with focused stewardship. When external constraints or heavy demands arise, this spark can curdle into rigid stubbornness, treating shared expectations as an interruption rather than a collaborative bridge.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54470,9 +54470,9 @@
   {
     "key": "synastry-aspect:quintile:meanNode:saturn",
     "locale": "en",
-    "text": "Your developmental path finds a stabilizing anchor through structural accountability and practical framing. This connection builds lasting momentum by turning abstract long-term goals into concrete milestones that withstand outside pressure. Friction arises when the push toward future growth clashes with demands for strict compliance, creating tension between freedom of direction and established bounds.",
+    "text": "Your developmental path finds a stabilizing anchor by translating specialized creative potential into practical, lasting forms. This connection builds distinct momentum by turning unique capabilities into reliable assets that withstand outside pressure. Tension surfaces when the push toward specialized growth brushes against rigid external boundaries, requiring resourceful adaptation between innovative direction and established bounds.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54590,9 +54590,9 @@
   {
     "key": "synastry-aspect:quintile:mercury:saturn",
     "locale": "en",
-    "text": "You share a structured mental rhythm that builds reliable frameworks for complex ideas. This dynamic processes abstract concepts through concrete discipline, turning shared thoughts into lasting plans. When external rules or structural demands appear, this connection risks turning overly rigid, mistaking rigid conformity for genuine safety.",
+    "text": "You approach shared problem-solving with an inventive precision that builds lasting frameworks from abstract concepts. This connection bridges structured discipline with clever mental agility, turning unconventional ideas into workable plans. When external rules or formal boundaries tighten, this dynamic risks hardening into inflexible certainty, mistaking rigid control for true security.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54614,9 +54614,9 @@
   {
     "key": "synastry-aspect:quintile:mercury:trueNode",
     "locale": "en",
-    "text": "Intellectual exchange between you both naturally generates unconventional solutions and sharp insights that neither manages entirely alone. This connection bridges distinct perspectives by turning everyday discussions into laboratories for inventive collaboration. Friction surfaces when rigid frameworks demand standard answers, resisting the fluid breakthroughs that arise from joining your thoughts together.",
+    "text": "Intellectual exchange between you both naturally points toward unexpected developmental milestones, steering your shared curiosity away from well-worn paths and into uncharted growth. This connection bridges distinct perspectives by turning everyday discussions into laboratories for inventive self-correction. Friction surfaces when rigid frameworks demand standard answers, resisting the fluid breakthroughs that help you evolve when joining your thoughts together.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54638,9 +54638,9 @@
   {
     "key": "synastry-aspect:quintile:mercury:venus",
     "locale": "en",
-    "text": "Your thinking effortlessly meets another person's values, creating a shared channel for intellectual play and aesthetic appreciation. This connection builds a mutual language where ideas feel inherently pleasing and attractive to both of you. When external differences or rigid boundaries appear, the easy rapport can sometimes slip into treating practical disagreements as mere matters of style rather than resolving the underlying divergence.",
+    "text": "Your thinking invents clever bridges between conceptual puzzles and personal values, turning intellectual exchange into a creative collaboration. This dynamic builds a shared medium where abstract ideas and aesthetic tastes spark original solutions. When external limitations arise, the inventive rapport can slip into treating structural disagreements as mere design problems rather than confronting underlying practical divergences.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54662,9 +54662,9 @@
   {
     "key": "synastry-aspect:quintile:moon:neptune",
     "locale": "en",
-    "text": "An effortless psychological resonance allows you to sense each other's unspoken moods and inner states before words are even formed. This quiet attunement builds a shared refuge of deep comfort and imaginative understanding, though it can occasionally blur the boundaries between individual needs. When practical demands interrupt this intuitive flow, a subtle hesitation arises around how to protect private emotional safety while remaining open to outside realities.",
+    "text": "An inventive psychological coordination allows you to intuitively translate each other's unspoken moods into shared creative possibilities before words are even formed. This imaginative attunement builds a quiet refuge of mutual understanding, though it can occasionally blur the boundaries between individual needs. When practical demands interrupt this subtle flow, hesitation arises around how to protect private emotional safety while remaining open to outside realities.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54710,9 +54710,9 @@
   {
     "key": "synastry-aspect:quintile:moon:saturn",
     "locale": "en",
-    "text": "You find an unexpected rhythm between emotional reassurance and steady, structured commitment, turning quiet stability into a practical refuge. This dynamic builds trust by pairing instinctive care with reliable boundaries, creating a mutual anchor during uncertainty. When external pressures mount, the connection risks calcifying into rigid routine or emotional detachment if safety is confused with absolute control.",
+    "text": "You discover creative ways to blend emotional reassurance with steady, structured commitment, inventing practical outlets for care that respect personal boundaries. This dynamic builds trust by finding unexpected solutions to vulnerability, offering a mutual anchor during uncertainty. When external pressures mount, the connection risks forcing overly clever workarounds or emotional detachment if safety is confused with absolute control.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54722,9 +54722,9 @@
   {
     "key": "synastry-aspect:quintile:moon:sun",
     "locale": "en",
-    "text": "Your instinctive emotional rhythm matches the core of who you are, creating a natural bridge between what you feel and what you choose to build. This connection works through quiet adaptation, letting you shape independence and cooperation into a shared momentum without friction. When external expectations demand compromise, the tension reveals whether you can maintain that fluent synthesis without losing your separate direction.",
+    "text": "Your instinctive emotional rhythm looks for ingenious solutions to bridge what you feel with what another person builds. This connection operates by translating raw independence into clever, custom arrangements that bypass traditional friction. When external limits restrict these inventive workarounds, the resulting tension exposes the difficulty of keeping your unique methods flexible without forcing compliance.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54758,9 +54758,9 @@
   {
     "key": "synastry-aspect:quintile:moon:venus",
     "locale": "en",
-    "text": "You find an instinctive ease in blending emotional safety with shared affection, creating a mutual rhythm that feels both comforting and deeply appreciated. This connection builds through quiet attunement, allowing you to establish closeness without demanding rigid boundaries or constant reassurance. When outside pressures test this rapport, you risk slipping into unspoken expectations where you wait for the other person to anticipate needs you have not clearly named.",
+    "text": "You possess an inventive capacity for uniting your emotional instincts with shared affection, turning quiet attunement into an art form that effortlessly bridges personal needs and mutual desires. This dynamic functions by discovering clever, spontaneous bridges between comfort and appreciation rather than relying on standard routines. When external demands strain this rapport, you may rely too heavily on clever solutions to bypass the messy, unvarnished work of direct emotional exposure.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54962,9 +54962,9 @@
   {
     "key": "synastry-aspect:quintile:osculatingLilith:venus",
     "locale": "en",
-    "text": "You share an inventive knack for blending unconventional desires with shared aesthetic pleasures, crafting unique ways to experience affection together. This connection bridges personal boundaries by discovering mutual appreciation for things others might overlook, allowing you to bypass ordinary social scripts. The friction arises when one partner seeks absolute conventional safety while the other insists on exploring untraditional territory.",
+    "text": "You share an intuitive knack for finding common ground through unconventional tastes, effortlessly blending unexpected forms of pleasure with mutual affection. This dynamic bridges personal boundaries by discovering shared appreciation for things others might overlook, allowing you to bypass ordinary social scripts with ease. The tension surfaces when individual needs for distinct self-expression occasionally challenge the desire to maintain a smooth, shared aesthetic.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -54986,9 +54986,9 @@
   {
     "key": "synastry-aspect:quintile:pallas:pluto",
     "locale": "en",
-    "text": "You share an uncommon knack for forging sharp strategies from raw complexity, turning deep underlying friction into constructive leverage. This connection builds toward precise insights that reframe difficult situations by restructuring how power and leverage operate between you. A persistent tension can surface when protective instincts clash, forcing a choice between maintaining absolute control or yielding to a shared reinvention.",
+    "text": "You share an uncommon knack for forging sharp strategies from raw complexity, turning deep underlying friction into constructive leverage. This connection builds toward precise insights that reframe difficult situations by restructuring how influence operates between you. A persistent tension can surface when analytical detachment meets heavy emotional undercurrents, forcing a choice between over-intellectualizing a profound crisis or yielding to its total transformation.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55034,9 +55034,9 @@
   {
     "key": "synastry-aspect:quintile:pallas:uranus",
     "locale": "en",
-    "text": "You forge sharp intellectual breakthroughs by treating conventional boundaries as flexible puzzles rather than permanent walls. This shared perspective generates ingenious workarounds and sudden clarity when standard methods stall. The underlying tension surfaces when the drive for total autonomy collides with the need for stable cooperation, often risking detachment just as a collaborative structure requires patient endurance.",
+    "text": "You generate sudden conceptual breakthroughs by viewing traditional systems as temporary frameworks awaiting revision. This intellectual pattern-recognition cuts through stagnation to offer original structural solutions. The underlying tension surfaces when the impulse for radical redesign collides with established methods, risking abrupt detachment just as a situation calls for methodical consistency.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55094,9 +55094,9 @@
   {
     "key": "synastry-aspect:quintile:pluto:trueNode",
     "locale": "en",
-    "text": "You forge an intuitive path toward shared growth by uncovering hidden potentials that others overlook. This dynamic fosters a mutual drive to break through old patterns, turning profound shifts into practical steps forward. The challenge arises when deep psychological renewal clashes with a desire for stability, creating friction over how much control to release.",
+    "text": "You channel intense psychological depth into resourceful ways of advancing shared goals, finding unexpected leverage where others see dead ends. This connection builds a skillful capacity to redirect hidden patterns into productive momentum. The tension surfaces when the drive for profound change meets a preference for familiar territory, creating friction over how much stability to disrupt.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55142,9 +55142,9 @@
   {
     "key": "synastry-aspect:quintile:saturn:sun",
     "locale": "en",
-    "text": "Your vital purpose and a partner's stabilizing steadiness join forces through an inventive talent for practical structure, building durable joint projects neither could manage entirely alone. This connection handles shared boundaries by finding ingenious ways to ground ambition without dampening personal spark. When external constraints or demands for conformity appear, the dynamic risks calcifying into rigid mutual oversight instead of maintaining its usual flexible craftsmanship.",
+    "text": "Your capacity for steady discipline and structural restraint meets a partner's outward vitality through an inventive talent for practical design, building durable joint projects neither could manage entirely alone. This connection handles shared boundaries by finding ingenious ways to ground ambition without dampening personal spark. When external constraints or demands for conformity appear, the dynamic risks calcifying into rigid mutual oversight instead of maintaining its usual flexible craftsmanship.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55154,9 +55154,9 @@
   {
     "key": "synastry-aspect:quintile:saturn:trueNode",
     "locale": "en",
-    "text": "You build a steady bridge between long-term accountability and future purpose, shaping shared goals through quiet persistence rather than force. This connection thrives by establishing practical structures that support mutual growth while respecting individual autonomy. The latent tension emerges when external delays test your patience, turning a resourceful joint effort into an exercise in strict control.",
+    "text": "You artfully bridge long-term accountability with future direction, combining disciplined persistence with an inventive capacity for shared purpose. This connection thrives by establishing practical structures that support mutual growth while respecting individual autonomy. The latent tension emerges when external delays test your patience, turning a resourceful joint effort into an exercise in strict control.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55178,9 +55178,9 @@
   {
     "key": "synastry-aspect:quintile:saturn:venus",
     "locale": "en",
-    "text": "You share an inventive knack for blending affection with lasting commitment, finding clever workarounds where warmth and steady structure normally clash. This connection invents practical ways to honor both personal freedom and mutual loyalty without forcing rigid compromises. When external delays test the bond, the challenge lies in avoiding clinical detachment or treating shared affection as a puzzle to solve rather than a feeling to inhabit.",
+    "text": "You share an inventive knack for blending affection with lasting commitment, finding clever workarounds where warmth and steady structure normally clash. This connection creates practical ways to honor both emotional investment and mutual loyalty without forcing rigid compromises. When external delays test the bond, the challenge lies in avoiding clinical detachment or treating shared closeness as a puzzle to solve rather than a feeling to inhabit.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55226,9 +55226,9 @@
   {
     "key": "synastry-aspect:quintile:sun:venus",
     "locale": "en",
-    "text": "Your vitality meets another person's capacity for appreciation with an inventive, problem-solving ease that bypasses ordinary social friction. This dynamic builds toward a shared creative output, shaping mutual regard through clever adaptations rather than forced compromise. When external pressures test this bond, the shared focus can drift into intellectual detachment, treating authentic connection as a puzzle to solve rather than a feeling to inhabit.",
+    "text": "Your vitality meets another person's capacity for appreciation with an inventive, problem-solving ease that bypasses ordinary social friction. This dynamic builds toward a shared creative output, shaping mutual regard through clever adaptations rather than forced compromise. When external pressures test this bond, the drive for clever solutions can sidestep deeper emotional vulnerability, treating authentic connection as an obstacle to outsmart rather than a feeling to inhabit.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55286,9 +55286,9 @@
   {
     "key": "synastry-aspect:quintile:uranus:venus",
     "locale": "en",
-    "text": "You spark an unusual creative current between each other, turning shared affection into a laboratory for fresh perspectives and unconventional pleasures. This dynamic bridges personal independence with mutual appreciation by introducing surprising outlets for intimacy that defy standard expectations. When routine threatens to flatten the connection, the pull toward sudden freedom challenges comfortable habits, sometimes forcing an abrupt reassessment of how closeness and autonomy coexist.",
+    "text": "You spark an unusual creative current between each other, turning shared affection into a laboratory for fresh perspectives and unconventional pleasures. This dynamic bridges personal independence with mutual appreciation by introducing surprising outlets for intimacy that defy standard expectations. When routine threatens to flatten the connection, the pull toward sudden freedom inspires inventive adaptations, sometimes creating a playful tension around how closeness and autonomy coexist.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55370,9 +55370,9 @@
   {
     "key": "synastry-aspect:biquintile:ceres:mars",
     "locale": "en",
-    "text": "Your drive to pursue personal goals finds a surprising, inventive ally in how another person cares for and sustains you, turning potential friction into a practical outlet for mutual ambition. This connection builds a steady rhythm between asserting your own will and receiving attentive support, allowing both of you to coordinate action without stepping on each other's toes. When external obstacles demand compromise, however, this inventive synthesis can stall into an awkward friction over who directs the momentum.",
+    "text": "Your capacity to nurture and sustain others finds an inventive, unexpected link with how another person pursues personal goals and asserts their will, turning potential friction into a practical outlet for shared ambition. This connection builds a steady rhythm between offering attentive support and watching the other act, allowing both of you to coordinate momentum without direct interference. When external obstacles demand compromise, however, this creative synthesis can stall into an awkward friction over how effort should be directed.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55394,9 +55394,9 @@
   {
     "key": "synastry-aspect:biquintile:ceres:meanNode",
     "locale": "en",
-    "text": "Your approach to mutual care and support finds an inventive workaround when meeting another person's trajectory of collective growth, bridging daily nurture with shared purpose. This dynamic builds toward a practical synthesis that neither manages entirely alone, quietly smoothing the path between personal devotion and future direction. The underlying tension arises when an external limit forces a choice between tending immediate needs or serving longer paths, occasionally creating friction around how dependency fits into shared momentum.",
+    "text": "Your approach to mutual care finds an inventive workaround when meeting another person's trajectory of collective growth, bridging daily nurture with shared purpose. This dynamic builds toward a practical synthesis that neither manages entirely alone, quietly smoothing the path between personal devotion and future direction. The underlying tension arises simply when differing rhythms complicate how immediate comfort integrates with wider ambitions.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55454,9 +55454,9 @@
   {
     "key": "synastry-aspect:biquintile:ceres:pallas",
     "locale": "en",
-    "text": "You find an unusual mechanical harmony between nurturing care and strategic pattern recognition, discovering clever workarounds that blend practical support with sharp intellectual planning. This connection builds a shared capacity to solve complex domestic or logistical puzzles through inventive joint solutions rather than standard compromises. The tension surfaces when practical vulnerability clashes with abstract conceptual frameworks, creating friction over how best to care for each other while trying to implement grand designs.",
+    "text": "You find an unusual mechanical harmony between nurturing care and strategic pattern recognition, discovering clever workarounds that blend practical support with sharp intellectual planning. This connection builds a shared capacity to solve complex logistical puzzles through inventive joint solutions rather than standard compromises. The tension surfaces when practical vulnerability gets lost inside overly abstract conceptual frameworks, creating friction whenever inventive designs outpace actual daily needs.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55466,9 +55466,9 @@
   {
     "key": "synastry-aspect:biquintile:ceres:pluto",
     "locale": "en",
-    "text": "You find unusual ways to support deep personal growth without forcing direct confrontation. By quietly blending practical care with intense psychological honesty, you help each other face difficult truths and emerge stronger. The risk lies in becoming overly protective of your mutual vulnerabilities, sometimes manufacturing crises just to prove your capacity for renewal.",
+    "text": "You find unusual ways to support profound personal growth without forcing direct confrontation. By quietly blending practical care with psychological honesty, you help each other face difficult truths and emerge stronger. The risk lies in becoming overly protective of mutual vulnerabilities, retreating into silent control when shared transformation demands complete exposure.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55586,9 +55586,9 @@
   {
     "key": "synastry-aspect:biquintile:chiron:mars",
     "locale": "en",
-    "text": "You bridge vulnerability and direct action by finding inventive ways to channel sensitive spots into physical pursuits. This pairing generates a shared knack for turning old frustrations into practical skills that neither of you masters alone. When external obstacles arise, the tension reveals a functional blind spot regarding control, leading to moments where protection clashes with direct assertion.",
+    "text": "You bridge vulnerability and direct action by finding inventive ways to channel sensitive spots into physical pursuits. This pairing generates a shared knack for turning old frustrations into practical skills that neither of you masters alone. When external obstacles arise, the creative tension seeks resolution through novel tactics rather than direct force, turning friction into an opportunity for clever problem-solving.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55646,9 +55646,9 @@
   {
     "key": "synastry-aspect:biquintile:chiron:neptune",
     "locale": "en",
-    "text": "You bridge deep personal vulnerability with boundless empathy, creating a quiet space where old hurts find gentle acceptance. This shared sensitivity allows you both to dissolve rigid defenses and offer profound healing through creative understanding. Yet this flowing openness can blur essential boundaries, making it difficult to distinguish where your own emotional needs end and the other person's begin.",
+    "text": "You consciously shape deep personal vulnerability into imaginative forms of healing, using creative insight to reframe old hurts with unusual skill. This perspective lets you dissolve rigid defenses purposefully, turning gentle idealism into a practical tool for mutual restoration. Yet this deliberate blending can obscure essential boundaries, making it difficult to maintain distinct limits when emotional needs merge.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55790,9 +55790,9 @@
   {
     "key": "synastry-aspect:biquintile:interpolatedLilith:mars",
     "locale": "en",
-    "text": "Your raw impulse to pursue goals finds an unusual, inventive outlet when meeting another person's edge of uncompromised wildness, creating a shared reservoir of unconventional power. Together, you build a sharp talent for bypassing ordinary social rules and friction, turning taboo territory into practical collaboration. This dynamic runs into difficulty when the urge for total autonomy collides with the need for mutual predictability, occasionally stalling joint momentum over unspoken boundaries.",
+    "text": "Your uncompromised independence meets an unexpected, inventive outlet when encountering another person's direct drive to act, building an unusual reservoir of raw power. Together, you develop a sharp talent for bypassing ordinary social rules, turning taboo territory into practical collaboration. This dynamic runs into difficulty when the urge for total autonomy collides with the need for mutual predictability, occasionally stalling joint momentum over unspoken boundaries.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55850,9 +55850,9 @@
   {
     "key": "synastry-aspect:biquintile:interpolatedLilith:pallas",
     "locale": "en",
-    "text": "You forge an inventive method for blending raw independence with sharp tactical strategy, turning unconventional boundaries into clear structural designs. This pairing builds an unexpected talent for synthesizing unexpressed impulses into practical frameworks that neither person manages alone. Friction arises when unyielding personal autonomy clashes directly with rigid organizational systems, creating a standing tension between wild self-sovereignty and calculated problem-solving.",
+    "text": "You forge an inventive method for blending raw independence with sharp tactical strategy, turning unconventional boundaries into clear structural designs. This pairing builds an unexpected talent for synthesizing unexpressed impulses into practical frameworks that neither person manages alone. The interaction finds its rhythm by weaving wild self-sovereignty directly into calculated problem-solving through unconventional creative solutions.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55886,9 +55886,9 @@
   {
     "key": "synastry-aspect:biquintile:interpolatedLilith:sun",
     "locale": "en",
-    "text": "Your vitality finds a subtle, inventive channel when meeting another person's untamed edges, creating unexpected room for authentic self-expression. This dynamic builds a functional bridge between personal boundaries and unconventional desires, allowing you both to sidestep ordinary power struggles. When external expectations press in, the shared impulse can stiffen into defensive isolation or mutual alienation rather than flexible collaboration.",
+    "text": "Your vitality finds a subtle, inventive channel when meeting another person's untamed edges, creating unexpected room for authentic self-expression. This dynamic builds a functional bridge between personal boundaries and unconventional desires, allowing you both to sidestep ordinary power struggles. When external expectations press in, the shared impulse can fracture into guarded independence or sharp incompatibility rather than flexible collaboration.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -55958,9 +55958,9 @@
   {
     "key": "synastry-aspect:biquintile:juno:mars",
     "locale": "en",
-    "text": "Your drive to assert personal will and protect independence finds an inventive collaborator in how your partner approaches lasting commitments. You naturally build a shared momentum by turning potential friction into practical problem-solving strategies, creating mutual purpose without surrendering autonomy. When external constraints or demands for conformity appear, this dynamic can occasionally overcomplicate straightforward choices, turning simple collaboration into an elaborate negotiation of boundaries.",
+    "text": "Your approach to lasting commitments meets an inventive collaborator in how your partner asserts personal will and pursues shared goals. You naturally build mutual purpose by turning potential friction into practical problem-solving strategies, creating momentum without surrendering autonomy. When external constraints or demands for conformity appear, this dynamic can occasionally overcomplicate straightforward choices, turning simple collaboration into an elaborate negotiation of boundaries.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56126,9 +56126,9 @@
   {
     "key": "synastry-aspect:biquintile:juno:vesta",
     "locale": "en",
-    "text": "Your relational commitments find an inventive workaround when paired with a singular focus on dedication, allowing you both to build shared structures through entirely unconventional methods. This dynamic enables a unique talent for merging personal loyalty with deep-seated devotion into something neither person manages alone. The hidden friction surfaces when rigid boundaries or external demands disrupt this delicate synthesis, forcing a choice between total independence and mutual adaptation.",
+    "text": "Your relational commitments find an inventive workaround when paired with a singular focus on dedication, allowing you both to build shared structures through entirely unconventional methods. This dynamic enables a unique talent for merging personal loyalty with deep-seated devotion into something neither person manages alone. The hidden friction surfaces when standard external frameworks attempt to categorize this custom synthesis, creating a quiet resistance against conventional definitions of partnership.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56246,9 +56246,9 @@
   {
     "key": "synastry-aspect:biquintile:jupiter:saturn",
     "locale": "en",
-    "text": "Your natural optimism finds a sturdy anchor when paired with steady discipline, creating a practical framework for turning bold horizons into lasting structures. This combination bridges expansive growth with careful caution, allowing you to build sustainable plans without losing sight of broader possibilities. When strict boundaries conflict with the desire for progress, the tension invites you to discover inventive compromises rather than forcing a rigid choice.",
+    "text": "Your optimism finds an inventive outlet when paired with steady discipline, discovering clever ways to turn expansive visions into structured reality. This connection bridges bold growth with careful caution, forging practical formats out of unconventional concepts. When strict boundaries conflict with the drive for progress, the tension invites imaginative problem-solving rather than forcing a rigid choice.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56258,9 +56258,9 @@
   {
     "key": "synastry-aspect:biquintile:jupiter:sun",
     "locale": "en",
-    "text": "Your vitality finds a natural ally in this connection, sparking a shared confidence that turns ordinary perspectives into larger possibilities. You build mutual enthusiasm by bridging different viewpoints into a unified outlook, discovering unexpected solutions through shared exploration. When external restrictions or divergent paths arise, this dynamic risks overextending into untested territory instead of pausing to ground your shared vision in reality.",
+    "text": "Your vitality finds an inventive ally in this connection, sparking a distinctive coordination that turns ordinary perspectives into clever, unconventional possibilities. You build mutual enthusiasm by bridging different viewpoints through creative problem-solving, discovering unexpected solutions through oblique exploration. When external restrictions arise, this dynamic risks overcomplicating simple directions rather than pausing to ground your shared vision in practical reality.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56270,9 +56270,9 @@
   {
     "key": "synastry-aspect:biquintile:jupiter:trueNode",
     "locale": "en",
-    "text": "You share an uncommon knack for fusing personal purpose with shared horizons, building paths toward growth that neither of you could map alone. This connective thread helps you blend individual goals with broader possibilities without forcing strict boundaries or rigid plans. Yet when external limits appear, this shared momentum risks stretching into overconfidence, mistaking sheer optimism for a practical map through complex terrain.",
+    "text": "You share an uncommon, inventive knack for fusing personal purpose with shared horizons, building unconventional paths toward growth that neither of you could map alone. This creative thread helps you blend individual goals with broader possibilities without forcing strict boundaries or rigid plans. Yet when external limits appear, this momentum risks stretching into overconfidence, mistaking sheer optimism for a practical map through complex terrain.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56282,9 +56282,9 @@
   {
     "key": "synastry-aspect:biquintile:jupiter:uranus",
     "locale": "en",
-    "text": "You share an inventive impulse that finds fresh workarounds whenever routine threatens to stall your shared growth. This connection builds practical momentum by turning unexpected disruptions into productive opportunities for shared progress. The underlying tension arises when freedom clashes with the need for security, risking sudden detachment whenever external predictability begins to feel restrictive.",
+    "text": "You share an inventive impulse that synthesizes unconventional ideas with expansive goals, finding creative workarounds whenever routine threatens to stall your shared growth. This connection builds distinct momentum by turning unexpected disruptions into unique opportunities for progress. The underlying tension arises when grand visions occasionally outpace practical feasibility, requiring inventive adjustments to ground sweeping theories.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56294,9 +56294,9 @@
   {
     "key": "synastry-aspect:biquintile:jupiter:venus",
     "locale": "en",
-    "text": "You bridge differing ideals of pleasure and connection by finding unusual common ground that satisfies both parties without demanding compromise. This dynamic generates mutual confidence through shared appreciation, gently expanding what each person believes possible in relationship. When external expectations crowd this shared space, the connection can struggle to maintain practical boundaries between personal freedom and relational obligation.",
+    "text": "You bridge differing ideals of pleasure and connection by finding unusual common ground that satisfies both parties without demanding compromise. This dynamic generates mutual confidence through shared appreciation, gently expanding what each person believes possible in relationship. When external demands require rigid categorization, the rapport can struggle to translate its fluid understanding into standard relational frameworks.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56390,9 +56390,9 @@
   {
     "key": "synastry-aspect:biquintile:mars:pallas",
     "locale": "en",
-    "text": "Your immediate physical impulse finds a clever ally in strategic pattern-recognition, creating unexpected workarounds when direct action stalls. This pairing builds toward inventive problem-solving, turning tactical obstacles into opportunities for creative skill. Friction arises when rigid external structures demand conformity, forcing a choice between clever adaptation and flat resistance to limits.",
+    "text": "Your immediate physical impulse finds a clever ally in strategic pattern-recognition, creating unexpected workarounds when direct action stalls. This pairing builds toward inventive problem-solving, turning tactical obstacles into opportunities for creative skill. Friction arises when orderly strategic design meets impromptu methods, forcing a choice between synchronized planning and independent improvisation.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56426,9 +56426,9 @@
   {
     "key": "synastry-aspect:biquintile:mars:sun",
     "locale": "en",
-    "text": "Your vitality sparks an inventive momentum in the other person, creating shared projects that neither could easily build alone. This combination aligns personal will with active pursuit through clever workarounds rather than direct force. Friction appears when differing paces of ambition require a deliberate pause, testing how smoothly mutual independence accommodates a shared objective.",
+    "text": "Your drive sparks an inventive momentum in the other person, creating shared projects that neither could easily build alone. This combination links personal will with active pursuit through clever workarounds rather than direct force. Friction appears when differing paces of ambition require a deliberate pause, testing how smoothly mutual independence accommodates a shared objective.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56630,9 +56630,9 @@
   {
     "key": "synastry-aspect:biquintile:meanNode:mercury",
     "locale": "en",
-    "text": "Intellectual rapport unfolds through an inventive knack for finding unexpected common ground and working solutions neither mind reaches alone. This connection relies on an agile exchange of perspectives that effortlessly bridges distinct mental frameworks without forcing agreement. Tension surfaces whenever rigid certainty meets this fluid flexibility, leading to sudden friction when fixed viewpoints attempt to pin down a constantly evolving dialogue.",
+    "text": "Your intellectual development pulls toward an inventive knack for finding unexpected common ground, shaping how you process and exchange ideas with others. This developmental connection relies on an agile interplay of perspectives that bridges distinct mental frameworks to foster mutual growth. Tension surfaces whenever rigid certainty meets this fluid flexibility, leading to sudden friction when fixed viewpoints attempt to pin down a constantly evolving dialogue.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56642,9 +56642,9 @@
   {
     "key": "synastry-aspect:biquintile:meanNode:moon",
     "locale": "en",
-    "text": "Your instinctive emotional life and another person's primary life direction discover an inventive knack for blending private needs with shared purpose. This bond generates an unusual talent for turning personal vulnerability into a resourceful bridge between two worlds. The tension surfaces when the drive for growth pushes past the familiar comforts required for steady emotional grounding.",
+    "text": "Your primary life direction and another person's instinctive emotional life discover an inventive knack for blending shared purpose with private needs. This bond generates an unusual talent for turning personal growth into a resourceful bridge between two worlds. The tension surfaces when the drive for evolution pushes past the familiar comforts required for steady emotional grounding.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56690,9 +56690,9 @@
   {
     "key": "synastry-aspect:biquintile:meanNode:pluto",
     "locale": "en",
-    "text": "You forge an intuitive bond that unlocks unexpected solutions to deep-seated impasses, blending an orientation toward future growth with a capacity for profound psychological renewal. This connection manages boundaries by inviting shared inquiry into what usually remains hidden, allowing mutual independence to coexist with intense focus. Friction arises when the push for evolution meets an instinct to protect vulnerable territory from exposure, leading to a standstill over control.",
+    "text": "You forge an intuitive bond that unlocks unexpected solutions to deep-seated impasses, blending an orientation toward future growth with a capacity for profound psychological renewal. This connection manages boundaries by inviting shared inquiry into what usually remains hidden, allowing mutual independence to coexist with intense focus. Friction arises only when a drive for evolution encounters an instinct to protect vulnerable territory from exposure, leading to a standstill over control.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56702,9 +56702,9 @@
   {
     "key": "synastry-aspect:biquintile:meanNode:saturn",
     "locale": "en",
-    "text": "Your shared path finds an unusual bridge between collective timing and structural duty, forging a practical capability to turn abstract long-term goals into solid reality. This connection builds through a steady mastery of boundaries, blending personal direction with strict accountability so that neither momentum nor order is lost. When external rules or structural delays arise, the interaction risks falling into rigid control, treating necessary pauses as roadblocks rather than useful boundaries for consolidation.",
+    "text": "Your shared path discovers an inventive way to bridge broad developmental direction with structural duty, forging a specialized capability to turn long-term goals into solid reality. This connection builds through an unconventional mastery of boundaries, blending personal timing with strict accountability so that neither momentum nor order is lost. When external rules or structural delays arise, the interaction risks falling into rigid control, treating necessary pauses as roadblocks rather than useful boundaries for consolidation.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56810,9 +56810,9 @@
   {
     "key": "synastry-aspect:biquintile:mercury:pluto",
     "locale": "en",
-    "text": "You share an intellectual frequency that easily digs beneath everyday surfaces to examine what others leave unsaid. This mental exchange operates through quiet probing and a joint fascination with underlying motives, building a bond of profound psychological trust. When hidden assumptions surface, the challenge lies in avoiding suspicion or turning ordinary discussions into intense interrogations.",
+    "text": "You approach shared problem-solving through unconventional mental angles, finding clever ways to synthesize complex or hidden information into original frameworks. This mental connection builds strength by reframing difficult topics into fertile ground for innovative discovery. When external rigidity blocks these unusual perspectives, the challenge lies in avoiding a rigid compulsion to force your underlying premises onto the situation.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56822,9 +56822,9 @@
   {
     "key": "synastry-aspect:biquintile:mercury:saturn",
     "locale": "en",
-    "text": "Your mental approach brings a structured focus that helps anchor the other person's spontaneous ideas into concrete plans. This interplay builds a reliable bridge between creative problem-solving and rigorous long-term structure. When outside pressures mount, the friction between strict rules and free-flowing thought can turn into stubborn stalemates over control.",
+    "text": "Your mental approach brings an inventive focus that finds clever ways to support the other person's solid, long-term frameworks. This connection builds a reliable bridge between flexible problem-solving and rigorous architectural planning. When external limits tighten, the tension between your fluid reasoning and their rigid boundaries can harden into stubborn stalemates over method.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56894,9 +56894,9 @@
   {
     "key": "synastry-aspect:biquintile:moon:neptune",
     "locale": "en",
-    "text": "You share an intuitive resonance that instantly recognizes unspoken moods, creating an atmosphere of quiet safety without requiring constant explanation. This connection blends gentle empathy with deep imagination, allowing you to sense each other's inner shifts before they are spoken aloud. When external demands crowd in, you might retreat into idealization, blurring the line between shared hopes and practical reality until vulnerability turns into quiet withdrawal.",
+    "text": "You share an intuitive resonance that invents subtle, creative ways to soothe unspoken moods, creating an atmosphere of quiet safety without requiring constant explanation. This connection blends gentle empathy with imaginative resourcefulness, allowing you to reframe each other's inner shifts into unexpected possibilities. When external demands crowd in, you might retreat into idealization, blurring the line between shared hopes and practical reality until vulnerability turns into quiet withdrawal.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56930,9 +56930,9 @@
   {
     "key": "synastry-aspect:biquintile:moon:pluto",
     "locale": "en",
-    "text": "Your emotional security grows through an unusual capacity to metabolize intense psychological material together, finding hidden sources of resilience. You manage vulnerability by uncovering shared depths that ordinary interactions miss entirely. When dependence or heavy feelings surface, the shared shadow lies in digging too deep into emotional undercurrents, sometimes transforming ordinary closeness into an exercise in psychological endurance.",
+    "text": "Your emotional security grows by finding unconventional ways to bridge intense psychological depths, turning raw vulnerability into creative resilience. You manage closeness by forging unexpected paths around emotional blocks that ordinary closeness misses entirely. When dependence surfaces, the hidden tension lies in overcomplicating simple feelings through elaborate internal solutions, turning straightforward connection into an exercise in mental gymnastics.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56942,9 +56942,9 @@
   {
     "key": "synastry-aspect:biquintile:moon:saturn",
     "locale": "en",
-    "text": "Your emotional responses find a steady structural anchor in your partner, creating a reliable framework where instinctive needs meet steady accountability. This dynamic builds a natural bridge between personal vulnerability and enduring commitment, allowing you to establish mutual safety without rigid control. The underlying tension surfaces when emotional spontaneity clashes with established boundaries, requiring conscious effort to balance warmth with objective limits.",
+    "text": "Your emotional life discovers inventive ways to weave personal vulnerability with enduring accountability, building a subtle bridge between instinct and discipline. This placement crafts an imaginative bridge between warmth and reliable limits, letting you handle structure without resorting to rigid control. The underlying tension surfaces when spontaneous feelings must negotiate established boundaries, requiring clever adjustments to keep both freedom and stability intact.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -56978,9 +56978,9 @@
   {
     "key": "synastry-aspect:biquintile:moon:uranus",
     "locale": "en",
-    "text": "You share an instinctive knack for introducing sudden, inventive shifts that keep your emotional connection from ever feeling predictable or stagnant. This dynamic continually invents clever workarounds whenever routine threatens to stifle your shared comfort, allowing you both to break free from old patterns with remarkable ease. The underlying tension surfaces when this constant need for fresh space brushes against a desire for steady predictability, creating friction between the craving for sudden novelty and the simple need to feel securely anchored.",
+    "text": "You share an instinctive appreciation for unexpected solutions, finding genuine comfort in moments of clever reinvention rather than rigid routine. This connection effortlessly spots unconventional paths around emotional stalls, allowing both of you to refresh your shared environment without disrupting your underlying security. The subtle tension appears when this affinity for spontaneous adaptation brushes up against a preference for familiar habits, requiring gentle space to balance novelty with simple grounding.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57050,9 +57050,9 @@
   {
     "key": "synastry-aspect:biquintile:neptune:saturn",
     "locale": "en",
-    "text": "You find a rare point of bridge-building where strict boundaries meet boundless imagination, allowing you to anchor idealistic visions into concrete reality without losing their spirit. This dynamic operates by pairing rigorous structure with fluid receptivity, creating a steady framework that supports creative problem-solving. The underlying friction emerges when structural rigidity clashes with the urge to dissolve limits, forcing a constant recalibration between holding fast and letting go.",
+    "text": "You bridge the gap between strict boundaries and boundless imagination, finding clever ways to anchor idealistic visions into concrete reality without losing their spirit. This dynamic operates by pairing rigorous structure with fluid receptivity, creating a steady framework that supports inventive problem-solving. The underlying tension surfaces when formal rules try to contain fluid inspiration, requiring ongoing adjustments between holding fast and letting go.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57098,9 +57098,9 @@
   {
     "key": "synastry-aspect:biquintile:neptune:venus",
     "locale": "en",
-    "text": "You naturally blend romantic idealism with aesthetic appreciation, creating shared ideals that elevate ordinary relating into an inspiring pursuit of beauty. This dynamic softens rigid interpersonal boundaries by replacing them with a shared imaginative vision of harmony. Yet this inclination toward shared illusion can falter when practical realities demand concrete accountability, masking straightforward differences behind layers of romanticized expectation.",
+    "text": "You forge an inventive creative bridge between aesthetic appreciation and imaginative ideals, finding clever ways to weave shared artistic visions into everyday relating. This connection subtly dissolves rigid boundaries by discovering unconventional paths toward harmony and mutual pleasure. Yet this drive for imaginative synthesis can falter when practical conditions demand straightforward accountability, substituting clever detours for transparent resolution.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57158,9 +57158,9 @@
   {
     "key": "synastry-aspect:biquintile:osculatingLilith:sun",
     "locale": "en",
-    "text": "You forge a distinct collaborative rhythm by blending your personal authority with an instinct for unvarnished truth. This connection builds a shared capacity to challenge conventional boundaries without creating direct confrontation, offering an inventive workaround when standard expectations feel too restrictive. The friction arises when one person's need for social acceptance clashes with the other's total disregard for propriety.",
+    "text": "You forge a distinct collaborative rhythm by blending personal authority with an instinct for unvarnished truth. This connection builds a shared capacity to challenge conventional boundaries without direct confrontation, offering an inventive workaround when standard expectations feel too restrictive. The shadow tension arises when internal drives for self-preservation rub against an uncompromising refusal to compromise on uncomfortable realities.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57194,9 +57194,9 @@
   {
     "key": "synastry-aspect:biquintile:osculatingLilith:venus",
     "locale": "en",
-    "text": "You bridge conventional aesthetic standards with unconventional desires, finding rare common ground where others experience friction. This dynamic allows you to synthesize shared affection and personal autonomy into an inventive relational style. The inherent tension arises when mutual pleasure demands conformity, prompting a swift retreat into isolated self-sufficiency rather than compromise.",
+    "text": "You bridge conventional standards with unconventional desires, finding rare common ground where others experience friction. This dynamic allows you to synthesize shared affection and personal autonomy into an inventive relational style. The inherent tension arises when mutual pleasure demands conformity, prompting a quiet detachment rather than comfortable compromise.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57302,9 +57302,9 @@
   {
     "key": "synastry-aspect:biquintile:pluto:saturn",
     "locale": "en",
-    "text": "Your capacity for deep structural endurance meets a relentless drive for profound structural renewal, forging a resourceful bridge between caution and radical change. You manage external constraints by finding inventive workarounds that honor both the need for order and the necessity of total reform. When reliance on others requires compromise, tension arises between holding fast to established systems and tearing them down to start over.",
+    "text": "Your capacity for profound structural renewal meets a relentless drive for disciplined endurance, forging a resourceful bridge between radical change and caution. You manage external constraints by finding inventive workarounds that honor both the necessity of total reform and the need for order. When reliance on others requires compromise, tension arises between tearing down established systems to start over and holding fast to what is proven.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57314,9 +57314,9 @@
   {
     "key": "synastry-aspect:biquintile:pluto:sun",
     "locale": "en",
-    "text": "Your core purpose and vitality find an unexpected avenue for profound change when meeting another person's intense depth, generating a shared perspective that neither builds alone. This connection naturally bridges personal identity with hidden motives, allowing privacy and shared focus to coexist without forceful intrusion. When external boundaries challenge this combined momentum, the tension surfaces as a quiet struggle between preserving individual autonomy and surrendering to deep mutual influence.",
+    "text": "Your intense depth works upon another person's core purpose by discovering unconventional bridges between personal visibility and hidden transformation. This dynamic quietly recalibrates how autonomy meets profound influence through unexpected problem-solving angles rather than direct collisions. When external limits restrict this creative momentum, the tension appears as an awkward standoff between holding tight to private control and yielding completely to shared renewal.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57374,9 +57374,9 @@
   {
     "key": "synastry-aspect:biquintile:saturn:sun",
     "locale": "en",
-    "text": "You bring a quiet, stabilizing anchor to another's central purpose, helping structure their ambitions without dampening their vitality. This connection builds a durable working rhythm by blending long-range focus with personal drive, turning external obstacles into practical shared objectives. When structural boundaries or outside demands interfere, friction surfaces as a subtle tension between granting complete independence and insisting on methodical patience.",
+    "text": "You offer an inventive framework for another's central purpose, finding unconventional ways to structure and support their ambitions without dampening their vitality. This connection builds a durable working rhythm by blending long-range focus with specialized problem-solving, turning external obstacles into practical shared objectives. When structural boundaries or outside demands interfere, friction surfaces as a subtle tension between granting complete independence and insisting on methodical patience.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57422,9 +57422,9 @@
   {
     "key": "synastry-aspect:biquintile:saturn:vesta",
     "locale": "en",
-    "text": "Your capacity for structured commitment finds a productive outlet in supporting another person's sacred focus, blending steady accountability with dedicated devotion. This connection builds quiet reliability through shared rituals and mutual patience when external constraints demand endurance. The difficulty arises if boundaries feel too rigid, creating friction between the need for structured order and the necessity of personal sanctuary.",
+    "text": "Your capacity for structured commitment finds an inventive, carefully engineered outlet in supporting another person's sacred focus, blending steady accountability with dedicated devotion through unconventional methods. This connection builds quiet reliability via ingenious shared rituals when external constraints demand endurance. The difficulty arises if boundaries feel too rigid, creating friction between the need for precise order and the necessity of personal sanctuary.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57530,9 +57530,9 @@
   {
     "key": "synastry-aspect:biquintile:uranus:vesta",
     "locale": "en",
-    "text": "You find unexpected ways to protect what matters most by introducing radical invention into shared routines and sacred spaces. This connection brings a knack for building inventive workarounds when traditional commitments face sudden disruption, allowing you both to innovate without severing your core loyalties. The challenge arises when sudden structural shifts clash with the desire for absolute predictability, creating friction between the urge to break free and the need to preserve stability.",
+    "text": "You discover inventive ways to honor shared commitments by introducing creative pivots directly into sacred routines. This connection builds a natural talent for finding unexpected solutions when traditional structures shift, allowing both of you to modernize your dedication without losing focus. The shadow appears when sudden experimentation feels too disruptive to established devotion, creating tension between the urge to innovate and the desire for absolute continuity.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
