@@ -4,15 +4,19 @@ import { bodyByKey } from '../src/astrology/bodies.js';
 import type { EssentialDignities } from '../src/astrology/dignities.js';
 import type { ChartData } from '../src/domain/chart-compute.js';
 import {
+  almutenOfAscendant,
   angleRows,
+  antisciaRows,
   aspectRows,
   chartSheetInput,
   chartSheetMetaLines,
   chartWheelRing,
   crossAspectRows,
+  declinationContactRows,
   degreeParts,
   derivedPointRows,
   dignityRows,
+  dispositorRows,
   houseCuspRows,
   positionRows,
 } from '../src/domain/chart-tables.js';
@@ -101,6 +105,7 @@ describe('positionRows (#44)', () => {
         degree: 10,
         minute: 0,
         second: 0,
+        anaretic: false,
       },
       {
         bodyKey: 'moon',
@@ -114,6 +119,7 @@ describe('positionRows (#44)', () => {
         degree: 10,
         minute: 0,
         second: 0,
+        anaretic: false,
       },
     ]);
   });
@@ -136,6 +142,7 @@ describe('positionRows (#44)', () => {
       degree: 10,
       minute: 0,
       second: 0,
+      anaretic: false,
     });
     expect(rows[3]).toEqual({
       bodyKey: 'mc',
@@ -146,6 +153,7 @@ describe('positionRows (#44)', () => {
       degree: 10,
       minute: 0,
       second: 0,
+      anaretic: false,
     });
   });
 
@@ -307,8 +315,32 @@ describe('dignityRows (#44)', () => {
       partOfSpirit: 0,
     };
     expect(dignityRows(data)).toEqual([
-      { bodyKey: 'sun', bodyName: 'Sun', ruler: false, exalted: true, detriment: false, fall: false },
-      { bodyKey: 'moon', bodyName: 'Moon', ruler: false, exalted: false, detriment: false, fall: false },
+      {
+        bodyKey: 'sun',
+        bodyName: 'Sun',
+        ruler: false,
+        exalted: true,
+        detriment: false,
+        fall: false,
+        triplicity: true,
+        bound: false,
+        face: true,
+        points: 8,
+        peregrine: false,
+      },
+      {
+        bodyKey: 'moon',
+        bodyName: 'Moon',
+        ruler: false,
+        exalted: false,
+        detriment: false,
+        fall: false,
+        triplicity: false,
+        bound: false,
+        face: false,
+        points: 5,
+        peregrine: false,
+      },
     ]);
   });
 
@@ -325,6 +357,149 @@ describe('dignityRows (#44)', () => {
     };
     expect(dignityRows(data).map((row) => row.bodyKey)).toEqual(['sun', 'chiron']);
     expect(dignityRows(data, { chironVisible: false }).map((row) => row.bodyKey)).toEqual(['sun']);
+  });
+});
+
+describe('almutenOfAscendant (#398)', () => {
+  it('names whichever traditional planet holds the most essential dignity at the Ascendant', () => {
+    const data: ChartData = {
+      positions: [],
+      // Ascendant at longitude 10 (10 Aries), day sect: Mars rules (5 points) but the Sun is
+      // exalted there, holds day triplicity, and is the Chaldean face ruler too (4+3+1=8 points)
+      // — the Sun outscores the sign's own ruler, which is exactly the kind of case an "Almuten
+      // of the Ascendant" summary exists to surface.
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    const result = almutenOfAscendant(data);
+    expect(result?.almutens).toEqual(['sun']);
+  });
+
+  it('is undefined when houses have no valid solution (#378)', () => {
+    const degenerateHouses: HousePositions = { ...HOUSES, cusps: HOUSES.cusps.map(() => Number.NaN) };
+    const data: ChartData = {
+      positions: [],
+      houses: degenerateHouses,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(almutenOfAscendant(data)).toBeUndefined();
+  });
+});
+
+describe('dispositorRows (#398)', () => {
+  it('terminates at a final dispositor when a body rules its own sign', () => {
+    const data: ChartData = {
+      positions: [position(MARS, 10)], // 10 Aries, Mars's own sign
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    const [row] = dispositorRows(data);
+    expect(row).toMatchObject({
+      bodyKey: 'mars',
+      chain: ['mars'],
+      finalDispositorKey: 'mars',
+      cycle: false,
+      mutualReception: false,
+    });
+  });
+
+  it('flags mutual reception between two bodies each in the sign the other rules', () => {
+    const mercury = idOf('mercury');
+    const data: ChartData = {
+      // Mars at 6 Gemini (Mercury's sign), Mercury at 5 Aries (Mars's sign) — the same pair
+      // `isMutualReception`'s own test (#34) uses.
+      positions: [position(MARS, 2 * 30 + 5), position(mercury, 5)],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    const rows = dispositorRows(data);
+    expect(rows.find((row) => row.bodyKey === 'mars')).toMatchObject({ mutualReception: true, cycle: true });
+    expect(rows.find((row) => row.bodyKey === 'mercury')).toMatchObject({ mutualReception: true, cycle: true });
+  });
+
+  it('excludes asteroids, nodes, Lilith and Chiron — a dispositor chain is a planets-only concept', () => {
+    const data: ChartData = {
+      // Mars at 10 Aries (its own sign) so Sun's own chain (Aries is Sun-exalted but Mars-ruled)
+      // has a position to resolve into — `dispositorChain` needs a placement for every ruler the
+      // walk reaches (its own doc comment), which Chiron would never provide anyway.
+      positions: [position(SUN, 10), position(MARS, 10), position(CHIRON, 50)],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(dispositorRows(data).map((row) => row.bodyKey)).toEqual(['sun', 'mars']);
+  });
+});
+
+describe('declinationContactRows (#398)', () => {
+  it('finds a parallel contact within the default 1° orb', () => {
+    const data: ChartData = {
+      positions: [position(SUN, 10), position(MOON, 100)],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+      declinations: new Map([
+        [SUN, 20],
+        [MOON, 20.5],
+      ]),
+      obliquity: 23.4,
+    };
+    expect(declinationContactRows(data)).toEqual([
+      { bodyAKey: 'sun', bodyAName: 'Sun', bodyBKey: 'moon', bodyBName: 'Moon', kind: 'parallel', orb: 0.5 },
+    ]);
+  });
+
+  it('returns an empty list when declinations are unavailable (a composite/harmonic chart)', () => {
+    const data: ChartData = {
+      positions: [position(SUN, 10), position(MOON, 100)],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(declinationContactRows(data)).toEqual([]);
+  });
+});
+
+describe('antisciaRows (#398)', () => {
+  it('finds an antiscion contact within the default 1° orb, deduplicated to one row per pair', () => {
+    const data: ChartData = {
+      positions: [position(SUN, 15), position(MOON, 165.5)], // Sun's antiscion is 15 Virgo (165) — same pair antiscialContacts' own test (#31) uses.
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    const rows = antisciaRows(data);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ kind: 'antiscion' });
+    expect([rows[0]?.bodyKey, rows[0]?.contactKey].sort()).toEqual(['moon', 'sun']);
   });
 });
 

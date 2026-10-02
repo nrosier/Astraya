@@ -72,6 +72,16 @@ export interface ChartData {
   readonly sect: Sect;
   readonly partOfFortune: Degrees;
   readonly partOfSpirit: Degrees;
+  /**
+   * Declination (equatorial, not ecliptic) per body — `declinations.ts`'s parallels/
+   * contraparallels/out-of-bounds all key off this. Undefined for a composite/harmonic chart
+   * (`composite.ts`/`harmonic.ts`): those positions are synthetic midpoints/multiples with no
+   * single real moment or place, so "declination of this point" isn't a coherent question —
+   * callers must treat a missing `declinations` as "not applicable here", not as a bug.
+   */
+  readonly declinations?: ReadonlyMap<BodyId, Degrees>;
+  /** True obliquity of the ecliptic at this moment — the out-of-bounds threshold (`declinations.ts`'s own doc comment). Same composite/harmonic caveat as `declinations`. */
+  readonly obliquity?: Degrees;
 }
 
 /**
@@ -148,14 +158,25 @@ export async function computeChartDataAtJd(
     return true;
   });
 
-  const [positions, houses] = await Promise.all([
+  const [positions, houses, equatorialPositions, obliquity] = await Promise.all([
     provider.positions(
       jd,
       bodies.map((body) => body.id),
       positionOptions,
     ),
     provider.houses(jd, place, options.houseSystem ?? DEFAULT_HOUSE_SYSTEM, options.zodiac),
+    // Equatorial reinterprets `.longitude`/`.latitude` as right ascension/declination
+    // (`PositionOptions.equatorial`'s own doc comment) — only declination is used here.
+    provider.positions(
+      jd,
+      bodies.map((body) => body.id),
+      { ...positionOptions, equatorial: true },
+    ),
+    provider.obliquity(jd),
   ]);
+  const declinations = new Map<BodyId, Degrees>(
+    equatorialPositions.map((position) => [position.body, position.latitude]),
+  );
 
   const positionByBody = new Map(positions.map((position) => [position.body, position]));
   const aspectsTo = options.aspectsTo ?? {};
@@ -192,5 +213,7 @@ export async function computeChartDataAtJd(
     sect,
     partOfFortune: partOfFortune(sect, houses.ascendant, sunPosition.longitude, moonPosition.longitude),
     partOfSpirit: partOfSpirit(sect, houses.ascendant, sunPosition.longitude, moonPosition.longitude),
+    declinations,
+    obliquity,
   };
 }

@@ -47,6 +47,21 @@ describe('computeChartData (#44)', () => {
     expect(data.positions.some((position) => position.body === moon?.id)).toBe(true);
   });
 
+  it('computes a plausible obliquity and declination per body (#398)', async () => {
+    const engine = await getEngine();
+    const data = await computeChartData(MOMENT, engine);
+    // True obliquity of the ecliptic is ~23.4° and barely drifts over human timescales.
+    expect(data.obliquity).toBeGreaterThan(23);
+    expect(data.obliquity).toBeLessThan(24);
+    expect(data.declinations?.size).toBe(data.positions.length);
+    // No body's declination can exceed the obliquity by more than a body's own ecliptic
+    // latitude could plausibly push it (a few degrees for the Moon/inner planets) — this is a
+    // sanity bound, not a precise astronomical claim.
+    for (const declination of data.declinations?.values() ?? []) {
+      expect(Math.abs(declination)).toBeLessThan((data.obliquity ?? 0) + 10);
+    }
+  });
+
   it('reports day sect for a Sun above the horizon', async () => {
     // Noon local time puts the Sun well above the horizon at this latitude.
     const engine = await getEngine();

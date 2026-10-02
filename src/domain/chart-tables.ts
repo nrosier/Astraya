@@ -7,7 +7,11 @@
  * integration test for computing a chart and the (fast, pure) test for
  * shaping one into rows can run independently.
  */
+import { almutenOf, essentialDignityScoreOf } from '../astrology/almuten.js';
+import { antiscialContacts, type AntiscialContact } from '../astrology/antiscia.js';
 import { bodyById, bodyByKey } from '../astrology/bodies.js';
+import { declinationContacts, isOutOfBounds } from '../astrology/declinations.js';
+import { dispositorChain, isMutualReception } from '../astrology/dispositors.js';
 import { houseOf } from '../astrology/emphasis.js';
 import { midpointOf } from '../astrology/midpoints.js';
 import { degreesInSign, signOf } from '../astrology/signs.js';
@@ -15,7 +19,7 @@ import { formatCoordinate } from '../ui/format.js';
 import { housesAreDefined, type ChartData } from './chart-compute.js';
 import type { Aspect } from '../astrology/aspects.js';
 import type { Locale } from '../interpretation/schema.js';
-import type { BodyPosition, Degrees } from '../ephemeris/types.js';
+import type { BodyId, BodyPosition, Degrees } from '../ephemeris/types.js';
 import type { BirthMomentInput } from '../time/types.js';
 import type { WheelRingInput } from '../chart/multi-wheel.js';
 import type { ChartSheetInput } from '../chart/chart-sheet.js';
@@ -118,6 +122,15 @@ export interface PositionRow extends DegreeParts {
   readonly retrograde?: boolean;
   /** Undefined for the Ascendant/Midheaven rows `includeAngles` adds — they define houses rather than sit in one. */
   readonly house?: number;
+  /** True in the sign's final degree (29°) — the classical "anaretic" degree (#398). */
+  readonly anaretic: boolean;
+  /**
+   * True when this body's declination is more extreme than the Sun's own maximum
+   * (`declinations.ts`'s `isOutOfBounds`) — `undefined` for the Ascendant/Midheaven rows
+   * `includeAngles` adds, and whenever `ChartData.declinations`/`.obliquity` aren't available
+   * (a composite/harmonic chart — see `ChartData.declinations`'s own doc comment) (#398).
+   */
+  readonly outOfBounds?: boolean;
 }
 
 /**
@@ -144,6 +157,8 @@ export function positionRows(
   const bodyRows = visiblePositions(data.positions, options).map((position) => {
     const body = bodyById(position.body);
     const key = body?.key ?? String(position.body);
+    const parts = degreeParts(position.longitude);
+    const declination = data.declinations?.get(position.body);
     return {
       bodyKey: key,
       bodyName: body?.name ?? String(position.body),
@@ -152,7 +167,11 @@ export function positionRows(
       speed: position.longitudeSpeed,
       retrograde: position.retrograde,
       ...(housesUsable ? { house: houseOf(position.longitude, data.houses.cusps) } : {}),
-      ...degreeParts(position.longitude),
+      ...parts,
+      anaretic: parts.degree === 29,
+      ...(declination === undefined || data.obliquity === undefined
+        ? {}
+        : { outOfBounds: isOutOfBounds(declination, data.obliquity) }),
     };
   });
   if (!includeAngles) return bodyRows;
@@ -162,13 +181,17 @@ export function positionRows(
   ];
   return [
     ...bodyRows,
-    ...angles.map(([bodyKey, bodyName, glyph, longitude]) => ({
-      bodyKey,
-      bodyName,
-      glyph,
-      longitude,
-      ...degreeParts(longitude),
-    })),
+    ...angles.map(([bodyKey, bodyName, glyph, longitude]) => {
+      const parts = degreeParts(longitude);
+      return {
+        bodyKey,
+        bodyName,
+        glyph,
+        longitude,
+        ...parts,
+        anaretic: parts.degree === 29,
+      };
+    }),
   ];
 }
 
@@ -269,6 +292,16 @@ export interface DignityRow {
   readonly exalted: boolean;
   readonly detriment: boolean;
   readonly fall: boolean;
+  /** Day, night, or participating triplicity ruler of this body's own sign, for the chart's own sect (#398). */
+  readonly triplicity: boolean;
+  /** Egyptian bound ruler of this body's own degree (#398). */
+  readonly bound: boolean;
+  /** Chaldean face/decan ruler of this body's own degree (#398). */
+  readonly face: boolean;
+  /** Essential-dignity point score (ruler 5, exaltation 4, triplicity 3, bound 2, face 1) — `almuten.ts`'s own weights (#398). */
+  readonly points: number;
+  /** True exactly when `points` is 0 — holds no essential dignity at all here (#398). */
+  readonly peregrine: boolean;
 }
 
 /** One row per visible body, in `ChartData.positions`' own order — every body, not only ones holding a dignity. */
@@ -276,6 +309,7 @@ export function dignityRows(data: ChartData, options: PointVisibilityOptions = {
   return visiblePositions(data.positions, options).map((position) => {
     const body = bodyById(position.body);
     const dignities = data.dignities.get(position.body);
+    const score = essentialDignityScoreOf(position.body, position.longitude, data.sect);
     return {
       bodyKey: body?.key ?? String(position.body),
       bodyName: body?.name ?? String(position.body),
@@ -283,8 +317,148 @@ export function dignityRows(data: ChartData, options: PointVisibilityOptions = {
       exalted: dignities?.exalted ?? false,
       detriment: dignities?.detriment ?? false,
       fall: dignities?.fall ?? false,
+      triplicity: score.triplicity,
+      bound: score.bound,
+      face: score.face,
+      points: score.points,
+      peregrine: score.peregrine,
     };
   });
+}
+
+/**
+ * "Almuten of the Ascendant" summary line (#398): which traditional planet holds the most
+ * essential dignity at the Ascendant's own degree. More than one body can tie — `almutens`
+ * carries all of them, same as `almuten.ts`'s own `AlmutenResult`. `undefined` when houses
+ * aren't usable (`housesAreDefined`), the same gate `ChartView`'s own houses-dependent sections use.
+ */
+export function almutenOfAscendant(data: ChartData): { readonly almutens: readonly string[] } | undefined {
+  if (!housesAreDefined(data.houses)) return undefined;
+  const result = almutenOf(data.houses.ascendant, data.sect);
+  return { almutens: result.almutens.map((id) => bodyById(id)?.key ?? String(id)) };
+}
+
+export interface DispositorRow {
+  readonly bodyKey: string;
+  readonly bodyName: string;
+  /** Body keys from the queried body through to its final dispositor, or the body that closed a cycle. */
+  readonly chain: readonly string[];
+  readonly finalDispositorKey?: string;
+  readonly finalDispositorName?: string;
+  /** True when the chain looped back onto an earlier body instead of reaching a final dispositor. */
+  readonly cycle: boolean;
+  /** True when this body and its immediate dispositor rule each other's sign (#398). */
+  readonly mutualReception: boolean;
+}
+
+/**
+ * One row per visible luminary/planet (the ten bodies that can meaningfully rule a sign) —
+ * asteroids, Chiron, the Lunar Nodes and Lilith are never a sign ruler themselves, so a
+ * dispositor chain for one of them would only restate another body's own row (#398).
+ */
+export function dispositorRows(data: ChartData, options: PointVisibilityOptions = {}): readonly DispositorRow[] {
+  const positions = new Map<BodyId, Degrees>(data.positions.map((position) => [position.body, position.longitude]));
+  const classical = visiblePositions(data.positions, options).filter((position) => {
+    const category = bodyById(position.body)?.category;
+    return category === 'luminary' || category === 'planet';
+  });
+  return classical.map((position) => {
+    const body = bodyById(position.body);
+    const result = dispositorChain(position.body, positions);
+    const immediateDispositor = result.chain[1];
+    const immediateDispositorLongitude =
+      immediateDispositor === undefined ? undefined : positions.get(immediateDispositor);
+    const mutualReception =
+      immediateDispositor !== undefined &&
+      immediateDispositorLongitude !== undefined &&
+      isMutualReception(position.body, position.longitude, immediateDispositor, immediateDispositorLongitude);
+    const finalBody = result.finalDispositor === undefined ? undefined : bodyById(result.finalDispositor);
+    return {
+      bodyKey: body?.key ?? String(position.body),
+      bodyName: body?.name ?? String(position.body),
+      chain: result.chain.map((id) => bodyById(id)?.key ?? String(id)),
+      ...(finalBody === undefined ? {} : { finalDispositorKey: finalBody.key, finalDispositorName: finalBody.name }),
+      cycle: result.cycle,
+      mutualReception,
+    };
+  });
+}
+
+export interface DeclinationContactRow {
+  readonly bodyAKey: string;
+  readonly bodyAName: string;
+  readonly bodyBKey: string;
+  readonly bodyBName: string;
+  readonly kind: 'parallel' | 'contraparallel';
+  readonly orb: Degrees;
+}
+
+/** Default parallel/contraparallel orb (#398) — tighter than a longitude aspect's, matching the convention most sources use for this equatorial contact. */
+const DEFAULT_DECLINATION_ORB: Degrees = 1;
+
+/**
+ * Every parallel/contraparallel contact within `orb` (default 1°) — `undefined` (returns an
+ * empty list) when `ChartData.declinations` isn't available, i.e. a composite/harmonic chart
+ * (see that field's own doc comment) (#398).
+ */
+export function declinationContactRows(
+  data: ChartData,
+  orb: Degrees = DEFAULT_DECLINATION_ORB,
+): readonly DeclinationContactRow[] {
+  if (data.declinations === undefined) return [];
+  return declinationContacts(data.declinations, orb).map((contact) => {
+    const bodyA = bodyById(contact.a);
+    const bodyB = bodyById(contact.b);
+    return {
+      bodyAKey: bodyA?.key ?? String(contact.a),
+      bodyAName: bodyA?.name ?? String(contact.a),
+      bodyBKey: bodyB?.key ?? String(contact.b),
+      bodyBName: bodyB?.name ?? String(contact.b),
+      kind: contact.kind,
+      orb: contact.orb,
+    };
+  });
+}
+
+export interface AntisciaRow {
+  readonly bodyKey: string;
+  readonly bodyName: string;
+  readonly contactKey: string;
+  readonly contactName: string;
+  readonly kind: AntiscialContact['kind'];
+  readonly orb: Degrees;
+}
+
+/** Default antiscial contact orb (#398) — matches `declinationContactRows`' own default, both tighter than a longitude aspect's. */
+const DEFAULT_ANTISCIA_ORB: Degrees = 1;
+
+/**
+ * Every antiscion/contra-antiscion contact within `orb` (default 1°), one row per body pair
+ * (deduplicated — `antiscialContacts` otherwise reports each pair from both sides of the
+ * mirror, the same duplication `chart/antiscia-overlay.ts`'s own `filterAntisciaForDisplay`
+ * exists to drop for the wheel overlay; this table needs the identical dedupe) (#398).
+ */
+export function antisciaRows(data: ChartData, orb: Degrees = DEFAULT_ANTISCIA_ORB): readonly AntisciaRow[] {
+  const positions = new Map<BodyId, Degrees>(data.positions.map((position) => [position.body, position.longitude]));
+  const seen = new Set<string>();
+  const rows: AntisciaRow[] = [];
+  for (const contact of antiscialContacts(positions, orb)) {
+    const [x, y] = contact.body <= contact.contact ? [contact.body, contact.contact] : [contact.contact, contact.body];
+    const key = `${contact.kind}:${String(x)}:${String(y)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const body = bodyById(contact.body);
+    const contactBody = bodyById(contact.contact);
+    rows.push({
+      bodyKey: body?.key ?? String(contact.body),
+      bodyName: body?.name ?? String(contact.body),
+      contactKey: contactBody?.key ?? String(contact.contact),
+      contactName: contactBody?.name ?? String(contact.contact),
+      kind: contact.kind,
+      orb: contact.orb,
+    });
+  }
+  return rows;
 }
 
 export interface DerivedPointRow extends DegreeParts {

@@ -28,18 +28,25 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
+  almutenOfAscendant,
   angleRows,
+  antisciaRows,
   aspectRows,
   chartSheetInput,
   chartSheetMetaLines,
+  declinationContactRows,
   derivedPointRows,
   dignityRows,
+  dispositorRows,
   houseCuspRows,
   positionRows,
   type AngleRow,
+  type AntisciaRow,
   type AspectRow,
+  type DeclinationContactRow,
   type DerivedPointRow,
   type DignityRow,
+  type DispositorRow,
   type HouseCuspRow,
   type PointVisibilityOptions,
   type PositionRow,
@@ -125,6 +132,18 @@ function positionColumns(t: typeof chartViewMessages.en, locale: Locale): readon
       valueOf: (row) => row.retrograde ?? false,
       render: (row) => (row.retrograde ? '℞' : ''),
     },
+    {
+      key: 'anaretic',
+      label: t.anareticLabel,
+      valueOf: (row) => row.anaretic,
+      render: (row) => (row.anaretic ? '✓' : ''),
+    },
+    {
+      key: 'outOfBounds',
+      label: t.outOfBoundsLabel,
+      valueOf: (row) => row.outOfBounds ?? false,
+      render: (row) => (row.outOfBounds === true ? '✓' : ''),
+    },
   ];
 }
 
@@ -191,6 +210,97 @@ function dignityColumns(t: typeof chartViewMessages.en, locale: Locale): readonl
       render: (row) => (row.detriment ? '✓' : ''),
     },
     { key: 'fall', label: t.fallLabel, valueOf: (row) => row.fall, render: (row) => (row.fall ? '✓' : '') },
+    {
+      key: 'triplicity',
+      label: t.triplicityLabel,
+      valueOf: (row) => row.triplicity,
+      render: (row) => (row.triplicity ? '✓' : ''),
+    },
+    { key: 'bound', label: t.boundLabel, valueOf: (row) => row.bound, render: (row) => (row.bound ? '✓' : '') },
+    { key: 'face', label: t.faceLabel, valueOf: (row) => row.face, render: (row) => (row.face ? '✓' : '') },
+    { key: 'points', label: t.dignityPointsLabel, valueOf: (row) => row.points },
+    {
+      key: 'peregrine',
+      label: t.peregrineLabel,
+      valueOf: (row) => row.peregrine,
+      render: (row) => (row.peregrine ? '✓' : ''),
+    },
+  ];
+}
+
+function dispositorColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<DispositorRow>[] {
+  return [
+    {
+      key: 'bodyName',
+      label: t.bodyLabel,
+      valueOf: (row) => row.bodyName,
+      render: (row) => bodyDisplayName(row.bodyKey, locale),
+    },
+    {
+      key: 'chain',
+      label: t.chainLabel,
+      valueOf: (row) => row.chain.join(' '),
+      render: (row) => row.chain.map((key) => bodyDisplayName(key, locale)).join(' → '),
+    },
+    {
+      key: 'finalDispositorName',
+      label: t.finalDispositorLabel,
+      valueOf: (row) => row.finalDispositorName ?? '',
+      render: (row) => (row.finalDispositorKey === undefined ? '—' : bodyDisplayName(row.finalDispositorKey, locale)),
+    },
+    { key: 'cycle', label: t.cycleLabel, valueOf: (row) => row.cycle, render: (row) => (row.cycle ? '✓' : '') },
+    {
+      key: 'mutualReception',
+      label: t.mutualReceptionLabel,
+      valueOf: (row) => row.mutualReception,
+      render: (row) => (row.mutualReception ? '✓' : ''),
+    },
+  ];
+}
+
+function declinationColumns(
+  t: typeof chartViewMessages.en,
+  locale: Locale,
+): readonly TableColumn<DeclinationContactRow>[] {
+  return [
+    {
+      key: 'bodyAName',
+      label: t.bodyALabel,
+      valueOf: (row) => row.bodyAName,
+      render: (row) => bodyDisplayName(row.bodyAKey, locale),
+    },
+    {
+      key: 'bodyBName',
+      label: t.bodyBLabel,
+      valueOf: (row) => row.bodyBName,
+      render: (row) => bodyDisplayName(row.bodyBKey, locale),
+    },
+    { key: 'kind', label: t.kindLabel, valueOf: (row) => row.kind, render: (row) => t[row.kind] },
+    { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
+  ];
+}
+
+function antisciaColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<AntisciaRow>[] {
+  return [
+    {
+      key: 'bodyName',
+      label: t.bodyLabel,
+      valueOf: (row) => row.bodyName,
+      render: (row) => bodyDisplayName(row.bodyKey, locale),
+    },
+    {
+      key: 'contactName',
+      label: t.contactLabel,
+      valueOf: (row) => row.contactName,
+      render: (row) => bodyDisplayName(row.contactKey, locale),
+    },
+    {
+      key: 'kind',
+      label: t.kindLabel,
+      valueOf: (row) => row.kind,
+      render: (row) => (row.kind === 'antiscion' ? t.antiscion : t.contraAntiscion),
+    },
+    { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
   ];
 }
 
@@ -246,26 +356,65 @@ function renderTableTab(
           />
         </>
       );
-    case 'aspects':
+    case 'aspects': {
+      const declinationRows = declinationContactRows(data);
+      const antiscionRows = antisciaRows(data);
       return (
-        <SortableTable
-          caption={t.aspectsCaption}
-          columns={aspectColumns(t, locale)}
-          rows={aspectRows(data)}
-          getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
-          downloadFilename={deriveExportFilename(displayName, 'aspects', 'csv')}
-        />
+        <>
+          <SortableTable
+            caption={t.aspectsCaption}
+            columns={aspectColumns(t, locale)}
+            rows={aspectRows(data)}
+            getRowKey={(row) => `${row.bodyAKey}-${row.aspect}-${row.bodyBKey}`}
+            downloadFilename={deriveExportFilename(displayName, 'aspects', 'csv')}
+          />
+          {antiscionRows.length > 0 && (
+            <SortableTable
+              caption={t.antisciaCaption}
+              columns={antisciaColumns(t, locale)}
+              rows={antiscionRows}
+              getRowKey={(row) => `${row.bodyKey}-${row.kind}-${row.contactKey}`}
+              downloadFilename={deriveExportFilename(displayName, 'antiscia', 'csv')}
+            />
+          )}
+          {declinationRows.length > 0 && (
+            <SortableTable
+              caption={t.declinationsCaption}
+              columns={declinationColumns(t, locale)}
+              rows={declinationRows}
+              getRowKey={(row) => `${row.bodyAKey}-${row.kind}-${row.bodyBKey}`}
+              downloadFilename={deriveExportFilename(displayName, 'declinations', 'csv')}
+            />
+          )}
+        </>
       );
-    case 'dignities':
+    }
+    case 'dignities': {
+      const almuten = almutenOfAscendant(data);
       return (
-        <SortableTable
-          caption={t.dignitiesCaption}
-          columns={dignityColumns(t, locale)}
-          rows={dignityRows(data, pointVisibility)}
-          getRowKey={(row) => row.bodyKey}
-          downloadFilename={deriveExportFilename(displayName, 'dignities', 'csv')}
-        />
+        <>
+          {almuten !== undefined && (
+            <p className="hint">
+              {t.almutenOfAscendantSentence(almuten.almutens.map((key) => bodyDisplayName(key, locale)).join(', '))}
+            </p>
+          )}
+          <SortableTable
+            caption={t.dignitiesCaption}
+            columns={dignityColumns(t, locale)}
+            rows={dignityRows(data, pointVisibility)}
+            getRowKey={(row) => row.bodyKey}
+            downloadFilename={deriveExportFilename(displayName, 'dignities', 'csv')}
+          />
+          <SortableTable
+            caption={t.dispositorsCaption}
+            columns={dispositorColumns(t, locale)}
+            rows={dispositorRows(data, pointVisibility)}
+            getRowKey={(row) => row.bodyKey}
+            downloadFilename={deriveExportFilename(displayName, 'dispositors', 'csv')}
+          />
+        </>
       );
+    }
     case 'derived':
       return (
         <>
