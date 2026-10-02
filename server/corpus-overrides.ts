@@ -44,6 +44,8 @@ export const CORPUS_CATEGORIES = [
   'dignity-state',
   'nakshatra',
   'pattern',
+  'profected-house',
+  'astro-line',
 ] as const;
 export type CorpusCategory = (typeof CORPUS_CATEGORIES)[number];
 

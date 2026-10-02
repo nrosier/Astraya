@@ -18,9 +18,9 @@ const en = {
   yourDataParagraph1After:
     '. Birth data you enter is stored on this device, in its IndexedDB storage, and that copy is the authoritative one.',
   yourDataParagraph2Before: 'If you are not signed in, ',
-  yourDataParagraph2Strong: 'nothing you enter ever leaves this device',
+  yourDataParagraph2Strong: 'almost nothing you enter leaves this device',
   yourDataParagraph2After:
-    '. There is no analytics, no tracking and no third-party request; the app makes no network call at all once it has loaded.',
+    '. There is no analytics and no tracking. The one exception is opt-in: searching for a birth place by name sends the text you type to a geocoding service to find its coordinates — nothing else leaves this device unless you choose to sign in.',
   yourDataParagraph3Before: 'If you sign in, your people and charts sync to ',
   yourDataParagraph3Em: 'this server',
   yourDataParagraph3After:
@@ -64,9 +64,9 @@ const nl: typeof en = {
   yourDataParagraph1After:
     ' berekend. Geboortegegevens die je invoert worden op dit apparaat opgeslagen, in de IndexedDB-opslag, en die kopie is de gezaghebbende.',
   yourDataParagraph2Before: 'Als je niet bent ingelogd, ',
-  yourDataParagraph2Strong: 'verlaat niets wat je invoert dit apparaat',
+  yourDataParagraph2Strong: 'verlaat bijna niets wat je invoert dit apparaat',
   yourDataParagraph2After:
-    '. Er is geen analytics, geen tracking en geen aanvraag naar derden; de app doet helemaal geen netwerkverzoek zodra hij geladen is.',
+    '. Er is geen analytics en geen tracking. De enige uitzondering is optioneel: het zoeken naar een geboorteplaats op naam stuurt de tekst die je typt naar een geocoderingsdienst om de coördinaten te vinden — er verlaat niets anders dit apparaat, tenzij je inlogt.',
   yourDataParagraph3Before: 'Als je inlogt, synchroniseren je personen en horoscopen naar ',
   yourDataParagraph3Em: 'deze server',
   yourDataParagraph3After:

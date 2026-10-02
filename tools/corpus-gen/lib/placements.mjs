@@ -24,6 +24,27 @@ export const DIGNITY_STATES = ['ruler', 'exalted', 'detriment', 'fall'];
 export const CORE_BODY_KEYS = BODIES.map((b) => b.key);
 /** The 7 bodies with a defined traditional rulership — the only ones dignity-state means anything for. */
 export const TRADITIONAL_RULER_KEYS = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn'];
+/**
+ * The complete, closed set of bodies the app ever computes astrocartography lines for — the union
+ * of `TRADITIONAL_ACG_BODY_IDS` and `EXTENDED_ACG_BODY_IDS` (`src/domain/astrocartography.ts`),
+ * by key rather than numeric `BodyId` (#369's `astro-line` category, like every other corpus
+ * category, keys off `BodyDefinition.key`). Hardcoded rather than imported+mapped: this file
+ * already hardcodes `TRADITIONAL_RULER_KEYS` as the same kind of small, stable closed list.
+ */
+export const ACG_BODY_KEYS = [
+  'sun',
+  'moon',
+  'mercury',
+  'venus',
+  'mars',
+  'jupiter',
+  'saturn',
+  'uranus',
+  'neptune',
+  'pluto',
+];
+/** The four angular house cusps astrocartography lines are drawn relative to — mirrors `schema.ts`'s `ACG_ANGLES`. */
+export const ACG_ANGLES = ['AC', 'DC', 'MC', 'IC'];
 
 export function corePairs() {
   const keys = [...CORE_BODY_KEYS].sort();
@@ -57,6 +78,10 @@ export function buildPlacements() {
   for (const body of TRADITIONAL_RULER_KEYS) {
     for (const state of DIGNITY_STATES) placements.push({ category: 'dignity-state', body, state });
   }
+  for (const house of HOUSES) placements.push({ category: 'profected-house', house });
+  for (const body of ACG_BODY_KEYS) {
+    for (const angle of ACG_ANGLES) placements.push({ category: 'astro-line', body, angle });
+  }
   return placements;
 }
 
@@ -75,6 +100,10 @@ export function placementDescription(placement) {
       return `synastry: ${bodyName(placement.bodyA)} ${placement.aspect} ${bodyName(placement.bodyB)} (cross-chart)`;
     case 'dignity-state':
       return `${bodyName(placement.body)} in ${placement.state}`;
+    case 'profected-house':
+      return `house ${String(placement.house)} profected (annual/monthly profection)`;
+    case 'astro-line':
+      return `${bodyName(placement.body)} ${placement.angle} astrocartography line`;
     default:
       throw new Error(`unreachable: unhandled category "${placement.category}"`);
   }
@@ -97,6 +126,10 @@ export function factsDescription(placement) {
       return `this chart's ${bodyName(placement.bodyA)} ${aspectName(placement.aspect)} the other chart's ${bodyName(placement.bodyB)}`;
     case 'dignity-state':
       return `${bodyName(placement.body)} in ${placement.state}`;
+    case 'profected-house':
+      return `house ${String(placement.house)} is the profected house for this period`;
+    case 'astro-line':
+      return `${bodyName(placement.body)} on the ${placement.angle} astrocartography line`;
     default:
       throw new Error(`this tool does not (yet) support category "${placement.category}"`);
   }

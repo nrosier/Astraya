@@ -32,6 +32,13 @@ describe('classify', () => {
     expect(classify(request({ pathname: '/api/auth/callback', mode: 'navigate' }))).toBe('bypass');
   });
 
+  it('bypasses the real OIDC callback path, never caching the single-use authorization code/state in its query string (#383)', () => {
+    // The actual redirect URI (src/ui/oidc-pkce.ts's OIDC_CALLBACK_PATH) is NOT under /api/ — it's
+    // a real path so the server's SPA fallback serves index.html there, which otherwise falls
+    // through to the `mode === 'navigate'` branch and gets cached under shell-navigate.
+    expect(classify(request({ pathname: '/auth/oidc/callback', mode: 'navigate' }))).toBe('bypass');
+  });
+
   it('routes ephemeris assets to their own strategy', () => {
     expect(classify(request({ pathname: '/ephe/sepl_18.se1', mode: 'cors' }))).toBe('ephemeris');
     expect(classify(request({ pathname: '/ephe/swisseph.wasm', mode: 'cors' }))).toBe('ephemeris');

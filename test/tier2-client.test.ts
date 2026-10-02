@@ -201,6 +201,15 @@ describe('generateTier2Interpretation', () => {
     expect(sent).toEqual({ mode: 'freeform', chartData, customPrompt: 'blunt and direct', locale: 'nl' });
   });
 
+  it('sends mode, chartData, and locale (no customPrompt) as the request body in synthesis mode (#377)', async () => {
+    await setupAdmin();
+    const chartData = toTier2ChartPayload(FIXTURE_CHART);
+    await generateTier2Interpretation({ mode: 'synthesis', chartData, locale: 'nl' });
+
+    const sent = requestBodies.at(-1);
+    expect(sent).toEqual({ mode: 'synthesis', chartData, locale: 'nl' });
+  });
+
   it('throws a Tier2Error carrying the server’s own message and status on a non-2xx response', async () => {
     await setupAdmin();
     await expect(

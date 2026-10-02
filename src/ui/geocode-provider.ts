@@ -31,11 +31,16 @@ const nominatimOrigin =
   explicitNominatimUrl === undefined ? DEFAULT_NOMINATIM_ORIGIN : new URL(explicitNominatimUrl).origin;
 export const NOMINATIM_SEARCH_URL = `${nominatimOrigin}/search`;
 
+const MAPTILER_HOST = 'api.maptiler.com';
+
 export function maptilerGeocodeUrl(path: string): URL {
-  const url = new URL(`https://api.maptiler.com/geocoding/${path}.json`);
+  const url = new URL(`https://${MAPTILER_HOST}/geocoding/${path}.json`);
   url.searchParams.set('key', maptilerApiKey ?? '');
   return url;
 }
+
+/** The actual third-party host a place-name search is sent to — for `BirthPlaceSearch.tsx`'s own point-of-use disclosure (#383/#390), so the claim names whichever provider this deployment is actually configured to use, not always the public default. */
+export const geocodeHost = usingMaptiler ? MAPTILER_HOST : new URL(NOMINATIM_SEARCH_URL).host;
 
 // Fires once, only for the true public default (never for a self-hoster's own server, whose
 // failures are that deployer's own server to diagnose).
