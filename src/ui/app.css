@@ -1462,6 +1462,51 @@ label.stacked textarea:focus-visible {
   padding-left: 1.1rem;
 }
 
+/* The Jones chart-shape diagram (#401): a small standalone abstract pattern, not drawn into
+   the real wheel — see jones-shape-diagram.ts's own doc comment for why. */
+.chart-shape-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.chart-shape-summary .hint {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
+.chart-shape-diagram-wrap {
+  flex: 0 0 auto;
+  width: 70px;
+}
+
+.chart-shape-diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart-shape-ring {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-shape-wedge {
+  fill: var(--accent);
+  fill-opacity: 0.18;
+  stroke: none;
+}
+
+.chart-shape-dot {
+  fill: var(--accent);
+}
+
+.chart-shape-handle {
+  fill: var(--solar);
+}
+
 .chart-multiwheel text,
 .chart-sheet text {
   font:

@@ -42,6 +42,7 @@ import {
   fixedStarRows,
   houseCuspRows,
   positionRows,
+  visiblePositions,
   type AngleRow,
   type AntisciaRow,
   type AspectRow,
@@ -59,6 +60,7 @@ import { deriveExportFilename } from '../domain/export-filename.js';
 import { encodeChartShareLink } from '../domain/chart-share.js';
 import { momentKey } from '../time/encode.js';
 import { renderChartSheetSvg } from '../chart/chart-sheet.js';
+import { renderJonesShapeDiagramSvg } from '../chart/jones-shape-diagram.js';
 import {
   DEFAULT_EXTENDED_SETTINGS,
   toChartCalculationOptions,
@@ -348,15 +350,25 @@ function renderTableTab(
   switch (tab) {
     case 'positions': {
       const shape = chartShapeOf(data, pointVisibility);
+      const shapePositions = new Map(
+        visiblePositions(data.positions, pointVisibility).map((position) => [position.body, position.longitude]),
+      );
       return (
         <>
           {shape !== undefined && (
-            <p className="hint">
-              {t.chartShapeSentence(
-                t.jonesShapeLabels[shape.shape],
-                shape.handle === undefined ? undefined : bodyDisplayName(bodyById(shape.handle)?.key ?? '', locale),
-              )}
-            </p>
+            <div className="chart-shape-summary">
+              <p className="hint">
+                {t.chartShapeSentence(
+                  t.jonesShapeLabels[shape.shape],
+                  shape.handle === undefined ? undefined : bodyDisplayName(bodyById(shape.handle)?.key ?? '', locale),
+                )}
+              </p>
+              <div
+                className="chart-shape-diagram-wrap"
+                aria-hidden="true"
+                dangerouslySetInnerHTML={{ __html: renderJonesShapeDiagramSvg(shape, shapePositions, 140) }}
+              />
+            </div>
           )}
           <SortableTable
             caption={t.positionsCaption}

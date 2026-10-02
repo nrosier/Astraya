@@ -118,3 +118,21 @@ test('clicking an aspect line isolates just its two endpoint bodies (#400)', asy
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect(panel).toHaveCount(0);
 });
+
+test('the Jones chart-shape diagram renders alongside its text sentence (#401)', async ({ page }) => {
+  test.setTimeout(60_000);
+
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+
+  await page.getByRole('link', { name: 'Natal chart', exact: true }).click();
+  await expect(page.getByText(/Chart shape: /)).toBeVisible();
+  await expect(page.locator('.chart-shape-diagram')).toBeVisible();
+  await expect(page.locator('.chart-shape-diagram .chart-shape-ring')).toBeVisible();
+});
