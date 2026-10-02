@@ -21,6 +21,24 @@
  * keep disagreeing about. `--force` bypasses this tracking entirely and re-evaluates everything
  * selected by `--locale`/`--persona`/`--limit`, same as before this tracking existed.
  *
+ * Submit-and-exit, not submit-and-block: a batch job can legitimately take OpenAI up to 24h, so
+ * this script never sits in a poll loop. Every run first checks every job already recorded in
+ * tools/corpus-gen/batch-state/evaluate-<locale>.json — a *list*, since more than one batch can
+ * be in flight for the same locale at once (e.g. run back to back to parallelize throughput). For
+ * each: a still-running job is reported and left on the list; a finished one has its results
+ * retrieved and applied (same as before), then drops off the list. Whatever's left genuinely
+ * eligible after that — with anything a still-running job already covers subtracted out, so the
+ * same entry is never judged by two jobs at once — is submitted as a new batch (unless
+ * `--check-only` is passed, which only checks/applies and never submits). Either way the script
+ * exits immediately after; there's no need to keep a terminal open or a process alive across the
+ * wait. Run it again (same `--locale`) whenever it's convenient to check.
+ *
+ * `--check-only` without `--locale` widens this to every locale that has a batch-state file at
+ * all: it scans tools/corpus-gen/batch-state/evaluate-*.json, reports which locale has which
+ * batch running (and still applies any that happen to have finished), without needing to know in
+ * advance which locale(s) you're waiting on. `--locale` stays required for every other mode,
+ * since submitting a new batch always has to be against one specific corpus.
+ *
  * Prints an estimated total cost on completion, from each result's own token usage and
  * lib/cost-estimate.mjs's batch-tier pricing table — an estimate for visibility, not a billing
  * record.
@@ -29,13 +47,14 @@
  * generate-batch.mjs's --batch is one of two modes, since the whole point of this feature is to
  * run the ChatGPT side cheaply at corpus scale.
  *
- *   npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>] [--evaluation-limit=N] [--force]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>] [--evaluation-limit=N] [--force] [--check-only]
+ *   npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --check-only   (checks every locale with a batch in flight)
  */
-import { readFile, mkdir } from 'node:fs/promises';
+import { readFile, mkdir, readdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildEvaluationPrompt, EVALUATION_RESPONSE_SCHEMA } from './lib/corpus-evaluation.mjs';
-import { buildBatchRequest, submitBatch, pollBatch, extractBatchResults } from './lib/openai-batch.mjs';
+import { buildBatchRequest, submitBatch, getBatch, isBatchTerminal, extractBatchResults } from './lib/openai-batch.mjs';
 import { factsDescription } from './lib/placements.mjs';
 import { parsePlacementKey } from '../../src/interpretation/schema.ts';
 import { readFeedback, writeFeedback, upsertFeedback } from './lib/corpus-feedback.mjs';
@@ -47,8 +66,13 @@ import {
   isEvaluationExhausted,
 } from './lib/eval-tracking.mjs';
 import { estimateBatchCostCents, formatCents } from './lib/cost-estimate.mjs';
+import { readBatchState, writeBatchState, clearBatchState } from './lib/batch-state.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+function identityOf(item) {
+  return `${item.key}\u0000${item.persona ?? 'neutral'}`;
+}
 
 const rawArgs = process.argv.slice(2);
 function flag(name, fallback) {
@@ -57,27 +81,211 @@ function flag(name, fallback) {
 }
 if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
   console.log(
-    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>] [--evaluation-limit=N] [--force]',
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>] [--evaluation-limit=N] [--force] [--check-only]',
+  );
+  console.log(
+    '       npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --check-only   (checks every locale with a batch in flight)',
   );
   process.exit(0);
 }
 
 const locale = flag('locale');
-if (!locale) throw new Error('--locale=<locale> is required');
 const limit = Number(flag('limit', Infinity));
 const model = flag('model', 'gpt-6-luna');
 const personaFilter = flag('persona'); // omit to check every persona, including neutral
 const evaluationLimit = Number(flag('evaluation-limit', 2));
 const force = rawArgs.includes('--force');
+// Checks every job already in flight (applying results for any that finished) and exits — never
+// builds a new candidate list or submits anything. Combined with omitting `--locale`, scans every
+// locale that has a batch-state file instead of just one.
+const checkOnly = rawArgs.includes('--check-only');
 
-const corpusPath = join(root, 'src', 'interpretation', 'corpus', `${locale}.json`);
-const corpus = JSON.parse(await readFile(corpusPath, 'utf8'));
+if (!locale && !checkOnly) {
+  throw new Error(
+    '--locale=<locale> is required (unless using --check-only without --locale, which checks every locale)',
+  );
+}
 
-const trackingPath = join(root, 'tools', 'corpus-gen', 'eval-tracking', `${locale}.json`);
-const tracking = await readTracking(trackingPath);
+// This locale's batch-state file holds a *list* of jobs, not just one — a run can have several
+// batches in flight at once (e.g. kicked off back to back to parallelize throughput). Every call
+// checks all of them (one single-shot status call each, never a blocking poll): a terminal job's
+// results are retrieved and applied, then it drops off the list; a still-running one stays on it
+// and is reported, not re-submitted.
+async function checkAndApply(loc) {
+  const corpusPath = join(root, 'src', 'interpretation', 'corpus', `${loc}.json`);
+  const corpus = JSON.parse(await readFile(corpusPath, 'utf8'));
+
+  const trackingPath = join(root, 'tools', 'corpus-gen', 'eval-tracking', `${loc}.json`);
+  const tracking = await readTracking(trackingPath);
+
+  const feedbackPath = join(root, 'tools', 'corpus-gen', 'feedback', `${loc}.json`);
+  const statePath = join(root, 'tools', 'corpus-gen', 'batch-state', `evaluate-${loc}.json`);
+  const existingState = await readBatchState(statePath);
+  const jobs = existingState?.jobs ?? [];
+
+  const stillRunning = [];
+  let feedback;
+  let anyTerminal = false;
+  let totalClean = 0;
+  let totalFlagged = 0;
+  let totalFailed = 0;
+  let totalCostCents = 0;
+  let costUnknown = false;
+
+  for (const job of jobs) {
+    console.log(
+      `[${loc}] checking batch ${job.batchId} (submitted ${job.submittedAt}, ${String(job.candidates.length)} entries)...`,
+    );
+    const batch = await getBatch({ apiKey: process.env.OPENAI_API_KEY, batchId: job.batchId });
+    if (!isBatchTerminal(batch)) {
+      const counts = batch.request_counts;
+      console.log(
+        `[${loc}] batch ${job.batchId} still ${batch.status}${counts ? ` (${String(counts.completed)}/${String(counts.total)} done, ${String(counts.failed)} failed)` : ''}`,
+      );
+      stillRunning.push(job);
+      continue;
+    }
+    console.log(`[${loc}] batch ${job.batchId} is ${batch.status} — retrieving results...`);
+    anyTerminal = true;
+    if (feedback === undefined) feedback = await readFeedback(feedbackPath);
+
+    // Rebuild this job's own candidates from the identity list captured at submission time,
+    // against the corpus as it stands now — same (key, persona) lookup convention as
+    // corpus-feedback.mjs/eval-tracking.mjs.
+    const byIdentity = new Map(corpus.map((entry) => [identityOf(entry), entry]));
+    const candidates = job.candidates.map(({ key, persona }) => {
+      const entry = byIdentity.get(identityOf({ key, persona }));
+      const placement = entry ? parsePlacementKey(entry.key) : undefined;
+      return entry && placement ? { entry, placement } : undefined;
+    });
+
+    const results = await extractBatchResults({ apiKey: process.env.OPENAI_API_KEY, batch });
+    const byCustomId = new Map(results.map((r) => [r.customId, r]));
+
+    candidates.forEach((candidate, index) => {
+      if (candidate === undefined) {
+        totalFailed += 1;
+        console.error(
+          `[${loc}] FAILED ${job.candidates[index].key}: entry no longer resolves against the current corpus`,
+        );
+        return;
+      }
+      const { entry } = candidate;
+      const result = byCustomId.get(String(index));
+      if (result === undefined) {
+        totalFailed += 1;
+        console.error(`[${loc}] FAILED ${entry.key}: no result came back for this entry`);
+        return;
+      }
+      if (result.error) {
+        totalFailed += 1;
+        console.error(`[${loc}] FAILED ${entry.key}: ${result.error.message}`);
+        return;
+      }
+      const costCents = estimateBatchCostCents(job.model, result.usage?.prompt_tokens, result.usage?.completion_tokens);
+      if (costCents === undefined) costUnknown = true;
+      else totalCostCents += costCents;
+      const existingTracking = findTracking(tracking, entry);
+      const now = new Date().toISOString();
+      if (result.result.correct === false) {
+        totalFlagged += 1;
+        upsertFeedback(feedback, {
+          key: entry.key,
+          persona: entry.persona,
+          locale: entry.locale,
+          originalText: entry.text,
+          issues: result.result.issues,
+          flaggedAt: now,
+        });
+        upsertTracking(tracking, {
+          key: entry.key,
+          persona: entry.persona,
+          locale: entry.locale,
+          clean: false,
+          evaluationCount: existingTracking?.evaluationCount ?? 0,
+          updatedAt: now,
+        });
+        console.log(`[${loc}] FLAGGED ${entry.key}: ${result.result.issues.join(' / ')}`);
+      } else {
+        totalClean += 1;
+        upsertTracking(tracking, {
+          key: entry.key,
+          persona: entry.persona,
+          locale: entry.locale,
+          clean: true,
+          evaluationCount: existingTracking?.evaluationCount ?? 0,
+          updatedAt: now,
+        });
+      }
+    });
+  }
+
+  if (anyTerminal) {
+    await mkdir(dirname(feedbackPath), { recursive: true });
+    await writeFeedback(feedbackPath, feedback);
+    await mkdir(dirname(trackingPath), { recursive: true });
+    await writeTracking(trackingPath, tracking);
+    console.log(
+      `\n[${loc}] evaluation complete: ${String(totalClean + totalFlagged + totalFailed)} checked — ${String(totalClean)} clean, ${String(totalFlagged)} flagged, ${String(totalFailed)} failed`,
+    );
+    console.log(
+      `[${loc}] estimated cost: ${formatCents(totalCostCents)}${costUnknown ? ` (+ unknown — no batch pricing on file for one or more models)` : ''}`,
+    );
+    console.log(`[${loc}] feedback written to ${feedbackPath}`);
+    console.log(`[${loc}] tracking written to ${trackingPath}`);
+  }
+
+  return { corpus, tracking, trackingPath, feedbackPath, statePath, jobs, stillRunning, anyTerminal };
+}
+
+if (checkOnly && !locale) {
+  const stateDir = join(root, 'tools', 'corpus-gen', 'batch-state');
+  let files = [];
+  try {
+    files = await readdir(stateDir);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  const locales = files
+    .filter((f) => f.startsWith('evaluate-') && f.endsWith('.json'))
+    .map((f) => f.slice('evaluate-'.length, -'.json'.length))
+    .sort();
+  if (locales.length === 0) {
+    console.log('no batches in flight for any locale.');
+    process.exit(0);
+  }
+  for (const loc of locales) {
+    const { jobs, stillRunning, statePath } = await checkAndApply(loc);
+    if (jobs.length === 0) console.log(`[${loc}] no batches in flight.`);
+    else if (stillRunning.length > 0)
+      console.log(`[${loc}] ${String(stillRunning.length)}/${String(jobs.length)} batch(es) still running.`);
+    else console.log(`[${loc}] all recorded batches completed and applied.`);
+    if (stillRunning.length > 0) await writeBatchState(statePath, { jobs: stillRunning });
+    else await clearBatchState(statePath);
+  }
+  process.exit(0);
+}
+
+const { corpus, tracking, statePath, jobs, stillRunning, anyTerminal } = await checkAndApply(locale);
+
+if (checkOnly) {
+  if (jobs.length === 0) console.log(`[${locale}] no batches in flight.`);
+  else if (stillRunning.length > 0)
+    console.log(
+      `[${locale}] ${String(stillRunning.length)} batch(es) still running, ${String(jobs.length - stillRunning.length)} completed and applied — --check-only, not submitting anything new.`,
+    );
+  else
+    console.log(`[${locale}] all recorded batches completed and applied — --check-only, not submitting anything new.`);
+  if (stillRunning.length > 0) await writeBatchState(statePath, { jobs: stillRunning });
+  else await clearBatchState(statePath);
+  process.exit(0);
+}
+
+const inFlightIdentities = new Set(stillRunning.flatMap((job) => job.candidates.map(identityOf)));
 
 const selected = corpus
   .filter((entry) => personaFilter === undefined || (entry.persona ?? 'neutral') === personaFilter)
+  .filter((entry) => !inFlightIdentities.has(identityOf(entry)))
   .map((entry) => {
     const placement = parsePlacementKey(entry.key);
     return placement === undefined ? undefined : { entry, placement };
@@ -91,10 +299,12 @@ const alreadyResolved = selected.length - eligible.length;
 const candidates = eligible.slice(0, Number.isFinite(limit) ? limit : undefined);
 
 console.log(
-  `[${locale}] model: ${model} — ${String(candidates.length)} entries to evaluate${personaFilter ? ` (persona=${personaFilter})` : ''}${alreadyResolved > 0 ? ` (${String(alreadyResolved)} already resolved, skipped)` : ''}`,
+  `[${locale}] model: ${model} — ${String(candidates.length)} entries to evaluate${personaFilter ? ` (persona=${personaFilter})` : ''}${alreadyResolved > 0 ? ` (${String(alreadyResolved)} already resolved, skipped)` : ''}${inFlightIdentities.size > 0 ? ` (${String(inFlightIdentities.size)} already covered by ${String(stillRunning.length)} running batch(es))` : ''}`,
 );
 if (candidates.length === 0) {
-  console.log(`[${locale}] nothing to do.`);
+  if (stillRunning.length > 0) await writeBatchState(statePath, { jobs: stillRunning });
+  else await clearBatchState(statePath);
+  if (stillRunning.length === 0 && !anyTerminal) console.log(`[${locale}] nothing to do.`);
   process.exit(0);
 }
 
@@ -125,98 +335,13 @@ console.log(
   `\n[${locale}] submitting ${String(requests.length)} request${requests.length === 1 ? '' : 's'} as one batch job...`,
 );
 const submitted = await submitBatch({ apiKey: process.env.OPENAI_API_KEY, requests });
-console.log(`[${locale}] batch ${submitted.id} — polling...`);
-
-// Logs on every poll where the status OR the done/failed counts changed — not just status, which
-// would otherwise silently swallow every real progress update for however long a batch spends
-// `in_progress` (confirmed empirically: a real 4,832-request job printed exactly one
-// `in_progress (0/4832...)` line, then jumped straight to `finalizing`, hiding whatever real
-// incremental progress OpenAI's own request_counts was reporting on every poll in between).
-let lastKey;
-const finished = await pollBatch({
-  apiKey: process.env.OPENAI_API_KEY,
+const newJob = {
   batchId: submitted.id,
-  onPoll: (status, counts) => {
-    const key = `${status}:${String(counts?.completed)}:${String(counts?.failed)}`;
-    if (key !== lastKey) {
-      lastKey = key;
-      console.log(
-        `[${locale}] ${status}${counts ? ` (${String(counts.completed)}/${String(counts.total)} done, ${String(counts.failed)} failed)` : ''}`,
-      );
-    }
-  },
-});
-
-const results = await extractBatchResults({ apiKey: process.env.OPENAI_API_KEY, batch: finished });
-const byCustomId = new Map(results.map((r) => [r.customId, r]));
-
-const feedbackPath = join(root, 'tools', 'corpus-gen', 'feedback', `${locale}.json`);
-const feedback = await readFeedback(feedbackPath);
-
-let flagged = 0;
-let clean = 0;
-let failed = 0;
-let totalCostCents = 0;
-let costUnknown = false;
-candidates.forEach(({ entry }, index) => {
-  const result = byCustomId.get(String(index));
-  if (result === undefined) {
-    failed += 1;
-    console.error(`[${locale}] FAILED ${entry.key}: no result came back for this entry`);
-    return;
-  }
-  if (result.error) {
-    failed += 1;
-    console.error(`[${locale}] FAILED ${entry.key}: ${result.error.message}`);
-    return;
-  }
-  const costCents = estimateBatchCostCents(model, result.usage?.prompt_tokens, result.usage?.completion_tokens);
-  if (costCents === undefined) costUnknown = true;
-  else totalCostCents += costCents;
-  const existingTracking = findTracking(tracking, entry);
-  const now = new Date().toISOString();
-  if (result.result.correct === false) {
-    flagged += 1;
-    upsertFeedback(feedback, {
-      key: entry.key,
-      persona: entry.persona,
-      locale: entry.locale,
-      originalText: entry.text,
-      issues: result.result.issues,
-      flaggedAt: now,
-    });
-    upsertTracking(tracking, {
-      key: entry.key,
-      persona: entry.persona,
-      locale: entry.locale,
-      clean: false,
-      evaluationCount: existingTracking?.evaluationCount ?? 0,
-      updatedAt: now,
-    });
-    console.log(`[${locale}] FLAGGED ${entry.key}: ${result.result.issues.join(' / ')}`);
-  } else {
-    clean += 1;
-    upsertTracking(tracking, {
-      key: entry.key,
-      persona: entry.persona,
-      locale: entry.locale,
-      clean: true,
-      evaluationCount: existingTracking?.evaluationCount ?? 0,
-      updatedAt: now,
-    });
-  }
-});
-
-await mkdir(dirname(feedbackPath), { recursive: true });
-await writeFeedback(feedbackPath, feedback);
-await mkdir(dirname(trackingPath), { recursive: true });
-await writeTracking(trackingPath, tracking);
-
+  submittedAt: new Date().toISOString(),
+  model,
+  candidates: candidates.map(({ entry }) => ({ key: entry.key, persona: entry.persona })),
+};
+await writeBatchState(statePath, { jobs: [...stillRunning, newJob] });
 console.log(
-  `\n[${locale}] evaluation complete: ${String(candidates.length)} checked — ${String(clean)} clean, ${String(flagged)} flagged, ${String(failed)} failed`,
+  `[${locale}] submitted batch ${submitted.id} covering ${String(candidates.length)} entries${stillRunning.length > 0 ? ` (${String(stillRunning.length)} other batch(es) still running for this locale)` : ''} — OpenAI batches can take up to 24h; run this script again later (same --locale) to check status and apply results once it's done.`,
 );
-console.log(
-  `[${locale}] estimated cost: ${formatCents(totalCostCents)}${costUnknown ? ` (+ unknown — no batch pricing on file for model ${model})` : ''}`,
-);
-console.log(`[${locale}] feedback written to ${feedbackPath}`);
-console.log(`[${locale}] tracking written to ${trackingPath}`);

@@ -98,19 +98,28 @@ export async function submitBatch({ apiKey, baseUrl, model, displayName, request
   return response.json();
 }
 
+/** Fetches a batch job's current operation with a single request — no loop, no blocking wait. */
+export async function getBatch({ apiKey, baseUrl, name, maxRetries = 3 }) {
+  const url = `${baseUrl || DEFAULT_BASE_URL}/v1beta/${name}`;
+  const response = await fetchWithRetry(url, { headers: { 'x-goog-api-key': apiKey } }, maxRetries);
+  return response.json();
+}
+
+/** Whether a batch operation has reached a terminal state (not necessarily success). */
+export function isBatchTerminal(operation) {
+  return operation.done === true || TERMINAL_STATES.has(operation.metadata?.state);
+}
+
 /**
  * Polls a batch job until it reaches a terminal state. `onPoll(state)` fires after every poll,
  * including the first, so a caller can show progress across what the API itself documents as
  * usually minutes, sometimes up to its own 48-hour hard expiry.
  */
 export async function pollBatch({ apiKey, baseUrl, name, intervalMs = 15000, onPoll, maxRetries = 3 }) {
-  const url = `${baseUrl || DEFAULT_BASE_URL}/v1beta/${name}`;
   for (;;) {
-    const response = await fetchWithRetry(url, { headers: { 'x-goog-api-key': apiKey } }, maxRetries);
-    const operation = await response.json();
-    const state = operation.metadata?.state;
-    onPoll?.(state);
-    if (operation.done === true || TERMINAL_STATES.has(state)) return operation;
+    const operation = await getBatch({ apiKey, baseUrl, name, maxRetries });
+    onPoll?.(operation.metadata?.state);
+    if (isBatchTerminal(operation)) return operation;
     await sleep(intervalMs);
   }
 }

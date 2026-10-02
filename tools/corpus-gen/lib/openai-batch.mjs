@@ -114,14 +114,24 @@ export async function submitBatch({ apiKey, baseUrl, requests, maxRetries = 3 })
   return createResponse.json();
 }
 
+/** Fetches a batch job's current state with a single request — no loop, no blocking wait. */
+export async function getBatch({ apiKey, baseUrl, batchId, maxRetries = 3 }) {
+  const url = `${baseUrl || DEFAULT_BASE_URL}/v1/batches/${batchId}`;
+  const response = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${apiKey}` } }, maxRetries);
+  return response.json();
+}
+
+/** Whether a batch has reached a terminal status (not necessarily success — see TERMINAL_STATUSES). */
+export function isBatchTerminal(batch) {
+  return TERMINAL_STATUSES.has(batch.status);
+}
+
 /** Polls a batch job until it reaches a terminal status. `onPoll(status)` fires after every poll. */
 export async function pollBatch({ apiKey, baseUrl, batchId, intervalMs = 15000, onPoll, maxRetries = 3 }) {
-  const url = `${baseUrl || DEFAULT_BASE_URL}/v1/batches/${batchId}`;
   for (;;) {
-    const response = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${apiKey}` } }, maxRetries);
-    const batch = await response.json();
+    const batch = await getBatch({ apiKey, baseUrl, batchId, maxRetries });
     onPoll?.(batch.status, batch.request_counts);
-    if (TERMINAL_STATUSES.has(batch.status)) return batch;
+    if (isBatchTerminal(batch)) return batch;
     await sleep(intervalMs);
   }
 }
