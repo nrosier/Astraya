@@ -400,7 +400,13 @@
           </li>
           <li>
             <strong><code>sefstars.txt</code> is absent from the package.</strong>
-            Fixed stars will not work until it is sourced separately.
+            Fixed stars will not work until it is sourced separately. <strong>Resolved in M4</strong> (<code
+              >src/ephemeris/assets.ts</code
+            >
+            pins it as <code>FIXED_STARS_ASSET</code>, fetched over HTTPS from the Swiss Ephemeris project itself rather
+            than the npm package; <code>src/astrology/fixed-stars.ts</code>
+            implements the feature) &mdash; left here as the historical record of the gap this ADR flagged, not a
+            currently-open item.
           </li>
           <li>
             <strong>Two library behaviours are actively dangerous and are guarded:</strong>
