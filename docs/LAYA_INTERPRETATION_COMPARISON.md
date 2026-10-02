@@ -187,14 +187,12 @@ supports (e.g. Llama 3.2's marketed 128K), unless overridden with
 than trusting a model's marketing page, the same lesson this doc's own
 512-vs-8192 caveat already teaches about Laya.
 
-**This already applies, unaddressed, to `tools/corpus-gen/lib/ollama.mjs`**:
-its request body sets `model`, `messages`, `format`, `stream`, and
-`options: { temperature }` — no `num_ctx`. Every corpus-gen Ollama call
-today (default model `mistral`) runs at whatever the VRAM-tier default
-resolves to on the machine that runs it, not at any figure someone might
-assume from the model's marketing. Flagged here as a pre-existing gap
-worth a fix independent of the Laya question — not addressed by this
-research pass.
+**Resolved** (was flagged here as an open gap at the time this doc was
+written): `tools/corpus-gen/lib/ollama.mjs`'s request body now sets
+`options: { temperature, num_ctx: Number(process.env.OLLAMA_NUM_CTX) ||
+DEFAULT_NUM_CTX }`, configurable via `OLLAMA_NUM_CTX`
+(`docs/OLLAMA_CORPUS_GENERATION.md`) rather than left at whatever the
+VRAM-tier default happens to resolve to.
 
 ### Models checked
 

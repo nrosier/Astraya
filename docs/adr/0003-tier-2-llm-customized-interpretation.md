@@ -82,10 +82,12 @@ second, best-effort line of defense instead: `prompt-guardrail.ts`, a pure,
 deterministic module (no model call, importable by both the client for an
 inline UX nicety and the server as the authoritative check) that rejects a
 prompt containing prompt-injection phrasing, fatalistic phrasing,
-medical/legal/financial claim language, or a date/coordinate-shaped
-substring. The server runs this check regardless of what the client already
-filtered — a bypassed or absent client check is not a security gap, since
-the client's pass was never the boundary.
+medical/legal/financial claim language, a date/coordinate-shaped substring,
+an off-topic request (files, systems, or access unrelated to the
+interpretation itself), or a request to fabricate or ignore the reader's
+actual chart facts (#394). The server runs this check regardless of what
+the client already filtered — a bypassed or absent client check is not a
+security gap, since the client's pass was never the boundary.
 
 **The credential and the model call live only in
 `server/interpretation/llm-client.ts`**, never in `src/`.

@@ -47,7 +47,11 @@ Swiss Ephemeris via `sweph-wasm`, confined to `src/ephemeris/` behind our own
   the engine refuses rather than falling back to lower-precision theory. Each file
   is pinned by SHA-256 so an upstream repack fails loudly.
 - **`sefstars.txt` is absent from the package.** Fixed stars will not work until it
-  is sourced separately.
+  is sourced separately. **Resolved in M4** (`src/ephemeris/assets.ts` pins it as
+  `FIXED_STARS_ASSET`, fetched over HTTPS from the Swiss Ephemeris project itself
+  rather than the npm package; `src/astrology/fixed-stars.ts` implements the
+  feature) — left here as the historical record of the gap this ADR flagged, not
+  a currently-open item.
 - **Two library behaviours are actively dangerous and are guarded:**
   - `swe_set_ephe_path` swallows per-file fetch errors and throws only if _every_
     file fails. A partial load therefore proceeds and silently degrades to Moshier

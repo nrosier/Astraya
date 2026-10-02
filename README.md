@@ -18,7 +18,9 @@ plausible-looking number.
 
 ## Status
 
-Early. Milestone M4 (calculation core) is in progress; see the
+Pre-1.0 (`v0.21.3`). Calculation, charting, interpretation (including optional
+AI-customized restyling), and sync are all built and shipping; M9 (polish and
+the `v1.0.0` launch itself) is what's left — see the
 [issues and milestones](https://github.com/nrosier/astraya/issues) for what is
 planned and what is done.
 
@@ -55,8 +57,10 @@ npm run check        # format, lint, typecheck, test
 ```
 
 `npm run ephe:sync` copies four files (2.48 MB) out of the 110 MB `sweph-wasm`
-package into `public/ephe/` and verifies each against a pinned SHA-256. It fails
-loudly if upstream repacks them, because a silently different ephemeris file is a
+package, plus fetches a fifth (`sefstars.txt`, the fixed-stars catalog, over
+HTTPS from the Swiss Ephemeris project itself — not part of the npm package),
+into `public/ephe/` and verifies each against a pinned SHA-256. It fails loudly
+if upstream repacks them, because a silently different ephemeris file is a
 silently different chart.
 
 `npm run corpus:split` splits `src/interpretation/corpus/{en,nl}.json` into

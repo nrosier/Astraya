@@ -177,3 +177,12 @@ Mistral's replacement:
 ```
 npx tsx --env-file=.env.local tools/corpus-gen/sample-validate-batch.mjs --category=synastry-aspect
 ```
+
+`tools/corpus-gen/` has grown further since the above was written — not
+Ollama-specific, so not detailed here, but worth knowing about:
+`run.sh` wraps the `npx tsx --env-file=.env.local` prefix every script
+above needs (e.g. `tools/corpus-gen/run.sh sample-validate-batch.mjs
+--category=synastry-aspect`); `corpus-stats.mjs` reports per-locale
+feedback-loop progress; `evaluate-corpus-batch.mjs`/`improve-corpus-batch.mjs`
+(#381) are the two-model ChatGPT-evaluate/Gemini-revise loop, resumable
+and `--check-only`-able across separate invocations.
