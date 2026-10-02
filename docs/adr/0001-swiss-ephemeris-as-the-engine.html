@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADR 0001: Swiss Ephemeris as the calculation engine</title>
+    <style>
+      /*
+       * HTML-first documentation (#399): reuses Astraya's own design tokens from
+       * src/ui/app.css verbatim rather than re-deriving them. Deliberately standalone:
+       * no build step, no external font, no dependency on the app's stylesheet.
+       */
+      :root {
+        color-scheme: dark light;
+
+        --bg: #0b0c18;
+        --surface: #15162a;
+        --surface-hover: #1d1e36;
+        --line: #2a2b45;
+
+        --fg: #eceafa;
+        --muted: #a09dc0;
+
+        --accent: #a390fb;
+        --aspect-hard: #ff8189;
+        --aspect-soft: #6ec3ff;
+        --aspect-minor: #8fe0a0;
+        --solar: #f2b75e;
+
+        --glow-a: rgb(124 92 255 / 18%);
+        --glow-b: rgb(242 183 94 / 8%);
+
+        --radius: 0.625rem;
+        --radius-sm: 0.375rem;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #fbfaff;
+          --surface: #f3f1fa;
+          --surface-hover: #ebe8f6;
+          --line: #e2dff0;
+
+          --fg: #16152b;
+          --muted: #5c5878;
+
+          --accent: #5b3fd4;
+          --solar: #8f5a0e;
+          --aspect-hard: #b3261e;
+          --aspect-soft: #1857c4;
+          --aspect-minor: #0a4d28;
+
+          --glow-a: rgb(124 92 255 / 8%);
+          --glow-b: rgb(242 183 94 / 7%);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 3rem 1.5rem 6rem;
+        background: var(--bg);
+        background-image:
+          radial-gradient(ellipse at top right, var(--glow-a), transparent 55%),
+          radial-gradient(ellipse at bottom left, var(--glow-b), transparent 55%);
+        background-attachment: fixed;
+        color: var(--fg);
+        font:
+          16px/1.65 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+
+      main {
+        max-width: 42rem;
+        margin: 0 auto;
+      }
+
+      header.adr-header {
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .adr-kicker {
+        margin: 0 0 0.5rem;
+        color: var(--accent);
+        font-weight: 650;
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: 1.75rem;
+        font-weight: 680;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+      }
+
+      .adr-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .adr-meta dt {
+        display: inline;
+        font-weight: 620;
+        color: var(--fg);
+      }
+
+      .adr-meta dt::after {
+        content: ' ';
+      }
+
+      .adr-meta dd {
+        display: inline;
+        margin: 0;
+      }
+
+      .status-pill {
+        display: inline-block;
+        padding: 0.1em 0.6em;
+        border: 1px solid color-mix(in oklab, var(--aspect-minor) 45%, var(--line));
+        border-radius: 999px;
+        background: color-mix(in oklab, var(--aspect-minor) 16%, var(--surface));
+        color: var(--aspect-minor);
+        font-weight: 650;
+        font-size: 0.8rem;
+        text-transform: capitalize;
+      }
+
+      /* Prose: the decision narrative, styled after app.css's .prose class. */
+      .prose h2 {
+        margin: 2.5rem 0 0.75rem;
+        font-size: 1.35rem;
+        font-weight: 620;
+        letter-spacing: -0.015em;
+      }
+
+      .prose h2:first-of-type {
+        margin-top: 0;
+      }
+
+      .prose h3 {
+        margin: 2rem 0 0.4rem;
+        font-size: 1.1rem;
+        font-weight: 620;
+      }
+
+      .prose h4 {
+        margin: 1.5rem 0 0.3rem;
+        color: var(--accent);
+        font-size: 0.95rem;
+      }
+
+      .prose p {
+        margin: 0 0 1rem;
+      }
+
+      .prose ul,
+      .prose ol {
+        margin: 0.5rem 0 1.25rem;
+        padding-left: 1.15rem;
+      }
+
+      .prose ul ul,
+      .prose ul ol {
+        margin: 0.4rem 0 0.4rem;
+      }
+
+      .prose li {
+        margin-bottom: 0.5rem;
+      }
+
+      .prose li::marker {
+        color: var(--accent);
+      }
+
+      .prose strong {
+        color: var(--fg);
+        font-weight: 650;
+      }
+
+      code {
+        padding: 0.1em 0.35em;
+        border-radius: 0.25rem;
+        background: color-mix(in oklab, var(--fg) 8%, transparent);
+        font-size: 0.875em;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      /* Tables: reproduces app.css's .data-table visual treatment. */
+      .data-table-wrap {
+        margin: 0 0 2rem;
+      }
+
+      .data-table-caption {
+        margin: 0 0 0.5rem;
+        color: var(--muted);
+        font-weight: 620;
+        font-size: 0.85rem;
+      }
+
+      .data-table-scroll {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+      }
+
+      table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+        font-size: 0.9rem;
+      }
+
+      table.data-table th,
+      table.data-table td {
+        padding: 0.5rem 0.85rem;
+        text-align: left;
+        border-bottom: 1px solid color-mix(in oklab, var(--line) 65%, transparent);
+      }
+
+      table.data-table td.num {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      table.data-table tbody tr:last-child th,
+      table.data-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      table.data-table th {
+        background: color-mix(in oklab, var(--surface) 70%, transparent);
+        color: var(--muted);
+        font-weight: 650;
+        font-size: 0.8rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      table.data-table strong {
+        color: var(--fg);
+      }
+
+      footer.adr-footer {
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="adr-header">
+        <p class="adr-kicker">Architecture Decision Record &middot; 0001</p>
+        <h1>Swiss Ephemeris as the calculation engine</h1>
+        <dl class="adr-meta">
+          <div>
+            <dt>Status</dt>
+            <dd><span class="status-pill">Accepted</span></dd>
+          </div>
+          <div>
+            <dt>Date</dt>
+            <dd>2026-09-07</dd>
+          </div>
+        </dl>
+      </header>
+
+      <article class="prose">
+        <h2>Context</h2>
+        <p>
+          Astraya's premise is that the numbers are right. That makes the ephemeris the single most consequential
+          dependency in the project, and it constrains the licence of everything else.
+        </p>
+        <p>Two candidates were evaluated by inspection rather than reputation:</p>
+
+        <div class="data-table-wrap">
+          <div class="data-table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col"></th>
+                  <th scope="col"><code>astronomy-engine</code></th>
+                  <th scope="col">Swiss Ephemeris (<code>sweph-wasm</code>)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Licence</th>
+                  <td>MIT</td>
+                  <td>AGPL-3.0 <strong>or</strong> commercial (Astrodienst AG)</td>
+                </tr>
+                <tr>
+                  <th scope="row">Positional accuracy</th>
+                  <td>arcminute-ish</td>
+                  <td>arcsecond, from JPL DE431</td>
+                </tr>
+                <tr>
+                  <th scope="row">House systems</th>
+                  <td><strong>none</strong></td>
+                  <td>~23</td>
+                </tr>
+                <tr>
+                  <th scope="row">Ayanamsas</th>
+                  <td><strong>none</strong></td>
+                  <td>48</td>
+                </tr>
+                <tr>
+                  <th scope="row">Asteroids, fixed stars, nodes/apsides</th>
+                  <td>no</td>
+                  <td>yes</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p>
+          <code>astronomy-engine</code> has no house systems and no ayanamsas at all. Since houses are not optional in
+          astrology and the agreed scope is "every option possible", it cannot implement the product regardless of how
+          pleasant its licence is.
+        </p>
+        <p>
+          <code>sweph-wasm@2.6.9</code> was checked against a live instance rather than its README, which documents only
+          a fraction of what it exposes: 287 constants are reachable, and the presence of <code>swe_houses_ex2</code>,
+          <code>swe_mooncross</code> and <code>swe_helio_cross</code> shows the underlying C core is really about 2.10.
+          So the full API is available and we do not need to compile Swiss Ephemeris ourselves.
+        </p>
+
+        <h2>Decision</h2>
+        <p>
+          Swiss Ephemeris via <code>sweph-wasm</code>, confined to <code>src/ephemeris/</code> behind our own
+          <code>EphemerisProvider</code>
+          interface, executing in a Web Worker.
+        </p>
+
+        <h2>Consequences</h2>
+        <ul>
+          <li>
+            <strong>Astraya must be AGPL-3.0-or-later.</strong> This is not a preference. The AGPL is the option we take
+            on Astrodienst's dual licence, and AGPL and MIT cannot be linked in the other direction. Running a modified
+            Astraya as a network service obliges us to offer users the source, which the <code>/about</code> page does.
+            Astrodienst also requires visible credit.
+          </li>
+          <li>
+            <strong>We ship 2.48 MB of the 110.6 MB package</strong>, pinned by SHA-256 so an upstream repack fails
+            loudly. This fixes the supported date range at <strong>1800&ndash;2399</strong>; outside it the engine
+            refuses rather than falling back to lower-precision theory.
+            <div class="data-table-wrap">
+              <p class="data-table-caption">Pinned ephemeris assets</p>
+              <div class="data-table-scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">File</th>
+                      <th scope="col">Size (bytes)</th>
+                      <th scope="col">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>swisseph.wasm</code></td>
+                      <td class="num">584,227</td>
+                      <td>The compiled Swiss Ephemeris WASM core</td>
+                    </tr>
+                    <tr>
+                      <td><code>semo_18.se1</code></td>
+                      <td class="num">1,304,771</td>
+                      <td>Moon ephemeris data</td>
+                    </tr>
+                    <tr>
+                      <td><code>sepl_18.se1</code></td>
+                      <td class="num">484,055</td>
+                      <td>Main planets ephemeris data</td>
+                    </tr>
+                    <tr>
+                      <td><code>seas_18.se1</code></td>
+                      <td class="num">223,002</td>
+                      <td>Asteroids ephemeris data</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </li>
+          <li>
+            <strong><code>sefstars.txt</code> is absent from the package.</strong>
+            Fixed stars will not work until it is sourced separately.
+          </li>
+          <li>
+            <strong>Two library behaviours are actively dangerous and are guarded:</strong>
+            <ul>
+              <li>
+                <code>swe_set_ephe_path</code> swallows per-file fetch errors and throws only if <em>every</em> file
+                fails. A partial load therefore proceeds and silently degrades to Moshier theory. We assert every
+                expected file exists in the WASM filesystem afterwards.
+              </li>
+              <li>
+                The bundled <code>.d.ts</code> states that <code>cusp[0]</code> is the first house.
+                <strong>It is wrong.</strong> Verified empirically: the array has 13 entries, index 0 is unused,
+                <code>cusps[1]</code> is the Ascendant and <code>cusps[10]</code>
+                the MC. Believing the documentation would have rotated every chart by one house &mdash; a wrong answer
+                that looks entirely plausible.
+              </li>
+            </ul>
+          </li>
+          <li>
+            <strong>Constants are generated, never transcribed</strong>, from a live instance. Roughly fourteen flags
+            (<code>SEFLG_SIDEREAL</code>, <code>SEFLG_TOPOCTR</code>, <code>SEFLG_EQUATORIAL</code> among them) are
+            computed at runtime and typed only as <code>number</code> in the declarations, so reading the types would
+            have produced wrong values. CI fails on drift.
+          </li>
+          <li>
+            <strong><code>swe_set_sid_mode</code> and <code>swe_set_topo</code> are global mutable state</strong> on the
+            instance, not per-call arguments. Confining WASM to one worker thread with a serialised request queue is
+            what makes that safe to reason about.
+          </li>
+        </ul>
+
+        <h2>Verification</h2>
+        <p>
+          The engine runs fully offline in Node, at full precision including Chiron, by widening <code>fetch</code> to
+          resolve <code>file://</code>
+          &mdash; so the golden-chart gate exercises the real production load path in CI with no network.
+        </p>
+        <p>
+          Measured agreement with NASA JPL Horizons across 11 bodies and 3 epochs: median about 0.05&Prime;. Two
+          distinct residuals were identified rather than assumed:
+        </p>
+        <ol>
+          <li>
+            A constant ~0.05&Prime; offset at every epoch, independent of body speed &mdash; a frame-level model
+            difference in nutation and aberration handling.
+          </li>
+          <li>
+            For future dates, an additional shared ~1.5 s time offset across the fast bodies &mdash; differing
+            <strong>predicted &Delta;T</strong>. Visible only on the Moon, which at ~0.55&Prime; per second of time
+            turns that into 0.83&Prime;.
+          </li>
+        </ol>
+        <p>
+          Hence the gate uses two tolerances: <strong>0.2&Prime; for historical epochs</strong> (where natal charts
+          actually live) and 1.5&Prime; for future dates. A single 1&Prime; bound would have hidden a tenfold regression
+          on exactly the cases that matter.
+        </p>
+      </article>
+
+      <footer class="adr-footer">
+        <p>
+          HTML-first documentation (#399): this is the canonical, rendered form of this ADR. A lightweight,
+          version-controlled counterpart is kept alongside at
+          <code>docs/adr/0001-swiss-ephemeris-as-the-engine.md</code> for diff-friendly review and plain-text reading.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
