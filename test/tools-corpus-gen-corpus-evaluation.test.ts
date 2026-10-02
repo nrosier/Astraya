@@ -48,4 +48,16 @@ describe('buildEvaluationPrompt (#381)', () => {
     });
     expect(userContent.startsWith('PLACEMENT FACTS: Moon in Cancer\n\nENTRY TEXT: Entry body.')).toBe(true);
   });
+
+  it('tells the judge not to penalize Lilith/node calculation-method variants for reading alike (#395)', () => {
+    const { systemInstruction } = buildEvaluationPrompt({
+      factsDescription: 'interpolatedLilith trine Saturn',
+      entryText: 'Some entry text.',
+    });
+    for (const body of ['meanLilith', 'trueLilith', 'osculatingLilith', 'interpolatedLilith', 'meanNode', 'trueNode']) {
+      expect(systemInstruction).toContain(body);
+    }
+    expect(systemInstruction).toContain('mutually');
+    expect(systemInstruction).toContain('not a defect');
+  });
 });
