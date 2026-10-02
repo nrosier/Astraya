@@ -25,7 +25,12 @@ const MAX_INLINE_BYTES = 18 * 1024 * 1024; // Google's own cap is 20MB; this lea
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 // Confirmed against a real batch job, not just docs — the public docs page describes this enum
 // as "JOB_STATE_*", but the API itself actually returns "BATCH_STATE_*".
-const TERMINAL_STATES = new Set(['BATCH_STATE_SUCCEEDED', 'BATCH_STATE_FAILED', 'BATCH_STATE_CANCELLED', 'BATCH_STATE_EXPIRED']);
+const TERMINAL_STATES = new Set([
+  'BATCH_STATE_SUCCEEDED',
+  'BATCH_STATE_FAILED',
+  'BATCH_STATE_CANCELLED',
+  'BATCH_STATE_EXPIRED',
+]);
 
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

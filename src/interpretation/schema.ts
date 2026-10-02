@@ -32,8 +32,24 @@ export const CORPUS_CATEGORIES = [
   'dignity-state',
   'nakshatra',
   'pattern',
+  'profected-house',
+  'astro-line',
 ] as const;
 export type CorpusCategory = (typeof CORPUS_CATEGORIES)[number];
+
+/**
+ * `profected-house` and `astro-line` (#369) are neutral-only — no entry in either category ever
+ * carries a `persona`. Personas are being phased out product-wide in favor of Tier 2's free-text
+ * custom prompt (ADR 0003), so these two categories, added after that direction was set, never
+ * get the 5-way persona split the earlier categories have. `validateCorpusEntries` enforces this
+ * the same way it already does for `anchor` entries (persona forbidden there too, for a different
+ * reason — see its own comment).
+ */
+export const NEUTRAL_ONLY_CATEGORIES: readonly CorpusCategory[] = ['profected-house', 'astro-line'];
+
+/** The four angular house cusps a natal chart's astrocartography lines are drawn relative to (`src/astrology/astrocartography.ts`). */
+export const ACG_ANGLES = ['AC', 'DC', 'MC', 'IC'] as const;
+export type AcgAngle = (typeof ACG_ANGLES)[number];
 
 /**
  * Editorial importance, assigned by whoever writes or reviews the entry —
@@ -120,7 +136,9 @@ export type CorpusPlacement =
     }
   | { readonly category: 'dignity-state'; readonly body: string; readonly state: DignityState }
   | { readonly category: 'nakshatra'; readonly body: string; readonly nakshatra: number }
-  | { readonly category: 'pattern'; readonly pattern: string };
+  | { readonly category: 'pattern'; readonly pattern: string }
+  | { readonly category: 'profected-house'; readonly house: number }
+  | { readonly category: 'astro-line'; readonly body: string; readonly angle: AcgAngle };
 
 const PATTERN_KEY_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
@@ -147,6 +165,10 @@ export function placementKey(placement: CorpusPlacement): string {
       return `nakshatra:${placement.body}:${String(placement.nakshatra)}`;
     case 'pattern':
       return `pattern:${placement.pattern}`;
+    case 'profected-house':
+      return `profected-house:${String(placement.house)}`;
+    case 'astro-line':
+      return `astro-line:${placement.body}:${placement.angle}`;
   }
 }
 
@@ -211,6 +233,16 @@ export function parsePlacementKey(key: string): CorpusPlacement | undefined {
       if (pattern === '') return undefined;
       return { category, pattern };
     }
+    case 'profected-house': {
+      const [house] = rest;
+      if (house === undefined) return undefined;
+      return { category, house: Number(house) };
+    }
+    case 'astro-line': {
+      const [body, angle] = rest;
+      if (body === undefined || !isAcgAngle(angle)) return undefined;
+      return { category, body, angle };
+    }
     default:
       return undefined;
   }
@@ -218,6 +250,10 @@ export function parsePlacementKey(key: string): CorpusPlacement | undefined {
 
 function isDignityState(value: string | undefined): value is DignityState {
   return (DIGNITY_STATES as readonly string[]).includes(value ?? '');
+}
+
+function isAcgAngle(value: string | undefined): value is AcgAngle {
+  return (ACG_ANGLES as readonly string[]).includes(value ?? '');
 }
 
 export type CorpusProvenanceSource = 'hand-written' | 'generated';
@@ -350,6 +386,15 @@ function validatePlacementFields(placement: CorpusPlacement): string[] {
         errors.push(`pattern key "${placement.pattern}" is not lowercase kebab-case`);
       }
       break;
+    case 'profected-house':
+      checkHouse(placement.house, 'house');
+      break;
+    case 'astro-line':
+      checkBody(placement.body, 'body');
+      if (!(ACG_ANGLES as readonly string[]).includes(placement.angle)) {
+        errors.push(`unknown astro-line angle "${placement.angle}"`);
+      }
+      break;
   }
   return errors;
 }
@@ -426,6 +471,10 @@ export function validateCorpusEntries(raw: readonly unknown[]): CorpusValidation
     for (const error of validateKey(key)) report(error);
     if (persona !== undefined && !isPersonaId(persona)) {
       report(`persona must be one of ${PERSONA_IDS.join(', ')}, got ${JSON.stringify(persona)}`);
+    }
+    const category = categoryOfKey(key);
+    if (persona !== undefined && category !== undefined && NEUTRAL_ONLY_CATEGORIES.includes(category)) {
+      report(`"${category}" entries must not declare a persona — this category is neutral-only (#369)`);
     }
     const dedupeKey = `${key}::${typeof persona === 'string' ? persona : ''}`;
     if (seenKeys.has(dedupeKey)) {

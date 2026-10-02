@@ -4,6 +4,7 @@
 const en = {
   searchByName: 'Search for a place by name',
   searchByNamePlaceholder: 'e.g. Paris, France',
+  searchDisclosure: (host: string) => `The text you type here is sent to ${host} to find coordinates.`,
   search: 'Search',
   searching: 'Searching…',
   searchNotFound: 'No matching place was found.',
@@ -14,6 +15,7 @@ const en = {
 const nl: typeof en = {
   searchByName: 'Zoek een plaats op naam',
   searchByNamePlaceholder: 'bijv. Amsterdam, Nederland',
+  searchDisclosure: (host: string) => `De tekst die je hier typt wordt naar ${host} gestuurd om coördinaten te vinden.`,
   search: 'Zoeken',
   searching: 'Zoeken…',
   searchNotFound: 'Er is geen overeenkomende plaats gevonden.',

@@ -15,6 +15,7 @@
 import { useState } from 'react';
 import { birthPlaceSearchMessages } from './BirthPlaceSearch.messages.js';
 import { forwardGeocode } from './forward-geocode.js';
+import { geocodeHost } from './geocode-provider.js';
 import { useMessages } from './messages.js';
 import type { ForwardGeocodeResult } from './forward-geocode.js';
 
@@ -72,6 +73,7 @@ export function BirthPlaceSearch({
             placeholder={t.searchByNamePlaceholder}
           />
         </label>
+        <p className="hint">{t.searchDisclosure(geocodeHost)}</p>
         <button type="submit" className="quiet" disabled={searchStatus === 'searching' || searchQuery.trim() === ''}>
           {searchStatus === 'searching' ? t.searching : t.search}
         </button>

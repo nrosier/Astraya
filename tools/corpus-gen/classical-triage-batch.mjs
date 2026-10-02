@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { buildClassicalTriagePrompt, CLASSICAL_TRIAGE_RESPONSE_SCHEMA } from './lib/classical-triage.mjs';
 import { writeCorpus } from './lib/write-corpus.mjs';
 import { categoryOfKey } from '../../src/interpretation/schema.ts';
+import { estimateCostCentsForCall, formatCents } from './lib/cost-estimate.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FLAG_TAG = 'diverges-from-classical-source';
@@ -85,6 +86,8 @@ if (candidates.length === 0) {
 
 let flagged = 0;
 let failed = 0;
+let usageIn = 0;
+let usageOut = 0;
 const lock = { writing: Promise.resolve() };
 
 async function persist() {
@@ -109,6 +112,10 @@ await withConcurrency(candidates, concurrency, async ({ entry, index }) => {
       userContent,
       responseSchema: CLASSICAL_TRIAGE_RESPONSE_SCHEMA,
       maxRetries: 5,
+      onUsage: (usage) => {
+        usageIn += usage?.promptTokenCount ?? 0;
+        usageOut += (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0);
+      },
     });
 
     if (result.matches === false) {
@@ -126,3 +133,12 @@ await withConcurrency(candidates, concurrency, async ({ entry, index }) => {
 console.log(
   `\n[${locale}] classical triage complete: ${String(candidates.length)} checked, ${String(flagged)} newly flagged, ${String(failed)} failed`,
 );
+{
+  const costCents = estimateCostCentsForCall({ provider, model, promptTokens: usageIn, outputTokens: usageOut });
+  console.log(
+    `[${locale}] usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — ` +
+      (costCents === undefined
+        ? `cost unknown (no pricing on file for ${model})`
+        : `est. cost: ${formatCents(costCents)}`),
+  );
+}
