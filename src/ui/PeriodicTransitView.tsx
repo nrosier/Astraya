@@ -25,6 +25,7 @@ import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import type { Aspect } from '../astrology/aspects.js';
 import { bodyByKey, bodyById } from '../astrology/bodies.js';
 import { SIGNS } from '../astrology/signs.js';
+import { bodyDisplayName, signDisplayName } from './astro-names.messages.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import {
   computePeriodicTransitForecast,
@@ -39,13 +40,14 @@ import { civilFromJulianDay } from '../time/julian.js';
 import { todayInputValue } from './format.js';
 import { useMessages } from './messages.js';
 import { momentKey } from '../time/encode.js';
+import { useLocale } from './locale.js';
 import { periodicTransitViewMessages } from './PeriodicTransitView.messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
 import type { BodyId, JulianDayUT } from '../ephemeris/types.js';
-import type { CorpusPlacement } from '../interpretation/schema.js';
+import type { CorpusPlacement, Locale } from '../interpretation/schema.js';
 
 type Load =
   | { readonly kind: 'loading' }
@@ -74,23 +76,23 @@ function formatUtc(jd: JulianDayUT): string {
   return `${String(civil.year)}-${pad(civil.month)}-${pad(civil.day)} ${pad(civil.hour)}:${pad(civil.minute)} UT`;
 }
 
-function bodyName(body: BodyId): string {
-  return bodyById(body)?.name ?? String(body);
-}
-
 function bodyKey(body: BodyId): string {
   return bodyById(body)?.key ?? String(body);
 }
 
-/** The `transit-aspect` fallback sentence (see file doc) for one transiting/natal pair. */
-function transitAspectSentence(transiting: BodyId, natal: BodyId, aspectKey: string): string {
+function bodyName(body: BodyId, locale: Locale): string {
+  return bodyDisplayName(bodyKey(body), locale);
+}
+
+/** The `transit-aspect` fallback sentence (see file doc) for one transiting/natal pair. `composeFallbackText` already composes this mechanically in either locale — no corpus content needed. */
+function transitAspectSentence(transiting: BodyId, natal: BodyId, aspectKey: string, locale: Locale): string {
   const placement: CorpusPlacement = {
     category: 'transit-aspect',
     aspect: aspectKey,
     transiting: bodyKey(transiting),
     natal: bodyKey(natal),
   };
-  return composeFallbackText(placement, 'en');
+  return composeFallbackText(placement, locale);
 }
 
 interface ContactRow {
@@ -103,13 +105,13 @@ interface ContactRow {
   readonly applying: boolean;
 }
 
-function contactRows(aspects: readonly Aspect[]): readonly ContactRow[] {
+function contactRows(aspects: readonly Aspect[], locale: Locale): readonly ContactRow[] {
   return aspects.map((aspect, index) => ({
     key: `${String(aspect.bodyA)}-${aspect.aspect.key}-${String(aspect.bodyB)}-${String(index)}`,
-    sentence: transitAspectSentence(aspect.bodyA, aspect.bodyB, aspect.aspect.key),
-    transiting: bodyName(aspect.bodyA),
+    sentence: transitAspectSentence(aspect.bodyA, aspect.bodyB, aspect.aspect.key, locale),
+    transiting: bodyName(aspect.bodyA, locale),
     aspect: aspect.aspect.name,
-    natal: bodyName(aspect.bodyB),
+    natal: bodyName(aspect.bodyB, locale),
     orb: aspect.orb,
     applying: aspect.applying,
   }));
@@ -147,13 +149,14 @@ interface StationRow {
 function exactEventRows(
   events: readonly TransitAspectEvent[],
   t: typeof periodicTransitViewMessages.en,
+  locale: Locale,
 ): readonly ExactEventRow[] {
   return events.map((event, index) => ({
     key: `${String(event.jd)}-${String(event.transitingBody)}-${String(event.natalBody)}-${String(index)}`,
     jd: event.jd,
     date: formatUtc(event.jd),
     sentence:
-      transitAspectSentence(event.transitingBody, event.natalBody, event.aspect.key) +
+      transitAspectSentence(event.transitingBody, event.natalBody, event.aspect.key, locale) +
       (event.retrograde ? ` ${t.retrograde}` : ''),
     retrograde: event.retrograde,
   }));
@@ -169,12 +172,13 @@ function exactEventColumns(t: typeof periodicTransitViewMessages.en): readonly T
 function stationRows(
   stations: readonly StationEvent[],
   t: typeof periodicTransitViewMessages.en,
+  locale: Locale,
 ): readonly StationRow[] {
   return stations.map((station, index) => ({
     key: `${String(station.jd)}-${String(station.body)}-${String(index)}`,
     jd: station.jd,
     date: formatUtc(station.jd),
-    body: bodyName(station.body),
+    body: bodyName(station.body, locale),
     direction: station.direction === 'retrograde' ? t.turnsRetrograde : t.turnsDirect,
   }));
 }
@@ -187,15 +191,20 @@ function stationColumns(t: typeof periodicTransitViewMessages.en): readonly Tabl
   ];
 }
 
-function signHouseLabel(sign: number, house: number, t: typeof periodicTransitViewMessages.en): string {
-  const signName = SIGNS[sign]?.name ?? t.signFallback(String(sign));
-  return `${signName}${t.houseSuffix(house)}`;
+function localizedSignName(sign: number, locale: Locale, t: typeof periodicTransitViewMessages.en): string {
+  const name = SIGNS[sign]?.name;
+  return name !== undefined ? signDisplayName(name, locale) : t.signFallback(String(sign));
+}
+
+function signHouseLabel(sign: number, house: number, locale: Locale, t: typeof periodicTransitViewMessages.en): string {
+  return `${localizedSignName(sign, locale, t)}${t.houseSuffix(house)}`;
 }
 
 export function PeriodicTransitView({ personId }: { personId: string }): React.JSX.Element {
   const state = useStoreState();
   const person = state.people.get(personId);
   const t = useMessages(periodicTransitViewMessages);
+  const [locale] = useLocale();
   const [asOf, setAsOf] = useState(todayInputValue);
   const { provider } = useEphemerisProvider();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
@@ -352,14 +361,14 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
           <section>
             <h2>{t.dailyHeading}</h2>
             <p>
-              {t.moonInLabel} {signHouseLabel(data.daily.moon.sign, data.daily.moon.house, t)}
+              {t.moonInLabel} {signHouseLabel(data.daily.moon.sign, data.daily.moon.house, locale, t)}
               {data.daily.moon.position.retrograde ? ` ${t.retrograde}` : ''}.
             </p>
             {data.daily.moonAspects.length > 0 && (
               <SortableTable
                 caption={t.moonAspectsCaption}
                 columns={contactColumns(t)}
-                rows={contactRows(data.daily.moonAspects)}
+                rows={contactRows(data.daily.moonAspects, locale)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-daily-moon', 'csv')}
               />
@@ -368,7 +377,7 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
               <SortableTable
                 caption={t.exactTodayCaption}
                 columns={exactEventColumns(t)}
-                rows={exactEventRows(data.daily.exactToday, t)}
+                rows={exactEventRows(data.daily.exactToday, t, locale)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-daily-exact', 'csv')}
               />
@@ -377,7 +386,7 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
               <SortableTable
                 caption={t.stationsTodayCaption}
                 columns={stationColumns(t)}
-                rows={stationRows(data.daily.stationsToday, t)}
+                rows={stationRows(data.daily.stationsToday, t, locale)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-daily-stations', 'csv')}
               />
@@ -393,7 +402,7 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
               <SortableTable
                 caption={t.exactThisWeekCaption}
                 columns={exactEventColumns(t)}
-                rows={exactEventRows(data.weekly.events, t)}
+                rows={exactEventRows(data.weekly.events, t, locale)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-weekly', 'csv')}
               />
@@ -408,14 +417,14 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
                     <p>
                       {t.lunarReturnSentence(
                         formatUtc(lunarReturn.returnJd),
-                        SIGNS[ascendantSign]?.name ?? t.signFallback(String(ascendantSign)),
+                        localizedSignName(ascendantSign, locale, t),
                       )}
                     </p>
                     {lunarReturn.contacts.length > 0 && (
                       <SortableTable
                         caption={t.lunarReturnContactsCaption}
                         columns={contactColumns(t)}
-                        rows={contactRows(lunarReturn.contacts)}
+                        rows={contactRows(lunarReturn.contacts, locale)}
                         getRowKey={(row) => row.key}
                         downloadFilename={deriveExportFilename(
                           person.displayName,
@@ -436,7 +445,7 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
             <h2>{t.monthlyHeading}</h2>
             <p>
               {t.sunInThisMonth(
-                signHouseLabel(data.monthly.sun.sign, data.monthly.sun.house, t),
+                signHouseLabel(data.monthly.sun.sign, data.monthly.sun.house, locale, t),
                 formatUtc(data.monthly.fromJd),
                 formatUtc(data.monthly.toJd),
               )}
@@ -445,7 +454,7 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
               <SortableTable
                 caption={t.exactThisMonthCaption}
                 columns={exactEventColumns(t)}
-                rows={exactEventRows(data.monthly.events, t)}
+                rows={exactEventRows(data.monthly.events, t, locale)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-monthly', 'csv')}
               />
@@ -455,15 +464,14 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
             <p>
               {t.progressedLunarReturnSentence(
                 formatUtc(data.monthly.progressedLunarReturn.returnJd),
-                SIGNS[progressedLunarReturnAscendantSign]?.name ??
-                  t.signFallback(String(progressedLunarReturnAscendantSign)),
+                localizedSignName(progressedLunarReturnAscendantSign, locale, t),
               )}
             </p>
             {data.monthly.progressedLunarReturn.contacts.length > 0 && (
               <SortableTable
                 caption={t.progressedLunarReturnContactsCaption}
                 columns={contactColumns(t)}
-                rows={contactRows(data.monthly.progressedLunarReturn.contacts)}
+                rows={contactRows(data.monthly.progressedLunarReturn.contacts, locale)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(
                   person.displayName,
@@ -480,14 +488,14 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
               {t.solarReturnSentence(
                 String(data.yearly.solarReturn.year),
                 formatUtc(data.yearly.solarReturn.returnJd),
-                SIGNS[returnAscendantSign]?.name ?? t.signFallback(String(returnAscendantSign)),
+                localizedSignName(returnAscendantSign, locale, t),
               )}
             </p>
             {data.yearly.solarReturn.contacts.length > 0 && (
               <SortableTable
                 caption={t.solarReturnContactsCaption}
                 columns={contactColumns(t)}
-                rows={contactRows(data.yearly.solarReturn.contacts)}
+                rows={contactRows(data.yearly.solarReturn.contacts, locale)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-yearly-return', 'csv')}
               />
@@ -496,14 +504,14 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
               {t.demibirthdaySentence(
                 String(data.yearly.demibirthday.year),
                 formatUtc(data.yearly.demibirthday.demibirthdayJd),
-                SIGNS[demibirthdayAscendantSign]?.name ?? t.signFallback(String(demibirthdayAscendantSign)),
+                localizedSignName(demibirthdayAscendantSign, locale, t),
               )}
             </p>
             {data.yearly.demibirthday.contacts.length > 0 && (
               <SortableTable
                 caption={t.demibirthdayContactsCaption}
                 columns={contactColumns(t)}
-                rows={contactRows(data.yearly.demibirthday.contacts)}
+                rows={contactRows(data.yearly.demibirthday.contacts, locale)}
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-yearly-demibirthday', 'csv')}
               />
@@ -524,7 +532,7 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
                 >
                   {RETURN_BODY_KEYS.map((key) => (
                     <option key={key} value={key}>
-                      {bodyByKey(key)?.name ?? key}
+                      {bodyDisplayName(key, locale)}
                     </option>
                   ))}
                 </select>
@@ -541,16 +549,16 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
               <>
                 <p>
                   {t.planetaryReturnSentence(
-                    bodyByKey(returnBodyKey)?.name ?? returnBodyKey,
+                    bodyDisplayName(returnBodyKey, locale),
                     formatUtc(returnData.returnJd),
-                    SIGNS[planetaryReturnAscendantSign]?.name ?? t.signFallback(String(planetaryReturnAscendantSign)),
+                    localizedSignName(planetaryReturnAscendantSign, locale, t),
                   )}
                 </p>
                 {returnData.contacts.length > 0 && (
                   <SortableTable
                     caption={t.planetaryReturnContactsCaption}
                     columns={contactColumns(t)}
-                    rows={contactRows(returnData.contacts)}
+                    rows={contactRows(returnData.contacts, locale)}
                     getRowKey={(row) => row.key}
                     downloadFilename={deriveExportFilename(person.displayName, 'forecast-planetary-return', 'csv')}
                   />

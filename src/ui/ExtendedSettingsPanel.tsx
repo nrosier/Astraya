@@ -15,8 +15,10 @@ import { useEffect, useState } from 'react';
 import { ASPECTS } from '../astrology/aspects.js';
 import { ayanamsaByKey, AYANAMSAS } from '../astrology/ayanamsas.js';
 import { HOUSE_SYSTEMS } from '../astrology/houses.js';
+import { aspectDisplayName } from './astro-names.messages.js';
 import { DEFAULT_EXTENDED_SETTINGS, type ExtendedSettings } from '../chart/extended-settings.js';
 import { extendedSettingsPanelMessages } from './ExtendedSettingsPanel.messages.js';
+import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import type { EphemerisProvider } from '../ephemeris/types.js';
 
@@ -59,6 +61,7 @@ export function ExtendedSettingsPanel({
 }): React.JSX.Element {
   const [draft, setDraft] = useState<ExtendedSettings>(value);
   const t = useMessages(extendedSettingsPanelMessages);
+  const [locale] = useLocale();
 
   const houseSystemNames = useNameLookup(
     HOUSE_SYSTEMS.map((system) => system.code),
@@ -185,7 +188,7 @@ export function ExtendedSettingsPanel({
                 setMinorAspect(aspect.key, event.target.checked);
               }}
             />{' '}
-            {aspect.angle}° {aspect.name}
+            {aspect.angle}° {aspectDisplayName(aspect.key, locale)}
           </label>
         ))}
       </fieldset>

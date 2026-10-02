@@ -23,15 +23,18 @@ import {
   TRADITIONAL_ACG_BODY_IDS,
   type AstrocartographyData,
 } from '../domain/astrocartography.js';
+import { bodyDisplayName, signDisplayName } from './astro-names.messages.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import { momentKey } from '../time/encode.js';
 import { astrocartographyViewMessages } from './AstrocartographyView.messages.js';
 import { svgToPngBlob } from './chart-raster.js';
 import { downloadBlob, downloadText } from './download.js';
+import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { useStoreState } from './store-context.js';
 import type { BodyId, GeoPosition } from '../ephemeris/types.js';
+import type { Locale } from '../interpretation/schema.js';
 
 type LineType = 'MC' | 'IC' | 'AC' | 'DC';
 const ALL_LINE_TYPES: readonly LineType[] = ['MC', 'IC', 'AC', 'DC'];
@@ -56,15 +59,15 @@ type Load =
   | { readonly kind: 'ready'; readonly data: AstrocartographyData }
   | { readonly kind: 'error'; readonly message: string };
 
-function bodyName(body: BodyId): string {
-  return bodyById(body)?.name ?? String(body);
+function bodyName(body: BodyId, locale: Locale): string {
+  return bodyDisplayName(bodyById(body)?.key ?? String(body), locale);
 }
 
 /** `18°34' Libra`-style label for an ecliptic longitude. */
-function signDegreeLabel(longitude: number): string {
+function signDegreeLabel(longitude: number, locale: Locale): string {
   const degrees = Math.floor(degreesInSign(longitude));
   const minutes = Math.round((degreesInSign(longitude) - degrees) * 60);
-  return `${String(degrees)}°${String(minutes).padStart(2, '0')}' ${signOf(longitude).name}`;
+  return `${String(degrees)}°${String(minutes).padStart(2, '0')}' ${signDisplayName(signOf(longitude).name, locale)}`;
 }
 
 function parseCoordinate(value: string, min: number, max: number): number | undefined {
@@ -77,6 +80,7 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
   const state = useStoreState();
   const person = state.people.get(personId);
   const t = useMessages(astrocartographyViewMessages);
+  const [locale] = useLocale();
   const { provider } = useEphemerisProvider();
   const [lineTypes, setLineTypes] = useState<readonly LineType[]>(ALL_LINE_TYPES);
   const [bodies, setBodies] = useState<readonly BodyId[]>(TRADITIONAL_ACG_BODY_IDS);
@@ -237,7 +241,7 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
                 toggleBody(body, event.target.checked);
               }}
             />{' '}
-            {bodyName(body)}
+            {bodyName(body, locale)}
           </label>
         ))}
         <details>
@@ -251,7 +255,7 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
                   toggleBody(body, event.target.checked);
                 }}
               />{' '}
-              {bodyName(body)}
+              {bodyName(body, locale)}
             </label>
           ))}
         </details>
@@ -303,8 +307,8 @@ export function AstrocartographyView({ personId }: { personId: string }): React.
         {data?.relocatedHouses !== undefined && (
           <p>
             {t.relocatedAscendantMidheaven(
-              signDegreeLabel(data.relocatedHouses.ascendant),
-              signDegreeLabel(data.relocatedHouses.midheaven),
+              signDegreeLabel(data.relocatedHouses.ascendant, locale),
+              signDegreeLabel(data.relocatedHouses.midheaven, locale),
             )}
           </p>
         )}
