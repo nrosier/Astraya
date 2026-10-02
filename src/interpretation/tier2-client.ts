@@ -6,7 +6,7 @@
  * response beyond its own shape, and every rejection carries the server's
  * own message.
  *
- * Two modes, see ADR 0003:
+ * Three modes, see ADR 0003:
  * - `'grounded'` sends `placementKeys` (from `report.ts`'s
  *   `reportPlacementKeys`) rather than the chart or corpus text itself — the
  *   server re-resolves each key's grounded Tier-1 text against its own copy
@@ -19,6 +19,10 @@
  *   interpretation from it. This deliberately gives up grounded mode's
  *   "no chart data crosses the wire" guarantee for this mode only; ADR 0003
  *   documents the tradeoff.
+ * - `'synthesis'` (#377) also sends `chartData`, but asks the model to reason
+ *   across the whole chart's placements together rather than restyle/
+ *   originate per a free-text instruction — so there is no `customPrompt`
+ *   field for this mode.
  *
  * `locale` is sent alongside either payload so the server responds in the
  * language the report is already showing.
@@ -101,6 +105,11 @@ export type Tier2Request =
       readonly chartData: Tier2ChartDataPayload;
       readonly customPrompt: string;
       readonly locale: Locale;
+    }
+  | {
+      readonly mode: 'synthesis';
+      readonly chartData: Tier2ChartDataPayload;
+      readonly locale: Locale;
     };
 
 /** Generates one Tier-2, AI-customized interpretation for the given request. */
@@ -113,4 +122,31 @@ export async function generateTier2Interpretation(request: Tier2Request): Promis
   if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
   const { sections } = (await response.json()) as { sections: readonly Tier2Section[] };
   return sections;
+}
+
+/** One past generation's metadata — never its text; see `listSavedInterpretations`/`getSavedInterpretation` (#392). */
+export interface SavedInterpretationSummary {
+  readonly id: string;
+  readonly mode: string;
+  readonly locale: Locale;
+  readonly createdAt: string;
+}
+
+export interface SavedInterpretationDetail extends SavedInterpretationSummary {
+  readonly sections: readonly Tier2Section[];
+}
+
+/** This user's own past generations, newest first — empty (not an error) when the server has no `ASTRAYA_ENCRYPTION_KEY` configured, same as `generateTier2Interpretation` never fails just because saving was skipped. */
+export async function listSavedInterpretations(): Promise<readonly SavedInterpretationSummary[]> {
+  const response = await fetch('/api/interpretation/results');
+  if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
+  const { results } = (await response.json()) as { results: readonly SavedInterpretationSummary[] };
+  return results;
+}
+
+/** Reopens one past generation by id, without calling the model again. */
+export async function getSavedInterpretation(id: string): Promise<SavedInterpretationDetail> {
+  const response = await fetch(`/api/interpretation/results/${encodeURIComponent(id)}`);
+  if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
+  return (await response.json()) as SavedInterpretationDetail;
 }

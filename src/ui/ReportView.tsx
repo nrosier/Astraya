@@ -48,8 +48,11 @@ import { reportViewMessages } from './ReportView.messages.js';
 import {
   generateTier2Interpretation,
   toTier2ChartPayload,
+  listSavedInterpretations,
+  getSavedInterpretation,
   Tier2Error,
   type Tier2Section,
+  type SavedInterpretationSummary,
 } from '../interpretation/tier2-client.js';
 import type { ChartData } from '../domain/chart-compute.js';
 
@@ -161,11 +164,22 @@ function AiCustomizedPanel({
   const t = useMessages(reportViewMessages);
   const user = useSessionUserOrUndefined();
   const [consent, setConsent] = useState(false);
-  const [mode, setMode] = useState<'grounded' | 'freeform'>('grounded');
+  const [mode, setMode] = useState<'grounded' | 'freeform' | 'synthesis'>('grounded');
   const [customPrompt, setCustomPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<readonly Tier2Section[] | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [savedResults, setSavedResults] = useState<readonly SavedInterpretationSummary[]>([]);
+  const [openSavedId, setOpenSavedId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (user === undefined) return;
+    // Empty (not an error) when the server has no ASTRAYA_ENCRYPTION_KEY configured — saving is
+    // additive, so there's simply nothing to list, not a failure to surface (#392).
+    void listSavedInterpretations()
+      .then(setSavedResults)
+      .catch(() => undefined);
+  }, [user]);
 
   if (user === undefined) {
     return (
@@ -177,14 +191,15 @@ function AiCustomizedPanel({
   }
 
   const placementKeys = reportPlacementKeys(report);
-  const guardrailIssues = checkCustomPrompt(customPrompt);
+  // Synthesis mode has no free-text instruction, so it has nothing to guard.
+  const guardrailIssues = mode === 'synthesis' ? [] : checkCustomPrompt(customPrompt);
   // Only shown once the user has typed something — otherwise the empty-prompt "length"
   // issue would announce itself on mount and re-announce on every keystroke, before the
   // user has had a chance to write anything.
-  const visibleGuardrailIssues = customPrompt === '' ? [] : guardrailIssues;
+  const visibleGuardrailIssues = mode === 'synthesis' || customPrompt === '' ? [] : guardrailIssues;
   const disabledReason = !consent
     ? t.tier2GenerateDisabledConsent
-    : customPrompt === ''
+    : mode !== 'synthesis' && customPrompt === ''
       ? t.tier2GenerateDisabledEmpty
       : guardrailIssues.length > 0
         ? t.tier2GenerateDisabledGuardrail
@@ -193,13 +208,24 @@ function AiCustomizedPanel({
   function handleGenerate(): void {
     setGenerating(true);
     setError(undefined);
+    // Consent authorizes one specific request, not a standing preference (ADR 0003) — spent the
+    // moment this request is dispatched, so a second "Generate" click (or a mode switch
+    // afterward sending a broader payload) requires a fresh tick, not a leftover one (#391).
+    setConsent(false);
     const request =
       mode === 'grounded'
         ? { mode: 'grounded' as const, placementKeys, customPrompt, locale }
-        : { mode: 'freeform' as const, chartData: toTier2ChartPayload(chart), customPrompt, locale };
+        : mode === 'freeform'
+          ? { mode: 'freeform' as const, chartData: toTier2ChartPayload(chart), customPrompt, locale }
+          : { mode: 'synthesis' as const, chartData: toTier2ChartPayload(chart), locale };
     generateTier2Interpretation(request)
       .then((sections) => {
         setResult(sections);
+        // Refreshes the list so a just-saved generation (if saving is enabled on this server)
+        // shows up without a reload — best-effort, same as the initial load (#392).
+        void listSavedInterpretations()
+          .then(setSavedResults)
+          .catch(() => undefined);
       })
       .catch((caught: unknown) => {
         setError(caught instanceof Tier2Error ? caught.message : String(caught));
@@ -209,19 +235,24 @@ function AiCustomizedPanel({
       });
   }
 
+  function openSaved(id: string): void {
+    setOpenSavedId(id);
+    setError(undefined);
+    getSavedInterpretation(id)
+      .then((detail) => {
+        setResult(detail.sections);
+      })
+      .catch((caught: unknown) => {
+        setError(caught instanceof Tier2Error ? caught.message : String(caught));
+      })
+      .finally(() => {
+        setOpenSavedId(undefined);
+      });
+  }
+
   return (
     <section className="report-section ai-customized-panel">
       <h3>{t.tier2Heading}</h3>
-      <label>
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(event) => {
-            setConsent(event.target.checked);
-          }}
-        />{' '}
-        {t.tier2ConsentLabel}
-      </label>
       <fieldset className="field-group">
         <legend>{t.tier2ModeLabel}</legend>
         <div role="radiogroup" aria-label={t.tier2ModeLabel}>
@@ -232,6 +263,10 @@ function AiCustomizedPanel({
               checked={mode === 'grounded'}
               onChange={() => {
                 setMode('grounded');
+                // The consent statement's wording depends on mode (what it discloses sending
+                // differs) — switching mode re-requires a tick rather than carrying over consent
+                // given under a different, narrower claim (#391).
+                setConsent(false);
               }}
             />{' '}
             {t.tier2ModeGrounded}
@@ -243,22 +278,47 @@ function AiCustomizedPanel({
               checked={mode === 'freeform'}
               onChange={() => {
                 setMode('freeform');
+                setConsent(false);
               }}
             />{' '}
             {t.tier2ModeFreeform}
+          </label>{' '}
+          <label>
+            <input
+              type="radio"
+              name="tier2-mode"
+              checked={mode === 'synthesis'}
+              onChange={() => {
+                setMode('synthesis');
+                setConsent(false);
+              }}
+            />{' '}
+            {t.tier2ModeSynthesis}
           </label>
         </div>
       </fieldset>
-      <label className="stacked">
-        {t.customPromptLabel}
-        <textarea
-          value={customPrompt}
-          placeholder={t.customPromptPlaceholder}
+      <label>
+        <input
+          type="checkbox"
+          checked={consent}
           onChange={(event) => {
-            setCustomPrompt(event.target.value);
+            setConsent(event.target.checked);
           }}
-        />
+        />{' '}
+        {t.tier2ConsentLabel(mode)}
       </label>
+      {mode !== 'synthesis' && (
+        <label className="stacked">
+          {t.customPromptLabel}
+          <textarea
+            value={customPrompt}
+            placeholder={t.customPromptPlaceholder}
+            onChange={(event) => {
+              setCustomPrompt(event.target.value);
+            }}
+          />
+        </label>
+      )}
       {visibleGuardrailIssues.length > 0 && (
         <div className="ai-customized-guardrail-issues warning" aria-live="polite">
           <ul>
@@ -270,7 +330,7 @@ function AiCustomizedPanel({
       )}
       <button
         type="button"
-        disabled={!consent || customPrompt === '' || guardrailIssues.length > 0 || generating}
+        disabled={!consent || (mode !== 'synthesis' && customPrompt === '') || guardrailIssues.length > 0 || generating}
         aria-label={disabledReason === undefined ? undefined : `${t.tier2Generate} — ${disabledReason}`}
         onClick={handleGenerate}
       >
@@ -285,6 +345,27 @@ function AiCustomizedPanel({
               <p>{section.body}</p>
             </article>
           ))}
+        </div>
+      )}
+      {savedResults.length > 0 && (
+        <div className="tier2-saved-results">
+          <h4>{t.tier2SavedHeading}</h4>
+          <ul>
+            {savedResults.map((saved) => (
+              <li key={saved.id}>
+                <button
+                  type="button"
+                  className="quiet"
+                  disabled={openSavedId !== undefined}
+                  onClick={() => {
+                    openSaved(saved.id);
+                  }}
+                >
+                  {t.tier2SavedEntry(saved.createdAt, saved.mode)}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </section>

@@ -17,11 +17,13 @@
  * (planet-in-sign, planet-in-house, sign-on-cusp, aspect-pair, dignity-state),
  * plus `transit-aspect` (#207) and `synastry-aspect` (#359), which reuse this
  * same fallback machinery for a different pair of roles (transiting/natal,
- * or this-chart/other-chart) rather than a same-chart pair. `nakshatra` and
- * `pattern` are out of scope for the same reason #60 excluded them: neither
- * is produced by anything currently feeding this module, and both would need
- * chart data (sidereal longitude, whole-chart shape) rather than a
- * `CorpusPlacement`'s own fields.
+ * or this-chart/other-chart) rather than a same-chart pair. `nakshatra`,
+ * `pattern`, `profected-house` and `astro-line` (#369) are out of scope for
+ * the same reason #60 excluded the first two: none of the four is produced
+ * by anything currently feeding this module (#369 only added the corpus
+ * schema/categories, not live report-engine wiring) — a future issue wiring
+ * profections or astrocartography into an actual report should add real
+ * cases here then, not before there's a real caller to exercise them.
  *
  * Dutch terminology note: the twelve sign names, ten planet/luminary names
  * and five major-aspect names below are standard, unremarkable translations.
@@ -255,6 +257,8 @@ export function composeFallbackText(placement: CorpusPlacement, locale: Locale):
     }
     case 'nakshatra':
     case 'pattern':
+    case 'profected-house':
+    case 'astro-line':
       throw new Error(`composeFallbackText: category "${placement.category}" is out of scope for #59 (see file doc)`);
   }
 }

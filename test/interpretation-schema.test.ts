@@ -8,6 +8,7 @@ import {
   PERSONA_IDS,
   placementKey,
   validateCorpusEntries,
+  validateKey,
   type CorpusPlacement,
 } from '../src/interpretation/schema.js';
 
@@ -21,6 +22,8 @@ const PLACEMENTS: readonly CorpusPlacement[] = [
   { category: 'dignity-state', body: 'jupiter', state: 'exalted' },
   { category: 'nakshatra', body: 'moon', nakshatra: 3 },
   { category: 'pattern', pattern: 'bowl' },
+  { category: 'profected-house', house: 7 },
+  { category: 'astro-line', body: 'venus', angle: 'MC' },
 ];
 
 function validEntry(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -88,6 +91,34 @@ describe('placementKey / parsePlacementKey (#53)', () => {
   it('categoryOfKey reads just the first segment', () => {
     expect(categoryOfKey('planet-in-house:moon:10')).toBe('planet-in-house');
     expect(categoryOfKey('bogus:1:2')).toBeUndefined();
+  });
+
+  it('rejects an astro-line key with an unknown angle', () => {
+    expect(parsePlacementKey('astro-line:sun:ZZ')).toBeUndefined();
+  });
+});
+
+describe('profected-house / astro-line (#369)', () => {
+  it('builds and parses the expected key shapes', () => {
+    expect(placementKey({ category: 'profected-house', house: 10 })).toBe('profected-house:10');
+    expect(placementKey({ category: 'astro-line', body: 'mars', angle: 'IC' })).toBe('astro-line:mars:IC');
+  });
+
+  it('validateKey accepts a well-formed profected-house key', () => {
+    expect(validateKey('profected-house:7')).toEqual([]);
+  });
+
+  it('validateKey rejects an out-of-range profected-house', () => {
+    expect(validateKey('profected-house:13')).not.toEqual([]);
+    expect(validateKey('profected-house:0')).not.toEqual([]);
+  });
+
+  it('validateKey accepts a well-formed astro-line key', () => {
+    expect(validateKey('astro-line:venus:AC')).toEqual([]);
+  });
+
+  it('validateKey rejects an unknown body in an astro-line key', () => {
+    expect(validateKey('astro-line:not-a-real-body:AC')).not.toEqual([]);
   });
 });
 
@@ -285,6 +316,23 @@ describe('validateCorpusEntries persona (#211)', () => {
         result.issues.some((issue) => issue.message.includes('duplicate key') && issue.message.includes('mystic')),
       ).toBe(true);
     }
+  });
+
+  it('rejects a persona on a profected-house entry — that category is neutral-only (#369)', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'profected-house:7', persona: 'mystic' })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues.some((issue) => issue.message.includes('neutral-only'))).toBe(true);
+  });
+
+  it('rejects a persona on an astro-line entry — that category is neutral-only (#369)', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'astro-line:venus:MC', persona: 'cynic' })]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues.some((issue) => issue.message.includes('neutral-only'))).toBe(true);
+  });
+
+  it('accepts a persona-less profected-house entry', () => {
+    const result = validateCorpusEntries([validEntry({ key: 'profected-house:7' })]);
+    expect(result.ok).toBe(true);
   });
 });
 
