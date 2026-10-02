@@ -146,3 +146,25 @@ describe('forwardGeocode, with a MapTiler API key configured (#294)', () => {
     expect(await forwardGeocodeWithMaptiler('Paris')).toEqual([]);
   });
 });
+
+describe('geocodeHost (#383/#390)', () => {
+  it('names the public Nominatim default when nothing is configured', async () => {
+    vi.resetModules();
+    const { geocodeHost } = await import('../src/ui/geocode-provider.ts');
+    expect(geocodeHost).toBe('nominatim.openstreetmap.org');
+  });
+
+  it('names MapTiler when a MapTiler API key is configured', async () => {
+    vi.stubEnv('VITE_MAPTILER_API_KEY', 'test-key');
+    vi.resetModules();
+    const { geocodeHost } = await import('../src/ui/geocode-provider.ts');
+    expect(geocodeHost).toBe('api.maptiler.com');
+  });
+
+  it('names a self-hosted Nominatim-compatible server when configured, not the public default', async () => {
+    vi.stubEnv('VITE_NOMINATIM_URL', 'https://geocode.example.org/search');
+    vi.resetModules();
+    const { geocodeHost } = await import('../src/ui/geocode-provider.ts');
+    expect(geocodeHost).toBe('geocode.example.org');
+  });
+});
