@@ -78,7 +78,11 @@ import { buildSystemInstruction, buildUserContent } from './lib/prompt.mjs';
 import { buildBatchRequest, submitBatch, pollBatch, extractBatchResults } from './lib/gemini-batch.mjs';
 import { writeCorpus } from './lib/write-corpus.mjs';
 import { buildPlacements, placementDescription, buildSymbolismContext, symbolismScopeFor } from './lib/placements.mjs';
-import { CORPUS_ENTRY_RESPONSE_SCHEMA, placementKey } from '../../src/interpretation/schema.ts';
+import {
+  CORPUS_ENTRY_RESPONSE_SCHEMA,
+  placementKey,
+  NEUTRAL_ONLY_CATEGORIES,
+} from '../../src/interpretation/schema.ts';
 import { lintCorpus, lintEntry } from '../../src/interpretation/lint.ts';
 import { findNearDuplicates } from '../../src/interpretation/dedupe.ts';
 import { estimateCostCentsForCall, formatCents } from './lib/cost-estimate.mjs';
@@ -186,6 +190,10 @@ corpus.forEach((entry, i) => {
 const allPlacements = buildPlacements();
 const pending = allPlacements
   .map((placement) => ({ placement, key: placementKey(placement) }))
+  // profected-house/astro-line (#369) are neutral-only — no persona round should ever touch them,
+  // same enforcement schema.ts's validateCorpusEntries applies to a shipped entry, just earlier
+  // (skipped before spending a single API call, not caught only after generating one).
+  .filter(({ placement }) => !persona || !NEUTRAL_ONLY_CATEGORIES.includes(placement.category))
   .filter(({ key }) => {
     const idx = existingIndex.get(key);
     if (idx === undefined) return true; // genuinely missing — always generate

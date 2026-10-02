@@ -43,6 +43,7 @@ import { buildImprovementPrompt, IMPROVEMENT_RESPONSE_SCHEMA } from './lib/corpu
 import { buildBatchRequest, submitBatch, pollBatch, extractBatchResults } from './lib/gemini-batch.mjs';
 import { buildSymbolismContext, symbolismScopeFor, factsDescription } from './lib/placements.mjs';
 import { parsePlacementKey } from '../../src/interpretation/schema.ts';
+import { lintEntry } from '../../src/interpretation/lint.ts';
 import { writeCorpus } from './lib/write-corpus.mjs';
 import { readFeedback, writeFeedback, removeFeedback } from './lib/corpus-feedback.mjs';
 import { readTracking, writeTracking, findTracking, upsertTracking } from './lib/eval-tracking.mjs';
@@ -180,12 +181,25 @@ for (const { record, corpusIndex } of requests) {
   const existingTracking = findTracking(tracking, record);
   const now = new Date().toISOString();
   if (verdict === 'IMPROVED') {
-    improved += 1;
     const entry = corpus[corpusIndex];
-    // An entry can be rewritten more than once across evaluation-loop rounds (#381's
-    // --evaluation-limit) — `includes` guards against the tag piling up a duplicate per round.
-    const tags = entry.tags.includes(IMPROVED_TAG) ? entry.tags : [...entry.tags, IMPROVED_TAG];
-    corpus[corpusIndex] = { ...entry, text, tags };
+    // Gemini's own revision is never applied blind — lintEntry re-checks the rewrite the same
+    // way generate-batch.mjs checks a freshly generated entry, catching e.g. a language flip
+    // (the reviewer's own `issues` are always English per corpus-evaluation.mjs, even for a nl
+    // entry — confirmed empirically that Gemini's rewrite still stays on-locale, but this is the
+    // backstop if a future case ever doesn't) before it ever reaches the shipped corpus.
+    const lintIssues = lintEntry({ ...entry, text });
+    if (lintIssues.length > 0) {
+      failed += 1;
+      console.error(
+        `[${locale}] REJECTED rewrite for ${record.key} (lint failed, keeping prior text): ${lintIssues.map((i) => `[${i.rule}] ${i.message}`).join(' / ')}`,
+      );
+    } else {
+      improved += 1;
+      // An entry can be rewritten more than once across evaluation-loop rounds (#381's
+      // --evaluation-limit) — `includes` guards against the tag piling up a duplicate per round.
+      const tags = entry.tags.includes(IMPROVED_TAG) ? entry.tags : [...entry.tags, IMPROVED_TAG];
+      corpus[corpusIndex] = { ...entry, text, tags };
+    }
   } else {
     unchanged += 1;
   }
