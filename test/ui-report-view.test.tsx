@@ -804,13 +804,84 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     container.remove();
   });
 
-  it('sends chartData (not placementKeys) once freeform mode is selected', async () => {
+  it('resets consent after a request, so a second Generate click requires a fresh tick (#391)', async () => {
     const { container, root } = await mountSignedIn();
 
     await act(async () => {
       consentCheckbox(container).click();
       setTextareaValue(customPromptTextarea(container), 'warm and encouraging, focused on career growth');
+      await Promise.resolve();
+    });
+    expect(consentCheckbox(container).checked).toBe(true);
+
+    act(() => {
+      generateButton(container).click();
+    });
+
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.tier2-result')).not.toBeNull();
+    });
+
+    // Consent authorized exactly the request just sent — it must not still be ticked afterward,
+    // and the button must be disabled again until the box is ticked a second time.
+    expect(consentCheckbox(container).checked).toBe(false);
+    expect(generateButton(container).disabled).toBe(true);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('resets consent when the mode is switched, even before any request is sent (#391)', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      consentCheckbox(container).click();
+      await Promise.resolve();
+    });
+    expect(consentCheckbox(container).checked).toBe(true);
+
+    await act(async () => {
       modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      await Promise.resolve();
+    });
+
+    expect(consentCheckbox(container).checked).toBe(false);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('states what freeform/synthesis actually send, not grounded mode’s narrower claim (#391)', async () => {
+    const { container, root } = await mountSignedIn();
+
+    expect(panelOf(container).textContent).toContain(reportViewMessages.en.tier2ConsentLabel('grounded'));
+
+    await act(async () => {
+      modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      await Promise.resolve();
+    });
+    expect(panelOf(container).textContent).toContain(reportViewMessages.en.tier2ConsentLabel('freeform'));
+    expect(panelOf(container).textContent).not.toContain(reportViewMessages.en.tier2ConsentLabel('grounded'));
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('sends chartData (not placementKeys) once freeform mode is selected', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      // Mode first, then consent — selecting a mode resets consent (#391), so ticking it
+      // beforehand would leave the button disabled.
+      modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      consentCheckbox(container).click();
+      setTextareaValue(customPromptTextarea(container), 'warm and encouraging, focused on career growth');
       await Promise.resolve();
     });
 
@@ -836,8 +907,10 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     const { container, root } = await mountSignedIn();
 
     await act(async () => {
-      consentCheckbox(container).click();
+      // Mode first, then consent — selecting a mode resets consent (#391), so ticking it
+      // beforehand would leave the button disabled.
       modeRadio(container, reportViewMessages.en.tier2ModeSynthesis).click();
+      consentCheckbox(container).click();
       await Promise.resolve();
     });
 

@@ -194,6 +194,10 @@ function AiCustomizedPanel({
   function handleGenerate(): void {
     setGenerating(true);
     setError(undefined);
+    // Consent authorizes one specific request, not a standing preference (ADR 0003) — spent the
+    // moment this request is dispatched, so a second "Generate" click (or a mode switch
+    // afterward sending a broader payload) requires a fresh tick, not a leftover one (#391).
+    setConsent(false);
     const request =
       mode === 'grounded'
         ? { mode: 'grounded' as const, placementKeys, customPrompt, locale }
@@ -215,16 +219,6 @@ function AiCustomizedPanel({
   return (
     <section className="report-section ai-customized-panel">
       <h3>{t.tier2Heading}</h3>
-      <label>
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(event) => {
-            setConsent(event.target.checked);
-          }}
-        />{' '}
-        {t.tier2ConsentLabel}
-      </label>
       <fieldset className="field-group">
         <legend>{t.tier2ModeLabel}</legend>
         <div role="radiogroup" aria-label={t.tier2ModeLabel}>
@@ -235,6 +229,10 @@ function AiCustomizedPanel({
               checked={mode === 'grounded'}
               onChange={() => {
                 setMode('grounded');
+                // The consent statement's wording depends on mode (what it discloses sending
+                // differs) — switching mode re-requires a tick rather than carrying over consent
+                // given under a different, narrower claim (#391).
+                setConsent(false);
               }}
             />{' '}
             {t.tier2ModeGrounded}
@@ -246,6 +244,7 @@ function AiCustomizedPanel({
               checked={mode === 'freeform'}
               onChange={() => {
                 setMode('freeform');
+                setConsent(false);
               }}
             />{' '}
             {t.tier2ModeFreeform}
@@ -257,12 +256,23 @@ function AiCustomizedPanel({
               checked={mode === 'synthesis'}
               onChange={() => {
                 setMode('synthesis');
+                setConsent(false);
               }}
             />{' '}
             {t.tier2ModeSynthesis}
           </label>
         </div>
       </fieldset>
+      <label>
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(event) => {
+            setConsent(event.target.checked);
+          }}
+        />{' '}
+        {t.tier2ConsentLabel(mode)}
+      </label>
       {mode !== 'synthesis' && (
         <label className="stacked">
           {t.customPromptLabel}

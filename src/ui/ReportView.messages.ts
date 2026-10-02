@@ -14,8 +14,10 @@ const en = {
   aiTabLabel: 'AI-Customized',
   tier2Heading: 'AI-customized interpretation',
   tier2SignInPrompt: 'Sign in to generate an AI-customized interpretation in your own style and tone.',
-  tier2ConsentLabel:
-    'Send the placements above (no name or birth data) to a third-party AI model for this one request.',
+  tier2ConsentLabel: (mode: 'grounded' | 'freeform' | 'synthesis'): string =>
+    mode === 'grounded'
+      ? 'Send the placements above (no name or birth data) to a third-party AI model for this one request.'
+      : 'Send your exact positions, houses, and aspects (no name or birth data) to a third-party AI model for this one request.',
   tier2ModeLabel: 'Interpretation mode',
   tier2ModeGrounded: 'Restyle reviewed text — sends only the placements above',
   tier2ModeFreeform: 'AI-written from your full chart — sends your exact positions, houses, and aspects',
@@ -50,8 +52,10 @@ const nl: typeof en = {
   aiTabLabel: 'AI-gepersonaliseerd',
   tier2Heading: 'AI-gepersonaliseerde interpretatie',
   tier2SignInPrompt: 'Log in om een AI-gepersonaliseerde interpretatie in je eigen stijl en toon te genereren.',
-  tier2ConsentLabel:
-    'Verstuur de bovenstaande plaatsingen (geen naam of geboortegegevens) naar een AI-model van derden voor dit ene verzoek.',
+  tier2ConsentLabel: (mode: 'grounded' | 'freeform' | 'synthesis') =>
+    mode === 'grounded'
+      ? 'Verstuur de bovenstaande plaatsingen (geen naam of geboortegegevens) naar een AI-model van derden voor dit ene verzoek.'
+      : 'Verstuur je exacte posities, huizen en aspecten (geen naam of geboortegegevens) naar een AI-model van derden voor dit ene verzoek.',
   tier2ModeLabel: 'Interpretatiemodus',
   tier2ModeGrounded: 'Herschrijf beoordeelde tekst — verstuurt alleen de bovenstaande plaatsingen',
   tier2ModeFreeform:
