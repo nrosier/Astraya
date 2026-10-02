@@ -504,6 +504,7 @@ export function ReportView({ chart }: { readonly chart: ChartData }): React.JSX.
         aria-labelledby={`interpretation-tab-${activeTab}`}
         tabIndex={0}
       >
+        <p className="hint">{t.interpretationDisclaimer}</p>
         {activeTab === 'standard' ? (
           <>
             {controls}
