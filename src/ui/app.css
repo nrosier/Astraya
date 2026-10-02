@@ -1437,6 +1437,31 @@ label.stacked textarea:focus-visible {
   height: auto;
 }
 
+/* The focused-info panel click-to-isolate (#400) opens below the wheel — plain accessible
+   text, unlike the wheel itself, since it's reached by a mouse/touch gesture but the content
+   it shows is ordinary prose with nothing wrong with a screen reader encountering it. */
+.chart-isolation-panel {
+  max-width: 55rem;
+  margin: -1rem auto 1.5rem;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 0.9rem;
+}
+
+.chart-isolation-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.chart-isolation-panel ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
 .chart-multiwheel text,
 .chart-sheet text {
   font:
@@ -1609,6 +1634,20 @@ label.stacked textarea:focus-visible {
   stroke: var(--muted);
   stroke-width: 1;
   opacity: 0.45;
+}
+
+.chart-glyph,
+.chart-aspect {
+  transition: opacity 0.15s;
+}
+
+/* Click-to-isolate (#400): everything not part of the clicked body/aspect fades out. The
+   element-plus-class selectors (`g.chart-dimmed`, not just `.chart-dimmed`) are deliberate —
+   each outranks the single-class aspect-family color rules below by specificity, so dimming
+   wins regardless of which rule happens to come later in the file. */
+g.chart-dimmed,
+line.chart-dimmed {
+  opacity: 0.15;
 }
 
 /*
