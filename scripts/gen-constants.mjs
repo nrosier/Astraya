@@ -23,7 +23,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(root, 'src', 'ephemeris', 'generated-constants.ts');
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  console.log('Usage: node scripts/gen-constants.mjs           regenerate\n   or: node scripts/gen-constants.mjs --check   fail if the committed file drifted');
+  console.log(
+    'Usage: node scripts/gen-constants.mjs           regenerate\n   or: node scripts/gen-constants.mjs --check   fail if the committed file drifted',
+  );
   process.exit(0);
 }
 

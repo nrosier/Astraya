@@ -4,7 +4,7 @@
  * docs/adr/0003-tier-2-llm-customized-interpretation.md for the full
  * architecture — this file is the route itself.
  *
- * Two modes:
+ * Three modes:
  * - `'grounded'` (default, unchanged since #360): the client sends
  *   `placementKeys` (from `report.ts`'s `reportPlacementKeys`) rather than
  *   birth data or chart-derived text; each key is re-resolved against this
@@ -19,6 +19,15 @@
  *   below re-derives and closed-set-checks every numeric id/key, the same
  *   reason `validateKey` does for grounded mode: untrusted client data must
  *   never reach the third-party prompt unchecked.
+ * - `'synthesis'` (#377): same `chartData` validation and fact-building as
+ *   `'freeform'`, but with a fixed task — reason across the whole chart's
+ *   placements together rather than restyling/originating per a
+ *   reader-supplied instruction — so it carries no `customPrompt` field at
+ *   all. #377 investigated this as a two-stage "synthesis + refinement"
+ *   pipeline; refinement turned out to already be covered by `'grounded'`
+ *   mode (restyle already-reviewed text) and unnecessary as a second chained
+ *   call on top of synthesis's own output, so this is the one new mode that
+ *   capability actually needed.
  *
  * `customPrompt` is the one free-text field neither mode's structural
  * constraint covers, so it is run through `checkCustomPrompt` here —
@@ -31,13 +40,31 @@
  * doesn't bound spend, since one call's cost varies with prompt/output
  * length, but it still stops a single account from hammering the route
  * before either cap has accumulated enough usage to trip.
+ *
+ * A successful generation is also saved (#392, `interpretation/results.ts`) so the user who
+ * generated it can reopen it later via `GET /api/interpretation/results[/:id]` without calling
+ * the model again — encrypted at rest the same way `ops.payload` is, and only when
+ * `ASTRAYA_INTERPRETATION_API_KEY`'s sibling encryption setting, `ASTRAYA_ENCRYPTION_KEY`, is
+ * configured. Missing that key disables saving, not generation — the two are independent.
  */
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Database } from './db.ts';
-import { requireUser } from './auth/identity.ts';
+import { requireUser, requireAdmin } from './auth/identity.ts';
 import { loadTier2Config, generateTier2Text, estimateCostCents } from './interpretation/llm-client.ts';
-import { recordUsage, userCostCentsSince, totalCostCentsSince } from './interpretation/usage.ts';
+import {
+  recordUsage,
+  userCostCentsSince,
+  totalCostCentsSince,
+  usageByUser,
+  costCentsSinceByUser,
+} from './interpretation/usage.ts';
 import { checkCustomPrompt } from '../src/interpretation/prompt-guardrail.ts';
+import { loadEncryptionKey } from './ops/crypto.ts';
+import {
+  saveInterpretationResult,
+  listInterpretationResults,
+  getInterpretationResult,
+} from './interpretation/results.ts';
 import { CORPUS_LOCALES, parsePlacementKey, validateKey, type Locale } from '../src/interpretation/schema.ts';
 import { resolvePlacementText } from '../src/interpretation/compose.ts';
 import { CORPUS } from '../src/interpretation/index.ts';
@@ -50,10 +77,10 @@ function isLocale(value: unknown): value is Locale {
   return typeof value === 'string' && (CORPUS_LOCALES as readonly string[]).includes(value);
 }
 
-type Mode = 'grounded' | 'freeform';
+type Mode = 'grounded' | 'freeform' | 'synthesis';
 
 function isMode(value: unknown): value is Mode {
-  return value === 'grounded' || value === 'freeform';
+  return value === 'grounded' || value === 'freeform' || value === 'synthesis';
 }
 
 interface GenerateBody {
@@ -109,6 +136,22 @@ const FREEFORM_SYSTEM_INSTRUCTION = [
   'never one long undivided paragraph.',
 ].join(' ');
 
+const SYNTHESIS_SYSTEM_INSTRUCTION = [
+  'You are a psychologically grounded astrologer writing a synthesized reading',
+  'of a whole natal chart from a list of grounded chart facts — exact placements,',
+  'houses, and aspects, already computed and correct. You are given several of',
+  "this chart's placements and aspects at once. Do not describe each one",
+  'independently in its own section — reason across them together, the way a',
+  'human astrologer integrating a whole chart would: note where placements',
+  'reinforce each other, where they create internal tension, and what unified',
+  'pattern of personality emerges from the combination. Stay strictly within the',
+  'facts given to you — do not invent placements, aspects, dates, or claims not',
+  'present in them. Do not give medical, legal, or financial advice, and do not',
+  'use fatalistic or absolute ("you will never...") phrasing. Organize your',
+  'response into 2 to 4 short thematic sections, each with a brief heading and a',
+  '1 to 3 sentence body — never one long undivided paragraph.',
+].join(' ');
+
 // A real report has a few dozen placements at most; this is a generous ceiling against
 // a request padded with junk entries to inflate token usage/cost per call.
 const MAX_PLACEMENT_KEYS = 200;
@@ -143,6 +186,19 @@ function buildUserContent(facts: readonly string[], customPrompt: string, locale
     '',
     'Grounded facts (do not add facts beyond these):',
     ...facts.map((fact) => `- ${fact}`),
+  ].join('\n');
+}
+
+/** Synthesis mode's user content — unlike `buildUserContent`, there is no reader-supplied style instruction: the task itself is fixed (`SYNTHESIS_SYSTEM_INSTRUCTION`). */
+function buildSynthesisUserContent(facts: readonly string[], locale: Locale): string {
+  const language = locale === 'nl' ? 'Dutch' : 'English';
+  return [
+    `Write in ${language}.`,
+    '',
+    'Computed placements and aspects (do not add facts beyond these):',
+    ...facts.map((fact) => `- ${fact}`),
+    '',
+    'Write the synthesized reading.',
   ].join('\n');
 }
 
@@ -298,21 +354,24 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
       // this isn't a breaking change for any caller that predates freeform mode.
       const mode: Mode | undefined = rawMode === undefined ? 'grounded' : isMode(rawMode) ? rawMode : undefined;
       if (mode === undefined) {
-        return reply.code(400).send({ error: "mode must be 'grounded' or 'freeform'" });
+        return reply.code(400).send({ error: "mode must be 'grounded', 'freeform', or 'synthesis'" });
       }
 
-      if (typeof customPrompt !== 'string') {
-        return reply.code(400).send({ error: 'customPrompt must be a string' });
+      // Synthesis mode is a fixed task with no reader-supplied style instruction, so it carries
+      // no `customPrompt` field at all — unlike grounded/freeform, which both require one.
+      if (mode !== 'synthesis') {
+        if (typeof customPrompt !== 'string') {
+          return reply.code(400).send({ error: 'customPrompt must be a string' });
+        }
+        const guardrailIssues = checkCustomPrompt(customPrompt);
+        if (guardrailIssues.length > 0) {
+          return reply
+            .code(400)
+            .send({ error: `customPrompt failed: ${guardrailIssues.map((issue) => issue.message).join('; ')}` });
+        }
       }
       if (!isLocale(locale)) {
         return reply.code(400).send({ error: `locale must be one of ${CORPUS_LOCALES.join(', ')}` });
-      }
-
-      const guardrailIssues = checkCustomPrompt(customPrompt);
-      if (guardrailIssues.length > 0) {
-        return reply
-          .code(400)
-          .send({ error: `customPrompt failed: ${guardrailIssues.map((issue) => issue.message).join('; ')}` });
       }
 
       let facts: string[];
@@ -349,7 +408,7 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
           return reply.code(400).send({ error: `chartData is invalid: ${validated.errors.join('; ')}` });
         }
         facts = buildFreeformFacts(validated.chartData);
-        systemInstruction = FREEFORM_SYSTEM_INSTRUCTION;
+        systemInstruction = mode === 'synthesis' ? SYNTHESIS_SYSTEM_INSTRUCTION : FREEFORM_SYSTEM_INSTRUCTION;
       }
 
       const config = loadTier2Config();
@@ -374,7 +433,10 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
         return reply.code(503).send({ error: 'Daily usage limit reached for this deployment. Try again tomorrow.' });
       }
 
-      const userContent = buildUserContent(facts, customPrompt, locale);
+      const userContent =
+        mode === 'synthesis'
+          ? buildSynthesisUserContent(facts, locale)
+          : buildUserContent(facts, customPrompt as string, locale);
 
       let result;
       try {
@@ -392,7 +454,68 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
         costCents,
       });
 
+      // Saving for later retrieval (#392) is additive, not this route's primary job — a missing
+      // encryption key disables it the same way it disables the sync relay (never write
+      // unencrypted), but unlike the relay that must not fail the generation that already
+      // succeeded; the reader just won't be able to reopen this one later.
+      const resultsKey = loadEncryptionKey();
+      if (resultsKey) {
+        saveInterpretationResult(db, { userId, mode, locale, sections: result.sections }, resultsKey);
+      }
+
       return reply.send({ sections: result.sections });
+    },
+  );
+
+  // Lists this user's own past generations (metadata only — mode/locale/when, never the text
+  // itself, so this works even when ASTRAYA_ENCRYPTION_KEY has since been removed or rotated).
+  app.get(
+    '/api/interpretation/results',
+    { preHandler: requireUser(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const userId = authenticatedUserId(request);
+      return reply.send({ results: listInterpretationResults(db, userId) });
+    },
+  );
+
+  // Re-opens one of this user's own past generations without calling the model again.
+  app.get<{ Params: { id: string } }>(
+    '/api/interpretation/results/:id',
+    { preHandler: requireUser(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const userId = authenticatedUserId(request);
+      const key = loadEncryptionKey();
+      if (!key) {
+        return reply.code(503).send({ error: 'Saved interpretations are not available on this server.' });
+      }
+      const found = getInterpretationResult(db, userId, request.params.id, key);
+      if (!found) return reply.code(404).send({ error: 'No saved interpretation with that id.' });
+      return reply.send(found);
+    },
+  );
+
+  // Admin-only (#382): the two daily caps above already read interpretation_usage before every
+  // call, but nothing before this let anyone — admin or otherwise — actually look at it. All-time
+  // per-user totals plus each user's own last-24h spend (to compare against the per-user cap) and
+  // the two configured cap values themselves, so an admin can see how close an account or this
+  // deployment is to being throttled, not just that it happened after the fact in a 503.
+  app.get(
+    '/api/admin/interpretation-usage',
+    { preHandler: requireAdmin(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (_request, reply) => {
+      const costCentsLast24hByUser = costCentsSinceByUser(db);
+      const users = usageByUser(db).map((user) => ({
+        ...user,
+        costCentsLast24h: costCentsLast24hByUser.get(user.userId) ?? 0,
+      }));
+      return reply.send({
+        users,
+        totalCostCentsLast24h: totalCostCentsSince(db),
+        caps: {
+          userDailyCapCents: envCapCents('ASTRAYA_INTERPRETATION_USER_DAILY_CENTS', 50),
+          totalDailyCapCents: envCapCents('ASTRAYA_INTERPRETATION_TOTAL_DAILY_CENTS', 500),
+        },
+      });
     },
   );
 }
