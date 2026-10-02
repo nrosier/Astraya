@@ -46,11 +46,31 @@ export const ACG_BODY_KEYS = [
 /** The four angular house cusps astrocartography lines are drawn relative to — mirrors `schema.ts`'s `ACG_ANGLES`. */
 export const ACG_ANGLES = ['AC', 'DC', 'MC', 'IC'];
 
+// #395: meanNode/trueNode and meanLilith/osculatingLilith/interpolatedLilith are each multiple
+// calculation methods for one real point (the Moon's node, its apogee), not distinct bodies —
+// BodyDefinition.category is what distinguishes "several ways to compute the same point" from
+// "two different real bodies that happen to share a category" (e.g. two distinct asteroids).
+// Two variants of the same point are always near-conjunct by construction, so an "aspect-pair"/
+// "synastry-aspect" entry between them would carry no independent astrological meaning regardless
+// of how it's worded — scoped out of generation entirely, the same kind of scope decision #369
+// made for other categories, rather than left for the generator to write something hollow.
+const SAME_POINT_VARIANT_CATEGORIES = new Set(['node', 'lilith']);
+function isSamePointVariantPair(bodyAKey, bodyBKey) {
+  const a = BODIES.find((b) => b.key === bodyAKey);
+  const b = BODIES.find((b) => b.key === bodyBKey);
+  return (
+    a !== undefined && b !== undefined && a.category === b.category && SAME_POINT_VARIANT_CATEGORIES.has(a.category)
+  );
+}
+
 export function corePairs() {
   const keys = [...CORE_BODY_KEYS].sort();
   const pairs = [];
   for (let i = 0; i < keys.length; i += 1) {
-    for (let j = i + 1; j < keys.length; j += 1) pairs.push([keys[i], keys[j]]);
+    for (let j = i + 1; j < keys.length; j += 1) {
+      if (isSamePointVariantPair(keys[i], keys[j])) continue;
+      pairs.push([keys[i], keys[j]]);
+    }
   }
   return pairs;
 }
