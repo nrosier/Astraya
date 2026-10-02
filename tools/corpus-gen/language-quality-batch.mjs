@@ -121,7 +121,8 @@ if (useBatch && provider !== 'gemini') {
 const { generateStructured } = await import(provider === 'ollama' ? './lib/ollama.mjs' : './lib/gemini.mjs');
 // Deliberately not process.env.GEMINI_MODEL — see this file's own doc comment on why flash-lite
 // is pinned here specifically, independent of whatever other scripts have that env var set to.
-const model = provider === 'ollama' ? flag('model', process.env.OLLAMA_MODEL || 'gemma4') : flag('model', 'gemini-3.5-flash-lite');
+const model =
+  provider === 'ollama' ? flag('model', process.env.OLLAMA_MODEL || 'gemma4') : flag('model', 'gemini-3.5-flash-lite');
 const baseUrl = provider === 'ollama' ? process.env.OLLAMA_BASE_URL : process.env.GEMINI_BASE_URL;
 
 const corpusPath = join(root, 'src', 'interpretation', 'corpus', `${locale}.json`);
@@ -172,7 +173,10 @@ async function applyVerdict(entry, index, result) {
 
 if (useBatch) {
   const requests = candidates.map(({ entry, index }) => {
-    const { systemInstruction, userContent } = buildLanguageQualityPrompt({ entryText: entry.text, locale: entry.locale });
+    const { systemInstruction, userContent } = buildLanguageQualityPrompt({
+      entryText: entry.text,
+      locale: entry.locale,
+    });
     return buildBatchRequest({
       key: String(index), // corpus array index — unique per entry regardless of persona, unlike entry.key
       systemInstruction,
@@ -182,7 +186,9 @@ if (useBatch) {
     });
   });
 
-  console.log(`\n[${locale}] submitting ${String(requests.length)} request${requests.length === 1 ? '' : 's'} as one batch job...`);
+  console.log(
+    `\n[${locale}] submitting ${String(requests.length)} request${requests.length === 1 ? '' : 's'} as one batch job...`,
+  );
   const submitted = await submitBatch({
     apiKey: process.env.GEMINI_API_KEY,
     baseUrl,
@@ -224,7 +230,10 @@ if (useBatch) {
   }
 } else {
   await withConcurrency(candidates, concurrency, async ({ entry, index }) => {
-    const { systemInstruction, userContent } = buildLanguageQualityPrompt({ entryText: entry.text, locale: entry.locale });
+    const { systemInstruction, userContent } = buildLanguageQualityPrompt({
+      entryText: entry.text,
+      locale: entry.locale,
+    });
 
     try {
       const result = await generateStructured({

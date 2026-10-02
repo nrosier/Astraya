@@ -139,7 +139,9 @@ const costCents = estimateCostCentsForCall({
 });
 console.log(
   `\nUSAGE: ${String(usage?.promptTokenCount ?? 0)} input tokens, ${String((usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0))} output tokens — ` +
-    (costCents === undefined ? `cost unknown (no pricing on file for ${model})` : `est. cost: ${formatCents(costCents)}`),
+    (costCents === undefined
+      ? `cost unknown (no pricing on file for ${model})`
+      : `est. cost: ${formatCents(costCents)}`),
 );
 
 const draftEntry = {

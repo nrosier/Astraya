@@ -3,6 +3,7 @@
  * standard-tier cost estimation for every corpus-gen script that calls an external LLM provider.
  */
 import { describe, expect, it } from 'vitest';
+// prettier-ignore
 // @ts-expect-error -- plain .mjs, no type declarations; cast to known shapes below.
 import { estimateBatchCostCents as estimateBatchCostCentsUntyped, estimateStandardCostCents as estimateStandardCostCentsUntyped, estimateCostCentsForCall as estimateCostCentsForCallUntyped, formatCents as formatCentsUntyped } from '../tools/corpus-gen/lib/cost-estimate.mjs';
 

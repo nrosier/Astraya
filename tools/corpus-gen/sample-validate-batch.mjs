@@ -304,8 +304,12 @@ log(
     outputTokens: judgeUsageOut,
   });
   const costLine = (label, costCents, m) =>
-    costCents === undefined ? `${label}: cost unknown (no pricing on file for ${m})` : `${label}: ${formatCents(costCents)}`;
-  log(`est. cost — ${costLine('generator', generatorCostCents, model)}, ${costLine('judge', judgeCostCents, judgeModel)}`);
+    costCents === undefined
+      ? `${label}: cost unknown (no pricing on file for ${m})`
+      : `${label}: ${formatCents(costCents)}`;
+  log(
+    `est. cost — ${costLine('generator', generatorCostCents, model)}, ${costLine('judge', judgeCostCents, judgeModel)}`,
+  );
 }
 log();
 log('PROPOSED NEXT STEPS');

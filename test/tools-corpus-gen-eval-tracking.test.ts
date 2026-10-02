@@ -9,6 +9,7 @@ import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+// prettier-ignore
 // @ts-expect-error -- plain .mjs, no type declarations; cast to known shapes below.
 import { readTracking as readTrackingUntyped, writeTracking as writeTrackingUntyped, findTracking as findTrackingUntyped, upsertTracking as upsertTrackingUntyped, isEvaluationExhausted as isEvaluationExhaustedUntyped } from '../tools/corpus-gen/lib/eval-tracking.mjs';
 
