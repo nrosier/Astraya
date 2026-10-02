@@ -10,6 +10,8 @@ export type PersonTabKey =
   | 'chart'
   | 'report'
   | 'profections'
+  | 'progressions'
+  | 'solar-arc'
   | 'transit'
   | 'synastry'
   | 'composite'
@@ -30,6 +32,8 @@ export const PERSON_TABS: readonly PersonTab[] = [
   { key: 'chart', buildHref: (id) => `#/chart/${id}` },
   { key: 'report', buildHref: (id) => `#/report/${id}` },
   { key: 'profections', buildHref: (id) => `#/profections/${id}` },
+  { key: 'progressions', buildHref: (id) => `#/progressions/${id}` },
+  { key: 'solar-arc', buildHref: (id) => `#/solar-arc/${id}` },
   { key: 'transit', buildHref: (id) => `#/transit/${id}` },
   { key: 'synastry', buildHref: (id) => `#/synastry/${id}` },
   { key: 'composite', buildHref: (id) => `#/composite/${id}` },
@@ -62,7 +66,7 @@ export interface PersonTabFamily {
 // here once built, rather than becoming new top-level items.
 export const PERSON_TAB_FAMILIES: readonly PersonTabFamily[] = [
   { key: 'transits-forecast', members: ['transit', 'periodic-transit'] },
-  { key: 'progressions-directions', members: ['profections'] },
+  { key: 'progressions-directions', members: ['profections', 'progressions', 'solar-arc'] },
   { key: 'relationship-charts', members: ['synastry', 'composite'] },
   { key: 'chart-variants', members: ['harmonic'] },
 ];
@@ -80,6 +84,8 @@ export function activeTabKey(route: Route): PersonTabKey | null {
     case 'chart':
     case 'report':
     case 'profections':
+    case 'progressions':
+    case 'solar-arc':
     case 'transit':
     case 'synastry':
     case 'composite':

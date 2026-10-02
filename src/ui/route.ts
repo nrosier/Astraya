@@ -22,6 +22,14 @@ export type Route =
   // modifier on the chart route rather than a route of its own like every sibling here.
   | { readonly kind: 'report'; readonly personId: string }
   | { readonly kind: 'profections'; readonly personId: string }
+  // Secondary/tertiary/minor progression (#398) — the technique and, for secondary, the MC
+  // method are picked in-screen, same reasoning as harmonic's divisional-chart picker: they
+  // change far more often within one visit than worth sharing as a link.
+  | { readonly kind: 'progressions'; readonly personId: string }
+  // Solar arc directions (#398) — its own route rather than a 'progressions' sub-mode: the
+  // data shape (DirectedContact's exactJd) and table columns are different enough to warrant
+  // a separate screen, same reasoning that already split transit/periodic-transit apart.
+  | { readonly kind: 'solar-arc'; readonly personId: string }
   | { readonly kind: 'transit'; readonly personId: string }
   // The second person is picked from within the screen, not the URL (#172) — every other
   // multi-word route here names exactly one person, and a synastry pairing changes far more
@@ -52,6 +60,8 @@ const PERSON_PATH = /^#\/person\/(.+)$/;
 const CHART_PATH = /^#\/chart\/(.+)$/;
 const REPORT_PATH = /^#\/report\/(.+)$/;
 const PROFECTIONS_PATH = /^#\/profections\/(.+)$/;
+const PROGRESSIONS_PATH = /^#\/progressions\/(.+)$/;
+const SOLAR_ARC_PATH = /^#\/solar-arc\/(.+)$/;
 const TRANSIT_PATH = /^#\/transit\/(.+)$/;
 const SYNASTRY_PATH = /^#\/synastry\/(.+)$/;
 const COMPOSITE_PATH = /^#\/composite\/(.+)$/;
@@ -109,6 +119,12 @@ export function parseRoute(hash: string): Route {
 
   const profections = PROFECTIONS_PATH.exec(path);
   if (profections !== null && isPersonId(profections[1])) return { kind: 'profections', personId: profections[1] };
+
+  const progressions = PROGRESSIONS_PATH.exec(path);
+  if (progressions !== null && isPersonId(progressions[1])) return { kind: 'progressions', personId: progressions[1] };
+
+  const solarArc = SOLAR_ARC_PATH.exec(path);
+  if (solarArc !== null && isPersonId(solarArc[1])) return { kind: 'solar-arc', personId: solarArc[1] };
 
   const transit = TRANSIT_PATH.exec(path);
   if (transit !== null && isPersonId(transit[1])) return { kind: 'transit', personId: transit[1] };

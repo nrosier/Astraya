@@ -81,6 +81,28 @@ describe('parseRoute', () => {
     expect(parseRoute('#/profections/../about')).toEqual({ kind: 'home' });
   });
 
+  it('routes a progressions id through (#398)', () => {
+    expect(parseRoute(`#/progressions/${ID}`)).toEqual({ kind: 'progressions', personId: ID });
+    expect(parseRoute(`#/progressions/${ID}/`)).toEqual({ kind: 'progressions', personId: ID });
+    expect(parseRoute(`#/progressions/${ID}?x=1`)).toEqual({ kind: 'progressions', personId: ID });
+  });
+
+  it('sends a malformed progressions id home rather than to a blank screen', () => {
+    expect(parseRoute('#/progressions/')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/progressions/nope')).toEqual({ kind: 'home' });
+  });
+
+  it('routes a solar-arc id through (#398)', () => {
+    expect(parseRoute(`#/solar-arc/${ID}`)).toEqual({ kind: 'solar-arc', personId: ID });
+    expect(parseRoute(`#/solar-arc/${ID}/`)).toEqual({ kind: 'solar-arc', personId: ID });
+    expect(parseRoute(`#/solar-arc/${ID}?x=1`)).toEqual({ kind: 'solar-arc', personId: ID });
+  });
+
+  it('sends a malformed solar-arc id home rather than to a blank screen', () => {
+    expect(parseRoute('#/solar-arc/')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/solar-arc/nope')).toEqual({ kind: 'home' });
+  });
+
   it('routes a transit id through (#172)', () => {
     expect(parseRoute(`#/transit/${ID}`)).toEqual({ kind: 'transit', personId: ID });
     expect(parseRoute(`#/transit/${ID}/`)).toEqual({ kind: 'transit', personId: ID });

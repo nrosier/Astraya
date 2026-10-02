@@ -42,7 +42,9 @@ const HarmonicView = lazy(async () => ({ default: (await personScreens()).Harmon
 const PeriodicTransitView = lazy(async () => ({ default: (await personScreens()).PeriodicTransitView }));
 const PersonForm = lazy(async () => ({ default: (await personScreens()).PersonForm }));
 const ProfectionsView = lazy(async () => ({ default: (await personScreens()).ProfectionsView }));
+const ProgressionsView = lazy(async () => ({ default: (await personScreens()).ProgressionsView }));
 const ReportScreen = lazy(async () => ({ default: (await personScreens()).ReportScreen }));
+const SolarArcView = lazy(async () => ({ default: (await personScreens()).SolarArcView }));
 const SynastryView = lazy(async () => ({ default: (await personScreens()).SynastryView }));
 const TransitView = lazy(async () => ({ default: (await personScreens()).TransitView }));
 const AdminPanel = lazy(async () => ({ default: (await import('./AdminPanel.js')).AdminPanel }));
@@ -299,6 +301,8 @@ function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.E
     parsed.kind === 'chart' ||
     parsed.kind === 'report' ||
     parsed.kind === 'profections' ||
+    parsed.kind === 'progressions' ||
+    parsed.kind === 'solar-arc' ||
     parsed.kind === 'transit' ||
     parsed.kind === 'synastry' ||
     parsed.kind === 'composite' ||
@@ -332,6 +336,8 @@ type PersonRoute = Extract<
       | 'chart'
       | 'report'
       | 'profections'
+      | 'progressions'
+      | 'solar-arc'
       | 'transit'
       | 'synastry'
       | 'composite'
@@ -347,6 +353,8 @@ function renderPersonView(parsed: PersonRoute): React.JSX.Element {
   if (parsed.kind === 'chart') return <ChartView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'report') return <ReportScreen key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'profections') return <ProfectionsView key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'progressions') return <ProgressionsView key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'solar-arc') return <SolarArcView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'transit') return <TransitView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'synastry') return <SynastryView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'composite') return <CompositeView key={parsed.personId} personId={parsed.personId} />;

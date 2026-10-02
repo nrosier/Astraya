@@ -1,6 +1,6 @@
 /**
  * Every screen that lives under the person tab strip, re-exported from one module so
- * `App.tsx` can reach all ten behind a single dynamic `import()` (#338).
+ * `App.tsx` can reach all of them behind a single dynamic `import()` (#338).
  *
  * A barrel rather than ten separate `import()` calls, deliberately: these screens share most
  * of `src/chart/**` and `src/domain/**` between them, so splitting them individually would
@@ -19,6 +19,8 @@ export { HarmonicView } from './HarmonicView.js';
 export { PeriodicTransitView } from './PeriodicTransitView.js';
 export { PersonForm } from './PersonForm.js';
 export { ProfectionsView } from './ProfectionsView.js';
+export { ProgressionsView } from './ProgressionsView.js';
 export { ReportScreen } from './ReportScreen.js';
+export { SolarArcView } from './SolarArcView.js';
 export { SynastryView } from './SynastryView.js';
 export { TransitView } from './TransitView.js';
