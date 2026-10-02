@@ -22,6 +22,7 @@ describe('activeTabKey', () => {
     expect(activeTabKey({ kind: 'synastry', personId: ID })).toBe('synastry');
     expect(activeTabKey({ kind: 'composite', personId: ID })).toBe('composite');
     expect(activeTabKey({ kind: 'harmonic', personId: ID })).toBe('harmonic');
+    expect(activeTabKey({ kind: 'draconic', personId: ID })).toBe('draconic');
     expect(activeTabKey({ kind: 'periodic-transit', personId: ID })).toBe('periodic-transit');
     expect(activeTabKey({ kind: 'astrocartography', personId: ID })).toBe('astrocartography');
   });
@@ -72,6 +73,7 @@ describe('PERSON_TABS', () => {
       synastry: `#/synastry/${ID}`,
       composite: `#/composite/${ID}`,
       harmonic: `#/harmonic/${ID}`,
+      draconic: `#/draconic/${ID}`,
       'periodic-transit': `#/periodic-transit/${ID}`,
       astrocartography: `#/astrocartography/${ID}`,
     });
@@ -109,6 +111,7 @@ describe('familyForTab (#398)', () => {
     expect(familyForTab('synastry')).toBe('relationship-charts');
     expect(familyForTab('composite')).toBe('relationship-charts');
     expect(familyForTab('harmonic')).toBe('chart-variants');
+    expect(familyForTab('draconic')).toBe('chart-variants');
   });
 
   it('returns undefined for the three fixed tabs and astrocartography', () => {

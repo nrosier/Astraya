@@ -53,6 +53,13 @@ const en = {
     `Demibirthday for ${year}: ${date}, Ascendant in ${sign}.`,
   demibirthdayContactsCaption: 'Demibirthday contacts to the natal chart',
 
+  planetaryReturnHeading: 'Other returns',
+  planetaryReturnHint:
+    'A return of any body to its own natal longitude, searching forward from the date above — the same mechanism as the solar/lunar returns, for the body you pick.',
+  planetaryReturnSentence: (body: string, date: string, sign: string) =>
+    `${body} return: ${date}, Ascendant in ${sign}.`,
+  planetaryReturnContactsCaption: 'Return contacts to the natal chart',
+
   exactLabel: 'Exact',
   forecastLabel: 'Forecast',
   bodyLabel: 'Body',
@@ -116,6 +123,13 @@ const nl: typeof en = {
   demibirthdaySentence: (year: string, date: string, sign: string) =>
     `Demibirthday voor ${year}: ${date}, Ascendant in ${sign}.`,
   demibirthdayContactsCaption: 'Contacten van de demibirthday met de natale horoscoop',
+
+  planetaryReturnHeading: 'Overige returns',
+  planetaryReturnHint:
+    'Een return van een hemellichaam naar zijn eigen natale lengtegraad, vooruitzoekend vanaf de datum hierboven — hetzelfde mechanisme als de solar/lunar return, voor het hemellichaam dat je kiest.',
+  planetaryReturnSentence: (body: string, date: string, sign: string) =>
+    `${body} return: ${date}, Ascendant in ${sign}.`,
+  planetaryReturnContactsCaption: 'Contacten van de return met de natale horoscoop',
 
   exactLabel: 'Exact',
   forecastLabel: 'Vooruitzicht',

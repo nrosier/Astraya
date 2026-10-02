@@ -16,6 +16,7 @@ export type PersonTabKey =
   | 'synastry'
   | 'composite'
   | 'harmonic'
+  | 'draconic'
   | 'periodic-transit'
   | 'astrocartography';
 
@@ -38,6 +39,7 @@ export const PERSON_TABS: readonly PersonTab[] = [
   { key: 'synastry', buildHref: (id) => `#/synastry/${id}` },
   { key: 'composite', buildHref: (id) => `#/composite/${id}` },
   { key: 'harmonic', buildHref: (id) => `#/harmonic/${id}` },
+  { key: 'draconic', buildHref: (id) => `#/draconic/${id}` },
   { key: 'periodic-transit', buildHref: (id) => `#/periodic-transit/${id}` },
   { key: 'astrocartography', buildHref: (id) => `#/astrocartography/${id}` },
 ];
@@ -61,14 +63,14 @@ export interface PersonTabFamily {
   readonly members: readonly PersonTabKey[];
 }
 
-// Order within a family is the order subtabs render in. Future techniques (planetary return,
-// secondary/minor progression, solar arc directions, draconic) slot in as additional members
-// here once built, rather than becoming new top-level items.
+// Order within a family is the order subtabs render in. A planetary-return picker still slots
+// into the Transits & Forecast family once built, as a section inside the existing
+// periodic-transit screen rather than a new member here.
 export const PERSON_TAB_FAMILIES: readonly PersonTabFamily[] = [
   { key: 'transits-forecast', members: ['transit', 'periodic-transit'] },
   { key: 'progressions-directions', members: ['profections', 'progressions', 'solar-arc'] },
   { key: 'relationship-charts', members: ['synastry', 'composite'] },
-  { key: 'chart-variants', members: ['harmonic'] },
+  { key: 'chart-variants', members: ['harmonic', 'draconic'] },
 ];
 
 /** Which family (if any) a tab belongs to — `undefined` for the three fixed tabs and `astrocartography`. */
@@ -90,6 +92,7 @@ export function activeTabKey(route: Route): PersonTabKey | null {
     case 'synastry':
     case 'composite':
     case 'harmonic':
+    case 'draconic':
     case 'periodic-transit':
     case 'astrocartography':
       return route.kind;

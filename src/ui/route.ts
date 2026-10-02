@@ -41,6 +41,9 @@ export type Route =
   // reasoning as composite: it changes far more often within one visit than it's worth
   // sharing as a link, and the screen's default (natal, n=1) is always a valid landing.
   | { readonly kind: 'harmonic'; readonly personId: string }
+  // Draconic chart (#398). No in-screen parameter at all: the draconic zero-point is always
+  // the natal North Node, so unlike harmonic there is nothing here to pick.
+  | { readonly kind: 'draconic'; readonly personId: string }
   // Daily/weekly/monthly/yearly transit forecast (#207). No second parameter to pick — the
   // screen's own "as of" date input plays the role a harmonic number or comparison person
   // plays elsewhere, and that's already excluded from the URL for the same reasons those are.
@@ -66,6 +69,7 @@ const TRANSIT_PATH = /^#\/transit\/(.+)$/;
 const SYNASTRY_PATH = /^#\/synastry\/(.+)$/;
 const COMPOSITE_PATH = /^#\/composite\/(.+)$/;
 const HARMONIC_PATH = /^#\/harmonic\/(.+)$/;
+const DRACONIC_PATH = /^#\/draconic\/(.+)$/;
 const PERIODIC_TRANSIT_PATH = /^#\/periodic-transit\/(.+)$/;
 const ASTROCARTOGRAPHY_PATH = /^#\/astrocartography\/(.+)$/;
 
@@ -137,6 +141,9 @@ export function parseRoute(hash: string): Route {
 
   const harmonic = HARMONIC_PATH.exec(path);
   if (harmonic !== null && isPersonId(harmonic[1])) return { kind: 'harmonic', personId: harmonic[1] };
+
+  const draconic = DRACONIC_PATH.exec(path);
+  if (draconic !== null && isPersonId(draconic[1])) return { kind: 'draconic', personId: draconic[1] };
 
   const periodicTransit = PERIODIC_TRANSIT_PATH.exec(path);
   if (periodicTransit !== null && isPersonId(periodicTransit[1])) {

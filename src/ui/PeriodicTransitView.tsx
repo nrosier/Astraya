@@ -23,7 +23,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import type { Aspect } from '../astrology/aspects.js';
-import { bodyById } from '../astrology/bodies.js';
+import { bodyByKey, bodyById } from '../astrology/bodies.js';
 import { SIGNS } from '../astrology/signs.js';
 import { deriveExportFilename } from '../domain/export-filename.js';
 import {
@@ -31,6 +31,7 @@ import {
   type PeriodicTransitForecast,
   type PeriodicTransitPeriods,
 } from '../domain/periodic-transit.js';
+import { computePlanetaryReturn, type PlanetaryReturnData } from '../domain/planetary-return.js';
 import { composeFallbackText } from '../interpretation/compose.js';
 import type { StationEvent } from '../astrology/stations.js';
 import type { TransitAspectEvent } from '../astrology/transit-events.js';
@@ -49,6 +50,21 @@ import type { CorpusPlacement } from '../interpretation/schema.js';
 type Load =
   | { readonly kind: 'loading' }
   | { readonly kind: 'ready'; readonly data: PeriodicTransitForecast }
+  | { readonly kind: 'error'; readonly message: string };
+
+/**
+ * The outer/social/personal planets a practitioner actually asks about for a return — unlike
+ * solar/lunar, which already have their own always-on tiers above. Independent `Load` and effect
+ * from the combined forecast above: this is the only tier driven by a user pick rather than
+ * always-on, and that pick has to drive its own fetch rather than the combined one.
+ */
+const RETURN_BODY_KEYS = ['jupiter', 'saturn', 'mars', 'venus', 'mercury'] as const;
+type ReturnBodyKey = (typeof RETURN_BODY_KEYS)[number];
+
+type PlanetaryReturnLoad =
+  | { readonly kind: 'idle' }
+  | { readonly kind: 'loading' }
+  | { readonly kind: 'ready'; readonly data: PlanetaryReturnData }
   | { readonly kind: 'error'; readonly message: string };
 
 /** UTC civil date and time, to the minute — every timestamp here is a computed UT moment, not a local one. */
@@ -221,6 +237,46 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
     };
   }, [momentKey(person?.moment), provider, targetDate]);
 
+  const [returnBodyKey, setReturnBodyKey] = useState<ReturnBodyKey>('jupiter');
+  const [returnLoad, setReturnLoad] = useState<PlanetaryReturnLoad>({ kind: 'idle' });
+
+  useEffect(() => {
+    if (person?.moment === undefined || provider === undefined || targetDate === undefined) {
+      setReturnLoad({ kind: 'idle' });
+      return undefined;
+    }
+    const moment = person.moment;
+    const body = bodyByKey(returnBodyKey);
+    if (body === undefined) {
+      setReturnLoad({ kind: 'idle' });
+      return undefined;
+    }
+    const effect = { cancelled: false };
+    setReturnLoad({ kind: 'loading' });
+
+    void (async () => {
+      try {
+        const searchFromJd = await provider.julianDayFromUtc(
+          targetDate.year,
+          targetDate.month,
+          targetDate.day,
+          12,
+          0,
+          0,
+        );
+        const data = await computePlanetaryReturn(moment, body.id, searchFromJd, provider);
+        if (!effect.cancelled) setReturnLoad({ kind: 'ready', data });
+      } catch (error) {
+        if (!effect.cancelled)
+          setReturnLoad({ kind: 'error', message: error instanceof Error ? error.message : String(error) });
+      }
+    })();
+
+    return () => {
+      effect.cancelled = true;
+    };
+  }, [momentKey(person?.moment), provider, targetDate, returnBodyKey]);
+
   if (person === undefined) {
     return <PersonNotFound />;
   }
@@ -258,6 +314,9 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
     data !== undefined ? Math.floor((data.yearly.demibirthday.houses.cusps[1] ?? 0) / 30) : 0;
   const progressedLunarReturnAscendantSign =
     data !== undefined ? Math.floor((data.monthly.progressedLunarReturn.houses.cusps[1] ?? 0) / 30) : 0;
+  const returnData = returnLoad.kind === 'ready' ? returnLoad.data : undefined;
+  const planetaryReturnAscendantSign =
+    returnData !== undefined ? Math.floor((returnData.houses.cusps[1] ?? 0) / 30) : 0;
 
   return (
     <main className="shell">
@@ -448,6 +507,55 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
                 getRowKey={(row) => row.key}
                 downloadFilename={deriveExportFilename(person.displayName, 'forecast-yearly-demibirthday', 'csv')}
               />
+            )}
+          </section>
+
+          <section>
+            <h2>{t.planetaryReturnHeading}</h2>
+            <p className="hint">{t.planetaryReturnHint}</p>
+            <p>
+              <label>
+                {t.bodyLabel}{' '}
+                <select
+                  value={returnBodyKey}
+                  onChange={(event) => {
+                    setReturnBodyKey(event.target.value as ReturnBodyKey);
+                  }}
+                >
+                  {RETURN_BODY_KEYS.map((key) => (
+                    <option key={key} value={key}>
+                      {bodyByKey(key)?.name ?? key}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </p>
+
+            {returnLoad.kind === 'loading' && <p className="status">{t.calculating}</p>}
+            {returnLoad.kind === 'error' && (
+              <p className="warning" role="alert">
+                {t.error(returnLoad.message)}
+              </p>
+            )}
+            {returnData !== undefined && (
+              <>
+                <p>
+                  {t.planetaryReturnSentence(
+                    bodyByKey(returnBodyKey)?.name ?? returnBodyKey,
+                    formatUtc(returnData.returnJd),
+                    SIGNS[planetaryReturnAscendantSign]?.name ?? t.signFallback(String(planetaryReturnAscendantSign)),
+                  )}
+                </p>
+                {returnData.contacts.length > 0 && (
+                  <SortableTable
+                    caption={t.planetaryReturnContactsCaption}
+                    columns={contactColumns(t)}
+                    rows={contactRows(returnData.contacts)}
+                    getRowKey={(row) => row.key}
+                    downloadFilename={deriveExportFilename(person.displayName, 'forecast-planetary-return', 'csv')}
+                  />
+                )}
+              </>
             )}
           </section>
         </>

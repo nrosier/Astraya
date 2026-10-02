@@ -80,6 +80,29 @@ test('changing the "as of" date recalculates the forecast', async ({ page }) => 
   expect(after).not.toBe(before);
 });
 
+test('the planetary-return picker computes a return for the chosen body (#398)', async ({ page }) => {
+  test.setTimeout(60_000);
+
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+
+  await page.getByRole('button', { name: 'Transits & Forecast', exact: true }).click();
+  await page.getByRole('link', { name: 'Forecast', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Other returns', level: 2 })).toBeVisible();
+
+  // Jupiter is the default selection, and already renders a return sentence with no picking.
+  await expect(page.getByText(/Jupiter return: /)).toBeVisible();
+
+  await page.getByLabel('Body').selectOption({ label: 'Saturn' });
+  await expect(page.getByText(/Saturn return: /)).toBeVisible();
+});
+
 test('a person with an unknown birth time is told a forecast needs one', async ({ page }) => {
   await gotoAndSettle(page, `${baseUrl}/#/people`);
   await createPerson(page, {

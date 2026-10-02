@@ -151,6 +151,18 @@ describe('parseRoute', () => {
     expect(parseRoute('#/harmonic/../about')).toEqual({ kind: 'home' });
   });
 
+  it('routes a draconic id through (#398)', () => {
+    expect(parseRoute(`#/draconic/${ID}`)).toEqual({ kind: 'draconic', personId: ID });
+    expect(parseRoute(`#/draconic/${ID}/`)).toEqual({ kind: 'draconic', personId: ID });
+    expect(parseRoute(`#/draconic/${ID}?x=1`)).toEqual({ kind: 'draconic', personId: ID });
+  });
+
+  it('sends a malformed draconic id home rather than to a blank screen', () => {
+    expect(parseRoute('#/draconic/')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/draconic/nope')).toEqual({ kind: 'home' });
+    expect(parseRoute('#/draconic/../about')).toEqual({ kind: 'home' });
+  });
+
   it('routes a periodic-transit id through (#207)', () => {
     expect(parseRoute(`#/periodic-transit/${ID}`)).toEqual({ kind: 'periodic-transit', personId: ID });
     expect(parseRoute(`#/periodic-transit/${ID}/`)).toEqual({ kind: 'periodic-transit', personId: ID });

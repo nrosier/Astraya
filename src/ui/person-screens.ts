@@ -15,6 +15,7 @@
 export { AstrocartographyView } from './AstrocartographyView.js';
 export { ChartView } from './ChartView.js';
 export { CompositeView } from './CompositeView.js';
+export { DraconicView } from './DraconicView.js';
 export { HarmonicView } from './HarmonicView.js';
 export { PeriodicTransitView } from './PeriodicTransitView.js';
 export { PersonForm } from './PersonForm.js';

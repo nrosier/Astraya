@@ -38,6 +38,7 @@ const personScreens = () => import('./person-screens.js');
 const AstrocartographyView = lazy(async () => ({ default: (await personScreens()).AstrocartographyView }));
 const ChartView = lazy(async () => ({ default: (await personScreens()).ChartView }));
 const CompositeView = lazy(async () => ({ default: (await personScreens()).CompositeView }));
+const DraconicView = lazy(async () => ({ default: (await personScreens()).DraconicView }));
 const HarmonicView = lazy(async () => ({ default: (await personScreens()).HarmonicView }));
 const PeriodicTransitView = lazy(async () => ({ default: (await personScreens()).PeriodicTransitView }));
 const PersonForm = lazy(async () => ({ default: (await personScreens()).PersonForm }));
@@ -307,6 +308,7 @@ function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.E
     parsed.kind === 'synastry' ||
     parsed.kind === 'composite' ||
     parsed.kind === 'harmonic' ||
+    parsed.kind === 'draconic' ||
     parsed.kind === 'periodic-transit' ||
     parsed.kind === 'astrocartography'
   ) {
@@ -342,6 +344,7 @@ type PersonRoute = Extract<
       | 'synastry'
       | 'composite'
       | 'harmonic'
+      | 'draconic'
       | 'periodic-transit'
       | 'astrocartography';
   }
@@ -359,6 +362,7 @@ function renderPersonView(parsed: PersonRoute): React.JSX.Element {
   if (parsed.kind === 'synastry') return <SynastryView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'composite') return <CompositeView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'harmonic') return <HarmonicView key={parsed.personId} personId={parsed.personId} />;
+  if (parsed.kind === 'draconic') return <DraconicView key={parsed.personId} personId={parsed.personId} />;
   if (parsed.kind === 'periodic-transit') {
     return <PeriodicTransitView key={parsed.personId} personId={parsed.personId} />;
   }
