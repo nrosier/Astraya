@@ -118,6 +118,8 @@ const en = {
   notCompleteChart: (name: string) =>
     `${name}’s birth record is not complete enough to calculate a chart yet. Fill in the missing fields on the`,
   personPageLink: 'person page',
+
+  isolationClear: 'Clear',
 };
 
 const nl: typeof en = {
@@ -232,6 +234,8 @@ const nl: typeof en = {
   notCompleteChart: (name: string) =>
     `Het geboorterecord van ${name} is niet volledig genoeg om een horoscoop te berekenen. Vul de ontbrekende velden in op de`,
   personPageLink: 'persoonspagina',
+
+  isolationClear: 'Wissen',
 };
 
 export const chartViewMessages = { en, nl };

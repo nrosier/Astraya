@@ -19,9 +19,15 @@
  */
 import type { AspectFamily } from '../astrology/aspects.js';
 import type { Aspect } from '../astrology/aspects.js';
+import { bodyById } from '../astrology/bodies.js';
 import type { BodyId, Degrees } from '../ephemeris/types.js';
 import type { WheelOrientationOptions } from './wheel.js';
 import { pointOnCircle, wheelAngle } from './wheel.js';
+
+/** `data-body` on a glyph is `BodyDefinition.key` (`glyph-layout.ts`) — resolve the same way here so a click handler can match an aspect line's endpoints against a glyph by the identical string. */
+function bodyKeyOf(body: BodyId): string {
+  return bodyById(body)?.key ?? String(body);
+}
 
 export interface AspectDisplayFilter {
   /** Only these aspect keys are shown; omit to show every aspect present. */
@@ -76,8 +82,10 @@ export function renderAspectWebSvg(
     const pointB = pointOnCircle(cx, cy, radius, angleB);
     const direction = aspect.applying ? 'applying' : 'separating';
     const className = `chart-aspect chart-aspect-${aspect.aspect.key} chart-aspect-${direction}`;
+    const bodyAKey = bodyKeyOf(aspect.bodyA);
+    const bodyBKey = bodyKeyOf(aspect.bodyB);
     parts.push(
-      `<line x1="${fmt(pointA.x)}" y1="${fmt(pointA.y)}" x2="${fmt(pointB.x)}" y2="${fmt(pointB.y)}" class="${className}" />`,
+      `<line x1="${fmt(pointA.x)}" y1="${fmt(pointA.y)}" x2="${fmt(pointB.x)}" y2="${fmt(pointB.y)}" class="${className}" data-aspect-key="${aspect.aspect.key}" data-aspect-body-a="${bodyAKey}" data-aspect-body-b="${bodyBKey}" />`,
     );
   }
   return parts.join('');
@@ -111,8 +119,10 @@ export function renderCrossRingAspectWebSvg(
     const pointB = pointOnCircle(cx, cy, b.radius, angleB);
     const direction = aspect.applying ? 'applying' : 'separating';
     const className = `chart-aspect chart-cross-aspect chart-aspect-${aspect.aspect.key} chart-aspect-${direction}`;
+    const bodyAKey = bodyKeyOf(aspect.bodyA);
+    const bodyBKey = bodyKeyOf(aspect.bodyB);
     parts.push(
-      `<line x1="${fmt(pointA.x)}" y1="${fmt(pointA.y)}" x2="${fmt(pointB.x)}" y2="${fmt(pointB.y)}" class="${className}" />`,
+      `<line x1="${fmt(pointA.x)}" y1="${fmt(pointA.y)}" x2="${fmt(pointB.x)}" y2="${fmt(pointB.y)}" class="${className}" data-aspect-key="${aspect.aspect.key}" data-aspect-body-a="${bodyAKey}" data-aspect-body-b="${bodyBKey}" />`,
     );
   }
   return parts.join('');

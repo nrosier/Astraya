@@ -51,16 +51,9 @@
   --radius: 0.625rem;
   --radius-sm: 0.375rem;
 
-  /* The page's own content column width — shared by `.shell`, `.person-shelf` and
-     `.sidebar-left` so the fixed left-edge controls and the page content never drift out
-     of sync whenever this gets tuned. */
+  /* The page's own content column width — shared by `.shell` and `.person-shelf` so they
+     never drift out of sync whenever this gets tuned. */
   --shell-max-width: 64rem;
-  /* `.sidebar-left` anchors at a flat `left: 0.75rem` (not centered), so its own
-     footprint — measured against its actual widest child, the sync badge — is a fixed
-     pixel width regardless of viewport. This is the floor `.shell`/`.person-shelf`'s own
-     left margin must never drop below, confirmed against that measurement with room to
-     spare, not a value added on top of ordinary centering. */
-  --sidebar-gutter: 8rem;
 }
 
 @media (prefers-color-scheme: light) {
@@ -131,41 +124,48 @@
 }
 
 /*
- * The fixed left edge, holding every global control (#137, #230): who is signed in,
- * sync status, the language choice and the theme toggle, all together — previously
- * split across both top corners, which made sign-in state and sync status say the same
- * thing twice in two separate places, then briefly a right-aligned top bar before moving
- * here. Fixed rather than in the flow, unlike `.accountpanel-signedin` below — these are
- * meant to be visible from anywhere, on every screen including the landing page, not just
- * where a signed-in device's data shows up.
+ * Language and theme sit together in a fixed top-right bar, side by side (#137) — the one
+ * pair of controls someone reaches for together ("read this in Dutch" and "make it dark"
+ * are both "change how the page looks", not "change who's using it"), visible from
+ * anywhere including the landing page.
  */
-.sidebar-left {
+.locale-bar {
   position: fixed;
   top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/*
+ * Sign-in and sync status sit together in a fixed bottom-left bar (#137, #230): sign-in/
+ * out is the thing that changes the sync badge's state, so the two have always stayed
+ * beside each other, just moved corners a few times (both top corners, briefly a single
+ * top bar, briefly a left-edge column) as the rest of the chrome around them changed. The
+ * ephemeris-loading/error status joins them here too — it is the same kind of "is
+ * something wrong with the app itself" signal sync status already is, so it reads as one
+ * group rather than a stray line elsewhere. Fixed rather than in the flow, unlike
+ * `.accountpanel-signedin` below — meant to be visible from anywhere, on every screen
+ * including the landing page, not just where a signed-in device's data shows up.
+ */
+.account-bar {
+  position: fixed;
+  bottom: 0.75rem;
   left: 0.75rem;
   z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.5rem;
-  /* A fixed element with both `left` *and* `right` set stretches to fill the gap between
-     them (confirmed by hand — it is not just shorthand for "shrink-wrap, positioned at
-     left") — tried that first to center-align this with `.shell`'s own edge the way the
-     old right-aligned top bar did, and the resulting invisible box, full `.shell`-width
-     wide, silently ate every click on the page content underneath it. Plain `left`
-     (shrink-wraps to content) plus this `pointer-events` pair is the fix: the column
-     itself never captures a click, only its actual pills do. */
-  pointer-events: none;
 }
 
-.sidebar-left > * {
-  pointer-events: auto;
-}
-
-/* Shared pill shape for every top-bar control (#367) — box only. Cursor/hover stays on
+/* Shared pill shape for every corner control (#367) — box only. Cursor/hover stays on
    each interactive selector below so the non-interactive `.accountpanel-demo` badge
    doesn't pick up pointer/hover affordances it shouldn't have. */
-.sidebar-pill {
+.corner-pill {
   display: flex;
   align-items: center;
   height: 2.25rem;
@@ -198,25 +198,25 @@
 
 /* The compact "Sign in" button that replaces `.accountpanel-popover` when signed out and
    collapsed — same shape as `.theme-toggle`'s neighbours, but wide enough for its label. */
-.sidebar-signin {
+.corner-signin {
   cursor: pointer;
 }
 
-.sidebar-signin:hover {
+.corner-signin:hover {
   background: var(--surface-hover);
 }
 
 /* The static "Demo — no sign-in or sync here" badge that replaces the sign-in
    button entirely in a `demo`-mode build (#73) — same pill shape as
-   `.sidebar-signin`, but not interactive: there's no server for it to act on. */
+   `.corner-signin`, but not interactive: there's no server for it to act on. */
 .accountpanel-demo {
   color: var(--muted, var(--fg));
   white-space: nowrap;
 }
 
 /* Always-visible confirmation of who is signed in (#137) — no click needed, unlike the
-   collapsed `.sidebar-signin` button it replaces once signed in. A layout wrapper only:
-   the sign-out and manage-users controls inside are each their own `.sidebar-pill`. */
+   collapsed `.corner-signin` button it replaces once signed in. A layout wrapper only:
+   the sign-out and manage-users controls inside are each their own `.corner-pill`. */
 .accountpanel-signedin {
   display: flex;
   align-items: center;
@@ -232,20 +232,22 @@
 
 .accountpanel-signedin .warning {
   position: absolute;
-  top: 2.5rem;
+  bottom: 2.5rem;
   left: 0;
   width: max-content;
   max-width: 16rem;
 }
 
-/* The sign-in form and the adoption prompt, both floating beneath their trigger rather
-   than in the page flow — `.sidebar-left` is fixed, so anything it contains that has more
+/* The sign-in form and the adoption prompt, both floating above their trigger rather
+   than in the page flow — `.account-bar` is fixed, so anything it contains that has more
    to say than a one-line badge needs its own box instead of pushing the page around.
-   Left-anchored (`left: 0`), not right, since the trigger now sits near the left edge
-   of the viewport (#230) — a right-anchored popover would run off-screen. */
+   Opens upward (`bottom: 2.5rem`), not downward, since the trigger sits near the bottom
+   edge of the viewport (#230) — a downward popover would run off the bottom of the
+   screen. Left-anchored (`left: 0`), not right, for the same reason: the trigger sits
+   near the left edge too. */
 .accountpanel-popover {
   position: absolute;
-  top: 2.5rem;
+  bottom: 2.5rem;
   left: 0;
   width: 18rem;
   padding: 1rem;
@@ -334,19 +336,21 @@
 }
 
 .syncbadge-label[aria-expanded='true']::after {
-  transform: rotate(90deg);
+  /* Points up, not down (`-90deg` not `90deg`): the popover it discloses opens upward
+     from this bottom-left badge, not downward. */
+  transform: rotate(-90deg);
 }
 
 .syncbadge-user {
   color: var(--muted);
 }
 
-/* Floats beneath the badge rather than in the page flow, same shape as
-   `.accountpanel-popover` — left-anchored since the badge sits near the left edge of
-   the viewport (#230). */
+/* Floats above the badge rather than in the page flow, same shape and same reasoning as
+   `.accountpanel-popover` — opens upward and left-anchored since the badge sits near the
+   bottom-left corner of the viewport (#230). */
 .syncbadge-popover {
   position: absolute;
-  top: 2.5rem;
+  bottom: 2.5rem;
   left: 0;
   width: 18rem;
   padding: 1rem;
@@ -431,15 +435,7 @@ body::before {
 
 .shell {
   max-width: var(--shell-max-width);
-  /* Not plain `margin: 0 auto`: that centers symmetrically, so on a viewport too narrow
-     for the ordinary centering gap to clear `.sidebar-left` on its own (including a
-     fully-uncentered one, gap zero), pure auto-centering would still happily overlap it.
-     `margin-left` floors at `--sidebar-gutter` instead of ever going below it;
-     `margin-right` keeps the ordinary centering gap, uncapped — on any viewport wide
-     enough that the gap already clears the sidebar on its own, this reads as normal,
-     roughly-centered `.shell`, same as before. */
-  margin-left: max(var(--sidebar-gutter), calc((100vw - var(--shell-max-width)) / 2));
-  margin-right: max(0rem, calc((100vw - var(--shell-max-width)) / 2));
+  margin: 0 auto;
   padding: 3.5rem 1.5rem 5rem;
 }
 
@@ -1165,30 +1161,22 @@ label.stacked textarea:focus-visible {
  * seam between them closed by a negative margin rather than painted over, so the active tab
  * reads as fused into the panel below it — the same illusion a browser's own tab strip, or
  * Notion's, uses. `overflow: hidden` clips the tab row's and content's own square corners to
- * the box's rounding. `.person-nav` itself supplies the top clearance every `.shell` needs to
- * clear the fixed `.sidebar-left`, moved here from the old borderless tab strip.
+ * the box's rounding.
+ *
+ * `PersonNav`/the active person view's own `<main class="shell">` renders inside
+ * `.person-shelf`. Both share `.shell`'s own `max-width`/`margin: 0 auto`, but that is not a
+ * double shift: once `.person-shelf` itself is capped and centered, its content box is
+ * already no wider than `--shell-max-width`, so the nested `.shell`'s own `max-width` is a
+ * no-op and its `margin: 0 auto` resolves to zero — it simply fills the width
+ * `.person-shelf` already reserved.
  */
 .person-shelf {
   max-width: var(--shell-max-width);
-  /* Same reasoning as `.shell`'s own doc comment just above — asymmetric on purpose. */
-  margin-top: 3.5rem;
-  margin-bottom: 5rem;
-  margin-left: max(var(--sidebar-gutter), calc((100vw - var(--shell-max-width)) / 2));
-  margin-right: max(0rem, calc((100vw - var(--shell-max-width)) / 2));
+  margin: 3.5rem auto 5rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   overflow: hidden;
-}
-
-/* `PersonNav`/the active person view's own `<main class="shell">` renders inside
-   `.person-shelf`, which has already done the shifting/width-capping above — applying
-   `.shell`'s own margin a second time here would double the shift. It just fills the
-   width `.person-shelf` already reserved instead. */
-.person-shelf .shell {
-  max-width: none;
-  margin-left: 0;
-  margin-right: 0;
 }
 
 .person-tabs {
@@ -2006,7 +1994,8 @@ label.stacked textarea:focus-visible {
   .data-table-actions,
   .report-controls,
   .pwastatus,
-  .sidebar-left,
+  .locale-bar,
+  .account-bar,
   .birth-place-search,
   .hint {
     display: none !important;

@@ -81,6 +81,16 @@ describe('renderAspectWebSvg (#42)', () => {
     expect(renderAspectWebSvg([], longitudeOf, 0, 300, 300, 200)).toBe('');
   });
 
+  it('carries data-aspect-key/data-aspect-body-a/-b for click-to-isolate (#400)', () => {
+    const aspects = [aspect('square', 1, 2, 0.5, true)];
+    const svg = renderAspectWebSvg(aspects, longitudeOf, 0, 300, 300, 200);
+    expect(svg).toContain('data-aspect-key="square"');
+    // bodyA=1/bodyB=2 happen to be real Swiss Ephemeris constants (Moon/Mercury) — bodyKeyOf
+    // resolves them to their string key, the same one glyph-layout.ts's data-body uses.
+    expect(svg).toContain('data-aspect-body-a="moon"');
+    expect(svg).toContain('data-aspect-body-b="mercury"');
+  });
+
   it("threads orientation/sweep options through to wheelAngle, matching renderWheelSvg's layer (#43)", () => {
     const aspects = [aspect('square', 1, 2, 0.5, true)];
     const defaultOrientation = renderAspectWebSvg(aspects, longitudeOf, 0, 300, 300, 200);
@@ -122,5 +132,13 @@ describe('renderCrossRingAspectWebSvg (#52)', () => {
 
   it('renders nothing for an empty aspect list', () => {
     expect(renderCrossRingAspectWebSvg([], resolveA, resolveB, 0, 300, 300)).toBe('');
+  });
+
+  it('carries data-aspect-key/data-aspect-body-a/-b for click-to-isolate (#400)', () => {
+    const aspects = [aspect('square', 1, 2, 0.5, true)];
+    const svg = renderCrossRingAspectWebSvg(aspects, resolveA, resolveB, 0, 300, 300);
+    expect(svg).toContain('data-aspect-key="square"');
+    expect(svg).toContain('data-aspect-body-a="moon"');
+    expect(svg).toContain('data-aspect-body-b="mercury"');
   });
 });

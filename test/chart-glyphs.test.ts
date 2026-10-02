@@ -199,4 +199,13 @@ describe('renderGlyph (#40)', () => {
       expect(svg).toContain(element);
     }
   });
+
+  it('appends extraAttrs verbatim after class when given, and omits them when not (#400)', () => {
+    const withAttrs = renderGlyph(sun, 50, 50, 40, 'chart-glyph-sun', 'data-body="sun"');
+    expect(withAttrs).toContain('class="chart-glyph-sun" data-body="sun">');
+
+    const withoutAttrs = renderGlyph(sun, 50, 50, 40, 'chart-glyph-sun');
+    expect(withoutAttrs).toContain('class="chart-glyph-sun">');
+    expect(withoutAttrs).not.toContain('data-body');
+  });
 });

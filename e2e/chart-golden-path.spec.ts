@@ -62,3 +62,59 @@ test('entering birth data renders the chart wheel and the SVG export downloads',
   const svg = Buffer.concat(chunks).toString('utf-8');
   expect(svg).toContain('<svg');
 });
+
+test('clicking a glyph on the wheel isolates it and opens a focused-info panel (#400)', async ({ page }) => {
+  test.setTimeout(60_000);
+
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+
+  await page.getByRole('link', { name: 'Natal chart', exact: true }).click();
+  await expect(page.locator('div.chart-wheel')).toBeVisible();
+
+  const sunGlyph = page.locator('[data-body="sun"]');
+  await expect(sunGlyph).toHaveCount(1);
+  await sunGlyph.click();
+
+  const panel = page.locator('.chart-isolation-panel');
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('Sun');
+  await expect(page.locator('.chart-wheel .chart-dimmed').first()).toBeVisible();
+
+  // Clicking the same glyph again toggles the isolation off.
+  await sunGlyph.click();
+  await expect(panel).toHaveCount(0);
+  await expect(page.locator('.chart-wheel .chart-dimmed')).toHaveCount(0);
+});
+
+test('clicking an aspect line isolates just its two endpoint bodies (#400)', async ({ page }) => {
+  test.setTimeout(60_000);
+
+  await gotoAndSettle(page, `${baseUrl}/#/people`);
+  await createPerson(page, {
+    name: 'Ada Lovelace',
+    date: '1815-12-10',
+    time: '07:45:00',
+    latitude: '51.5072',
+    longitude: '-0.1276',
+  });
+
+  await page.getByRole('link', { name: 'Natal chart', exact: true }).click();
+  await expect(page.locator('div.chart-wheel')).toBeVisible();
+
+  const line = page.locator('[data-aspect-body-a]').first();
+  await line.click({ force: true });
+
+  const panel = page.locator('.chart-isolation-panel');
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('Orb');
+
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect(panel).toHaveCount(0);
+});

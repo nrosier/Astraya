@@ -152,6 +152,12 @@ describe('renderGlyphRingSvg (#41)', () => {
     expect(svg).toContain('<g transform="translate(');
   });
 
+  it('carries data-body for click-to-isolate (#400)', () => {
+    const positions = [{ key: 'sun', longitude: 10 }];
+    const svg = renderGlyphRingSvg(positions, 0, 300, 300, 250, 280);
+    expect(svg).toContain('data-body="sun"');
+  });
+
   it("threads orientation/sweep options through to wheelAngle, matching renderWheelSvg's layer (#43)", () => {
     const positions = [{ key: 'sun', longitude: 10 }];
     const defaultOrientation = renderGlyphRingSvg(positions, 0, 300, 300, 250, 280);

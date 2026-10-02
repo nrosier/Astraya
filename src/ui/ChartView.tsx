@@ -26,7 +26,7 @@
  * pattern is small enough to inline here rather than factor into its own
  * component for a single caller.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   almutenOfAscendant,
   angleRows,
@@ -82,7 +82,7 @@ import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
-import type { EphemerisProvider } from '../ephemeris/types.js';
+import type { BodyId, EphemerisProvider } from '../ephemeris/types.js';
 import type { Locale } from '../interpretation/schema.js';
 import type { BirthMomentInput } from '../time/types.js';
 
@@ -496,6 +496,85 @@ function pngSizes(t: typeof chartViewMessages.en): readonly { readonly label: st
   ];
 }
 
+function bodyKeyOf(body: BodyId): string {
+  return bodyById(body)?.key ?? String(body);
+}
+
+function pairKeyOf(a: string, b: string): string {
+  return [a, b].sort().join('|');
+}
+
+/**
+ * Click-to-isolate (#400): what's currently clicked on the wheel, and everything derived from
+ * it — which body/aspect-pair keys should stay at full opacity, plus the focused-info content.
+ * A mouse/touch-only enhancement layered on an already-`aria-hidden` wheel (see the wheel div's
+ * own doc comment) — not a keyboard-accessible widget, since the data tables already are the
+ * accessible path to every value this exposes.
+ */
+interface WheelIsolation {
+  readonly bodies: ReadonlySet<string>;
+  readonly pairs: ReadonlySet<string>;
+  readonly heading: string;
+  readonly positionRow?: PositionRow | undefined;
+  readonly relatedAspects: readonly AspectRow[];
+  readonly aspectRow?: AspectRow | undefined;
+}
+
+/** `isolatedKey` is `body:<bodyKey>` or `aspect:<bodyKeyA>|<bodyKeyB>` (sorted) — see `handleWheelClick`. */
+function resolveWheelIsolation(
+  isolatedKey: string,
+  data: ChartData,
+  pointVisibility: PointVisibilityOptions,
+  housesRenderable: boolean,
+  locale: Locale,
+): WheelIsolation | undefined {
+  const colonIndex = isolatedKey.indexOf(':');
+  if (colonIndex === -1) return undefined;
+  const kind = isolatedKey.slice(0, colonIndex);
+  const value = isolatedKey.slice(colonIndex + 1);
+  const allPositions = positionRows(data, pointVisibility, housesRenderable);
+  const allAspects = aspectRows(data);
+
+  if (kind === 'body') {
+    const bodies = new Set<string>([value]);
+    const pairs = new Set<string>();
+    for (const aspect of data.aspects) {
+      const a = bodyKeyOf(aspect.bodyA);
+      const b = bodyKeyOf(aspect.bodyB);
+      if (a !== value && b !== value) continue;
+      bodies.add(a);
+      bodies.add(b);
+      pairs.add(pairKeyOf(a, b));
+    }
+    const positionRow = allPositions.find((row) => row.bodyKey === value);
+    const relatedAspects = allAspects.filter((row) => row.bodyAKey === value || row.bodyBKey === value);
+    return {
+      bodies,
+      pairs,
+      heading: positionRow !== undefined ? bodyDisplayName(positionRow.bodyKey, locale) : value,
+      positionRow,
+      relatedAspects,
+    };
+  }
+
+  const [bodyAKey, bodyBKey] = value.split('|');
+  if (bodyAKey === undefined || bodyBKey === undefined) return undefined;
+  const aspectRow = allAspects.find(
+    (row) =>
+      (row.bodyAKey === bodyAKey && row.bodyBKey === bodyBKey) ||
+      (row.bodyAKey === bodyBKey && row.bodyBKey === bodyAKey),
+  );
+  const bodyAName = aspectRow !== undefined ? bodyDisplayName(aspectRow.bodyAKey, locale) : bodyAKey;
+  const bodyBName = aspectRow !== undefined ? bodyDisplayName(aspectRow.bodyBKey, locale) : bodyBKey;
+  return {
+    bodies: new Set([bodyAKey, bodyBKey]),
+    pairs: new Set([pairKeyOf(bodyAKey, bodyBKey)]),
+    heading: `${bodyAName} – ${bodyBName}`,
+    relatedAspects: [],
+    aspectRow,
+  };
+}
+
 /**
  * Copies a #65 share link for one birth moment to the clipboard — the chart itself is
  * always recomputed from `moment` on the recipient's end, so this is the entire payload;
@@ -622,6 +701,58 @@ export function ChartDataView({
     );
   }, [load, housesRenderable, displayName, metaLines, extendedSettings, t]);
 
+  // Click-to-isolate (#400). `wheelRef` is the delegation point: the wheel's markup is a raw
+  // injected string, not JSX, so individual glyphs/aspect lines can't carry their own `onClick`.
+  const wheelRef = useRef<HTMLDivElement>(null);
+  const [isolatedKey, setIsolatedKey] = useState<string | undefined>(undefined);
+
+  // A new sheet (redraw, person change, settings change) may no longer contain the previously
+  // clicked element at all — clear rather than risk pointing at something that no longer exists.
+  useEffect(() => {
+    setIsolatedKey(undefined);
+  }, [sheet]);
+
+  const isolation = useMemo(() => {
+    if (isolatedKey === undefined || load.kind !== 'ready') return undefined;
+    return resolveWheelIsolation(isolatedKey, load.data, pointVisibility, housesRenderable, locale);
+  }, [isolatedKey, load, pointVisibility, housesRenderable, locale]);
+
+  // Applies the dim/highlight split directly to the injected DOM (the only option: these
+  // elements are raw HTML, not React-rendered, so no amount of state can re-render their own
+  // classes). `g.chart-dimmed`/`line.chart-dimmed` in app.css outrank the aspect-family color
+  // rules by specificity (element + class beats class alone) regardless of source order.
+  useEffect(() => {
+    const root = wheelRef.current;
+    if (root === null) return;
+    const glyphs = root.querySelectorAll<SVGGElement>('[data-body]');
+    const lines = root.querySelectorAll<SVGLineElement>('[data-aspect-body-a]');
+    for (const glyph of glyphs) {
+      const key = glyph.getAttribute('data-body') ?? '';
+      glyph.classList.toggle('chart-dimmed', isolation !== undefined && !isolation.bodies.has(key));
+    }
+    for (const line of lines) {
+      const a = line.getAttribute('data-aspect-body-a') ?? '';
+      const b = line.getAttribute('data-aspect-body-b') ?? '';
+      const dim = isolation !== undefined && !isolation.pairs.has(pairKeyOf(a, b));
+      line.classList.toggle('chart-dimmed', dim);
+    }
+  }, [isolation, sheet]);
+
+  const handleWheelClick = (event: React.MouseEvent<HTMLDivElement>): void => {
+    const target = event.target as Element;
+    const bodyEl = target.closest('[data-body]');
+    const aspectEl = bodyEl === null ? target.closest('[data-aspect-body-a]') : null;
+    let nextKey: string | undefined;
+    if (bodyEl !== null) {
+      nextKey = `body:${bodyEl.getAttribute('data-body') ?? ''}`;
+    } else if (aspectEl !== null) {
+      const a = aspectEl.getAttribute('data-aspect-body-a') ?? '';
+      const b = aspectEl.getAttribute('data-aspect-body-b') ?? '';
+      nextKey = `aspect:${pairKeyOf(a, b)}`;
+    }
+    setIsolatedKey((current) => (current === nextKey ? undefined : nextKey));
+  };
+
   useEffect(() => {
     if (!printAll) return undefined;
     // document.title seeds the filename most browsers' print-to-PDF dialogs suggest, so a
@@ -724,18 +855,67 @@ export function ChartDataView({
           {sheet !== undefined && (
             <>
               <div
+                ref={wheelRef}
                 className="chart-wheel"
                 // Hidden from assistive tech rather than given an aria-label (#69): a chart
                 // wheel packs dozens of positions/aspects into overlapping glyphs, and no short
                 // label does that justice. The data tables right below are the actual accessible
                 // equivalent — they carry every value the wheel draws, as text a screen reader
-                // can read directly.
+                // can read directly. Click-to-isolate (#400) stays a mouse/touch-only
+                // enhancement layered on top of that decision, not a reason to revisit it: the
+                // tables remain the one accessible path to every value the wheel draws, clicked
+                // or not.
                 aria-hidden="true"
                 // The wheel is generated entirely by this app from data it just computed — never
                 // user-supplied markup — so injecting it is the same trust boundary as any other
                 // value this component renders, just carried as a string instead of JSX.
                 dangerouslySetInnerHTML={{ __html: sheet.markup }}
+                onClick={handleWheelClick}
               />
+
+              {isolation !== undefined && (
+                <div className="chart-isolation-panel">
+                  <div className="chart-isolation-head">
+                    <strong>{isolation.heading}</strong>
+                    <button
+                      type="button"
+                      className="quiet"
+                      onClick={() => {
+                        setIsolatedKey(undefined);
+                      }}
+                    >
+                      {t.isolationClear}
+                    </button>
+                  </div>
+                  {isolation.positionRow !== undefined && (
+                    <p>
+                      {signDisplayName(isolation.positionRow.sign, locale)} {isolation.positionRow.degree}°
+                      {String(isolation.positionRow.minute).padStart(2, '0')}'
+                      {isolation.positionRow.house !== undefined && ` — ${t.houseLabel} ${isolation.positionRow.house}`}
+                    </p>
+                  )}
+                  {isolation.relatedAspects.length > 0 && (
+                    <ul>
+                      {isolation.relatedAspects.map((row) => {
+                        const otherKey = row.bodyAKey === isolation.positionRow?.bodyKey ? row.bodyBKey : row.bodyAKey;
+                        const otherName = bodyDisplayName(otherKey, locale);
+                        return (
+                          <li key={`${row.bodyAKey}-${row.aspectKey}-${row.bodyBKey}`}>
+                            {aspectDisplayName(row.aspectKey, locale)} {otherName} ({row.orb.toFixed(2)}°,{' '}
+                            {row.applying ? t.applying : t.separating})
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  {isolation.aspectRow !== undefined && (
+                    <p>
+                      {aspectDisplayName(isolation.aspectRow.aspectKey, locale)} — {t.orbLabel}{' '}
+                      {isolation.aspectRow.orb.toFixed(2)}°, {isolation.aspectRow.applying ? t.applying : t.separating}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* AstroChart is a reference rendering kept alongside Astraya's own wheel so the
                   two can be compared during development (#231) — production users only ever

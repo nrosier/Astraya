@@ -177,7 +177,14 @@ export function renderGlyphRingSvg(
     }
 
     parts.push(
-      renderGlyph(definition, glyphPoint.x, glyphPoint.y, glyphSize, `chart-glyph chart-glyph-${placement.key}`),
+      renderGlyph(
+        definition,
+        glyphPoint.x,
+        glyphPoint.y,
+        glyphSize,
+        `chart-glyph chart-glyph-${placement.key}`,
+        `data-body="${placement.key}"`,
+      ),
     );
   }
   return parts.join('');

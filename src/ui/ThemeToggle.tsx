@@ -21,7 +21,7 @@ export function ThemeToggle(): React.JSX.Element {
   return (
     <button
       type="button"
-      className="sidebar-pill theme-toggle"
+      className="corner-pill theme-toggle"
       onClick={() => {
         setTheme((current) => {
           const next = nextTheme(current);

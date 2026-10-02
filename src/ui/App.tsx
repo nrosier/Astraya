@@ -213,25 +213,29 @@ function AppShell(): React.JSX.Element {
     // in, and that has to survive navigating between routes that each mount their own
     // `Stored` — otherwise every navigation would reopen the database and restart sync.
     //
-    // Account and sync status are global, not tied to any one screen (#137): both sit
-    // together down the left edge, on every route including the landing page, as the
-    // app's persistent "am I signed in, and where is my data" controls (#230) —
-    // previously split across both top corners, which left sign-in state and sync
-    // status saying the same thing twice in two places.
+    // Account/sync status and language/theme are both global, not tied to any one screen
+    // (#137), but answer two different questions — "who am I and where's my data" versus
+    // "how does the page look" — so each gets its own fixed corner rather than one shared
+    // column: sign-in/sync at bottom-left, language/theme at top-right, both on every
+    // route including the landing page.
     <SessionProvider>
-      {/* Ordered before `screen` so tab order matches the fixed left-edge position
-          these render at (#69) — a keyboard user reaches them first, same as
-          sighted users see them first. `AccountPanel` sits right next to
-          `SyncBadge` (#230): sign-in/out is the thing that changes the sync badge's
-          state, so it belongs beside it rather than further down the column. */}
-      <div className="sidebar-left">
-        {/* Only shown while loading or on failure (#234) — once ready, the ephemeris is an
-            implementation detail again. A silent failure here is precisely the bug class
-            this project is built to avoid, so it stays visible on every route, not just a
-            landing page that no longer exists. */}
+      {/* `AccountPanel` sits right next to `SyncBadge` (#230): sign-in/out is the thing
+          that changes the sync badge's state, so it belongs beside it. The ephemeris
+          status line joins them (#234) — once ready, the ephemeris is an implementation
+          detail again, but a silent failure here is precisely the bug class this project
+          is built to avoid, so it stays visible on every route, not just a landing page
+          that no longer exists. */}
+      <div className="account-bar">
         {engineStatus !== 'ready' && <p className="status">{engineStatus}</p>}
         <SyncBadge />
         <AccountPanel />
+      </div>
+      {/* Ordered before `screen` so tab order matches the fixed top-right position these
+          render at (#69) — a keyboard user reaches them before the page content, same as
+          sighted users see them first. Side by side, not stacked: changing language and
+          changing theme are both "change how the page looks", picked together more often
+          than either is picked alone. */}
+      <div className="locale-bar">
         <LanguageToggle />
         <ThemeToggle />
       </div>

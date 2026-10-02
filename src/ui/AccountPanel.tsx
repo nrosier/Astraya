@@ -1,5 +1,5 @@
 /**
- * Sign-in/out UI (#78, #109). Mounted globally in `sidebar-left`, right next to
+ * Sign-in/out UI (#78, #109). Mounted globally in `account-bar`, right next to
  * `SyncBadge` (#230) — signed-in or signed-out state is the answer to "am I signed
  * in", and that has to be visible without navigating anywhere.
  *
@@ -222,7 +222,7 @@ function SignInForm({
       <button
         ref={triggerRef}
         type="button"
-        className="sidebar-pill sidebar-signin"
+        className="corner-pill corner-signin"
         aria-expanded={false}
         aria-controls={SIGNIN_POPOVER_ID}
         onClick={() => {
@@ -295,7 +295,7 @@ function SignInForm({
 
 /**
  * No "signed in as" text here — `SyncBadge`'s "(logged in as: {username})" already
- * says that, right next to this in `sidebar-left` (#230).
+ * says that, right next to this in `account-bar` (#230).
  */
 function SignedIn({
   user,
@@ -328,13 +328,13 @@ function SignedIn({
 
   return (
     <div className="accountpanel-signedin">
-      <button className="sidebar-pill quiet" disabled={busy} onClick={doSignOut}>
+      <button className="corner-pill quiet" disabled={busy} onClick={doSignOut}>
         {t.signOutButton}
       </button>
       {user.isAdmin && (
         <button
           type="button"
-          className="sidebar-pill quiet"
+          className="corner-pill quiet"
           onClick={() => {
             window.location.hash = '#/admin';
           }}
@@ -421,14 +421,14 @@ export function AccountPanel(): React.JSX.Element {
     if (user !== undefined) setRemovableAccount(undefined);
   }, [user]);
 
-  // Positioned so the popover/warning below — absolutely positioned, `left`/`right: 0`
-  // — anchors to this trigger's own box rather than to `.sidebar-left`'s (#230: this now
-  // shares that fixed corner with `SyncBadge` and the toggles, so anchoring to the
-  // shared container would misplace the popover under whichever control sits first).
+  // Positioned so the popover/warning below — absolutely positioned, `left: 0`/
+  // `bottom: 2.5rem` — anchors to this trigger's own box rather than to `.account-bar`'s
+  // (#230: this shares that fixed corner with `SyncBadge`, so anchoring to the shared
+  // container would misplace the popover under whichever control sits first).
   return (
     <div className="accountpanel">
       {IS_DEMO_MODE ? (
-        <span className="sidebar-pill accountpanel-demo">{t.demoModeBadge}</span>
+        <span className="corner-pill accountpanel-demo">{t.demoModeBadge}</span>
       ) : adoption !== undefined ? (
         <AdoptionPanel recordCount={adoption.recordCount} resolveAdoption={resolveAdoption} />
       ) : user === undefined ? (

@@ -21,7 +21,7 @@ import type { EphemerisProvider } from '../ephemeris/types.js';
 export interface EphemerisProviderState {
   /** `undefined` until the worker has initialized, or if it never will. */
   readonly provider: EphemerisProvider | undefined;
-  /** Set once, on initialization failure. A silent ephemeris failure is precisely the bug class this project is built to avoid, so `App.tsx` surfaces this in its sidebar status on every route. */
+  /** Set once, on initialization failure. A silent ephemeris failure is precisely the bug class this project is built to avoid, so `App.tsx` surfaces this in its `account-bar` status on every route. */
   readonly error: string | undefined;
 }
 

@@ -376,18 +376,25 @@ export function aspectGlyph(key: string): GlyphDefinition | undefined {
  * Places a glyph's 0-100 box centered at `(cx, cy)`, scaled so the box's
  * full width/height equal `size` pixels, as a `<g>` in the caller's SVG.
  */
+/**
+ * `extraAttrs` is a pre-formatted string of additional attributes (e.g. `data-body="sun"`),
+ * appended verbatim after `class`. Optional and unused by most callers — #400's click-to-isolate
+ * targets are the only ones that pass it today.
+ */
 export function renderGlyph(
   definition: GlyphDefinition,
   cx: number,
   cy: number,
   size: number,
   className: string,
+  extraAttrs = '',
 ): string {
   const scale = size / 100;
   const tx = cx - size / 2;
   const ty = cy - size / 2;
+  const attrs = extraAttrs === '' ? '' : ` ${extraAttrs}`;
   return (
-    `<g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${scale.toFixed(4)})" class="${className}">` +
+    `<g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${scale.toFixed(4)})" class="${className}"${attrs}>` +
     `${definition.elements.join('')}</g>`
   );
 }
