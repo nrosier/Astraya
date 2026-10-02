@@ -8,6 +8,7 @@ import {
   angleRows,
   antisciaRows,
   aspectRows,
+  chartShapeOf,
   chartSheetInput,
   chartSheetMetaLines,
   chartWheelRing,
@@ -533,6 +534,44 @@ describe('fixedStarRows (#398)', () => {
       partOfSpirit: 0,
     };
     expect(fixedStarRows(data)).toEqual([]);
+  });
+});
+
+describe('chartShapeOf (#398)', () => {
+  it('identifies a bucket and its handle, the same fixture jonesShapeOf itself is tested against (#35)', () => {
+    const mercury = idOf('mercury');
+    const venus = idOf('venus');
+    const data: ChartData = {
+      positions: [
+        position(SUN, 0),
+        position(MOON, 50),
+        position(mercury, 100),
+        position(venus, 150),
+        position(MARS, 255),
+      ],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    const result = chartShapeOf(data);
+    expect(result?.shape).toBe('bucket');
+    expect(result?.handle).toBe(MARS);
+  });
+
+  it('is undefined with fewer than two visible positions, rather than letting jonesShapeOf throw', () => {
+    const data: ChartData = {
+      positions: [position(SUN, 10)],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(chartShapeOf(data)).toBeUndefined();
   });
 });
 

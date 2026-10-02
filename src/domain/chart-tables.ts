@@ -14,6 +14,7 @@ import { declinationContacts, isOutOfBounds } from '../astrology/declinations.js
 import { dispositorChain, isMutualReception } from '../astrology/dispositors.js';
 import { houseOf } from '../astrology/emphasis.js';
 import { fixedStarConjunctions } from '../astrology/fixed-stars.js';
+import { jonesShapeOf, type JonesShapeResult } from '../astrology/jones-shapes.js';
 import { midpointOf } from '../astrology/midpoints.js';
 import { degreesInSign, signOf } from '../astrology/signs.js';
 import { formatCoordinate } from '../ui/format.js';
@@ -495,6 +496,19 @@ export function fixedStarRows(
       orb: contact.orb,
     };
   });
+}
+
+/**
+ * The chart's overall Jones shape (#35, #398) — `undefined` only in the degenerate case of fewer
+ * than two visible positions, where `jonesShapeOf` would otherwise throw (`PointVisibilityOptions`
+ * can drop Chiron down to as few as nine bodies, still comfortably above two, but this guards the
+ * boundary rather than assuming it).
+ */
+export function chartShapeOf(data: ChartData, options: PointVisibilityOptions = {}): JonesShapeResult | undefined {
+  const visible = visiblePositions(data.positions, options);
+  if (visible.length < 2) return undefined;
+  const positions = new Map<BodyId, Degrees>(visible.map((position) => [position.body, position.longitude]));
+  return jonesShapeOf(positions);
 }
 
 export interface DerivedPointRow extends DegreeParts {

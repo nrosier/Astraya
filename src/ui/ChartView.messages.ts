@@ -55,6 +55,20 @@ const en = {
   fixedStarsCaption: 'Fixed stars',
 
   almutenOfAscendantSentence: (names: string) => `Almuten of the Ascendant: ${names}`,
+  // Jones' own seven pattern names (#35, #398) have no established Dutch astrological
+  // vocabulary, the same out-of-scope treatment house-system names and "Harmonic"/"Solar
+  // return" already get (#158's glossary) — kept untranslated in both locales.
+  jonesShapeLabels: {
+    bundle: 'Bundle',
+    bowl: 'Bowl',
+    locomotive: 'Locomotive',
+    bucket: 'Bucket',
+    seesaw: 'Seesaw',
+    splay: 'Splay',
+    splash: 'Splash',
+  },
+  chartShapeSentence: (shape: string, handle: string | undefined) =>
+    handle === undefined ? `Chart shape: ${shape}.` : `Chart shape: ${shape} (handle: ${handle}).`,
 
   sectPrefix: 'Sect:',
   dayChart: 'Day chart',
@@ -160,6 +174,17 @@ const nl: typeof en = {
   fixedStarsCaption: 'Vaste sterren',
 
   almutenOfAscendantSentence: (names: string) => `Almuten van de Ascendant: ${names}`,
+  jonesShapeLabels: {
+    bundle: 'Bundle',
+    bowl: 'Bowl',
+    locomotive: 'Locomotive',
+    bucket: 'Bucket',
+    seesaw: 'Seesaw',
+    splay: 'Splay',
+    splash: 'Splash',
+  },
+  chartShapeSentence: (shape: string, handle: string | undefined) =>
+    handle === undefined ? `Horoscoopvorm: ${shape}.` : `Horoscoopvorm: ${shape} (handvat: ${handle}).`,
 
   sectPrefix: 'Sect:',
   dayChart: 'Daghoroscoop',

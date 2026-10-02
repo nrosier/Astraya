@@ -32,6 +32,7 @@ import {
   angleRows,
   antisciaRows,
   aspectRows,
+  chartShapeOf,
   chartSheetInput,
   chartSheetMetaLines,
   declinationContactRows,
@@ -68,6 +69,7 @@ import {
 import { standaloneSvg } from '../chart/standalone-svg.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
 import { AstroChartWheel } from './AstroChartWheel.js';
+import { bodyById } from '../astrology/bodies.js';
 import { aspectDisplayName, bodyDisplayName, signDisplayName } from './astro-names.messages.js';
 import { chartViewMessages } from './ChartView.messages.js';
 import { svgToPngBlob } from './chart-raster.js';
@@ -344,16 +346,28 @@ function renderTableTab(
   locale: Locale,
 ): React.ReactNode {
   switch (tab) {
-    case 'positions':
+    case 'positions': {
+      const shape = chartShapeOf(data, pointVisibility);
       return (
-        <SortableTable
-          caption={t.positionsCaption}
-          columns={positionColumns(t, locale)}
-          rows={positionRows(data, pointVisibility, showHouses)}
-          getRowKey={(row) => row.bodyKey}
-          downloadFilename={deriveExportFilename(displayName, 'positions', 'csv')}
-        />
+        <>
+          {shape !== undefined && (
+            <p className="hint">
+              {t.chartShapeSentence(
+                t.jonesShapeLabels[shape.shape],
+                shape.handle === undefined ? undefined : bodyDisplayName(bodyById(shape.handle)?.key ?? '', locale),
+              )}
+            </p>
+          )}
+          <SortableTable
+            caption={t.positionsCaption}
+            columns={positionColumns(t, locale)}
+            rows={positionRows(data, pointVisibility, showHouses)}
+            getRowKey={(row) => row.bodyKey}
+            downloadFilename={deriveExportFilename(displayName, 'positions', 'csv')}
+          />
+        </>
       );
+    }
     case 'houses':
       return (
         <>
