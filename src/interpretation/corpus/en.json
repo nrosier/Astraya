@@ -31550,9 +31550,9 @@
   {
     "key": "aspect-pair:opposition:meanLilith:pluto",
     "locale": "en",
-    "text": "You hold a profound drive to reclaim absolute autonomy, operating from a place where hidden motives and structural controls must be thoroughly excavated before any genuine trust can take root. This stance meets its friction when external demands require submission to shared systems, triggering an intense instinct to dismantle power imbalances rather than yield to them. The underlying vulnerability surfaces as a total refusal to compromise, creating deep standoffs whenever shared authority forces a choice between surrender and isolation.",
+    "text": "You hold a profound drive to reclaim absolute autonomy, operating from a place where hidden motives and structural controls must be thoroughly excavated before any genuine trust can take root. This stance meets its friction when external demands require submission to shared systems, triggering an intense instinct to question power imbalances rather than yield to them. The underlying tension surfaces as a sharp resistance to compromise, creating periodic standoffs whenever shared authority forces a difficult choice between self-preservation and cooperation.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -31682,7 +31682,7 @@
   {
     "key": "aspect-pair:opposition:meanNode:pallas",
     "locale": "en",
-    "text": "Your path balances familiar tactical habits and pattern recognition against a future direction of collective relevance. You manage external boundaries by applying systematic problem-solving rather than raw impulse to shared situations. When external limits arise, you risk intellectualizing solutions to maintain predictable order over shifting collective currents.",
+    "text": "Your path balances familiar tactical habits and pattern recognition against a future direction of collective relevance. You address shared situations by applying systematic problem-solving rather than raw impulse. When group aims shift unpredictably, you risk intellectualizing solutions to maintain rigid order over developing currents.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -32198,7 +32198,7 @@
   {
     "key": "aspect-pair:opposition:osculatingLilith:uranus",
     "locale": "en",
-    "text": "You maintain an unyielding insistence on raw authenticity, prioritizing unfiltered self-expression over any shared social contract. This drive operates by pushing against collective expectations until rigid structures fracture under the pressure of uncompromised truth. When meeting external limits, the tension surfaces as an acute friction where ordinary cooperation feels like an intolerable demand to surrender your core sovereignty.",
+    "text": "You hold an absolute demand for personal sovereignty, placing unfiltered independence above conventional social agreements. This drive operates by testing collective rules until established boundaries clash directly with your need for radical autonomy. When meeting external limits, the tension surfaces as friction where predictable structures feel like an immediate threat to your freedom.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -33914,7 +33914,7 @@
   {
     "key": "synastry-aspect:conjunction:meanNode:mercury",
     "locale": "en",
-    "text": "Your usual way of processing and exchanging information naturally serves as a focal point that anchors another person's overall direction and development. This dynamic draws you into continuous dialogue where your mental habits directly support their broader life trajectory. Yet, tension arises when your focus on immediate details clashes with their orientation toward larger objectives, occasionally making shared conclusions difficult to sustain.",
+    "text": "Your overarching direction and development naturally intersect with another person's way of processing and exchanging information, drawing you into continuous dialogue. This dynamic anchors your broader life trajectory to their mental habits. Yet, tension arises when their focus on immediate details clashes with your orientation toward larger objectives, occasionally making shared conclusions difficult to sustain.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -38534,7 +38534,7 @@
   {
     "key": "synastry-aspect:semisquare:meanNode:pluto",
     "locale": "en",
-    "text": "Your long-term trajectory repeatedly brushes against intense psychological undertones, creating minor daily friction between your personal growth path and the other person's deep drive for profound mastery. This minor aspect nudges you toward uncompromising self-honesty, yet it regularly prompts a subtle standoff whenever your forward movement demands yielding to private depths. When external circumstances restrict your progress, you risk generating unnecessary friction simply to test the durability of the connection.",
+    "text": "Your long-term trajectory repeatedly brushes against intense psychological undertones, creating minor daily friction between your personal growth path and a deep drive for profound mastery. This aspect nudges you toward uncompromising self-honesty, yet it regularly prompts a subtle standoff whenever your forward movement demands yielding to private depths. When external circumstances restrict your progress, you risk generating unnecessary friction simply to avoid confronting what needs to change.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -41318,7 +41318,7 @@
   {
     "key": "synastry-aspect:sextile:osculatingLilith:uranus",
     "locale": "en",
-    "text": "An instinctive drive toward uncompromised autonomy meets a sharp spark for sudden disruption, opening unexpected room to bypass polite social contracts. This dynamic flows through mutual experiments with taboo spaces, letting you bypass orthodox expectations altogether. The recurring tension surfaces whenever fierce self-possession rubs against shared structures, requiring constant negotiation between radical personal freedom and collective predictability.",
+    "text": "An instinctive drive toward uncompromised autonomy meets a sharp spark for sudden disruption, opening unexpected room to bypass polite social contracts. This dynamic flows through mutual experiments with unconventional spaces, allowing both of you to effortlessly step outside orthodox expectations. The recurring tension surfaces whenever fierce self-possession encounters shared structures, prompting a shared curiosity in how radical personal freedom and collective predictability can coexist without friction.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -42170,9 +42170,9 @@
   {
     "key": "synastry-aspect:quintile:interpolatedLilith:meanLilith",
     "locale": "en",
-    "text": "This cross-chart connection builds a mutual fascination with what remains unsaid and untamed between you. You establish a dynamic where unspoken boundaries are continuously tested, prompting both of you to examine hidden impulses regarding autonomy. The underlying tension surfaces when shared circumstances demand conformity, sparking a quiet resistance to any expectation of yielding personal territory.",
+    "text": "This cross-chart connection builds an inventive spark around what remains untamed between you, turning hidden impulses into a collaborative creative experiment. You establish a dynamic where unspoken boundaries are playfully repurposed rather than merely tested, inviting fresh models of personal autonomy. The underlying tension surfaces when shared structures demand conventional conformity, sparking an experimental resistance to any expectation of yielding personal territory.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -43010,9 +43010,9 @@
   {
     "key": "synastry-aspect:quintile:meanLilith:venus",
     "locale": "en",
-    "text": "Your connection draws its pull from a quiet fascination with what lies outside conventional bounds, seeking out uncommon rapport through shared tastes that quietly challenge established expectations. This dynamic thrives when both of you respect distinct boundaries around personal autonomy, allowing affection to express itself without rigid demands for conformity. Friction surfaces whenever social expectations or conventional pressures attempt to standardize how you appreciate each other, leading to silent resistance against shared obligations.",
+    "text": "Your connection draws its pull from an inventive fascination with unconventional aesthetics, forging unique creative bridges through tastes that playfully reinvent ordinary expectations. This dynamic thrives when both of you maintain distinct boundaries around personal autonomy, allowing affection to express itself through surprising experiments rather than predictable scripts. Friction surfaces whenever external pressures attempt to standardize how you appreciate each other, leading to quiet withdrawal from shared obligations.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -43058,9 +43058,9 @@
   {
     "key": "synastry-aspect:quintile:meanNode:neptune",
     "locale": "en",
-    "text": "You share a subtle capacity to attune toward shared ideals and imaginative possibilities, bridging personal direction with collective sensitivities. This connection builds mutual inspiration through unspoken understanding rather than rigid definitions. When external boundaries or practical demands press in, the relationship risks drifting into idealized expectations that obscure concrete reality.",
+    "text": "You share a distinct capacity to inventively translate shared ideals and imaginative possibilities into focused mutual inspiration, bridging personal direction with collective sensitivities through unique creative solutions. This connection builds resonance through unspoken understanding rather than conventional frameworks. When external boundaries or practical demands press in, the dynamic risks drifting into idealized expectations that obscure concrete reality.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -43106,7 +43106,7 @@
   {
     "key": "synastry-aspect:quintile:meanNode:saturn",
     "locale": "en",
-    "text": "Your capacity for methodical structure offers a specialized creative anchor to your partner's long-term direction, turning deliberate accountability into a shared developmental craft. This connection functions through carefully honed boundaries that shape mutual commitments without stifling individuality. Tension emerges when the drive for precise control meets the organic need for spontaneous growth, creating friction between strict discipline and unfolding potential.",
+    "text": "Your developmental path naturally seeks out external structure and methodical limits, treating accountability as a primary vehicle for growth. This connection functions by measuring spontaneous impulses against established boundaries, grounding your trajectory in deliberate pacing. Tension emerges when the demand for strict discipline encounters your underlying need for unstructured evolution, creating friction between rigid oversight and forward momentum.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -43550,9 +43550,9 @@
   {
     "key": "synastry-aspect:quintile:osculatingLilith:pluto",
     "locale": "en",
-    "text": "An instinctive pull toward unvarnished truth shapes this dynamic, seeking deep psychological honesty by stripping away social pretense and unspoken taboos. This mechanism handles boundaries by probing hidden motives and demanding radical authenticity from shared spaces. Friction arises when the intensity of this inquiry meets resistance, creating a standoff between exposed vulnerabilities and the impulse to maintain control.",
+    "text": "An instinctive drive toward radical psychological honesty shapes this dynamic, forging unexpected breakthroughs by bringing hidden motives and unspoken truths to light. This mechanism handles boundaries through probing inquiry, building shared understanding by dismantling artificial constraints and social pretense. Friction arises when this relentless focus meets conventional caution, creating a standoff between exposed vulnerabilities and the impulse to protect established control.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -43598,9 +43598,9 @@
   {
     "key": "synastry-aspect:quintile:osculatingLilith:uranus",
     "locale": "en",
-    "text": "An instinctive pull toward uncompromised freedom shapes how you engage with shared boundaries, finding clarity through sudden departures from routine expectations. This dynamic thrives on mutual independence, yet creates friction whenever closeness demands predictability or structural conformity. The underlying dilemma surfaces as a tension between honoring an autonomous impulse and maintaining stable relational ground.",
+    "text": "An inventive impulse sparks original solutions precisely where established structures feel too restrictive, finding breakthroughs through sudden reframing. This dynamic thrives on unconventional experimentation, yet generates friction whenever collaborative frameworks demand predictable continuity. The underlying tension surfaces between designing a radically autonomous path and sustaining reliable ground with others.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -43790,7 +43790,7 @@
   {
     "key": "synastry-aspect:quintile:saturn:sun",
     "locale": "en",
-    "text": "Your deliberate focus provides a stabilizing anchor for another's spontaneous vitality, turning structured commitment into a reliable framework for shared goals. This connection handles responsibilities through careful pacing rather than rigid control, building quiet trust over time. Friction arises when cautious boundaries try to rein in unscripted self-expression, leading to hesitation around mutual independence.",
+    "text": "Your deliberate focus offers an inventive stabilization for another's spontaneous vitality, turning structured commitment into a resourceful framework for shared goals. This connection handles responsibilities through artful pacing rather than rigid control, building quiet trust over time. Friction arises when cautious boundaries try to shape unscripted self-expression, leading to tactical hesitation around mutual independence.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -45422,9 +45422,9 @@
   {
     "key": "synastry-aspect:square:meanNode:uranus",
     "locale": "en",
-    "text": "Your connection introduces sudden shifts that continually challenge established patterns and shared expectations. This dynamic thrives on unexpected pivots away from routine, using creative friction to keep mutual growth from stalling. When external structures demand predictable stability, the interaction tends to provoke abrupt detachment or reactive independence.",
+    "text": "Your connection introduces sudden shifts that continually disrupt established directions and alter your long-term developmental path. This dynamic thrives on unexpected pivots away from routine, using creative friction to keep personal growth from stalling on familiar paths. When external structures demand predictable stability, the interaction tends to provoke abrupt detachment or reactive independence against those limiting conditions.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -46634,7 +46634,7 @@
   {
     "key": "synastry-aspect:trine:chiron:sun",
     "locale": "en",
-    "text": "Your core sense of purpose finds steady validation in another person, turning personal vulnerability into a foundation for mutual understanding. This connection balances self-reliance with open exposure by letting each person be seen without demanding instant fixes for old wounds. Friction surfaces only when personal growth is treated as a puzzle to solve rather than a shared state to inhabit.",
+    "text": "Your capacity for deep personal healing offers steady validation to another person's core purpose, turning vulnerability into a foundation for mutual understanding. This connection balances self-reliance with open exposure by holding space without demanding instant fixes for old wounds. Friction surfaces only when growth is treated as a puzzle to solve rather than a shared state to inhabit.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -47030,9 +47030,9 @@
   {
     "key": "synastry-aspect:trine:juno:sun",
     "locale": "en",
-    "text": "Your core purpose and identity receive a steady, affirming recognition that honors your personal autonomy without demanding compromise. This connection establishes trust by respecting individual boundaries while encouraging mutual devotion. Friction arises when external pressures force a choice between personal freedom and shared commitment, prompting a withdrawal into self-protection.",
+    "text": "Your core purpose and identity receive a steady, affirming recognition that honors your personal autonomy without demanding compromise. This connection establishes trust by respecting individual boundaries while encouraging mutual devotion. Friction surfaces when the ease of mutual support masks unspoken expectations about how shared life decisions should be directed, prompting a sudden insistence on self-determination.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -49898,9 +49898,9 @@
   {
     "key": "synastry-aspect:sesquiquadrate:meanNode:neptune",
     "locale": "en",
-    "text": "You share a profound sensitivity that seeks deep spiritual connection and mutual idealism, striving to bridge distinct worldviews through shared imagination. This dynamic tests boundaries when unspoken assumptions clash with practical reality, creating friction between absolute devotion and ordinary expectations. The core tension arises when one person's ideals demand more than the relationship structure can safely hold, leading to subtle misunderstandings about responsibility.",
+    "text": "Your path toward personal growth continually encounters a pull toward boundless idealism, urging you to look past practical limits in pursuit of a shared vision. This dynamic tests boundaries when cherished assumptions meet ordinary reality, creating friction between absolute devotion and grounded expectations. The core tension arises when transcendent longings demand more than daily life can safely hold, leading to subtle misunderstandings about direction.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50822,9 +50822,9 @@
   {
     "key": "synastry-aspect:biquintile:ceres:interpolatedLilith",
     "locale": "en",
-    "text": "Your capacity for tending to others meets an untamed instinct for absolute autonomy, creating an unusual rhythm between care and detachment. You handle this by offering support that respects radical independence, allowing closeness without demands for conformity. When dependency or external expectations press too heavily, a sharp withdrawal occurs as a measure to protect personal sovereignty.",
+    "text": "Your approach to nurturing discovers inventive ways to honor fierce personal autonomy, blending support with absolute freedom of expression. You balance these impulses by devising custom frameworks for closeness that reject standard expectations. When external demands threaten that hard-won independence, a sudden pivot toward creative detachment restores your equilibrium without severing the bond entirely.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -50966,9 +50966,9 @@
   {
     "key": "synastry-aspect:biquintile:ceres:saturn",
     "locale": "en",
-    "text": "Your capacity to nurture meets a steady impulse for structure, creating an unusual rhythm between offering care and maintaining practical boundaries. You build security by balancing attentive support with clear expectations, though friction can arise when emotional needs clash with rigid structural demands. This dynamic invites you to reconcile warmth with restraint without sacrificing either quality.",
+    "text": "Your capacity to nurture finds an inventive working relationship with a steady impulse for structure, forging constructive ways to combine attentive support with practical boundaries. You build security by discovering unexpected pathways between emotional warmth and disciplined restraint, though tension can surface when creative methods of care clash with established protocols. This dynamic invites you to build sustainable frameworks for devotion without forcing a rigid choice between softness and order.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51338,7 +51338,7 @@
   {
     "key": "synastry-aspect:biquintile:interpolatedLilith:neptune",
     "locale": "en",
-    "text": "An unusual creative instinct draws you toward blending wild autonomy with vast idealism, finding uncommon ways to unite raw independence with shared imagination. This dynamic operates through subtle, inventive reframing rather than direct confrontation, bypassing rigid structures by dissolving expected categories altogether. The resulting tension surfaces as friction when abstract visions must reconcile with concrete demands for predictability.",
+    "text": "An unusual creative instinct draws you toward blending wild autonomy with vast idealism, finding uncommon ways to unite raw independence with shared imagination. This dynamic operates through subtle, inventive reframing rather than direct confrontation, bypassing rigid structures by dissolving expected categories altogether. The resulting tension surfaces as friction when abstract visions must reconcile with concrete realization.",
     "tier": "nuance",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -51374,9 +51374,9 @@
   {
     "key": "synastry-aspect:biquintile:interpolatedLilith:pluto",
     "locale": "en",
-    "text": "An instinctive pull draws you toward absolute authenticity, challenging shared conventions by quietly rejecting anything superficial or inherited. This dynamic operates through an acute perception of hidden motives, allowing you to test boundaries without demanding outward confrontation. Friction arises when unacknowledged power dynamics surface, creating a silent standoff between personal sovereignty and the need for mutual trust.",
+    "text": "An instinctive pull draws you toward absolute authenticity, forging unconventional solutions by reshaping hidden power dynamics with quiet precision. This dynamic operates through an acute perception of underlying motives, allowing you to bridge personal sovereignty and shared depth without demanding outward confrontation. Creative tension surfaces when rigid external controls meet your insistence on structural renewal, inviting a resourceful reimagining of trust.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51434,9 +51434,9 @@
   {
     "key": "synastry-aspect:biquintile:interpolatedLilith:venus",
     "locale": "en",
-    "text": "You draw toward connections that bypass conventional boundaries, seeking shared spaces where raw authenticity takes precedence over polished harmony. This dynamic bridges personal autonomy with relational intimacy by unsettling established expectations and inviting unconventional vulnerability. The shadow surfaces when unyielding independence clashes with the desire for steady comfort, creating friction around how much personal freedom you are willing to surrender for relational ease.",
+    "text": "You find inventive ways to blend personal autonomy with shared affection, seeking out connections that bypass conventional rules for relating. This dynamic crafts unconventional paths toward intimacy by treating independence and attachment as forces that can solve each other's puzzles. The shadow emerges when this constant search for novel integration creates unnecessary friction with simple, established comforts.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -51566,9 +51566,9 @@
   {
     "key": "synastry-aspect:biquintile:juno:pluto",
     "locale": "en",
-    "text": "Your connection seeks a profound level of commitment by stripping away superficial attachments to reveal what lies beneath shared trust. This dynamic handles vulnerability through an unspoken pressure to test boundaries and uncover hidden motives. The underlying tension surfaces when the depth required for security begins to feel like a demand for absolute control over each other's autonomy.",
+    "text": "Your connection seeks a profound level of commitment by inventively fusing shared devotion with an appetite for deep psychological truth. This dynamic handles vulnerability through clever adjustments that unearth hidden motives without demanding direct confrontation. The underlying tension surfaces when the creative effort required to maintain this intensity begins to strain against the need for straightforward independence.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52058,7 +52058,7 @@
   {
     "key": "synastry-aspect:biquintile:meanLilith:pallas",
     "locale": "en",
-    "text": "An unconventional approach to problem-solving meets a sharp, strategic intellect across this dynamic. You find a natural ease in challenging orthodox methods and proposing solutions that bypass standard rules. Friction arises when established intellectual frameworks demand standardization, leading to intellectual clashes over creative autonomy versus established systems.",
+    "text": "An unconventional approach to problem-solving meets a sharp, strategic intellect across this dynamic. You find a natural ease in challenging orthodox methods and proposing solutions that bypass standard rules. Tension surfaces when established intellectual frameworks demand standardization, highlighting a quiet divergence between creative autonomy and systematic procedure.",
     "tier": "nuance",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -52262,9 +52262,9 @@
   {
     "key": "synastry-aspect:biquintile:meanNode:uranus",
     "locale": "en",
-    "text": "Your connection sparks a mutual pull toward sudden perspective shifts, interrupting routine patterns with unexpected flashes of clarity. This dynamic creates space for unconventional growth by challenging shared assumptions about how life should unfold. Yet, this restless push for autonomy can generate sudden friction whenever either person seeks predictability or emotional safety.",
+    "text": "Your connection draws out inventive ways of solving old problems, finding unusual angles that turn rigid habits into creative experiments. This dynamic builds freedom through clever adaptations rather than outright rebellion, opening unexpected paths forward. Yet, this constant search for clever workarounds can create friction whenever either person relies on steady routines to feel secure.",
     "tier": "nuance",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52358,9 +52358,9 @@
   {
     "key": "synastry-aspect:biquintile:mercury:saturn",
     "locale": "en",
-    "text": "Your mental style approaches serious commitments with a methodical patience that seeks long-term stability through structured agreements. This perspective processes shared expectations by building reliable frameworks, though it can occasionally harden into rigid rigidity when external limitations or delays challenge mutual understanding.",
+    "text": "Your thinking style approaches structure through clever adjustments, finding inventive ways to weave discipline into shared agreements. This perspective processes expectations by tinkering with boundaries, though it can stall into over-calculated hesitation when external demands require more than tactical cooperation.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52466,9 +52466,9 @@
   {
     "key": "synastry-aspect:biquintile:moon:pluto",
     "locale": "en",
-    "text": "Your emotional world responds to shared depth with an instinctive urge to uncover what remains hidden, drawing you toward profound psychological honesty. This connection operates by quietly probing surface boundaries, seeking total transparency rather than easy comfort. When demands for control or emotional concealment arise, the dynamic can tip into suspicion, creating tension between the desire for absolute closeness and the need to protect personal autonomy.",
+    "text": "Your emotional world responds to shared depth by finding ingenious ways to bridge personal privacy with profound psychological honesty. This connection operates through subtle adjustments that integrate vulnerability with self-protection, shaping unusual solutions for sharing what is normally kept hidden. When outside demands for control or emotional concealment arise, the dynamic can tip into over-calculated watchfulness, creating tension between the drive for absolute transparency and the need to maintain clear boundaries.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52718,9 +52718,9 @@
   {
     "key": "synastry-aspect:biquintile:osculatingLilith:uranus",
     "locale": "en",
-    "text": "Your connection catalyzes sudden departures from established habits, prioritizing radical freedom above collective comfort. You manage shared boundaries by instantly dismantling routines that feel restrictive or predictable. This creates friction whenever unexpected changes disrupt mutual stability, forcing both of you to reconcile a mutual craving for autonomy with the practical need for steady ground.",
+    "text": "Your connection invents clever, unconventional workarounds when standard habits and shared routines grow too confining. You manage joint boundaries by redesigning structures on the fly, finding inventive angles that bypass traditional expectations. This introduces friction whenever sudden pivots challenge practical predictability, forcing both of you to balance the spark of creative independence against the steady requirement for reliable ground.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -52862,7 +52862,7 @@
   {
     "key": "synastry-aspect:biquintile:pluto:trueNode",
     "locale": "en",
-    "text": "You share an inventive pull toward profound mutual evolution, finding resourceful ways to weave shared direction with deep inner shifts. This dynamic handles boundaries by discovering unexpected angles for growth, testing whether both of you can tolerate radical exposure without losing steady ground. The underlying tension emerges when the pursuit of total renewal meets ordinary resistance, creating friction between unconventional transformation and the need for safe predictability.",
+    "text": "You share an inventive pull toward profound mutual evolution, finding resourceful ways to align shared direction with deep inner shifts. This dynamic handles boundaries by discovering unexpected angles for growth, exploring whether both of you can tolerate radical exposure without losing steady ground. The underlying pull emerges when the pursuit of total renewal meets ordinary resistance, inviting creative adaptation between unconventional transformation and the need for safe predictability.",
     "tier": "nuance",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -53018,7 +53018,7 @@
   {
     "key": "synastry-aspect:biquintile:trueNode:uranus",
     "locale": "en",
-    "text": "Your shared path develops through unusual creative breakthroughs that turn conventional perspectives upside down. You manage boundaries by seeking out clever alternatives to standard arrangements, maintaining distance from predictable patterns. The friction appears when innovative solutions clash with the practical need for steady continuity, creating a persistent push and pull between fresh perspectives and established habits.",
+    "text": "Your shared path develops through unusual creative breakthroughs that turn conventional perspectives upside down. You manage boundaries by forging clever alternatives to standard arrangements, keeping room open for unexpected possibilities. The friction appears when experimental solutions outpace existing frameworks, creating an ongoing puzzle in how to integrate fresh insight with everyday reality.",
     "tier": "nuance",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -53390,7 +53390,7 @@
   {
     "key": "synastry-aspect:quincunx:chiron:mercury",
     "locale": "en",
-    "text": "Your way of processing information meets an unresolved sensitivity in the other person, requiring constant adjustment in how concepts are delivered. This dynamic bridges contrasting mental frameworks by repeatedly testing where intellectual exchanges touch tender spots. The shadow dilemma surfaces as recurring friction between differing perspectives, turning basic information sharing into an exercise in awkward recalibration.",
+    "text": "Your own areas of persistent vulnerability intersect with how someone else processes and delivers information, requiring ongoing adjustment to bridge different mental frameworks. This dynamic bridges contrasting perspectives by continually touching tender intellectual spots. The shadow dilemma surfaces as recurring friction, turning basic conceptual exchange into an exercise in awkward recalibration.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -53654,7 +53654,7 @@
   {
     "key": "synastry-aspect:quincunx:interpolatedLilith:pluto",
     "locale": "en",
-    "text": "This configuration builds toward profound psychological honesty by constantly adjusting your instinct for raw autonomy against shared depths of control. It operates through subtle friction, requiring an ongoing recalibration between independent boundaries and intense mutual entanglements. The shadow surfaces as chronic suspicion, where ordinary cooperation stalls because every compromise feels like an unwanted surrender of personal sovereignty.",
+    "text": "This configuration builds toward profound psychological honesty by constantly adjusting your instinct for raw autonomy against shared depths of control. It operates through subtle friction, requiring an ongoing recalibration between independent boundaries and intense mutual entanglements. The shadow surfaces as an acute sensitivity to power dynamics, where ordinary cooperation stalls because every compromise feels like an excessive demand to yield personal sovereignty.",
     "tier": "core",
     "tags": ["improved-via-feedback-loop"],
     "provenance": {
@@ -56606,9 +56606,9 @@
   {
     "key": "synastry-aspect:opposition:meanLilith:osculatingLilith",
     "locale": "en",
-    "text": "This cross-chart connection exposes a mutual fascination with what society rejects or conceals, creating an immediate mirror for unacknowledged instincts. The dynamic tests personal boundaries by provoking deep questions about autonomy versus shared taboos. Friction arises when one person's refusal to conform challenges the other's need for security, turning hidden assumptions into points of unavoidable tension.",
+    "text": "This cross-chart connection exposes a mutual fascination with what society rejects or conceals, creating an immediate mirror for unacknowledged instincts. The dynamic tests personal boundaries by provoking deep questions about autonomy versus shared taboos. Friction arises when one person's refusal to conform challenges the other's standing definitions, turning hidden assumptions into points of unavoidable tension.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57530,9 +57530,9 @@
   {
     "key": "synastry-aspect:opposition:sun:trueNode",
     "locale": "en",
-    "text": "Your core purpose meets an external pull that challenges your established direction, creating an immediate sense of shared destiny coupled with friction over priorities. This dynamic manages boundaries by continually testing whether individual goals can accommodate a collective path. The shadow dilemma surfaces when external demands clash with personal autonomy, leading to an unproductive tug-of-war between personal will and shared trajectory.",
+    "text": "Your core purpose meets an external pull rooted in familiar patterns, creating an immediate sense of recognition coupled with friction over future direction. This dynamic manages boundaries by continually testing whether established habits can accommodate a shared path. The shadow dilemma surfaces when comfortable past choices clash with mutual evolution, leading to a standstill between personal will and collective momentum.",
     "tier": "core",
-    "tags": [],
+    "tags": ["improved-via-feedback-loop"],
     "provenance": {
       "source": "generated",
       "model": "gemini-3.5-flash-lite",
@@ -57698,7 +57698,7 @@
   {
     "key": "dignity-state:moon:ruler",
     "locale": "en",
-    "text": "Your emotional core operates from an unshakeable internal authority, anchoring its security in complete self-possession and deep familiarity. This instinct builds toward creating an uncompromising sanctuary where personal boundaries require no external validation or defense. When forced into unfamiliar dependencies or erratic environments, the resulting tension triggers an absolute withdrawal behind closed doors to preserve total autonomy.",
+    "text": "Your emotional life flows with an innate, self-sustaining ease that makes comfort feel immediately accessible and deeply familiar. This instinct builds toward creating an organic sanctuary where emotional needs are met without internal friction or the need to justify vulnerability. When unexpected external demands disrupt this quiet equilibrium, the resulting tension causes a retreat into private certainty rather than an outward search for reassurance.",
     "tier": "core",
     "tags": ["ruler", "improved-via-feedback-loop"],
     "provenance": {
@@ -57746,7 +57746,7 @@
   {
     "key": "dignity-state:mercury:ruler",
     "locale": "en",
-    "text": "Your mental processing operates with complete self-sufficiency, instantly anchoring information to your own established framework without needing external validation. This autonomous reasoning style builds strict boundaries around what counts as valid evidence, prioritizing absolute internal coherence over outside consensus. Yet this uncompromising certainty creates friction when shared projects require adopting provisional methods or yielding to collective definitions of truth.",
+    "text": "Your mental processing naturally references its own internal rules, absorbing and organizing new facts with a seamless self-contained logic. This fluid style builds understanding through direct internal connection rather than outside authorization. Yet this native self-reliance creates friction when collective problem solving requires adopting external procedures or temporarily abandoning familiar conceptual frameworks.",
     "tier": "core",
     "tags": ["ruler", "improved-via-feedback-loop"],
     "provenance": {
@@ -57818,7 +57818,7 @@
   {
     "key": "dignity-state:venus:detriment",
     "locale": "en",
-    "text": "You approach connection by questioning conventional expectations of harmony, seeking out shared resources and affection on terms that resist easy assimilation. This orientation builds bonds by prioritizing authentic complexity over smooth pleasantries, forging attachments through mutual distinctness. When external norms demand standard displays of agreement, you may withdraw from common ground or challenge the required reciprocity to preserve your distinct sense of value.",
+    "text": "You approach connection by questioning conventional expectations of harmony, seeking out affection on terms that resist easy assimilation into standard molds. This orientation builds bonds by prioritizing authentic complexity over smooth pleasantries, forging attachments through mutual distinctness rather than simple agreeable mirroring. When external norms demand standard displays of accord, you may withdraw from common ground or challenge the required reciprocity to preserve your distinct sense of value.",
     "tier": "core",
     "tags": ["detriment", "improved-via-feedback-loop"],
     "provenance": {
