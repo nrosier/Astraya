@@ -397,6 +397,52 @@ describe('POST /api/interpretation/generate', () => {
     });
   });
 
+  describe('synthesis mode (#377)', () => {
+    const VALID_SYNTHESIS_BODY = { mode: 'synthesis', chartData: VALID_CHART_DATA, locale: 'en' };
+
+    it('generates text from the given chart facts with no customPrompt required', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: VALID_SYNTHESIS_BODY,
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json<{ sections: { heading: string; body: string }[] }>().sections).toEqual([
+        { heading: 'Overview', body: 'A restyled interpretation.' },
+      ]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('still rejects invalid chartData with 400, same as freeform mode', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: {
+          ...VALID_SYNTHESIS_BODY,
+          chartData: { ...VALID_CHART_DATA, positions: [{ body: SUN_ID, longitude: 400 }] },
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('still rejects an unknown locale with 400', async () => {
+      const cookie = await signIn(app);
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/interpretation/generate',
+        cookies: { [SESSION_COOKIE]: cookie },
+        payload: { ...VALID_SYNTHESIS_BODY, locale: 'fr' },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
   /** Mirrors the malformed-body cases above: a guardrail-rejected prompt is a 400, caught before any model call. */
   it('rejects a guardrail-failing customPrompt with 400 and never calls the model', async () => {
     const cookie = await signIn(app);
@@ -600,5 +646,192 @@ describe('POST /api/interpretation/generate', () => {
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatchObject({ prompt_tokens: 10, output_tokens: 20 });
     });
+  });
+});
+
+describe('GET /api/admin/interpretation-usage (#382)', () => {
+  function recordUsageRow(uid: string, costCents: number): void {
+    const raw = new DatabaseSync(dbPath);
+    raw
+      .prepare(
+        'INSERT INTO interpretation_usage (user_id, prompt_tokens, output_tokens, cost_cents, created_at) VALUES (?, ?, ?, ?, ?)',
+      )
+      .run(uid, 10, 20, costCents, new Date().toISOString());
+    raw.close();
+  }
+
+  it('rejects an unauthenticated request with 401', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/admin/interpretation-usage' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('rejects a signed-in non-admin user with 403', async () => {
+    await signIn(app); // provisions the first (admin) account, not used for this request
+    const { sessionId: bobCookie } = await createAndLoginUser(app, 'bob', 'correct-horse-battery-2');
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/admin/interpretation-usage',
+      cookies: { [SESSION_COOKIE]: bobCookie },
+    });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('returns per-user usage, excluding a user with no usage, ordered by cost descending, with the configured caps', async () => {
+    const adminCookie = await signIn(app); // /api/setup's first account is always an admin
+    const { userId: bobId } = await createAndLoginUser(app, 'bob', 'correct-horse-battery-2');
+    await createAndLoginUser(app, 'carol', 'correct-horse-battery-3'); // never uses Tier 2 — must not appear below
+
+    const raw = new DatabaseSync(dbPath);
+    const aliceId = (raw.prepare('SELECT id FROM users WHERE username = ?').get('alice') as { id: string }).id;
+    raw.close();
+    recordUsageRow(aliceId, 5);
+    recordUsageRow(bobId, 50);
+
+    process.env.ASTRAYA_INTERPRETATION_USER_DAILY_CENTS = '42';
+    process.env.ASTRAYA_INTERPRETATION_TOTAL_DAILY_CENTS = '420';
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/admin/interpretation-usage',
+      cookies: { [SESSION_COOKIE]: adminCookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json<{
+      users: { username: string; requestCount: number; costCents: number; costCentsLast24h: number }[];
+      totalCostCentsLast24h: number;
+      caps: { userDailyCapCents: number; totalDailyCapCents: number };
+    }>();
+
+    expect(body.users.map((u) => u.username)).toEqual(['bob', 'alice']);
+    expect(body.users.find((u) => u.username === 'bob')).toMatchObject({
+      requestCount: 1,
+      costCents: 50,
+      costCentsLast24h: 50,
+    });
+    expect(body.totalCostCentsLast24h).toBe(55);
+    expect(body.caps).toEqual({ userDailyCapCents: 42, totalDailyCapCents: 420 });
+  });
+});
+
+describe('saved interpretation results (#392)', () => {
+  it('rejects an unauthenticated list request with 401', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/interpretation/results' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('rejects an unauthenticated get-by-id request with 401', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/interpretation/results/anything' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('lists nothing for a user who has never generated anything', async () => {
+    const cookie = await signIn(app);
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json<{ results: unknown[] }>().results).toEqual([]);
+  });
+
+  it('saves a successful generation and makes it retrievable without calling the model again', async () => {
+    const cookie = await signIn(app);
+    const generated = await app.inject({
+      method: 'POST',
+      url: '/api/interpretation/generate',
+      cookies: { [SESSION_COOKIE]: cookie },
+      payload: VALID_BODY,
+    });
+    expect(generated.statusCode).toBe(200);
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(list.statusCode).toBe(200);
+    const { results } = list.json<{ results: { id: string; mode: string; locale: string; createdAt: string }[] }>();
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ mode: 'grounded', locale: 'en' });
+
+    // fetchMock is only ever stubbed to answer the Gemini call — the result below must come
+    // entirely from the saved row, not a second model call.
+    const callsBeforeReopen = fetchMock.mock.calls.length;
+    const detail = await app.inject({
+      method: 'GET',
+      url: `/api/interpretation/results/${results[0]?.id}`,
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(detail.statusCode).toBe(200);
+    expect(detail.json()).toMatchObject({
+      mode: 'grounded',
+      locale: 'en',
+      sections: [{ heading: 'Overview', body: 'A restyled interpretation.' }],
+    });
+    expect(fetchMock.mock.calls.length).toBe(callsBeforeReopen);
+  });
+
+  it('returns 404 for a result id that belongs to a different user', async () => {
+    const aliceCookie = await signIn(app);
+    await app.inject({
+      method: 'POST',
+      url: '/api/interpretation/generate',
+      cookies: { [SESSION_COOKIE]: aliceCookie },
+      payload: VALID_BODY,
+    });
+    const { results } = (
+      await app.inject({
+        method: 'GET',
+        url: '/api/interpretation/results',
+        cookies: { [SESSION_COOKIE]: aliceCookie },
+      })
+    ).json<{ results: { id: string }[] }>();
+
+    const { sessionId: bobCookie } = await createAndLoginUser(app, 'bob', 'correct-horse-battery-2');
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/interpretation/results/${results[0]?.id}`,
+      cookies: { [SESSION_COOKIE]: bobCookie },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('returns 404 for an id that does not exist at all', async () => {
+    const cookie = await signIn(app);
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results/not-a-real-id',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('does not save anything, and returns 503 on get-by-id, when ASTRAYA_ENCRYPTION_KEY is not configured', async () => {
+    delete process.env.ASTRAYA_ENCRYPTION_KEY;
+    const cookie = await signIn(app);
+
+    const generated = await app.inject({
+      method: 'POST',
+      url: '/api/interpretation/generate',
+      cookies: { [SESSION_COOKIE]: cookie },
+      payload: VALID_BODY,
+    });
+    // Saving is additive — a missing encryption key must not fail the generation itself.
+    expect(generated.statusCode).toBe(200);
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(list.json<{ results: unknown[] }>().results).toEqual([]);
+
+    const detail = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results/anything',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(detail.statusCode).toBe(503);
   });
 });

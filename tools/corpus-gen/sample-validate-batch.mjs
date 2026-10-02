@@ -44,6 +44,7 @@ import {
 } from './lib/placements.mjs';
 import { CORPUS_ENTRY_RESPONSE_SCHEMA } from '../../src/interpretation/schema.ts';
 import { lintEntry } from '../../src/interpretation/lint.ts';
+import { estimateCostCentsForCall, formatCents } from './lib/cost-estimate.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -193,6 +194,11 @@ log(
 );
 log();
 
+let generatorUsageIn = 0;
+let generatorUsageOut = 0;
+let judgeUsageIn = 0;
+let judgeUsageOut = 0;
+
 const results = [];
 for (const placement of placements) {
   const description = placementDescription(placement);
@@ -216,6 +222,10 @@ for (const placement of placements) {
       userContent,
       responseSchema: CORPUS_ENTRY_RESPONSE_SCHEMA,
       maxRetries: 2,
+      onUsage: (usage) => {
+        generatorUsageIn += usage?.promptTokenCount ?? 0;
+        generatorUsageOut += (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0);
+      },
     });
   } catch (error) {
     row.generationError = error.message;
@@ -244,6 +254,10 @@ for (const placement of placements) {
       userContent,
       responseSchema: VERIFICATION_RESPONSE_SCHEMA,
       maxRetries: 3,
+      onUsage: (usage) => {
+        judgeUsageIn += usage?.promptTokenCount ?? 0;
+        judgeUsageOut += (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0);
+      },
     });
     row.grounded = judged.grounded;
     row.groundingIssues = judged.issues;
@@ -276,6 +290,27 @@ log(
     `${String(lintFailed)} lint-failed, ${String(ungrounded)} ungrounded, ` +
     `${String(generationErrors)} generation errors, ${String(judgeErrors)} judge errors`,
 );
+{
+  const generatorCostCents = estimateCostCentsForCall({
+    provider,
+    model,
+    promptTokens: generatorUsageIn,
+    outputTokens: generatorUsageOut,
+  });
+  const judgeCostCents = estimateCostCentsForCall({
+    provider: judgeProvider,
+    model: judgeModel,
+    promptTokens: judgeUsageIn,
+    outputTokens: judgeUsageOut,
+  });
+  const costLine = (label, costCents, m) =>
+    costCents === undefined
+      ? `${label}: cost unknown (no pricing on file for ${m})`
+      : `${label}: ${formatCents(costCents)}`;
+  log(
+    `est. cost — ${costLine('generator', generatorCostCents, model)}, ${costLine('judge', judgeCostCents, judgeModel)}`,
+  );
+}
 log();
 log('PROPOSED NEXT STEPS');
 if (generationErrors === total) {

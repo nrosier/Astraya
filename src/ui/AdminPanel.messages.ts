@@ -43,6 +43,18 @@ const en = {
   storedChangesCount: (n: string) => `${n} stored changes`,
   unconfiguredSyncSuffix: (rows: string) =>
     `${rows} (sync is not configured on this server, so an exact count of people/charts is not available)`,
+
+  usageHeading: 'AI-customized interpretation usage',
+  loadingUsage: 'Loading usage…',
+  usageEmpty: 'No AI-customized interpretation requests yet.',
+  usageUserColumn: 'User',
+  usageRequestsColumn: 'Requests',
+  usageTokensColumn: 'Tokens (in / out)',
+  usageCostColumn: 'Total cost',
+  usageCostLast24hColumn: 'Last 24h',
+  usageLastUsedColumn: 'Last used',
+  usageCapsNote: (userCap: string, totalCap: string, totalLast24h: string) =>
+    `Caps: ${userCap} per user, ${totalCap} total, per rolling 24h window. This deployment's total in the last 24h: ${totalLast24h}.`,
 };
 
 const nl: typeof en = {
@@ -88,6 +100,18 @@ const nl: typeof en = {
   storedChangesCount: (n: string) => `${n} opgeslagen wijzigingen`,
   unconfiguredSyncSuffix: (rows: string) =>
     `${rows} (synchronisatie is niet geconfigureerd op deze server, dus een exact aantal personen/horoscopen is niet beschikbaar)`,
+
+  usageHeading: 'Gebruik van AI-gepersonaliseerde interpretatie',
+  loadingUsage: 'Gebruik laden…',
+  usageEmpty: 'Nog geen AI-gepersonaliseerde interpretatieverzoeken.',
+  usageUserColumn: 'Gebruiker',
+  usageRequestsColumn: 'Verzoeken',
+  usageTokensColumn: 'Tokens (in / uit)',
+  usageCostColumn: 'Totale kosten',
+  usageCostLast24hColumn: 'Laatste 24u',
+  usageLastUsedColumn: 'Laatst gebruikt',
+  usageCapsNote: (userCap: string, totalCap: string, totalLast24h: string) =>
+    `Limieten: ${userCap} per gebruiker, ${totalCap} totaal, per voortschrijdend venster van 24u. Totaal van deze server in de laatste 24u: ${totalLast24h}.`,
 };
 
 export const adminPanelMessages = { en, nl };

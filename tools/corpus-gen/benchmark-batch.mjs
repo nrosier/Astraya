@@ -95,6 +95,7 @@ import {
 import { embed, generateStructured as ollamaGenerateStructured } from './lib/ollama.mjs';
 import { bodyByKey } from '../../src/astrology/bodies.ts';
 import { CORPUS_ENTRY_RESPONSE_SCHEMA } from '../../src/interpretation/schema.ts';
+import { estimateCostCentsForCall, formatCents } from './lib/cost-estimate.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BASE_URL = 'https://json.astrologyapi.com/v1';
@@ -261,6 +262,11 @@ async function fetchThirdPartyText(sample) {
 const corpusPath = join(root, 'src', 'interpretation', 'corpus', 'en.json');
 const corpus = JSON.parse(await readFile(corpusPath, 'utf8'));
 
+// Only astrayaTextFor's generateStructured call below has a real, provider-dependent cost — the
+// Laya/embedding/llmJudgeFor judging further down is always local Ollama, genuinely free.
+let usageIn = 0;
+let usageOut = 0;
+
 /** Astraya's own text for a sampled placement — the already-shipped neutral entry if one exists,
  * otherwise generated on demand and never persisted (this tool is read-only, per #368's own "not
  * an automatic corpus edit" constraint). */
@@ -290,6 +296,10 @@ async function astrayaTextFor(sample) {
     userContent,
     responseSchema: CORPUS_ENTRY_RESPONSE_SCHEMA,
     maxRetries: 5,
+    onUsage: (usage) => {
+      usageIn += usage?.promptTokenCount ?? 0;
+      usageOut += (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0);
+    },
   });
   return { text: result.text, source: 'generated-on-demand', model };
 }
@@ -630,6 +640,15 @@ if (scored.length > 0) {
   const astrayaWins = scored.filter((r) => r.answers.preference === 'astraya').length;
   log(
     `preference win rate (Laya) — Astraya: ${astrayaWins}/${scored.length}, third-party: ${scored.length - astrayaWins}/${scored.length}`,
+  );
+}
+{
+  const costCents = estimateCostCentsForCall({ provider, model, promptTokens: usageIn, outputTokens: usageOut });
+  log(
+    `\nastrayaTextFor usage: ${String(usageIn)} input tokens, ${String(usageOut)} output tokens — ` +
+      (costCents === undefined
+        ? `cost unknown (no pricing on file for ${model})`
+        : `est. cost: ${formatCents(costCents)}`),
   );
 }
 log(`\nresults persisted to ${DB_PATH} — run "npx tsx tools/corpus-gen/benchmark-dashboard.mjs" to view them.`);

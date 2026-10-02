@@ -35,6 +35,7 @@ import { lintEntry } from '../../src/interpretation/lint.ts';
 import { findNearDuplicates } from '../../src/interpretation/dedupe.ts';
 import { BODIES } from '../../src/astrology/bodies.ts';
 import { SIGNS } from '../../src/astrology/signs.ts';
+import { estimateCostCentsForCall, formatCents } from './lib/cost-estimate.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -107,6 +108,7 @@ console.log(`PROVIDER: ${provider}  MODEL: ${String(model)}  TEMPERATURE: ${proc
 console.log('='.repeat(80));
 
 let result;
+let usage;
 try {
   result = await generateStructured({
     apiKey: process.env.GEMINI_API_KEY,
@@ -116,6 +118,9 @@ try {
     systemInstruction,
     userContent,
     responseSchema: CORPUS_ENTRY_RESPONSE_SCHEMA,
+    onUsage: (u) => {
+      usage = u;
+    },
   });
 } catch (error) {
   console.error('\nGENERATION FAILED');
@@ -125,6 +130,19 @@ try {
 
 console.log('\nRAW MODEL OUTPUT');
 console.log(JSON.stringify(result, null, 2));
+
+const costCents = estimateCostCentsForCall({
+  provider,
+  model,
+  promptTokens: usage?.promptTokenCount,
+  outputTokens: (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0),
+});
+console.log(
+  `\nUSAGE: ${String(usage?.promptTokenCount ?? 0)} input tokens, ${String((usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0))} output tokens — ` +
+    (costCents === undefined
+      ? `cost unknown (no pricing on file for ${model})`
+      : `est. cost: ${formatCents(costCents)}`),
+);
 
 const draftEntry = {
   key,
