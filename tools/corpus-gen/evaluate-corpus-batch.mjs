@@ -81,7 +81,7 @@ function flag(name, fallback) {
 }
 if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
   console.log(
-    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>] [--evaluation-limit=N] [--force] [--check-only]',
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--persona=<id>] [--evaluation-limit=N] [--force] [--recheck-exhausted] [--check-only]',
   );
   console.log(
     '       npx tsx --env-file=.env.local tools/corpus-gen/evaluate-corpus-batch.mjs --check-only   (checks every locale with a batch in flight)',
@@ -95,6 +95,12 @@ const model = flag('model', 'gpt-6-luna');
 const personaFilter = flag('persona'); // omit to check every persona, including neutral
 const evaluationLimit = Number(flag('evaluation-limit', 2));
 const force = rawArgs.includes('--force');
+// #396: re-checking the entries improve-corpus-batch.mjs's own `--last-resort` mode just revised
+// doesn't fit `--force` (which re-evaluates the *entire* corpus, far more than needed) or the
+// default filter (which excludes anything already exhausted, these entries by definition). Scoped
+// to exactly the entries that were just given a one-time last-resort revision and nothing else —
+// `lastResortAttempted` is only ever set by that mode, so it's a precise, cheap target list.
+const recheckExhausted = rawArgs.includes('--recheck-exhausted');
 // Checks every job already in flight (applying results for any that finished) and exits — never
 // builds a new candidate list or submits anything. Combined with omitting `--locale`, scans every
 // locale that has a batch-state file instead of just one.
@@ -294,7 +300,9 @@ const selected = corpus
 
 const eligible = force
   ? selected
-  : selected.filter((item) => !isEvaluationExhausted(findTracking(tracking, item.entry), evaluationLimit));
+  : recheckExhausted
+    ? selected.filter((item) => findTracking(tracking, item.entry)?.lastResortAttempted === true)
+    : selected.filter((item) => !isEvaluationExhausted(findTracking(tracking, item.entry), evaluationLimit));
 const alreadyResolved = selected.length - eligible.length;
 const candidates = eligible.slice(0, Number.isFinite(limit) ? limit : undefined);
 

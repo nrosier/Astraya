@@ -65,7 +65,13 @@ import { lintEntry } from '../../src/interpretation/lint.ts';
 import { containsPromptInjectionPhrase } from '../../src/interpretation/prompt-guardrail.ts';
 import { writeCorpus } from './lib/write-corpus.mjs';
 import { readFeedback, writeFeedback, removeFeedback } from './lib/corpus-feedback.mjs';
-import { readTracking, writeTracking, findTracking, upsertTracking } from './lib/eval-tracking.mjs';
+import {
+  readTracking,
+  writeTracking,
+  findTracking,
+  upsertTracking,
+  isEvaluationExhausted,
+} from './lib/eval-tracking.mjs';
 import { estimateBatchCostCents, formatCents } from './lib/cost-estimate.mjs';
 import { readBatchState, writeBatchState, clearBatchState } from './lib/batch-state.mjs';
 
@@ -83,7 +89,7 @@ function flag(name, fallback) {
 }
 if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
   console.log(
-    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/improve-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--check-only]',
+    'Usage: npx tsx --env-file=.env.local tools/corpus-gen/improve-corpus-batch.mjs --locale=en [--limit=N] [--model=<name>] [--evaluation-limit=N] [--last-resort] [--check-only]',
   );
   console.log(
     '       npx tsx --env-file=.env.local tools/corpus-gen/improve-corpus-batch.mjs --check-only   (checks every locale with a batch in flight)',
@@ -95,6 +101,17 @@ const locale = flag('locale');
 const limit = Number(flag('limit', Infinity));
 const model = flag('model', process.env.GEMINI_MODEL);
 const baseUrl = process.env.GEMINI_BASE_URL;
+const evaluationLimit = Number(flag('evaluation-limit', 2));
+// #396's quintile/biquintile stragglers: entries already exhausted (evaluationCount >= limit)
+// without agreement never get a fresh feedback-file record, since evaluate-corpus-batch.mjs's own
+// exhaustion filter excludes them from being re-flagged — so the normal feedback-driven path below
+// can never reach them. `--last-resort` sources records straight from tracking instead (every
+// `!clean`, exhausted, not-yet-attempted entry with a recorded `lastRejection`), and passes
+// `lastResort: true` into the prompt (lib/corpus-improvement.mjs) permitting one minimal,
+// non-technical nod to the aspect's nature as a genuine last resort. Each entry is only ever given
+// one such attempt — `lastResortAttempted: true` is recorded regardless of verdict so a later
+// `--last-resort` run never re-offers it.
+const lastResort = rawArgs.includes('--last-resort');
 // Checks every job already in flight (applying results for any that finished) and exits — never
 // builds a new request list or submits anything. Combined with omitting `--locale`, scans every
 // locale that has a batch-state file instead of just one.
@@ -153,8 +170,13 @@ async function checkAndApply(loc) {
     const results = extractBatchResults(operation);
     const byKey = new Map(results.map((r) => [r.key, r]));
 
-    for (const { key, persona } of job.records) {
-      const record = byFeedbackIdentity.get(identityOf({ key, persona }));
+    for (const jobRecord of job.records) {
+      const { key, persona } = jobRecord;
+      // `--last-resort` jobs (#396) carry their own `issues`/`originalText` straight from
+      // tracking at submission time (see below) — there's no feedback-file entry to look up,
+      // since these entries are already past evaluate-corpus-batch.mjs's own exhaustion filter
+      // and so were never re-flagged into the feedback file this round.
+      const record = job.lastResort ? jobRecord : byFeedbackIdentity.get(identityOf({ key, persona }));
       if (record === undefined) {
         skipped += 1;
         console.error(`[${loc}] SKIPPED ${key}: no longer present in the feedback file`);
@@ -223,8 +245,16 @@ async function checkAndApply(loc) {
         evaluationCount: (existingTracking?.evaluationCount ?? 0) + 1,
         updatedAt: now,
         ...(verdict === 'UNCHANGED' ? { lastRejection: { issues: record.issues, reasoning } } : {}),
+        // A last-resort attempt is spent regardless of verdict — this is a one-time escape valve
+        // per entry, never repeatedly offered on later rounds (see the `--last-resort` doc comment
+        // above `rawArgs.includes('--last-resort')`). `upsertTracking` *replaces* the whole record
+        // rather than merging, so a later ordinary (non-last-resort) round touching this same
+        // entry must still carry the flag forward explicitly or it silently reverts to never
+        // having been attempted — confirmed as a real bug (not hypothetical): an entry's
+        // `lastResortAttempted` was found wiped by exactly this after a follow-up ordinary round.
+        ...(job.lastResort || existingTracking?.lastResortAttempted === true ? { lastResortAttempted: true } : {}),
       });
-      removeFeedback(feedback, record);
+      if (!job.lastResort) removeFeedback(feedback, record);
     }
   }
 
@@ -246,7 +276,7 @@ async function checkAndApply(loc) {
     console.log(`[${loc}] tracking written to ${trackingPath}`);
   }
 
-  return { feedback, corpus, statePath, jobs, stillRunning, anyTerminal };
+  return { feedback, corpus, tracking, statePath, jobs, stillRunning, anyTerminal };
 }
 
 if (checkOnly && !locale) {
@@ -277,7 +307,7 @@ if (checkOnly && !locale) {
   process.exit(0);
 }
 
-const { feedback, corpus, statePath, jobs, stillRunning, anyTerminal } = await checkAndApply(locale);
+const { feedback, corpus, tracking, statePath, jobs, stillRunning, anyTerminal } = await checkAndApply(locale);
 
 if (checkOnly) {
   if (jobs.length === 0) console.log(`[${locale}] no batches in flight.`);
@@ -293,8 +323,30 @@ if (checkOnly) {
 }
 
 const inFlightIdentities = new Set(stillRunning.flatMap((job) => job.records.map(identityOf)));
-const eligibleRecords = feedback.filter((record) => !inFlightIdentities.has(identityOf(record)));
-const records = eligibleRecords.slice(0, Number.isFinite(limit) ? limit : undefined);
+
+let records;
+if (lastResort) {
+  const corpusByIdentity = new Map(corpus.map((entry) => [identityOf(entry), entry]));
+  const eligibleTracking = tracking.filter(
+    (t) =>
+      !t.clean &&
+      isEvaluationExhausted(t, evaluationLimit) &&
+      t.lastRejection !== undefined &&
+      !t.lastResortAttempted &&
+      !inFlightIdentities.has(identityOf(t)),
+  );
+  records = eligibleTracking
+    .map((t) => {
+      const entry = corpusByIdentity.get(identityOf(t));
+      if (entry === undefined) return undefined;
+      return { key: t.key, persona: t.persona, issues: t.lastRejection.issues, originalText: entry.text };
+    })
+    .filter((r) => r !== undefined)
+    .slice(0, Number.isFinite(limit) ? limit : undefined);
+} else {
+  const eligibleRecords = feedback.filter((record) => !inFlightIdentities.has(identityOf(record)));
+  records = eligibleRecords.slice(0, Number.isFinite(limit) ? limit : undefined);
+}
 
 if (records.length === 0) {
   if (stillRunning.length > 0) await writeBatchState(statePath, { jobs: stillRunning });
@@ -350,6 +402,7 @@ for (const record of records) {
     factsDescription: factsDescription(placement),
     originalText: record.originalText,
     issues: record.issues,
+    lastResort,
   });
   requests.push(
     buildBatchRequest({
@@ -383,7 +436,12 @@ const newJob = {
   name: submitted.name,
   submittedAt: new Date().toISOString(),
   model,
-  records: records.filter((r) => !newlySkipped.includes(r)).map((r) => ({ key: r.key, persona: r.persona })),
+  // `--last-resort` jobs carry `issues`/`originalText` here too (not just `key`/`persona`), since
+  // there's no feedback-file entry for checkAndApply to resolve them against later.
+  records: records
+    .filter((r) => !newlySkipped.includes(r))
+    .map((r) => (lastResort ? r : { key: r.key, persona: r.persona })),
+  ...(lastResort ? { lastResort: true } : {}),
 };
 await writeBatchState(statePath, { jobs: [...stillRunning, newJob] });
 console.log(
