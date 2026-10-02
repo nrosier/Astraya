@@ -304,6 +304,7 @@ async function runBatchRounds() {
           corpusEntries: corpus,
           locale,
           persona,
+          aspectKey: placement.aspect,
         }),
         temperature: Number(process.env.GEMINI_TEMPERATURE ?? '0.75'),
         responseSchema: CORPUS_ENTRY_RESPONSE_SCHEMA,
@@ -398,6 +399,7 @@ if (useBatch) {
       corpusEntries: corpus,
       locale,
       persona,
+      aspectKey: placement.aspect,
     });
 
     try {

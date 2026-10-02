@@ -212,7 +212,12 @@ for (const placement of placements) {
       locale,
       forceLanguageDirective: provider === 'ollama',
     });
-    const userContent = buildUserContent({ placementDescription: description, corpusEntries: corpus, locale });
+    const userContent = buildUserContent({
+      placementDescription: description,
+      corpusEntries: corpus,
+      locale,
+      aspectKey: placement.aspect,
+    });
     generated = await generate({
       apiKey: apiKeyFor(provider),
       model,

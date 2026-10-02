@@ -115,11 +115,35 @@ export function buildSystemInstruction({ persona, symbolismContext, locale, forc
   ].join('\n');
 }
 
-export function buildUserContent({ placementDescription, corpusEntries, locale, persona }) {
+/**
+ * #396: quintile/biquintile ("the quintile series" — aspects.ts's own doc comment) share a
+ * traditional flavor distinct from a major aspect's tension/flow: a knack for creative synthesis.
+ * Unlike a major aspect's feel, which models convey without being told (friction, harmony are
+ * common-knowledge associations), this one isn't — ChatGPT's judge kept flagging quintile/
+ * biquintile entries as generic for exactly this reason (#396), and Gemini kept (correctly)
+ * declining to just name the aspect, since NEGATIVE_CONSTRAINTS already bans repeating what the
+ * facts already state. This supplies the actual missing ingredient — what quality to aim for —
+ * without lifting that ban.
+ */
+const QUINTILE_SERIES_ASPECTS = new Set(['quintile', 'biquintile']);
+const QUINTILE_SERIES_FLAVOR_HINT = {
+  en: "This pairing's aspect is part of the quintile series. Unlike a major aspect's tension or flow, its traditional flavor is a knack for creative synthesis: a specific talent, inventive workaround, or skillful way the two drives combine into something neither manages alone. Let that specific creative, integrative quality come through in what the combination actually produces or enables — without naming the aspect itself.",
+  nl: 'Het aspect van deze combinatie hoort bij de quintielfamilie. Anders dan de spanning of vloeiendheid van een hoofdaspect is de traditionele kleur ervan een aanleg voor creatieve synthese: een specifiek talent, een vindingrijke oplossing, of een vaardige manier waarop de twee drijfveren samen iets opleveren dat geen van beide alleen voor elkaar krijgt. Laat die specifieke creatieve, integrerende kwaliteit doorklinken in wat de combinatie daadwerkelijk oplevert of mogelijk maakt — zonder het aspect zelf te noemen.',
+};
+
+/** The quintile-series flavor hint for this aspect/locale, or `undefined` outside that family. */
+export function aspectFlavorHint(aspectKey, locale) {
+  if (!QUINTILE_SERIES_ASPECTS.has(aspectKey)) return undefined;
+  return QUINTILE_SERIES_FLAVOR_HINT[locale] ?? QUINTILE_SERIES_FLAVOR_HINT.en;
+}
+
+export function buildUserContent({ placementDescription, corpusEntries, locale, persona, aspectKey }) {
   const anchorsBlock = buildAnchorsBlock(corpusEntries, locale, persona);
+  const flavorHint = aspectKey === undefined ? undefined : aspectFlavorHint(aspectKey, locale);
   return [
     `TARGET PLACEMENT: ${placementDescription}`,
     '',
+    ...(flavorHint ? [flavorHint, ''] : []),
     ...(anchorsBlock ? [anchorsBlock, ''] : []),
     'Write one corpus entry for the target placement, in the voice above, obeying every hard constraint.',
   ].join('\n');

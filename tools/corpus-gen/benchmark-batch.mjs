@@ -286,6 +286,7 @@ async function astrayaTextFor(sample) {
     corpusEntries: corpus,
     locale: 'en',
     persona: undefined,
+    aspectKey: sample.placement.aspect,
   });
   const result = await generateStructured({
     apiKey: process.env.GEMINI_API_KEY,
