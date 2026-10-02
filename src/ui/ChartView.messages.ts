@@ -37,6 +37,7 @@ const en = {
   cycleLabel: 'Cycle',
   contactLabel: 'Contact',
   kindLabel: 'Kind',
+  starLabel: 'Star',
   parallel: 'Parallel',
   contraparallel: 'Contraparallel',
   antiscion: 'Antiscion',
@@ -51,6 +52,7 @@ const en = {
   dispositorsCaption: 'Dispositors',
   declinationsCaption: 'Declinations',
   antisciaCaption: 'Antiscia',
+  fixedStarsCaption: 'Fixed stars',
 
   almutenOfAscendantSentence: (names: string) => `Almuten of the Ascendant: ${names}`,
 
@@ -140,6 +142,7 @@ const nl: typeof en = {
   cycleLabel: 'Kringloop',
   contactLabel: 'Contact',
   kindLabel: 'Soort',
+  starLabel: 'Ster',
   parallel: 'Parallel',
   contraparallel: 'Contraparallel',
   antiscion: 'Antiscion',
@@ -154,6 +157,7 @@ const nl: typeof en = {
   dispositorsCaption: 'Dispositors',
   declinationsCaption: 'Declinaties',
   antisciaCaption: 'Antiscia',
+  fixedStarsCaption: 'Vaste sterren',
 
   almutenOfAscendantSentence: (names: string) => `Almuten van de Ascendant: ${names}`,
 

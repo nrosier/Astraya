@@ -7,7 +7,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { bodyById, bodyByKey } from '../src/astrology/bodies.js';
-import { computeChartData, computeChartDataAtJd, housesAreDefined } from '../src/domain/chart-compute.js';
+import {
+  computeChartData,
+  computeChartDataAtJd,
+  housesAreDefined,
+  NATAL_FIXED_STARS,
+} from '../src/domain/chart-compute.js';
 import type { HousePositions } from '../src/ephemeris/types.js';
 import { julianDayFor } from '../src/time/julian.js';
 import { resolveMoment } from '../src/time/resolve.js';
@@ -59,6 +64,17 @@ describe('computeChartData (#44)', () => {
     // sanity bound, not a precise astronomical claim.
     for (const declination of data.declinations?.values() ?? []) {
       expect(Math.abs(declination)).toBeLessThan((data.obliquity ?? 0) + 10);
+    }
+  });
+
+  it('resolves a longitude for every NATAL_FIXED_STARS name (#398)', async () => {
+    const engine = await getEngine();
+    const data = await computeChartData(MOMENT, engine);
+    expect(data.fixedStars?.size).toBe(NATAL_FIXED_STARS.length);
+    for (const name of NATAL_FIXED_STARS) {
+      const longitude = data.fixedStars?.get(name);
+      expect(longitude).toBeGreaterThanOrEqual(0);
+      expect(longitude).toBeLessThan(360);
     }
   });
 

@@ -38,6 +38,7 @@ import {
   derivedPointRows,
   dignityRows,
   dispositorRows,
+  fixedStarRows,
   houseCuspRows,
   positionRows,
   type AngleRow,
@@ -47,6 +48,7 @@ import {
   type DerivedPointRow,
   type DignityRow,
   type DispositorRow,
+  type FixedStarRow,
   type HouseCuspRow,
   type PointVisibilityOptions,
   type PositionRow,
@@ -304,6 +306,21 @@ function antisciaColumns(t: typeof chartViewMessages.en, locale: Locale): readon
   ];
 }
 
+function fixedStarColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<FixedStarRow>[] {
+  return [
+    // Star names (Regulus, Spica, ...) are proper nouns, the same in both locales — no glossary
+    // lookup needed, unlike body/aspect names.
+    { key: 'star', label: t.starLabel, valueOf: (row) => row.star },
+    {
+      key: 'bodyName',
+      label: t.bodyLabel,
+      valueOf: (row) => row.bodyName,
+      render: (row) => bodyDisplayName(row.bodyKey, locale),
+    },
+    { key: 'orb', label: t.orbLabel, valueOf: (row) => row.orb, render: (row) => `${row.orb.toFixed(2)}°` },
+  ];
+}
+
 function derivedPointColumns(t: typeof chartViewMessages.en, locale: Locale): readonly TableColumn<DerivedPointRow>[] {
   return [
     { key: 'label', label: t.pointLabel, valueOf: (row) => row.label },
@@ -359,6 +376,7 @@ function renderTableTab(
     case 'aspects': {
       const declinationRows = declinationContactRows(data);
       const antiscionRows = antisciaRows(data);
+      const starRows = fixedStarRows(data, pointVisibility);
       return (
         <>
           <SortableTable
@@ -384,6 +402,15 @@ function renderTableTab(
               rows={declinationRows}
               getRowKey={(row) => `${row.bodyAKey}-${row.kind}-${row.bodyBKey}`}
               downloadFilename={deriveExportFilename(displayName, 'declinations', 'csv')}
+            />
+          )}
+          {starRows.length > 0 && (
+            <SortableTable
+              caption={t.fixedStarsCaption}
+              columns={fixedStarColumns(t, locale)}
+              rows={starRows}
+              getRowKey={(row) => `${row.star}-${row.bodyKey}`}
+              downloadFilename={deriveExportFilename(displayName, 'fixed-stars', 'csv')}
             />
           )}
         </>

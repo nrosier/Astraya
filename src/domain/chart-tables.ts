@@ -13,6 +13,7 @@ import { bodyById, bodyByKey } from '../astrology/bodies.js';
 import { declinationContacts, isOutOfBounds } from '../astrology/declinations.js';
 import { dispositorChain, isMutualReception } from '../astrology/dispositors.js';
 import { houseOf } from '../astrology/emphasis.js';
+import { fixedStarConjunctions } from '../astrology/fixed-stars.js';
 import { midpointOf } from '../astrology/midpoints.js';
 import { degreesInSign, signOf } from '../astrology/signs.js';
 import { formatCoordinate } from '../ui/format.js';
@@ -459,6 +460,41 @@ export function antisciaRows(data: ChartData, orb: Degrees = DEFAULT_ANTISCIA_OR
     });
   }
   return rows;
+}
+
+export interface FixedStarRow {
+  readonly star: string;
+  readonly bodyKey: string;
+  readonly bodyName: string;
+  readonly orb: Degrees;
+}
+
+/** Default fixed-star conjunction orb (#398) — the same tight 1° convention as antiscia/declination contacts. */
+const DEFAULT_FIXED_STAR_ORB: Degrees = 1;
+
+/**
+ * Every conjunction within `orb` (default 1°) between a visible body and one of
+ * `NATAL_FIXED_STARS` (#398). An empty list, not an error, when `ChartData.fixedStars` isn't
+ * available (a composite/harmonic chart — see that field's own doc comment).
+ */
+export function fixedStarRows(
+  data: ChartData,
+  options: PointVisibilityOptions = {},
+  orb: Degrees = DEFAULT_FIXED_STAR_ORB,
+): readonly FixedStarRow[] {
+  if (data.fixedStars === undefined) return [];
+  const positions = new Map<BodyId, Degrees>(
+    visiblePositions(data.positions, options).map((position) => [position.body, position.longitude]),
+  );
+  return fixedStarConjunctions(data.fixedStars, positions, orb).map((contact) => {
+    const body = bodyById(contact.body);
+    return {
+      star: contact.star,
+      bodyKey: body?.key ?? String(contact.body),
+      bodyName: body?.name ?? String(contact.body),
+      orb: contact.orb,
+    };
+  });
 }
 
 export interface DerivedPointRow extends DegreeParts {

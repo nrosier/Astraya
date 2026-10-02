@@ -17,6 +17,7 @@ import {
   derivedPointRows,
   dignityRows,
   dispositorRows,
+  fixedStarRows,
   houseCuspRows,
   positionRows,
 } from '../src/domain/chart-tables.js';
@@ -500,6 +501,38 @@ describe('antisciaRows (#398)', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ kind: 'antiscion' });
     expect([rows[0]?.bodyKey, rows[0]?.contactKey].sort()).toEqual(['moon', 'sun']);
+  });
+});
+
+describe('fixedStarRows (#398)', () => {
+  it('finds a conjunction within the default 1° orb', () => {
+    const data: ChartData = {
+      positions: [position(SUN, 150.5)],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+      fixedStars: new Map([['Regulus', 150.1]]),
+    };
+    const rows = fixedStarRows(data);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ star: 'Regulus', bodyKey: 'sun', bodyName: 'Sun' });
+    expect(rows[0]?.orb).toBeCloseTo(0.4, 10);
+  });
+
+  it('returns an empty list when fixed stars are unavailable (a composite/harmonic chart)', () => {
+    const data: ChartData = {
+      positions: [position(SUN, 150.5)],
+      houses: HOUSES,
+      aspects: [],
+      dignities: new Map(),
+      sect: 'day',
+      partOfFortune: 0,
+      partOfSpirit: 0,
+    };
+    expect(fixedStarRows(data)).toEqual([]);
   });
 });
 

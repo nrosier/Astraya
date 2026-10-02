@@ -43,6 +43,22 @@ import type { BirthMomentInput } from '../time/types.js';
 /** Placidus, the system every other screen in the app defaults to. */
 const DEFAULT_HOUSE_SYSTEM: HouseSystem = 'P';
 
+/**
+ * The seven traditionally significant "royal"/prominent fixed stars (#398) — a deliberately
+ * short, well-known list rather than every star `sefstars.txt` (#33) carries, matching how most
+ * mainstream natal-report software surfaces fixed stars at all. Exact spellings confirmed against
+ * `public/ephe/sefstars.txt` itself.
+ */
+export const NATAL_FIXED_STARS: readonly string[] = [
+  'Regulus',
+  'Spica',
+  'Algol',
+  'Aldebaran',
+  'Antares',
+  'Fomalhaut',
+  'Sirius',
+];
+
 export interface ChartCalculationOptions {
   readonly houseSystem?: HouseSystem;
   readonly zodiac?: Zodiac;
@@ -82,6 +98,13 @@ export interface ChartData {
   readonly declinations?: ReadonlyMap<BodyId, Degrees>;
   /** True obliquity of the ecliptic at this moment — the out-of-bounds threshold (`declinations.ts`'s own doc comment). Same composite/harmonic caveat as `declinations`. */
   readonly obliquity?: Degrees;
+  /**
+   * Ecliptic longitude per `NATAL_FIXED_STARS` name, for `fixed-stars.ts`'s `fixedStarConjunctions`
+   * (#398). Undefined for a composite/harmonic chart — same reasoning as `declinations`: fixed
+   * stars conjunct a real body's own longitude, which a synthetic midpoint/multiple position
+   * doesn't coherently have one real moment to look them up for.
+   */
+  readonly fixedStars?: ReadonlyMap<string, Degrees>;
 }
 
 /**
@@ -158,7 +181,7 @@ export async function computeChartDataAtJd(
     return true;
   });
 
-  const [positions, houses, equatorialPositions, obliquity] = await Promise.all([
+  const [positions, houses, equatorialPositions, obliquity, fixedStarPositions] = await Promise.all([
     provider.positions(
       jd,
       bodies.map((body) => body.id),
@@ -173,9 +196,18 @@ export async function computeChartDataAtJd(
       { ...positionOptions, equatorial: true },
     ),
     provider.obliquity(jd),
+    // `fixedStar` has no batch form (one call per name), unlike `positions` — Promise.all over
+    // NATAL_FIXED_STARS is the whole batching this gets. Keyed by the *requested* name, not the
+    // engine's own returned `.name` (which can carry extra qualifying text — confirmed by
+    // test/ephemeris-fixed-stars.test.ts's own `.toContain('regulus')`, not an exact match), so
+    // every caller gets the stable key it asked for.
+    Promise.all(NATAL_FIXED_STARS.map((name) => provider.fixedStar(jd, name, positionOptions))),
   ]);
   const declinations = new Map<BodyId, Degrees>(
     equatorialPositions.map((position) => [position.body, position.latitude]),
+  );
+  const fixedStars = new Map<string, Degrees>(
+    fixedStarPositions.map((star, index) => [NATAL_FIXED_STARS[index] ?? star.name, star.longitude]),
   );
 
   const positionByBody = new Map(positions.map((position) => [position.body, position]));
@@ -215,5 +247,6 @@ export async function computeChartDataAtJd(
     partOfSpirit: partOfSpirit(sect, houses.ascendant, sunPosition.longitude, moonPosition.longitude),
     declinations,
     obliquity,
+    fixedStars,
   };
 }
