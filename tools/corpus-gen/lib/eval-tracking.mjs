@@ -16,6 +16,13 @@
  *   iteration) without ever reaching `clean`, as many times as the feedback loop is allowed to
  *   run (default 2, see evaluate-corpus-batch.mjs's `--evaluation-limit`), so it stops being
  *   re-queued even though the two models never agreed.
+ *
+ * `lastRejection?: { issues, reasoning }` — set by improve-corpus-batch.mjs whenever its verdict
+ * is `UNCHANGED` (Gemini's own `issues`-it-rejected and the `reasoning` it gave), cleared (never
+ * set) on `IMPROVED` since a rewrite means any prior rejection no longer describes the current
+ * text. evaluate-corpus-batch.mjs reads this back and hands it to its own judge on the entry's
+ * next evaluation (`corpus-evaluation.mjs`'s `priorRejection`), so a disagreement between the two
+ * models is visible to both sides across rounds instead of looping blind.
  */
 import { readFile, writeFile } from 'node:fs/promises';
 

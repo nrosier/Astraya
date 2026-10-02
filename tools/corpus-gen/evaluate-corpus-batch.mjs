@@ -99,9 +99,14 @@ if (candidates.length === 0) {
 }
 
 const requests = candidates.map(({ entry, placement }, index) => {
+  // If Gemini rejected a complaint about this exact entry last round (improve-corpus-batch.mjs's
+  // UNCHANGED verdict), hand that rejection back to this judge now — reviewing with the other
+  // side's reasoning already in view, not re-flagging the same thing blind every round (#381).
+  const priorRejection = findTracking(tracking, entry)?.lastRejection;
   const { systemInstruction, userContent } = buildEvaluationPrompt({
     factsDescription: factsDescription(placement),
     entryText: entry.text,
+    ...(priorRejection ? { priorRejection } : {}),
   });
   return buildBatchRequest({
     customId: String(index), // position in `candidates` — unique regardless of persona, unlike entry.key alone

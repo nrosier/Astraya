@@ -16,6 +16,14 @@
  * tokens for the same answers (erasing its lower per-token price); gpt-5.4-nano scored only 4/6
  * (two false positives against genuinely fine entries). gpt-6-luna is the one actually wired up
  * as this feature's default — see evaluate-corpus-batch.mjs's own doc comment.
+ *
+ * `priorRejection` closes the loop the other direction: when improve-corpus-batch.mjs's judge
+ * (Gemini, the model that wrote the entry) reviews a flagged entry and rejects the complaint
+ * (verdict UNCHANGED), that rejection — the issues it rejected and its own reasoning for doing
+ * so — is handed back to *this* judge on the entry's next evaluation
+ * (evaluate-corpus-batch.mjs reads it from eval-tracking.mjs's `lastRejection`), so ChatGPT is
+ * reviewing with the full back-and-forth in view, not re-flagging the same thing in a loop with
+ * neither side ever seeing the other's reasoning.
  */
 
 export const EVALUATION_RESPONSE_SCHEMA = {
@@ -35,10 +43,29 @@ const SYSTEM_INSTRUCTION = [
   "Set correct=false if there is a factual error OR a real shortcoming of kind (2) — not for minor stylistic preference. List each specific issue in issues as a short, concrete sentence (what is wrong AND why), in English regardless of the entry's own language. If there is no real issue, set correct=true and issues to an empty array.",
 ].join(' ');
 
-/** Builds the judge's system/user content for one entry against its own placement's facts. */
-export function buildEvaluationPrompt({ factsDescription, entryText }) {
+/**
+ * Builds the judge's system/user content for one entry against its own placement's facts.
+ * `priorRejection` — `{ issues, reasoning }` from a previous round's `UNCHANGED` verdict, if any
+ * — is appended as its own block so the judge can decide whether to re-flag with that rebuttal
+ * already in view, rather than relitigating blind.
+ */
+export function buildEvaluationPrompt({ factsDescription, entryText, priorRejection }) {
+  const priorRejectionBlock =
+    priorRejection === undefined
+      ? ''
+      : [
+          '',
+          '',
+          'On a previous review, this entry was flagged for:',
+          ...priorRejection.issues.map((issue) => `- ${issue}`),
+          '',
+          'The model that originally wrote this entry reviewed that feedback and rejected it, explaining:',
+          priorRejection.reasoning,
+          '',
+          'Take this into account: only flag this entry again if you still believe there is a genuine problem despite that rebuttal. If you agree the rebuttal is valid, set correct=true.',
+        ].join('\n');
   return {
     systemInstruction: SYSTEM_INSTRUCTION,
-    userContent: `PLACEMENT FACTS: ${factsDescription}\n\nENTRY TEXT: ${entryText}`,
+    userContent: `PLACEMENT FACTS: ${factsDescription}\n\nENTRY TEXT: ${entryText}${priorRejectionBlock}`,
   };
 }

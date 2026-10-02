@@ -209,6 +209,12 @@ for (const { record, corpusIndex } of requests) {
   // the loop exhausts, not something to wave through as resolved on the first disagreement.
   // `clean` is only ever set by evaluate-corpus-batch.mjs's own judge actually agreeing the entry
   // is correct — never by a rewrite being declined here.
+  //
+  // A genuine UNCHANGED (Gemini actively disagreeing with the complaint, not a rewrite we
+  // ourselves threw out for failing lint) is remembered as `lastRejection` — ChatGPT sees its own
+  // rejected issues plus Gemini's reasoning on this entry's next evaluation, rather than the two
+  // models re-litigating blind every round. Cleared on any outcome that isn't that exact case:
+  // once the text actually changes (IMPROVED), the rejection no longer describes current text.
   upsertTracking(tracking, {
     key: record.key,
     persona: record.persona,
@@ -216,6 +222,7 @@ for (const { record, corpusIndex } of requests) {
     clean: false,
     evaluationCount: (existingTracking?.evaluationCount ?? 0) + 1,
     updatedAt: now,
+    ...(verdict === 'UNCHANGED' ? { lastRejection: { issues: record.issues, reasoning } } : {}),
   });
   removeFeedback(feedback, record);
 }
