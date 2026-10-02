@@ -17,9 +17,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
+import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
+import { saveInterpretationResult } from '../server/interpretation/results.ts';
 import { ReportView, PERSONA_LABELS } from '../src/ui/ReportView.js';
 import { reportViewMessages } from '../src/ui/ReportView.messages.js';
 import { toTier2ChartPayload } from '../src/interpretation/tier2-client.js';
@@ -804,13 +806,135 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     container.remove();
   });
 
-  it('sends chartData (not placementKeys) once freeform mode is selected', async () => {
+  it('lists a saved generation and reopens it without ever calling /generate (#392)', async () => {
+    // /api/interpretation/generate is intercepted by this describe block's own fetch mock
+    // (above) rather than reaching the real server (so other tests here can control its exact
+    // response/error shape) — meaning a real generate click never actually writes a row via
+    // saveInterpretationResult. Inserting one directly, against the same db file and the same
+    // ASTRAYA_ENCRYPTION_KEY this server is configured with, tests the list+reopen path on its
+    // own terms: a real GET against the real route, decrypting a real row.
+    const { container, root } = await mountSignedIn();
+
+    const raw = new DatabaseSync(join(dir, 'astraya.db'));
+    const { id: userId } = raw.prepare('SELECT id FROM users WHERE username = ?').get('alice') as { id: string };
+    const key = Buffer.from(process.env.ASTRAYA_ENCRYPTION_KEY ?? '', 'base64');
+    const savedId = saveInterpretationResult(
+      raw,
+      { userId, mode: 'synthesis', locale: 'en', sections: [{ heading: 'Overview', body: 'A saved interpretation.' }] },
+      key,
+    );
+    raw.close();
+
+    let savedButton: HTMLButtonElement | undefined;
+    await vi.waitFor(() => {
+      const found = panelOf(container).querySelector('.tier2-saved-results button');
+      expect(found).not.toBeNull();
+      savedButton = found as HTMLButtonElement;
+    });
+
+    const generateCallsBeforeReopen = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+      (call: unknown[]) => call[0] === '/api/interpretation/generate',
+    ).length;
+
+    act(() => {
+      savedButton?.click();
+    });
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.tier2-result')?.textContent).toContain('A saved interpretation.');
+    });
+    expect(savedId).not.toBe('');
+    expect(panelOf(container).textContent).toContain(reportViewMessages.en.tier2SavedHeading);
+
+    // Reopened via GET /api/interpretation/results/:id, never a POST /generate.
+    const generateCallsAfterReopen = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+      (call: unknown[]) => call[0] === '/api/interpretation/generate',
+    ).length;
+    expect(generateCallsAfterReopen).toBe(generateCallsBeforeReopen);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('resets consent after a request, so a second Generate click requires a fresh tick (#391)', async () => {
     const { container, root } = await mountSignedIn();
 
     await act(async () => {
       consentCheckbox(container).click();
       setTextareaValue(customPromptTextarea(container), 'warm and encouraging, focused on career growth');
+      await Promise.resolve();
+    });
+    expect(consentCheckbox(container).checked).toBe(true);
+
+    act(() => {
+      generateButton(container).click();
+    });
+
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.tier2-result')).not.toBeNull();
+    });
+
+    // Consent authorized exactly the request just sent — it must not still be ticked afterward,
+    // and the button must be disabled again until the box is ticked a second time.
+    expect(consentCheckbox(container).checked).toBe(false);
+    expect(generateButton(container).disabled).toBe(true);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('resets consent when the mode is switched, even before any request is sent (#391)', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      consentCheckbox(container).click();
+      await Promise.resolve();
+    });
+    expect(consentCheckbox(container).checked).toBe(true);
+
+    await act(async () => {
       modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      await Promise.resolve();
+    });
+
+    expect(consentCheckbox(container).checked).toBe(false);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('states what freeform/synthesis actually send, not grounded mode’s narrower claim (#391)', async () => {
+    const { container, root } = await mountSignedIn();
+
+    expect(panelOf(container).textContent).toContain(reportViewMessages.en.tier2ConsentLabel('grounded'));
+
+    await act(async () => {
+      modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      await Promise.resolve();
+    });
+    expect(panelOf(container).textContent).toContain(reportViewMessages.en.tier2ConsentLabel('freeform'));
+    expect(panelOf(container).textContent).not.toContain(reportViewMessages.en.tier2ConsentLabel('grounded'));
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('sends chartData (not placementKeys) once freeform mode is selected', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      // Mode first, then consent — selecting a mode resets consent (#391), so ticking it
+      // beforehand would leave the button disabled.
+      modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      consentCheckbox(container).click();
+      setTextareaValue(customPromptTextarea(container), 'warm and encouraging, focused on career growth');
       await Promise.resolve();
     });
 
@@ -824,6 +948,38 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
 
     expect(lastGenerateRequest).toMatchObject({ mode: 'freeform' });
     expect(lastGenerateRequest).not.toHaveProperty('placementKeys');
+    expect(lastGenerateRequest).toHaveProperty('chartData', toTier2ChartPayload(makeChart()));
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('sends chartData with no customPrompt once synthesis mode is selected, and hides the prompt textarea (#377)', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      // Mode first, then consent — selecting a mode resets consent (#391), so ticking it
+      // beforehand would leave the button disabled.
+      modeRadio(container, reportViewMessages.en.tier2ModeSynthesis).click();
+      consentCheckbox(container).click();
+      await Promise.resolve();
+    });
+
+    expect(panelOf(container).querySelector('textarea')).toBeNull();
+
+    act(() => {
+      generateButton(container).click();
+    });
+
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.tier2-result')).not.toBeNull();
+    });
+
+    expect(lastGenerateRequest).toMatchObject({ mode: 'synthesis' });
+    expect(lastGenerateRequest).not.toHaveProperty('placementKeys');
+    expect(lastGenerateRequest).not.toHaveProperty('customPrompt');
     expect(lastGenerateRequest).toHaveProperty('chartData', toTier2ChartPayload(makeChart()));
 
     act(() => {

@@ -242,6 +242,32 @@ const MIGRATIONS: readonly ((db: DatabaseSync) => void)[] = [
       CREATE INDEX corpus_candidates_status ON corpus_candidates(status);
     `);
   },
+  // 10: persists a Tier 2 (#360) generation's own output so a user can reopen it later without
+  // regenerating (and re-spending quota) — #392. Deliberately NOT `interpretation_usage`
+  // (migration 8, token/cost metadata only, by design "never the interpretation text itself")
+  // — this table holds the one thing that one doesn't, so it needs the same at-rest encryption
+  // `ops.payload` gets (`server/ops/crypto.ts`), not plaintext: `sections_json` is the encrypted
+  // ciphertext (iv/key_version alongside, same shape as `ops`), never read by the server for any
+  // reason other than returning it to the user who generated it. Written only when
+  // `ASTRAYA_ENCRYPTION_KEY` is configured — same "disabled, not unencrypted" rule the sync relay
+  // already enforces for the exact same key; unlike the relay, failing to save this is not fatal
+  // to the request, since generating and returning the text is this route's primary job and
+  // saving it for later is additive.
+  (db) => {
+    db.exec(`
+      CREATE TABLE interpretation_results (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        mode TEXT NOT NULL,
+        locale TEXT NOT NULL,
+        sections_json BLOB NOT NULL,
+        key_version INTEGER NOT NULL,
+        iv BLOB NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX interpretation_results_user_created ON interpretation_results(user_id, created_at);
+    `);
+  },
 ];
 
 /** Migration steps whose table rebuild would otherwise break `REFERENCES` clauses pointing at the table being rebuilt. */

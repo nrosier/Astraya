@@ -54,6 +54,10 @@ export function describePlacement(placement: CorpusPlacement): string {
       return `${bodyLabel(placement.body)}, nakshatra ${String(placement.nakshatra)}`;
     case 'pattern':
       return placement.pattern;
+    case 'profected-house':
+      return `house ${String(placement.house)} profected`;
+    case 'astro-line':
+      return `${bodyLabel(placement.body)} ${placement.angle} line`;
   }
 }
 
