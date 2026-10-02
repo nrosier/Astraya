@@ -123,3 +123,30 @@ export async function generateTier2Interpretation(request: Tier2Request): Promis
   const { sections } = (await response.json()) as { sections: readonly Tier2Section[] };
   return sections;
 }
+
+/** One past generation's metadata — never its text; see `listSavedInterpretations`/`getSavedInterpretation` (#392). */
+export interface SavedInterpretationSummary {
+  readonly id: string;
+  readonly mode: string;
+  readonly locale: Locale;
+  readonly createdAt: string;
+}
+
+export interface SavedInterpretationDetail extends SavedInterpretationSummary {
+  readonly sections: readonly Tier2Section[];
+}
+
+/** This user's own past generations, newest first — empty (not an error) when the server has no `ASTRAYA_ENCRYPTION_KEY` configured, same as `generateTier2Interpretation` never fails just because saving was skipped. */
+export async function listSavedInterpretations(): Promise<readonly SavedInterpretationSummary[]> {
+  const response = await fetch('/api/interpretation/results');
+  if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
+  const { results } = (await response.json()) as { results: readonly SavedInterpretationSummary[] };
+  return results;
+}
+
+/** Reopens one past generation by id, without calling the model again. */
+export async function getSavedInterpretation(id: string): Promise<SavedInterpretationDetail> {
+  const response = await fetch(`/api/interpretation/results/${encodeURIComponent(id)}`);
+  if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
+  return (await response.json()) as SavedInterpretationDetail;
+}

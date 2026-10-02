@@ -17,9 +17,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
+import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { build } from '../server/index.ts';
+import { saveInterpretationResult } from '../server/interpretation/results.ts';
 import { ReportView, PERSONA_LABELS } from '../src/ui/ReportView.js';
 import { reportViewMessages } from '../src/ui/ReportView.messages.js';
 import { toTier2ChartPayload } from '../src/interpretation/tier2-client.js';
@@ -797,6 +799,57 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     expect(lastGenerateRequest).toMatchObject({ mode: 'grounded' });
     expect(lastGenerateRequest).toHaveProperty('placementKeys');
     expect(lastGenerateRequest).not.toHaveProperty('chartData');
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('lists a saved generation and reopens it without ever calling /generate (#392)', async () => {
+    // /api/interpretation/generate is intercepted by this describe block's own fetch mock
+    // (above) rather than reaching the real server (so other tests here can control its exact
+    // response/error shape) — meaning a real generate click never actually writes a row via
+    // saveInterpretationResult. Inserting one directly, against the same db file and the same
+    // ASTRAYA_ENCRYPTION_KEY this server is configured with, tests the list+reopen path on its
+    // own terms: a real GET against the real route, decrypting a real row.
+    const { container, root } = await mountSignedIn();
+
+    const raw = new DatabaseSync(join(dir, 'astraya.db'));
+    const { id: userId } = raw.prepare('SELECT id FROM users WHERE username = ?').get('alice') as { id: string };
+    const key = Buffer.from(process.env.ASTRAYA_ENCRYPTION_KEY ?? '', 'base64');
+    const savedId = saveInterpretationResult(
+      raw,
+      { userId, mode: 'synthesis', locale: 'en', sections: [{ heading: 'Overview', body: 'A saved interpretation.' }] },
+      key,
+    );
+    raw.close();
+
+    let savedButton: HTMLButtonElement | undefined;
+    await vi.waitFor(() => {
+      const found = panelOf(container).querySelector('.tier2-saved-results button');
+      expect(found).not.toBeNull();
+      savedButton = found as HTMLButtonElement;
+    });
+
+    const generateCallsBeforeReopen = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+      (call: unknown[]) => call[0] === '/api/interpretation/generate',
+    ).length;
+
+    act(() => {
+      savedButton?.click();
+    });
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.tier2-result')?.textContent).toContain('A saved interpretation.');
+    });
+    expect(savedId).not.toBe('');
+    expect(panelOf(container).textContent).toContain(reportViewMessages.en.tier2SavedHeading);
+
+    // Reopened via GET /api/interpretation/results/:id, never a POST /generate.
+    const generateCallsAfterReopen = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+      (call: unknown[]) => call[0] === '/api/interpretation/generate',
+    ).length;
+    expect(generateCallsAfterReopen).toBe(generateCallsBeforeReopen);
 
     act(() => {
       root.unmount();

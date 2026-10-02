@@ -40,6 +40,12 @@
  * doesn't bound spend, since one call's cost varies with prompt/output
  * length, but it still stops a single account from hammering the route
  * before either cap has accumulated enough usage to trip.
+ *
+ * A successful generation is also saved (#392, `interpretation/results.ts`) so the user who
+ * generated it can reopen it later via `GET /api/interpretation/results[/:id]` without calling
+ * the model again — encrypted at rest the same way `ops.payload` is, and only when
+ * `ASTRAYA_INTERPRETATION_API_KEY`'s sibling encryption setting, `ASTRAYA_ENCRYPTION_KEY`, is
+ * configured. Missing that key disables saving, not generation — the two are independent.
  */
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Database } from './db.ts';
@@ -53,6 +59,12 @@ import {
   costCentsSinceByUser,
 } from './interpretation/usage.ts';
 import { checkCustomPrompt } from '../src/interpretation/prompt-guardrail.ts';
+import { loadEncryptionKey } from './ops/crypto.ts';
+import {
+  saveInterpretationResult,
+  listInterpretationResults,
+  getInterpretationResult,
+} from './interpretation/results.ts';
 import { CORPUS_LOCALES, parsePlacementKey, validateKey, type Locale } from '../src/interpretation/schema.ts';
 import { resolvePlacementText } from '../src/interpretation/compose.ts';
 import { CORPUS } from '../src/interpretation/index.ts';
@@ -442,7 +454,43 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
         costCents,
       });
 
+      // Saving for later retrieval (#392) is additive, not this route's primary job — a missing
+      // encryption key disables it the same way it disables the sync relay (never write
+      // unencrypted), but unlike the relay that must not fail the generation that already
+      // succeeded; the reader just won't be able to reopen this one later.
+      const resultsKey = loadEncryptionKey();
+      if (resultsKey) {
+        saveInterpretationResult(db, { userId, mode, locale, sections: result.sections }, resultsKey);
+      }
+
       return reply.send({ sections: result.sections });
+    },
+  );
+
+  // Lists this user's own past generations (metadata only — mode/locale/when, never the text
+  // itself, so this works even when ASTRAYA_ENCRYPTION_KEY has since been removed or rotated).
+  app.get(
+    '/api/interpretation/results',
+    { preHandler: requireUser(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const userId = authenticatedUserId(request);
+      return reply.send({ results: listInterpretationResults(db, userId) });
+    },
+  );
+
+  // Re-opens one of this user's own past generations without calling the model again.
+  app.get<{ Params: { id: string } }>(
+    '/api/interpretation/results/:id',
+    { preHandler: requireUser(db), config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const userId = authenticatedUserId(request);
+      const key = loadEncryptionKey();
+      if (!key) {
+        return reply.code(503).send({ error: 'Saved interpretations are not available on this server.' });
+      }
+      const found = getInterpretationResult(db, userId, request.params.id, key);
+      if (!found) return reply.code(404).send({ error: 'No saved interpretation with that id.' });
+      return reply.send(found);
     },
   );
 

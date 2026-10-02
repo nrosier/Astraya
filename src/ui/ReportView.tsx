@@ -48,8 +48,11 @@ import { reportViewMessages } from './ReportView.messages.js';
 import {
   generateTier2Interpretation,
   toTier2ChartPayload,
+  listSavedInterpretations,
+  getSavedInterpretation,
   Tier2Error,
   type Tier2Section,
+  type SavedInterpretationSummary,
 } from '../interpretation/tier2-client.js';
 import type { ChartData } from '../domain/chart-compute.js';
 
@@ -166,6 +169,17 @@ function AiCustomizedPanel({
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<readonly Tier2Section[] | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [savedResults, setSavedResults] = useState<readonly SavedInterpretationSummary[]>([]);
+  const [openSavedId, setOpenSavedId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (user === undefined) return;
+    // Empty (not an error) when the server has no ASTRAYA_ENCRYPTION_KEY configured — saving is
+    // additive, so there's simply nothing to list, not a failure to surface (#392).
+    void listSavedInterpretations()
+      .then(setSavedResults)
+      .catch(() => undefined);
+  }, [user]);
 
   if (user === undefined) {
     return (
@@ -207,12 +221,32 @@ function AiCustomizedPanel({
     generateTier2Interpretation(request)
       .then((sections) => {
         setResult(sections);
+        // Refreshes the list so a just-saved generation (if saving is enabled on this server)
+        // shows up without a reload — best-effort, same as the initial load (#392).
+        void listSavedInterpretations()
+          .then(setSavedResults)
+          .catch(() => undefined);
       })
       .catch((caught: unknown) => {
         setError(caught instanceof Tier2Error ? caught.message : String(caught));
       })
       .finally(() => {
         setGenerating(false);
+      });
+  }
+
+  function openSaved(id: string): void {
+    setOpenSavedId(id);
+    setError(undefined);
+    getSavedInterpretation(id)
+      .then((detail) => {
+        setResult(detail.sections);
+      })
+      .catch((caught: unknown) => {
+        setError(caught instanceof Tier2Error ? caught.message : String(caught));
+      })
+      .finally(() => {
+        setOpenSavedId(undefined);
       });
   }
 
@@ -311,6 +345,27 @@ function AiCustomizedPanel({
               <p>{section.body}</p>
             </article>
           ))}
+        </div>
+      )}
+      {savedResults.length > 0 && (
+        <div className="tier2-saved-results">
+          <h4>{t.tier2SavedHeading}</h4>
+          <ul>
+            {savedResults.map((saved) => (
+              <li key={saved.id}>
+                <button
+                  type="button"
+                  className="quiet"
+                  disabled={openSavedId !== undefined}
+                  onClick={() => {
+                    openSaved(saved.id);
+                  }}
+                >
+                  {t.tier2SavedEntry(saved.createdAt, saved.mode)}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </section>

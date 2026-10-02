@@ -37,6 +37,8 @@ const en = {
   tier2GenerateDisabledEmpty: 'enter style, tone, and focus instructions first',
   tier2GenerateDisabledGuardrail: 'fix the issues above first',
   tier2Error: (message: string) => `Could not generate: ${message}`,
+  tier2SavedHeading: 'Past interpretations',
+  tier2SavedEntry: (createdAt: string, mode: string) => `${createdAt} (${mode})`,
 };
 
 const nl: typeof en = {
@@ -76,6 +78,8 @@ const nl: typeof en = {
   tier2GenerateDisabledEmpty: 'voer eerst stijl-, toon- en focusinstructies in',
   tier2GenerateDisabledGuardrail: 'los eerst de bovenstaande problemen op',
   tier2Error: (message: string) => `Genereren mislukt: ${message}`,
+  tier2SavedHeading: 'Eerdere interpretaties',
+  tier2SavedEntry: (createdAt: string, mode: string) => `${createdAt} (${mode})`,
 };
 
 export const reportViewMessages = { en, nl };

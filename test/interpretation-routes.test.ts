@@ -712,3 +712,126 @@ describe('GET /api/admin/interpretation-usage (#382)', () => {
     expect(body.caps).toEqual({ userDailyCapCents: 42, totalDailyCapCents: 420 });
   });
 });
+
+describe('saved interpretation results (#392)', () => {
+  it('rejects an unauthenticated list request with 401', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/interpretation/results' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('rejects an unauthenticated get-by-id request with 401', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/interpretation/results/anything' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('lists nothing for a user who has never generated anything', async () => {
+    const cookie = await signIn(app);
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json<{ results: unknown[] }>().results).toEqual([]);
+  });
+
+  it('saves a successful generation and makes it retrievable without calling the model again', async () => {
+    const cookie = await signIn(app);
+    const generated = await app.inject({
+      method: 'POST',
+      url: '/api/interpretation/generate',
+      cookies: { [SESSION_COOKIE]: cookie },
+      payload: VALID_BODY,
+    });
+    expect(generated.statusCode).toBe(200);
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(list.statusCode).toBe(200);
+    const { results } = list.json<{ results: { id: string; mode: string; locale: string; createdAt: string }[] }>();
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ mode: 'grounded', locale: 'en' });
+
+    // fetchMock is only ever stubbed to answer the Gemini call — the result below must come
+    // entirely from the saved row, not a second model call.
+    const callsBeforeReopen = fetchMock.mock.calls.length;
+    const detail = await app.inject({
+      method: 'GET',
+      url: `/api/interpretation/results/${results[0]?.id}`,
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(detail.statusCode).toBe(200);
+    expect(detail.json()).toMatchObject({
+      mode: 'grounded',
+      locale: 'en',
+      sections: [{ heading: 'Overview', body: 'A restyled interpretation.' }],
+    });
+    expect(fetchMock.mock.calls.length).toBe(callsBeforeReopen);
+  });
+
+  it('returns 404 for a result id that belongs to a different user', async () => {
+    const aliceCookie = await signIn(app);
+    await app.inject({
+      method: 'POST',
+      url: '/api/interpretation/generate',
+      cookies: { [SESSION_COOKIE]: aliceCookie },
+      payload: VALID_BODY,
+    });
+    const { results } = (
+      await app.inject({
+        method: 'GET',
+        url: '/api/interpretation/results',
+        cookies: { [SESSION_COOKIE]: aliceCookie },
+      })
+    ).json<{ results: { id: string }[] }>();
+
+    const { sessionId: bobCookie } = await createAndLoginUser(app, 'bob', 'correct-horse-battery-2');
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/interpretation/results/${results[0]?.id}`,
+      cookies: { [SESSION_COOKIE]: bobCookie },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('returns 404 for an id that does not exist at all', async () => {
+    const cookie = await signIn(app);
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results/not-a-real-id',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('does not save anything, and returns 503 on get-by-id, when ASTRAYA_ENCRYPTION_KEY is not configured', async () => {
+    delete process.env.ASTRAYA_ENCRYPTION_KEY;
+    const cookie = await signIn(app);
+
+    const generated = await app.inject({
+      method: 'POST',
+      url: '/api/interpretation/generate',
+      cookies: { [SESSION_COOKIE]: cookie },
+      payload: VALID_BODY,
+    });
+    // Saving is additive — a missing encryption key must not fail the generation itself.
+    expect(generated.statusCode).toBe(200);
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(list.json<{ results: unknown[] }>().results).toEqual([]);
+
+    const detail = await app.inject({
+      method: 'GET',
+      url: '/api/interpretation/results/anything',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    expect(detail.statusCode).toBe(503);
+  });
+});
