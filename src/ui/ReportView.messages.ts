@@ -31,6 +31,10 @@ const en = {
   guardrailIssueFatalisticPhrasing: 'Avoid absolute, no-way-out phrasing (e.g. "you will never...").',
   guardrailIssueMedicalLegalFinancialClaim: 'Avoid asking for medical, legal, or financial advice.',
   guardrailIssuePiiShape: 'This looks like it contains a date or coordinate — describe style, tone, and focus only.',
+  guardrailIssueOffTopic:
+    'This is about files, systems, or access, not the interpretation — describe style, tone, and focus only.',
+  guardrailIssueFabricationRequest:
+    'This asks the model to invent or ignore facts rather than restyle the real chart — not allowed.',
   tier2Generate: 'Generate',
   tier2Generating: 'Generating…',
   tier2GenerateDisabledConsent: 'check the consent box first',
@@ -72,6 +76,10 @@ const nl: typeof en = {
   guardrailIssueFatalisticPhrasing: 'Vermijd absolute, uitzichtloze bewoordingen (bijv. "je zult nooit...").',
   guardrailIssueMedicalLegalFinancialClaim: 'Vraag niet om medisch, juridisch of financieel advies.',
   guardrailIssuePiiShape: 'Dit lijkt een datum of coördinaat te bevatten — beschrijf alleen stijl, toon en focus.',
+  guardrailIssueOffTopic:
+    'Dit gaat over bestanden, systemen of toegang, niet over de interpretatie — beschrijf alleen stijl, toon en focus.',
+  guardrailIssueFabricationRequest:
+    'Dit vraagt het model om feiten te verzinnen of te negeren in plaats van de echte horoscoop anders te verwoorden — niet toegestaan.',
   tier2Generate: 'Genereren',
   tier2Generating: 'Genereren…',
   tier2GenerateDisabledConsent: 'vink eerst het toestemmingsvakje aan',

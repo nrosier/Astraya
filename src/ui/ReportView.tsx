@@ -76,6 +76,10 @@ function guardrailIssueMessage(t: typeof reportViewMessages.en, issue: Guardrail
       return t.guardrailIssueMedicalLegalFinancialClaim;
     case 'pii-shape':
       return t.guardrailIssuePiiShape;
+    case 'off-topic':
+      return t.guardrailIssueOffTopic;
+    case 'fabrication-request':
+      return t.guardrailIssueFabricationRequest;
   }
 }
 
