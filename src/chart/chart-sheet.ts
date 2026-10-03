@@ -59,13 +59,11 @@ export interface ChartSheet {
 const DEFAULT_SIZE = 800;
 
 /**
- * The lower panels sit two abreast — the square aspect grid beside the
- * element table — with the degree strip full width underneath. Fractions of
- * the content width, so the split holds at every size.
+ * The element/modality table is a fraction of the content width, so it keeps its shape at every
+ * size. It sits in the empty upper-right of the aspect staircase, or under it when that is too
+ * crowded to leave room (#413).
  */
-const MATRIX_WIDTH_FRACTION = 0.55;
-const COLUMN_GAP_FRACTION = 0.05;
-const EMPHASIS_WIDTH_FRACTION = 1 - MATRIX_WIDTH_FRACTION - COLUMN_GAP_FRACTION;
+const EMPHASIS_WIDTH_FRACTION = 0.4;
 
 export function renderChartSheetSvg(input: ChartSheetInput, options?: ChartSheetOptions): ChartSheet {
   const size = options?.size ?? DEFAULT_SIZE;
@@ -108,18 +106,37 @@ export function renderChartSheetSvg(input: ChartSheetInput, options?: ChartSheet
   );
   y += size + gap;
 
-  const matrixWidth = contentWidth * MATRIX_WIDTH_FRACTION;
+  // The grid and its positions table take the full width; the element/modality table sits in
+  // the empty upper-right of the staircase, as on the reference sheet, when it fits there.
+  const matrixLayout: PanelLayout = { x: contentX, y, width: contentWidth };
+  const matrix = renderAspectMatrixSvg(input.matrix, matrixLayout);
   const emphasisWidth = contentWidth * EMPHASIS_WIDTH_FRACTION;
-  const matrixLayout: PanelLayout = { x: contentX, y, width: matrixWidth };
   const emphasisLayout: PanelLayout = {
     x: contentX + contentWidth - emphasisWidth,
     y,
     width: emphasisWidth,
   };
-  const matrix = renderAspectMatrixSvg(input.matrix, matrixLayout);
   const emphasis = renderEmphasisGridSvg(input.emphasis, emphasisLayout, fontSize);
-  parts.push(matrix.markup, emphasis.markup);
-  y += Math.max(matrix.height, emphasis.height) + gap;
+  const rowHeight = input.matrix.bodies.length === 0 ? 0 : matrix.height / input.matrix.bodies.length;
+  // The staircase's right edge at row `r` is the table width plus `r + 1` cells; the emphasis
+  // grid clears it when its last row's edge is still left of the grid's own left edge.
+  const rowsUnderEmphasis = rowHeight === 0 ? 0 : Math.ceil(emphasis.height / rowHeight);
+  const staircaseEdge = contentX + contentWidth - (input.matrix.bodies.length - rowsUnderEmphasis) * rowHeight;
+  const emphasisFits = rowHeight > 0 && staircaseEdge + gap <= emphasisLayout.x;
+  parts.push(matrix.markup);
+  if (emphasisFits) {
+    parts.push(emphasis.markup);
+    y += matrix.height + gap;
+  } else {
+    const belowLayout: PanelLayout = {
+      x: contentX + contentWidth - emphasisWidth,
+      y: y + matrix.height + gap,
+      width: emphasisWidth,
+    };
+    const below = renderEmphasisGridSvg(input.emphasis, belowLayout, fontSize);
+    parts.push(below.markup);
+    y += matrix.height + gap + below.height + gap;
+  }
 
   const strip = renderDegreeStripSvg(
     input.strip,

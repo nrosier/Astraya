@@ -17,7 +17,9 @@
 import {
   DEFAULT_ORB_CONFIG,
   findAspects,
+  matchAspect,
   type Aspect,
+  type AspectMatch,
   type AspectSubject,
   type OrbConfig,
 } from '../astrology/aspects.js';
@@ -80,10 +82,35 @@ export interface ChartCalculationOptions {
   };
 }
 
+/** Which chart angle an `AngleAspect` is to. */
+export type AspectAngle = 'asc' | 'mc';
+
+/**
+ * An aspect between a chart angle (the Ascendant or Midheaven) and a body (#413). Separate from
+ * `Aspect` because an angle has no `BodyId`; `body` is the body side, `angle` the angle side.
+ */
+export interface AngleAspect extends AspectMatch {
+  readonly angle: AspectAngle;
+  readonly body: BodyId;
+}
+
+/**
+ * How fast the Ascendant and Midheaven sweep the ecliptic, in degrees per day — one turn of the
+ * sky per sidereal day. Only used to decide applying/separating for an angle aspect, where the
+ * angle's own motion dwarfs any body's, so its exact instantaneous rate doesn't matter.
+ */
+const ANGLE_SPEED_DEG_PER_DAY = 360.9856;
+
 export interface ChartData {
   readonly positions: readonly BodyPosition[];
   readonly houses: HousePositions;
   readonly aspects: readonly Aspect[];
+  /**
+   * Aspects from the Ascendant and Midheaven to each body that takes part in `aspects` (#413).
+   * Undefined for a composite/harmonic chart (those have no real angles to aspect) and empty when
+   * the houses have no solution.
+   */
+  readonly angleAspects?: readonly AngleAspect[];
   readonly dignities: ReadonlyMap<BodyId, EssentialDignities>;
   readonly sect: Sect;
   readonly partOfFortune: Degrees;
@@ -127,6 +154,36 @@ export function housesAreDefined(houses: HousePositions): boolean {
     Number.isFinite(houses.midheaven) &&
     houses.cusps.slice(1).every((cusp) => Number.isFinite(cusp))
   );
+}
+
+/** Aspects from the Ascendant and Midheaven to every subject, treating each angle as a non-luminary point. */
+function findAngleAspects(
+  houses: HousePositions,
+  subjects: readonly AspectSubject[],
+  orbConfig: OrbConfig,
+): readonly AngleAspect[] {
+  const angles: readonly (readonly [AspectAngle, Degrees])[] = [
+    ['asc', houses.ascendant],
+    ['mc', houses.midheaven],
+  ];
+  const result: AngleAspect[] = [];
+  for (const [angle, longitude] of angles) {
+    const anglePosition: BodyPosition = {
+      body: -1,
+      longitude,
+      latitude: 0,
+      distance: 1,
+      longitudeSpeed: ANGLE_SPEED_DEG_PER_DAY,
+      latitudeSpeed: 0,
+      distanceSpeed: 0,
+      retrograde: false,
+    };
+    for (const subject of subjects) {
+      const match = matchAspect(anglePosition, 'planet', subject.position, subject.category, orbConfig);
+      if (match) result.push({ ...match, angle, body: subject.body });
+    }
+  }
+  return result;
 }
 
 /**
@@ -220,7 +277,9 @@ export async function computeChartDataAtJd(
     if (body.category === 'node' && aspectsTo.lunarNodes !== true) return [];
     return [{ body: body.id, position, category: body.category }];
   });
-  const aspects = findAspects(subjects, options.orbConfig ?? DEFAULT_ORB_CONFIG);
+  const orbConfig = options.orbConfig ?? DEFAULT_ORB_CONFIG;
+  const aspects = findAspects(subjects, orbConfig);
+  const angleAspects = housesAreDefined(houses) ? findAngleAspects(houses, subjects, orbConfig) : [];
 
   const dignities = new Map<BodyId, EssentialDignities>(
     positions.map((position) => [position.body, essentialDignities(position.body, position.longitude)]),
@@ -241,6 +300,7 @@ export async function computeChartDataAtJd(
     positions,
     houses,
     aspects,
+    angleAspects,
     dignities,
     sect,
     partOfFortune: partOfFortune(sect, houses.ascendant, sunPosition.longitude, moonPosition.longitude),
