@@ -4,6 +4,17 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.23.1] — 2026-10-03
+
+**A patch for v0.23.0: the same app, with its changelog entry corrected so the release could be published.**
+
+v0.23.0's changelog entry had a formatting slip (a code span inside bold text) that the changelog-rendering test rightly rejected, so its GitHub release was never created even though its Docker image and demo went out. Nothing in the app itself changes; this release is the first to carry the corrected entry.
+
+### Fixed
+
+- **The v0.23.0 changelog entry renders cleanly on the Changelog page** — one bullet showed raw backticks.
+- **The end-to-end test for click-to-isolate (#400) selects the clickable glyph group** rather than every element tagged with the planet, which since the wheel redesign (#412) includes its degree stack and tick. The suite is green again.
+
 ## [0.23.0] — 2026-10-03
 
 **The natal wheel and aspect grid are rebuilt in the classic Astro-Seek/Astrodienst layout, every wheel symbol is now reliably clickable, an Admin area joins the main menu, and Tier-2 custom prompts are checked by a model before anything is generated.**
@@ -25,7 +36,7 @@ M9 (Polish & launch) progress, not a finished milestone — v1.0.0 hasn't shippe
 
 - **The Tier-2 mode choice is a dropdown with a one-line description of the selected mode, replacing the three radio buttons (#411).**
 - **The corner pill that opened the user list is now "Admin" (#414), and the user list no longer carries the AI-usage table or the corpus links** — both live on the new admin tab strip.
-- **The aspect grid's orb is now the signed distance from exact (`-3` means three degrees short), with applying/separating as a separate `a`/`s` (#413)** — it used to print `-`/`+` for applying/separating with degrees and minutes. The exact orb is still in the Aspects table.
+- **The aspect grid's orb is now the signed distance from exact (-3 means three degrees short), with applying or separating shown separately as a or s (#413).** It used to print a minus or plus for applying or separating, with degrees and minutes. The exact orb is still in the Aspects table.
 - **Evaluation-loop state for the corpus tooling is now committed** (`tools/corpus-gen/eval-tracking/`), so the review loop's memory of which entries were already judged clean survives a fresh checkout.
 
 ## [0.22.0] — 2026-10-03
