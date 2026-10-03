@@ -2331,3 +2331,42 @@ label.stacked textarea:focus-visible {
     page-break-inside: avoid;
   }
 }
+
+/* Planetary cycles (#410): the zodiac with a cycle's exact aspects joined in order. */
+.cycles-form {
+  margin-bottom: 0.5rem;
+}
+
+.cycle-figure {
+  margin: 1rem 0 1.5rem;
+}
+
+.cycle-diagram {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.cycle-ring,
+.cycle-sign-boundary {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
+.cycle-link {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  opacity: 0.8;
+}
+
+.cycle-point {
+  fill: var(--accent);
+}
+
+.cycle-diagram .cycle-point-label {
+  fill: var(--fg);
+  font:
+    600 0.7rem system-ui,
+    sans-serif;
+}

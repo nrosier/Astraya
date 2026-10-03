@@ -53,6 +53,7 @@ export type Route =
   // periodic-transit's "as of" date above.
   | { readonly kind: 'astrocartography'; readonly personId: string }
   | { readonly kind: 'shared' }
+  | { readonly kind: 'cycles' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'admin-usage' }
   | { readonly kind: 'corpus-overrides' }
@@ -90,6 +91,9 @@ export function parseRoute(hash: string): Route {
     // #65: a chart shared by link — everything it needs is in the query, not the store.
     case '#/shared':
       return { kind: 'shared' };
+    // #410: planetary cycles — ephemeris only, no person, no stored data.
+    case '#/cycles':
+      return { kind: 'cycles' };
     case '#/admin':
       return { kind: 'admin' };
     case '#/admin/usage':

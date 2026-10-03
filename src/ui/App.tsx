@@ -49,6 +49,7 @@ const ReportScreen = lazy(async () => ({ default: (await personScreens()).Report
 const SolarArcView = lazy(async () => ({ default: (await personScreens()).SolarArcView }));
 const SynastryView = lazy(async () => ({ default: (await personScreens()).SynastryView }));
 const TransitView = lazy(async () => ({ default: (await personScreens()).TransitView }));
+const CyclesView = lazy(async () => ({ default: (await import('./CyclesView.js')).CyclesView }));
 const AdminPanel = lazy(async () => ({ default: (await import('./AdminPanel.js')).AdminPanel }));
 const AdminUsagePanel = lazy(async () => ({ default: (await import('./AdminPanel.js')).AdminUsagePanel }));
 const CorpusOverridesPanel = lazy(async () => ({
@@ -273,6 +274,7 @@ function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.E
   if (parsed.kind === 'about') return <About seVersion={seVersion} />;
   if (parsed.kind === 'changelog') return <Changelog />;
   if (parsed.kind === 'shared') return <SharedChartView />;
+  if (parsed.kind === 'cycles') return <CyclesView />;
   if (parsed.kind === 'set-password') return <SetPasswordForm />;
   if (parsed.kind === 'setup') return <SetupForm />;
   if (
