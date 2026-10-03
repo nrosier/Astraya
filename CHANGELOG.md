@@ -4,6 +4,30 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.23.0] — 2026-10-03
+
+**The natal wheel and aspect grid are rebuilt in the classic Astro-Seek/Astrodienst layout, every wheel symbol is now reliably clickable, an Admin area joins the main menu, and Tier-2 custom prompts are checked by a model before anything is generated.**
+
+M9 (Polish & launch) progress, not a finished milestone — v1.0.0 hasn't shipped yet.
+
+### Added
+
+- **A restructured natal wheel (#412).** Outside in: a zodiac dial with the signs coloured by element, a degree ruler hanging inward, a wide planet band where each planet is a radial stack (glyph with an `R` when retrograde, degree, sign, minutes) that moves with its glyph so crowded planets no longer lose their label, and a narrow house dial holding the house numbers, ASC/DSC/MC/IC labels and a tick at each planet's true degree. The four angles run out to the edge with their exact degree printed in the zodiac dial rather than cutting across the aspect web, and aspects within 1° are drawn heavier.
+- **Click-to-isolate now works on every planet, sign and aspect line (#412).** Each has an invisible hit area the size of the whole symbol (a 10px-wide strip for a line), so you no longer have to click exactly on a stroke. Signs are clickable too, isolating the sign, the planets in it and their aspects. Everything not involved fades — including other planets' degrees, signs and ticks — and a pointer cursor, hover highlight and a hint line say what can be clicked.
+- **An Astro-Seek-style aspect grid (#413).** A positions table (glyph, name, degree, element-coloured sign, minutes, house) sits beside the grid; the Ascendant and Midheaven are rows with their own aspects; each cell shows the aspect glyph with the signed whole-degree orb over `a` (applying) or `s` (separating); aspects within 1° of exact get a heavy border; and the element/modality table moves into the empty corner of the staircase.
+- **The Moon's phase on the Positions tab (#403).** One of Rudhyar's eight phases, the Moon's elongation from the Sun to the minute, waxing or waning, and how much of the disk is lit — for example "Last Quarter Moon — 272°57′ ahead of the Sun, waning, 47% lit".
+- **Void-of-course Moon on the Transits screen (#402).** For the chosen date it states whether the Moon has made its last major aspect (to the Sun or Mercury–Pluto) before leaving its sign, since when and until when, or what its next aspect is. Times are exact to the minute and given in UTC.
+- **An Admin tab in the main menu (#414).** Admins get one tab strip — Users, AI usage, Corpus overrides, Corpus candidates — on every admin screen, and an Admin tab at the end of the person menu. AI usage is now its own screen.
+- **Tier-2 custom prompts are checked before anything is generated (#411).** A separate model call judges the instruction and answers `pass` or `fail: <reason>`; only tone, style and focus are allowed, and requests to lie, invent facts or promise outcomes are rejected with the reason shown. A failed or unreadable check blocks generation rather than skipping it. The check is billed against the usage caps like any other call.
+- **OIDC admin-group promotion now explains itself (#414).** Each sign-in logs the groups the token carried and whether any matched, with a warning when admin groups are configured but the token has none; start-up states which groups promote. The README and `.env.example` now say the server reads only its process environment, not a `.env` file by itself, and what the Authentik side must provide.
+
+### Changed
+
+- **The Tier-2 mode choice is a dropdown with a one-line description of the selected mode, replacing the three radio buttons (#411).**
+- **The corner pill that opened the user list is now "Admin" (#414), and the user list no longer carries the AI-usage table or the corpus links** — both live on the new admin tab strip.
+- **The aspect grid's orb is now the signed distance from exact (`-3` means three degrees short), with applying/separating as a separate `a`/`s` (#413)** — it used to print `-`/`+` for applying/separating with degrees and minutes. The exact orb is still in the Aspects table.
+- **Evaluation-loop state for the corpus tooling is now committed** (`tools/corpus-gen/eval-tracking/`), so the review loop's memory of which entries were already judged clean survives a fresh checkout.
+
 ## [0.22.0] — 2026-10-03
 
 **A natal-chart feature pass lands most of #398's remaining "computed but no UI"
