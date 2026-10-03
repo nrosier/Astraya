@@ -32,22 +32,35 @@ import type { Locale } from './schema.js';
 
 export class Tier2Error extends Error {
   readonly status: number;
+  /** `'customization-rejected'` when the server's verification phase refused the custom prompt (#411). */
+  readonly code: string | undefined;
+  /** The verifier's own explanation for that rejection — absent when it gave none. */
+  readonly reason: string | undefined;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, code?: string, reason?: string) {
     super(message);
     this.name = 'Tier2Error';
     this.status = status;
+    this.code = code;
+    this.reason = reason;
   }
 }
 
-async function errorMessage(response: Response): Promise<string> {
+async function errorFrom(response: Response): Promise<Tier2Error> {
   try {
-    const body = (await response.json()) as { error?: unknown };
-    if (typeof body.error === 'string') return body.error;
+    const body = (await response.json()) as { error?: unknown; code?: unknown; reason?: unknown };
+    if (typeof body.error === 'string') {
+      return new Tier2Error(
+        body.error,
+        response.status,
+        typeof body.code === 'string' ? body.code : undefined,
+        typeof body.reason === 'string' ? body.reason : undefined,
+      );
+    }
   } catch {
     /* fall through to the generic message below */
   }
-  return `Request failed with status ${String(response.status)}`;
+  return new Tier2Error(`Request failed with status ${String(response.status)}`, response.status);
 }
 
 /** Hand-mirrors `server/interpretation/llm-client.ts`'s `Tier2Section` — no shared schema library between client and server. */
@@ -119,7 +132,7 @@ export async function generateTier2Interpretation(request: Tier2Request): Promis
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
-  if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
+  if (!response.ok) throw await errorFrom(response);
   const { sections } = (await response.json()) as { sections: readonly Tier2Section[] };
   return sections;
 }
@@ -139,7 +152,7 @@ export interface SavedInterpretationDetail extends SavedInterpretationSummary {
 /** This user's own past generations, newest first — empty (not an error) when the server has no `ASTRAYA_ENCRYPTION_KEY` configured, same as `generateTier2Interpretation` never fails just because saving was skipped. */
 export async function listSavedInterpretations(): Promise<readonly SavedInterpretationSummary[]> {
   const response = await fetch('/api/interpretation/results');
-  if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
+  if (!response.ok) throw await errorFrom(response);
   const { results } = (await response.json()) as { results: readonly SavedInterpretationSummary[] };
   return results;
 }
@@ -147,6 +160,6 @@ export async function listSavedInterpretations(): Promise<readonly SavedInterpre
 /** Reopens one past generation by id, without calling the model again. */
 export async function getSavedInterpretation(id: string): Promise<SavedInterpretationDetail> {
   const response = await fetch(`/api/interpretation/results/${encodeURIComponent(id)}`);
-  if (!response.ok) throw new Tier2Error(await errorMessage(response), response.status);
+  if (!response.ok) throw await errorFrom(response);
   return (await response.json()) as SavedInterpretationDetail;
 }

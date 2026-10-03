@@ -1419,6 +1419,70 @@ label.stacked textarea:focus-visible {
 }
 
 .tier2-result h4 {
+/* Tier 2 mode picker (#411): a styled native select — keeps the platform's own keyboard and
+   screen-reader behavior — with the selected mode's description underneath. */
+.tier2-mode-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0 0 1.25rem;
+  max-width: 32rem;
+}
+
+.tier2-mode-select label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tier2-mode-select select {
+  appearance: none;
+  width: 100%;
+  padding: 0.65rem 2.5rem 0.65rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    right 1.1rem center,
+    right 0.8rem center;
+  background-size: 0.3rem 0.3rem;
+  background-repeat: no-repeat;
+  color: var(--fg);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.tier2-mode-select select:hover {
+  background-color: var(--surface-hover);
+}
+
+.tier2-mode-select select:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in oklab, var(--accent) 55%, transparent);
+  outline-offset: 0;
+}
+
+.tier2-mode-select .hint {
+  margin: 0;
+}
+
+.ai-customized-rejection p {
+  margin: 0;
+}
+
+.ai-customized-rejection p + p {
+  margin-top: 0.35rem;
+}
+
   margin: 0 0 0.4rem;
   color: var(--accent);
   font-size: 0.95rem;

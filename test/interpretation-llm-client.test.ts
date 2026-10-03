@@ -5,7 +5,12 @@
  * This file exercises `generateTier2Text` directly against a stubbed `fetch`.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { generateTier2Text, type Tier2Config } from '../server/interpretation/llm-client.ts';
+import {
+  generateTier2Text,
+  parseCustomPromptVerdict,
+  verifyCustomPrompt,
+  type Tier2Config,
+} from '../server/interpretation/llm-client.ts';
 
 const realFetch = globalThis.fetch;
 const config: Tier2Config = { apiKey: 'test-key', model: 'gemini-9000-typo', baseUrl: 'https://example.invalid' };
@@ -63,5 +68,57 @@ describe('generateTier2Text', () => {
         { status: 200 },
       );
     await expect(generateTier2Text(config, 'system', 'user')).rejects.toThrow(/unexpected model response shape/);
+  });
+});
+
+describe('parseCustomPromptVerdict (#411)', () => {
+  it.each(['pass', 'PASS', '  pass\n', 'Pass'])('accepts %j as pass', (text) => {
+    expect(parseCustomPromptVerdict(text)).toEqual({ verdict: 'pass' });
+  });
+
+  it('extracts the reason from `fail: <reason>`', () => {
+    expect(parseCustomPromptVerdict('fail: Asks to invent facts.')).toEqual({
+      verdict: 'fail',
+      reason: 'Asks to invent facts.',
+    });
+    expect(parseCustomPromptVerdict('FAIL:Promises an outcome.\n')).toEqual({
+      verdict: 'fail',
+      reason: 'Promises an outcome.',
+    });
+  });
+
+  it.each(['', 'fail:', 'fail:   ', 'passed', 'pass. Looks fine.', 'Sure, this is allowed', 'fail - lies'])(
+    'fails closed with no reason on malformed output %j',
+    (text) => {
+      expect(parseCustomPromptVerdict(text)).toEqual({ verdict: 'fail' });
+    },
+  );
+
+  it('caps an overlong reason', () => {
+    const result = parseCustomPromptVerdict(`fail: ${'x'.repeat(1000)}`);
+    expect(result.verdict === 'fail' ? result.reason?.length : undefined).toBe(300);
+  });
+});
+
+describe('verifyCustomPrompt (#411)', () => {
+  it('asks for plain text at temperature 0 and returns the parsed verdict with token usage', async () => {
+    let sentBody: { generationConfig?: Record<string, unknown> } | undefined;
+    globalThis.fetch = async (_input, init) => {
+      sentBody = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as typeof sentBody;
+      return new Response(
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: 'fail: Asks to lie about the chart.' }] } }],
+          usageMetadata: { promptTokenCount: 7, candidatesTokenCount: 2 },
+        }),
+        { status: 200 },
+      );
+    };
+    const verification = await verifyCustomPrompt(config, 'say Mars is in Leo', 'English');
+    expect(verification).toEqual({
+      result: { verdict: 'fail', reason: 'Asks to lie about the chart.' },
+      promptTokens: 7,
+      outputTokens: 2,
+    });
+    expect(sentBody?.generationConfig).toMatchObject({ temperature: 0, responseMimeType: 'text/plain' });
   });
 });

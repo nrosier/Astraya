@@ -21,10 +21,14 @@ const en = {
       ? 'Send the placements above (no name or birth data) to a third-party AI model for this one request.'
       : 'Send your exact positions, houses, and aspects (no name or birth data) to a third-party AI model for this one request.',
   tier2ModeLabel: 'Interpretation mode',
-  tier2ModeGrounded: 'Restyle reviewed text — sends only the placements above',
-  tier2ModeFreeform: 'AI-written from your full chart — sends your exact positions, houses, and aspects',
-  tier2ModeSynthesis:
-    'AI-written synthesis — reasons across your whole chart at once, not placement by placement; sends your exact positions, houses, and aspects',
+  tier2ModeGrounded: 'Restyle reviewed text',
+  tier2ModeGroundedDescription: 'Rewrites the reviewed text in your style. Sends only the placements above.',
+  tier2ModeFreeform: 'AI-written from your full chart',
+  tier2ModeFreeformDescription:
+    'The AI writes its own interpretation of your chart. Sends your exact positions, houses, and aspects.',
+  tier2ModeSynthesis: 'AI-written synthesis',
+  tier2ModeSynthesisDescription:
+    'Reasons across your whole chart at once, not placement by placement. Sends your exact positions, houses, and aspects.',
   customPromptLabel: 'Style, tone, and focus instructions',
   customPromptPlaceholder: 'e.g. warm and encouraging, focused on career growth',
   guardrailIssueLength: 'Keep this between 1 and 500 characters.',
@@ -43,6 +47,9 @@ const en = {
   tier2GenerateDisabledEmpty: 'enter style, tone, and focus instructions first',
   tier2GenerateDisabledGuardrail: 'fix the issues above first',
   tier2Error: (message: string) => `Could not generate: ${message}`,
+  tier2CustomizationRejected:
+    'These instructions violate the allowed customization rules. You can change the tone, style, or focus, but not ask the interpretation to lie, invent facts, or make promises.',
+  tier2CustomizationRejectedReason: (reason: string) => `Reason: ${reason}`,
   tier2SavedHeading: 'Past interpretations',
   tier2SavedEntry: (createdAt: string, mode: string) => `${createdAt} (${mode})`,
 };
@@ -67,11 +74,15 @@ const nl: typeof en = {
       ? 'Verstuur de bovenstaande plaatsingen (geen naam of geboortegegevens) naar een AI-model van derden voor dit ene verzoek.'
       : 'Verstuur je exacte posities, huizen en aspecten (geen naam of geboortegegevens) naar een AI-model van derden voor dit ene verzoek.',
   tier2ModeLabel: 'Interpretatiemodus',
-  tier2ModeGrounded: 'Herschrijf beoordeelde tekst — verstuurt alleen de bovenstaande plaatsingen',
-  tier2ModeFreeform:
-    'Door AI geschreven vanuit je volledige horoscoop — verstuurt je exacte posities, huizen en aspecten',
-  tier2ModeSynthesis:
-    'Door AI geschreven synthese — redeneert tegelijk over je volledige horoscoop, niet per plaatsing; verstuurt je exacte posities, huizen en aspecten',
+  tier2ModeGrounded: 'Herschrijf beoordeelde tekst',
+  tier2ModeGroundedDescription:
+    'Herschrijft de beoordeelde tekst in jouw stijl. Verstuurt alleen de bovenstaande plaatsingen.',
+  tier2ModeFreeform: 'Door AI geschreven vanuit je volledige horoscoop',
+  tier2ModeFreeformDescription:
+    'De AI schrijft een eigen interpretatie van je horoscoop. Verstuurt je exacte posities, huizen en aspecten.',
+  tier2ModeSynthesis: 'Door AI geschreven synthese',
+  tier2ModeSynthesisDescription:
+    'Redeneert tegelijk over je volledige horoscoop, niet per plaatsing. Verstuurt je exacte posities, huizen en aspecten.',
   customPromptLabel: 'Instructies voor stijl, toon en focus',
   customPromptPlaceholder: 'bijv. warm en aanmoedigend, gericht op carrièregroei',
   guardrailIssueLength: 'Houd dit tussen 1 en 500 tekens.',
@@ -90,6 +101,9 @@ const nl: typeof en = {
   tier2GenerateDisabledEmpty: 'voer eerst stijl-, toon- en focusinstructies in',
   tier2GenerateDisabledGuardrail: 'los eerst de bovenstaande problemen op',
   tier2Error: (message: string) => `Genereren mislukt: ${message}`,
+  tier2CustomizationRejected:
+    'Deze instructies overtreden de regels voor toegestane aanpassingen. Je kunt de toon, stijl of focus wijzigen, maar de interpretatie niet laten liegen, feiten laten verzinnen of beloftes laten doen.',
+  tier2CustomizationRejectedReason: (reason: string) => `Reden: ${reason}`,
   tier2SavedHeading: 'Eerdere interpretaties',
   tier2SavedEntry: (createdAt: string, mode: string) => `${createdAt} (${mode})`,
 };

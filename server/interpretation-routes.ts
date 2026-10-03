@@ -33,6 +33,11 @@
  * constraint covers, so it is run through `checkCustomPrompt` here —
  * authoritatively, regardless of whether the client already filtered it —
  * before it is ever combined with the resolved facts and sent to the model.
+ * That phrase-list check is only a cheap pre-filter: a reworded request slips
+ * past any fixed list, so a passing prompt then goes through a separate
+ * model verification call (#411) that answers only `pass` or `fail: <reason>`.
+ * Generation runs only on `pass`; a `fail`, an unparseable answer, or a failed
+ * verification call all stop the request before generation (fail closed).
  *
  * Gated by `requireUser`: any signed-in user, not admin-only, since this is
  * a per-user feature, not an admin one. Rate-limited per user (not global)
@@ -50,7 +55,12 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Database } from './db.ts';
 import { requireUser, requireAdmin } from './auth/identity.ts';
-import { loadTier2Config, generateTier2Text, estimateCostCents } from './interpretation/llm-client.ts';
+import {
+  loadTier2Config,
+  generateTier2Text,
+  verifyCustomPrompt,
+  estimateCostCents,
+} from './interpretation/llm-client.ts';
 import {
   recordUsage,
   userCostCentsSince,
@@ -431,6 +441,37 @@ export function registerInterpretationRoutes(app: FastifyInstance, db: Database)
       }
       if (totalCostCentsSince(db) >= totalDailyCapCents) {
         return reply.code(503).send({ error: 'Daily usage limit reached for this deployment. Try again tomorrow.' });
+      }
+
+      if (mode !== 'synthesis') {
+        let verification;
+        try {
+          verification = await verifyCustomPrompt(
+            config,
+            customPrompt as string,
+            locale === 'nl' ? 'Dutch' : 'English',
+            2,
+            request.log,
+          );
+        } catch (error) {
+          request.log.error(error, 'Tier 2 custom-prompt verification call failed');
+          return reply.code(502).send({ error: 'Your instruction could not be verified right now. Try again later.' });
+        }
+        // The verification call costs tokens whatever its verdict, so it counts toward both caps.
+        recordUsage(db, {
+          userId,
+          promptTokens: verification.promptTokens,
+          outputTokens: verification.outputTokens,
+          costCents: estimateCostCents(verification.promptTokens, verification.outputTokens),
+        });
+        if (verification.result.verdict === 'fail') {
+          const reason = verification.result.reason ?? null;
+          return reply.code(422).send({
+            error: `This instruction violates the allowed customization rules${reason === null ? '.' : `: ${reason}`}`,
+            code: 'customization-rejected',
+            reason,
+          });
+        }
       }
 
       const userContent =

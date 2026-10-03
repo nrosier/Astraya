@@ -549,14 +549,17 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     return button;
   }
 
-  function modeRadio(container: HTMLElement, labelText: string): HTMLInputElement {
-    const label = Array.from(panelOf(container).querySelectorAll('label')).find(
-      (candidate) =>
-        candidate.querySelector('input[type="radio"]') !== null && candidate.textContent.includes(labelText),
-    );
-    const input = label?.querySelector('input[type="radio"]');
-    if (!(input instanceof HTMLInputElement)) throw new Error(`test fixture bug: no radio labeled "${labelText}"`);
-    return input;
+  function modeSelect(container: HTMLElement): HTMLSelectElement {
+    const select = panelOf(container).querySelector('select#tier2-mode');
+    if (!(select instanceof HTMLSelectElement)) throw new Error('test fixture bug: no mode dropdown rendered');
+    return select;
+  }
+
+  /** Same prototype-setter trick as `setTextareaValue` below, for the controlled mode `<select>`. */
+  function selectMode(container: HTMLElement, mode: 'grounded' | 'freeform' | 'synthesis'): void {
+    const select = modeSelect(container);
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(select, mode);
+    select.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   /**
@@ -779,6 +782,101 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     container.remove();
   });
 
+  it('updates the description under the dropdown when the mode changes (#411)', async () => {
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      selectMode(container, 'synthesis');
+      await Promise.resolve();
+    });
+    expect(modeSelect(container).value).toBe('synthesis');
+    expect(panelOf(container).querySelector('#tier2-mode-description')?.textContent).toBe(
+      reportViewMessages.en.tier2ModeSynthesisDescription,
+    );
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('shows the customization-rules rejection with the verifier’s reason, not a generic error (#411)', async () => {
+    generateResponse = () =>
+      new Response(
+        JSON.stringify({
+          error: 'This instruction violates the allowed customization rules: Asks to promise an outcome.',
+          code: 'customization-rejected',
+          reason: 'Asks to promise an outcome.',
+        }),
+        { status: 422 },
+      );
+    const { container, root } = await mountSignedIn();
+    const t = reportViewMessages.en;
+
+    await act(async () => {
+      consentCheckbox(container).click();
+      setTextareaValue(customPromptTextarea(container), 'tell me I will definitely get rich');
+      await Promise.resolve();
+    });
+    act(() => {
+      generateButton(container).click();
+    });
+
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.ai-customized-rejection')).not.toBeNull();
+    });
+    const rejection = panelOf(container).querySelector('.ai-customized-rejection');
+    expect(rejection?.getAttribute('role')).toBe('alert');
+    expect(rejection?.textContent).toContain(t.tier2CustomizationRejected);
+    expect(rejection?.textContent).toContain(t.tier2CustomizationRejectedReason('Asks to promise an outcome.'));
+    expect(panelOf(container).textContent).not.toContain(t.tier2Error(''));
+    expect(panelOf(container).querySelector('.tier2-result')).toBeNull();
+
+    // Editing the instruction clears the stale rejection.
+    await act(async () => {
+      setTextareaValue(customPromptTextarea(container), 'warm and encouraging');
+      await Promise.resolve();
+    });
+    expect(panelOf(container).querySelector('.ai-customized-rejection')).toBeNull();
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('shows the rejection without a reason line when the verifier gave none (#411)', async () => {
+    generateResponse = () =>
+      new Response(
+        JSON.stringify({
+          error: 'This instruction violates the allowed customization rules.',
+          code: 'customization-rejected',
+          reason: null,
+        }),
+        { status: 422 },
+      );
+    const { container, root } = await mountSignedIn();
+
+    await act(async () => {
+      consentCheckbox(container).click();
+      setTextareaValue(customPromptTextarea(container), 'something odd');
+      await Promise.resolve();
+    });
+    act(() => {
+      generateButton(container).click();
+    });
+
+    await vi.waitFor(() => {
+      expect(panelOf(container).querySelector('.ai-customized-rejection')).not.toBeNull();
+    });
+    expect(panelOf(container).querySelectorAll('.ai-customized-rejection p')).toHaveLength(1);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('sends placementKeys (not chartData) in the default, grounded mode', async () => {
     const { container, root } = await mountSignedIn();
 
@@ -896,7 +994,7 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     expect(consentCheckbox(container).checked).toBe(true);
 
     await act(async () => {
-      modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      selectMode(container, 'freeform');
       await Promise.resolve();
     });
 
@@ -914,7 +1012,7 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     expect(panelOf(container).textContent).toContain(reportViewMessages.en.tier2ConsentLabel('grounded'));
 
     await act(async () => {
-      modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      selectMode(container, 'freeform');
       await Promise.resolve();
     });
     expect(panelOf(container).textContent).toContain(reportViewMessages.en.tier2ConsentLabel('freeform'));
@@ -932,7 +1030,7 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     await act(async () => {
       // Mode first, then consent — selecting a mode resets consent (#391), so ticking it
       // beforehand would leave the button disabled.
-      modeRadio(container, reportViewMessages.en.tier2ModeFreeform).click();
+      selectMode(container, 'freeform');
       consentCheckbox(container).click();
       setTextareaValue(customPromptTextarea(container), 'warm and encouraging, focused on career growth');
       await Promise.resolve();
@@ -962,7 +1060,7 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     await act(async () => {
       // Mode first, then consent — selecting a mode resets consent (#391), so ticking it
       // beforehand would leave the button disabled.
-      modeRadio(container, reportViewMessages.en.tier2ModeSynthesis).click();
+      selectMode(container, 'synthesis');
       consentCheckbox(container).click();
       await Promise.resolve();
     });
@@ -988,7 +1086,7 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
     container.remove();
   });
 
-  it('renders the mode toggle labels in the active locale', async () => {
+  it('renders the mode dropdown and its description in the active locale', async () => {
     const { container, root } = await mountSignedIn();
 
     await act(async () => {
@@ -996,8 +1094,17 @@ describe('AiCustomizedPanel, signed in (#360)', () => {
       await Promise.resolve();
     });
 
-    expect(modeRadio(container, reportViewMessages.nl.tier2ModeGrounded).checked).toBe(true);
-    expect(panelOf(container).textContent).toContain(reportViewMessages.nl.tier2ModeFreeform);
+    const select = modeSelect(container);
+    expect(select.value).toBe('grounded');
+    expect(Array.from(select.options).map((option) => option.textContent)).toEqual([
+      reportViewMessages.nl.tier2ModeGrounded,
+      reportViewMessages.nl.tier2ModeFreeform,
+      reportViewMessages.nl.tier2ModeSynthesis,
+    ]);
+    const label = panelOf(container).querySelector('label[for="tier2-mode"]');
+    expect(label?.textContent).toBe(reportViewMessages.nl.tier2ModeLabel);
+    const description = panelOf(container).querySelector(`#${select.getAttribute('aria-describedby') ?? ''}`);
+    expect(description?.textContent).toBe(reportViewMessages.nl.tier2ModeGroundedDescription);
 
     act(() => {
       root.unmount();

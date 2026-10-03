@@ -144,6 +144,8 @@ function Paragraph({
   );
 }
 
+type Tier2Mode = 'grounded' | 'freeform' | 'synthesis';
+
 /**
  * Tier 2 (#360): opt-in, authenticated, per-request-consented LLM-customized
  * interpretation — the "AI-Customized" sub-tab alongside the Tier-1
@@ -154,7 +156,9 @@ function Paragraph({
  * The one free-text field (style/tone/focus instructions) is run through
  * `checkCustomPrompt` on every keystroke so a rejected prompt is visible
  * before Generate is even clickable — a UX nicety only. The server runs the
- * same check authoritatively and does not trust this client-side pass.
+ * same check authoritatively and does not trust this client-side pass, then
+ * has a model verify the prompt (#411) before generating anything — a
+ * rejection from that phase renders as its own alert, not a generic error.
  */
 function AiCustomizedPanel({
   report,
@@ -168,11 +172,12 @@ function AiCustomizedPanel({
   const t = useMessages(reportViewMessages);
   const user = useSessionUserOrUndefined();
   const [consent, setConsent] = useState(false);
-  const [mode, setMode] = useState<'grounded' | 'freeform' | 'synthesis'>('grounded');
+  const [mode, setMode] = useState<Tier2Mode>('grounded');
   const [customPrompt, setCustomPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<readonly Tier2Section[] | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [rejection, setRejection] = useState<{ readonly reason: string | undefined } | undefined>(undefined);
   const [savedResults, setSavedResults] = useState<readonly SavedInterpretationSummary[]>([]);
   const [openSavedId, setOpenSavedId] = useState<string | undefined>(undefined);
 
@@ -212,6 +217,7 @@ function AiCustomizedPanel({
   function handleGenerate(): void {
     setGenerating(true);
     setError(undefined);
+    setRejection(undefined);
     // Consent authorizes one specific request, not a standing preference (ADR 0003) — spent the
     // moment this request is dispatched, so a second "Generate" click (or a mode switch
     // afterward sending a broader payload) requires a fresh tick, not a leftover one (#391).
@@ -232,6 +238,10 @@ function AiCustomizedPanel({
           .catch(() => undefined);
       })
       .catch((caught: unknown) => {
+        if (caught instanceof Tier2Error && caught.code === 'customization-rejected') {
+          setRejection({ reason: caught.reason });
+          return;
+        }
         setError(caught instanceof Tier2Error ? caught.message : String(caught));
       })
       .finally(() => {
@@ -242,6 +252,7 @@ function AiCustomizedPanel({
   function openSaved(id: string): void {
     setOpenSavedId(id);
     setError(undefined);
+    setRejection(undefined);
     getSavedInterpretation(id)
       .then((detail) => {
         setResult(detail.sections);
@@ -257,50 +268,32 @@ function AiCustomizedPanel({
   return (
     <section className="report-section ai-customized-panel">
       <h3>{t.tier2Heading}</h3>
-      <fieldset className="field-group">
-        <legend>{t.tier2ModeLabel}</legend>
-        <div role="radiogroup" aria-label={t.tier2ModeLabel}>
-          <label>
-            <input
-              type="radio"
-              name="tier2-mode"
-              checked={mode === 'grounded'}
-              onChange={() => {
-                setMode('grounded');
-                // The consent statement's wording depends on mode (what it discloses sending
-                // differs) — switching mode re-requires a tick rather than carrying over consent
-                // given under a different, narrower claim (#391).
-                setConsent(false);
-              }}
-            />{' '}
-            {t.tier2ModeGrounded}
-          </label>{' '}
-          <label>
-            <input
-              type="radio"
-              name="tier2-mode"
-              checked={mode === 'freeform'}
-              onChange={() => {
-                setMode('freeform');
-                setConsent(false);
-              }}
-            />{' '}
-            {t.tier2ModeFreeform}
-          </label>{' '}
-          <label>
-            <input
-              type="radio"
-              name="tier2-mode"
-              checked={mode === 'synthesis'}
-              onChange={() => {
-                setMode('synthesis');
-                setConsent(false);
-              }}
-            />{' '}
-            {t.tier2ModeSynthesis}
-          </label>
-        </div>
-      </fieldset>
+      <div className="tier2-mode-select">
+        <label htmlFor="tier2-mode">{t.tier2ModeLabel}</label>
+        <select
+          id="tier2-mode"
+          value={mode}
+          aria-describedby="tier2-mode-description"
+          onChange={(event) => {
+            setMode(event.target.value as Tier2Mode);
+            // The consent statement's wording depends on mode (what it discloses sending
+            // differs) — switching mode re-requires a tick rather than carrying over consent
+            // given under a different, narrower claim (#391).
+            setConsent(false);
+          }}
+        >
+          <option value="grounded">{t.tier2ModeGrounded}</option>
+          <option value="freeform">{t.tier2ModeFreeform}</option>
+          <option value="synthesis">{t.tier2ModeSynthesis}</option>
+        </select>
+        <p id="tier2-mode-description" className="hint">
+          {mode === 'grounded'
+            ? t.tier2ModeGroundedDescription
+            : mode === 'freeform'
+              ? t.tier2ModeFreeformDescription
+              : t.tier2ModeSynthesisDescription}
+        </p>
+      </div>
       <label>
         <input
           type="checkbox"
@@ -319,6 +312,7 @@ function AiCustomizedPanel({
             placeholder={t.customPromptPlaceholder}
             onChange={(event) => {
               setCustomPrompt(event.target.value);
+              setRejection(undefined);
             }}
           />
         </label>
@@ -341,6 +335,12 @@ function AiCustomizedPanel({
         {generating ? t.tier2Generating : t.tier2Generate}
       </button>
       {error !== undefined && <p role="alert">{t.tier2Error(error)}</p>}
+      {rejection !== undefined && (
+        <div className="ai-customized-rejection warning" role="alert">
+          <p>{t.tier2CustomizationRejected}</p>
+          {rejection.reason !== undefined && <p>{t.tier2CustomizationRejectedReason(rejection.reason)}</p>}
+        </div>
+      )}
       {result !== undefined && (
         <div className="tier2-result">
           {result.map((section) => (
