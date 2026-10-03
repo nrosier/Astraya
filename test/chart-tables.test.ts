@@ -728,25 +728,60 @@ describe('chartSheetInput', () => {
     partOfSpirit: 0,
   };
 
-  it('gives every panel the same bodies, in ChartData order', () => {
+  it('gives every panel the same bodies, in ChartData order, with the grid also carrying the two angles (#413)', () => {
     const input = chartSheetInput(data);
-    expect(input.matrix.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
+    expect(input.matrix.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'asc', 'mc']);
     expect(input.emphasis.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
     expect(input.strip.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
   });
 
-  it('labels matrix rows by body name, for the bodies whose glyph is missing', () => {
-    expect(chartSheetInput(data).matrix.bodies).toEqual([
-      { key: 'sun', label: 'Sun' },
-      { key: 'moon', label: 'Moon' },
-      { key: 'mars', label: 'Mars' },
+  it('describes each matrix row for the positions table: name, longitude, retrograde and house; the angles with no house (#413)', () => {
+    const rows = chartSheetInput(data).matrix.bodies;
+    expect(rows.slice(0, 3)).toEqual([
+      { key: 'sun', label: 'Sun', name: 'Sun', longitude: 10, retrograde: false, house: 1 },
+      { key: 'moon', label: 'Moon', name: 'Moon', longitude: 100, retrograde: false, house: 4 },
+      { key: 'mars', label: 'Mars', name: 'Mars', longitude: 101, retrograde: false, house: 4 },
+    ]);
+    expect(rows.slice(3)).toEqual([
+      { key: 'asc', label: 'AC', name: 'ASC', longitude: 10 },
+      { key: 'mc', label: 'MC', name: 'MC', longitude: 280 },
     ]);
   });
 
-  it('passes the engine aspects through by key, never re-deriving them', () => {
+  it('localizes the positions table name through the supplied lookup, but not the angles', () => {
+    const rows = chartSheetInput(data, [], 'Natal', {}, (key) => `<${key}>`).matrix.bodies;
+    expect(rows.map((row) => row.name)).toEqual(['<sun>', '<moon>', '<mars>', 'ASC', 'MC']);
+  });
+
+  it('passes the engine aspects through by key with their signed orb, never re-deriving which aspect it is', () => {
+    // The fixture's square sits at separation 91 against an exact 90, one degree past it.
     expect(chartSheetInput(data).matrix.aspects).toEqual([
-      { aKey: 'sun', bKey: 'mars', aspectKey: 'square', orb: 1, applying: true },
+      { aKey: 'sun', bKey: 'mars', aspectKey: 'square', orb: 1, signedOrb: 1, applying: true },
     ]);
+  });
+
+  it('adds the chart’s angle aspects to the grid, keyed by the angle (#413)', () => {
+    const withAngles: ChartData = {
+      ...data,
+      angleAspects: [
+        {
+          angle: 'asc',
+          body: SUN,
+          aspect: { key: 'sextile', name: 'Sextile', angle: 60, family: 'major' },
+          separation: 58.5,
+          orb: 1.5,
+          applying: false,
+        },
+      ],
+    };
+    expect(chartSheetInput(withAngles).matrix.aspects).toContainEqual({
+      aKey: 'asc',
+      bKey: 'sun',
+      aspectKey: 'sextile',
+      orb: 1.5,
+      signedOrb: -1.5,
+      applying: false,
+    });
   });
 
   it('wraps the chart as a single wheel ring, with the label it is given', () => {
@@ -764,13 +799,13 @@ describe('chartSheetInput', () => {
   it('keeps Chiron in every panel by default, dropping it once chironVisible is false', () => {
     const withChiron: ChartData = { ...data, positions: [...data.positions, position(CHIRON, 200)] };
     const shown = chartSheetInput(withChiron);
-    expect(shown.matrix.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'chiron']);
+    expect(shown.matrix.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'chiron', 'asc', 'mc']);
     expect(shown.emphasis.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'chiron']);
     expect(shown.strip.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'chiron']);
     expect(shown.rings[0]?.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'chiron']);
 
     const hidden = chartSheetInput(withChiron, [], 'Natal', { chironVisible: false });
-    expect(hidden.matrix.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
+    expect(hidden.matrix.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars', 'asc', 'mc']);
     expect(hidden.emphasis.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
     expect(hidden.strip.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);
     expect(hidden.rings[0]?.bodies.map((body) => body.key)).toEqual(['sun', 'moon', 'mars']);

@@ -66,7 +66,10 @@ const STANDALONE_STYLE = [
   '.chart-sheet-meta { fill: #5c5878; }',
   '.chart-panel-heading { fill: #16152b; opacity: 0.75; }',
   '.chart-panel-rule { stroke: #e2dff0; stroke-width: 1; }',
-  '.chart-matrix-cell, .chart-matrix-diagonal, .chart-emphasis-cell { fill: none; stroke: #e2dff0; stroke-width: 1; }',
+  '.chart-matrix-cell, .chart-matrix-row-cell, .chart-matrix-diagonal, .chart-emphasis-cell { fill: none; stroke: #e2dff0; stroke-width: 1; }',
+  '.chart-matrix-cell.chart-matrix-cell-tight { stroke: #16152b; stroke-width: 2; }',
+  '.chart-matrix-name, .chart-matrix-position { fill: #16152b; font-size: 0.78rem; }',
+  '.chart-matrix-orb, .chart-matrix-direction { font-size: 0.6rem; }',
   '.chart-matrix-diagonal { fill: #f3f1fa; }',
   // Pre-mixed rather than `color-mix`, which SVG rasterizers support unevenly.
   // Pre-mixed rather than `color-mix`, which SVG rasterizers support unevenly.
@@ -74,7 +77,8 @@ const STANDALONE_STYLE = [
   '.chart-matrix-cell-conjunction, .chart-matrix-cell-semisextile, .chart-matrix-cell-sextile, .chart-matrix-cell-trine { fill: rgb(24 87 196 / 12%); }',
   '.chart-matrix-cell-quintile, .chart-matrix-cell-biquintile, .chart-matrix-cell-quincunx { fill: rgb(31 138 76 / 12%); }',
   '.chart-matrix-label { fill: #16152b; }',
-  '.chart-matrix-orb { fill: #5c5878; }',
+  '.chart-matrix-orb { fill: #16152b; }',
+  '.chart-matrix-direction { fill: #5c5878; }',
   '.chart-aspect-glyph circle, .chart-aspect-glyph path, .chart-aspect-glyph rect, .chart-aspect-glyph line { fill: none; stroke: #5c5878; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }',
   '.chart-aspect-glyph-semisquare circle, .chart-aspect-glyph-semisquare path, .chart-aspect-glyph-semisquare rect, .chart-aspect-glyph-semisquare line, .chart-aspect-glyph-square circle, .chart-aspect-glyph-square path, .chart-aspect-glyph-square rect, .chart-aspect-glyph-square line, .chart-aspect-glyph-sesquiquadrate circle, .chart-aspect-glyph-sesquiquadrate path, .chart-aspect-glyph-sesquiquadrate rect, .chart-aspect-glyph-sesquiquadrate line, .chart-aspect-glyph-opposition circle, .chart-aspect-glyph-opposition path, .chart-aspect-glyph-opposition rect, .chart-aspect-glyph-opposition line { stroke: #b3261e; }',
   '.chart-aspect-glyph-conjunction circle, .chart-aspect-glyph-conjunction path, .chart-aspect-glyph-conjunction rect, .chart-aspect-glyph-conjunction line, .chart-aspect-glyph-semisextile circle, .chart-aspect-glyph-semisextile path, .chart-aspect-glyph-semisextile rect, .chart-aspect-glyph-semisextile line, .chart-aspect-glyph-trine circle, .chart-aspect-glyph-trine path, .chart-aspect-glyph-trine rect, .chart-aspect-glyph-trine line, .chart-aspect-glyph-sextile circle, .chart-aspect-glyph-sextile path, .chart-aspect-glyph-sextile rect, .chart-aspect-glyph-sextile line { stroke: #1857c4; }',

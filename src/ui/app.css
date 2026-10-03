@@ -1948,11 +1948,36 @@ label.stacked textarea:focus-visible {
 }
 
 .chart-matrix-cell,
+.chart-matrix-row-cell,
 .chart-matrix-diagonal,
 .chart-emphasis-cell {
   fill: none;
   stroke: var(--line);
   stroke-width: 1;
+}
+
+/* An aspect within 1° of exact: a heavy border, as on the reference sheet (#413). */
+.chart-matrix-cell.chart-matrix-cell-tight {
+  stroke: var(--fg);
+  stroke-width: 2;
+}
+
+/* The positions table beside the grid: name and numbers at the sheet's text sizes, which the
+   shared `.chart-sheet text` font shorthand would otherwise flatten to one size. */
+.chart-sheet .chart-matrix-name {
+  fill: var(--fg);
+  font-size: 0.78rem;
+}
+
+.chart-sheet .chart-matrix-position {
+  fill: var(--fg);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-sheet .chart-matrix-orb,
+.chart-sheet .chart-matrix-direction {
+  font-size: 0.6rem;
 }
 
 .chart-matrix-diagonal {
@@ -1964,6 +1989,10 @@ label.stacked textarea:focus-visible {
 }
 
 .chart-matrix-orb {
+  fill: var(--fg);
+}
+
+.chart-matrix-direction {
   fill: var(--muted);
 }
 

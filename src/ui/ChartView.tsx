@@ -740,13 +740,14 @@ export function ChartDataView({
         metaLines ?? [displayName || t.chartFallback],
         displayName || t.natalFallback,
         toPointVisibilityOptions(extendedSettings),
+        (bodyKey) => bodyDisplayName(bodyKey, locale),
       ),
       {
         ...resolveWheelDisplayOptions({}),
         signWedgeStyle: toSignWedgeStyle(extendedSettings),
       },
     );
-  }, [load, housesRenderable, displayName, metaLines, extendedSettings, t]);
+  }, [load, housesRenderable, displayName, metaLines, extendedSettings, t, locale]);
 
   // Click-to-isolate (#400). `wheelRef` is the delegation point: the wheel's markup is a raw
   // injected string, not JSX, so individual glyphs/aspect lines can't carry their own `onClick`.

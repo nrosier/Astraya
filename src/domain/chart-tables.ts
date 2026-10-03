@@ -619,6 +619,8 @@ export function chartSheetInput(
   metaLines: readonly string[] = [],
   label = 'Natal',
   options: PointVisibilityOptions = {},
+  /** Localized body name for the grid's positions table; the English `BodyDefinition.name` when omitted. */
+  nameOf: (bodyKey: string) => string = (bodyKey) => bodyByKey(bodyKey)?.name ?? bodyKey,
 ): ChartSheetInput {
   const bodies = visiblePositions(data.positions, options).map((position) => {
     const body = bodyById(position.body);
@@ -627,20 +629,51 @@ export function chartSheetInput(
       key: body?.key ?? String(position.body),
       label: body?.name ?? String(position.body),
       longitude: position.longitude,
+      retrograde: position.retrograde,
     };
   });
+  const rows = new Map(positionRows(data, options, true).map((row) => [row.bodyKey, row]));
+  const angleBodies = [
+    { key: 'asc', label: 'AC', name: 'ASC', longitude: data.houses.ascendant },
+    { key: 'mc', label: 'MC', name: 'MC', longitude: data.houses.midheaven },
+  ];
+  const keyOf = (body: BodyId): string => bodyById(body)?.key ?? String(body);
   return {
     metaLines,
     rings: [chartWheelRing(data, label, options)],
     matrix: {
-      bodies: bodies.map(({ key, label: bodyLabel }) => ({ key, label: bodyLabel })),
-      aspects: data.aspects.map((aspect) => ({
-        aKey: bodyById(aspect.bodyA)?.key ?? String(aspect.bodyA),
-        bKey: bodyById(aspect.bodyB)?.key ?? String(aspect.bodyB),
-        aspectKey: aspect.aspect.key,
-        orb: aspect.orb,
-        applying: aspect.applying,
-      })),
+      bodies: [
+        ...bodies.map((body) => {
+          const house = rows.get(body.key)?.house;
+          return {
+            key: body.key,
+            label: body.label,
+            name: nameOf(body.key),
+            longitude: body.longitude,
+            retrograde: body.retrograde,
+            ...(house === undefined ? {} : { house }),
+          };
+        }),
+        ...angleBodies,
+      ],
+      aspects: [
+        ...data.aspects.map((aspect) => ({
+          aKey: keyOf(aspect.bodyA),
+          bKey: keyOf(aspect.bodyB),
+          aspectKey: aspect.aspect.key,
+          orb: aspect.orb,
+          signedOrb: aspect.separation - aspect.aspect.angle,
+          applying: aspect.applying,
+        })),
+        ...(data.angleAspects ?? []).map((aspect) => ({
+          aKey: aspect.angle,
+          bKey: keyOf(aspect.body),
+          aspectKey: aspect.aspect.key,
+          orb: aspect.orb,
+          signedOrb: aspect.separation - aspect.aspect.angle,
+          applying: aspect.applying,
+        })),
+      ],
     },
     emphasis: { bodies: bodies.map(({ body, key, longitude }) => ({ body, key, longitude })) },
     strip: { bodies: bodies.map(({ key, longitude }) => ({ key, longitude })) },

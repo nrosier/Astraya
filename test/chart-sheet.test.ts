@@ -29,8 +29,8 @@ const input: ChartSheetInput = {
   metaLines: ['Ada Lovelace', 'Placidus · Tropical', "London, 51°30'N 0°07'W"],
   rings: [{ label: 'Natal', houses: houses(15), bodies: BODIES }],
   matrix: {
-    bodies: BODIES.map(({ key, label }) => ({ key, label })),
-    aspects: [{ aKey: 'sun', bKey: 'moon', aspectKey: 'trine', orb: 0.5, applying: true }],
+    bodies: BODIES.map(({ key, label, longitude }) => ({ key, label, name: label, longitude })),
+    aspects: [{ aKey: 'sun', bKey: 'moon', aspectKey: 'trine', orb: 0.5, signedOrb: -0.5, applying: true }],
   },
   emphasis: { bodies: BODIES.map(({ body, key, longitude }) => ({ body, key, longitude })) },
   strip: { bodies: BODIES.map(({ key, longitude }) => ({ key, longitude })) },

@@ -6,6 +6,7 @@
  * correctly, and a mocked provider would only prove the wiring around a fake.
  */
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_ORB_CONFIG } from '../src/astrology/aspects.js';
 import { bodyById, bodyByKey } from '../src/astrology/bodies.js';
 import {
   computeChartData,
@@ -224,5 +225,60 @@ describe('housesAreDefined (#378)', () => {
     const oneBadCusp = [...VALID.cusps];
     oneBadCusp[7] = Number.NaN;
     expect(housesAreDefined({ ...VALID, cusps: oneBadCusp })).toBe(false);
+  });
+});
+
+/**
+ * The chart in the Astro-Seek reference sheet (#413): 1 Jan 1970 00:00, Antwerp OH. Its grid
+ * prints these ASC/MC aspects, which are what the expected values below are taken from.
+ */
+describe('angle aspects (#413)', () => {
+  const REFERENCE: BirthMomentInput = {
+    civil: { year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0 },
+    coordinates: { latitude: 41.1833, longitude: -84.7333 },
+    zoneOverride: 'America/New_York',
+  };
+
+  async function referenceAngleAspects(): Promise<
+    NonNullable<Awaited<ReturnType<typeof computeChartData>>['angleAspects']>
+  > {
+    const data = await computeChartData(REFERENCE, await getEngine());
+    return data.angleAspects ?? [];
+  }
+
+  it('finds the Ascendant square the Sun, applying, about 10° wide', async () => {
+    const sun = bodyByKey('sun');
+    const found = (await referenceAngleAspects()).find((a) => a.angle === 'asc' && a.body === sun?.id);
+    expect(found?.aspect.key).toBe('square');
+    expect(found?.applying).toBe(true);
+    expect(found?.separation).toBeGreaterThan(99);
+    expect(found?.separation).toBeLessThan(100.5);
+  });
+
+  it('finds the Midheaven opposite the Sun, applying, about 10° out on the short side', async () => {
+    const sun = bodyByKey('sun');
+    const found = (await referenceAngleAspects()).find((a) => a.angle === 'mc' && a.body === sun?.id);
+    expect(found?.aspect.key).toBe('opposition');
+    expect(found?.applying).toBe(true);
+    expect(found?.orb).toBeGreaterThan(9.4);
+    expect(found?.orb).toBeLessThan(10);
+    // Short of exact: the separation is under 180°.
+    expect(found?.separation).toBeLessThan(180);
+  });
+
+  it('gives only aspects within the configured orb, so a wider orb scale finds at least as many', async () => {
+    const engine = await getEngine();
+    const base = await computeChartData(REFERENCE, engine);
+    const wide = await computeChartData(REFERENCE, engine, {
+      orbConfig: { ...DEFAULT_ORB_CONFIG, scalePercent: 50 },
+    });
+    expect((wide.angleAspects ?? []).length).toBeGreaterThanOrEqual((base.angleAspects ?? []).length);
+  });
+
+  it('leaves out Chiron, Lilith and the Nodes unless asked, exactly as for body-to-body aspects', async () => {
+    const engine = await getEngine();
+    const without = await computeChartData(REFERENCE, engine);
+    const centaur = bodyByKey('chiron');
+    expect((without.angleAspects ?? []).some((a) => a.body === centaur?.id)).toBe(false);
   });
 });
