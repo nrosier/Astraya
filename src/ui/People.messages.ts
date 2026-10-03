@@ -8,6 +8,7 @@ const en = {
   addPerson: 'Add a person',
   cyclesLink: 'Planetary cycles',
   eclipsesLink: 'Eclipses',
+  horaryLink: 'Horary chart',
   empty:
     'Nobody yet. Add a person and their birth record; a chart can be drawn once the date, time and coordinates are in.',
   unnamed: 'Unnamed',
@@ -28,6 +29,7 @@ const nl: typeof en = {
   addPerson: 'Persoon toevoegen',
   cyclesLink: 'Planetaire cycli',
   eclipsesLink: 'Verduisteringen',
+  horaryLink: 'Horoscoop voor een vraag',
   empty:
     'Nog niemand. Voeg een persoon en hun geboortegegevens toe; een horoscoop kan worden getekend zodra de datum, tijd en coördinaten bekend zijn.',
   unnamed: 'Naamloos',

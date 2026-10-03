@@ -49,6 +49,7 @@ const ReportScreen = lazy(async () => ({ default: (await personScreens()).Report
 const SolarArcView = lazy(async () => ({ default: (await personScreens()).SolarArcView }));
 const SynastryView = lazy(async () => ({ default: (await personScreens()).SynastryView }));
 const TransitView = lazy(async () => ({ default: (await personScreens()).TransitView }));
+const HoraryView = lazy(async () => ({ default: (await import('./HoraryView.js')).HoraryView }));
 const EclipsesView = lazy(async () => ({ default: (await import('./EclipsesView.js')).EclipsesView }));
 const CyclesView = lazy(async () => ({ default: (await import('./CyclesView.js')).CyclesView }));
 const AdminPanel = lazy(async () => ({ default: (await import('./AdminPanel.js')).AdminPanel }));
@@ -276,6 +277,7 @@ function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.E
   if (parsed.kind === 'changelog') return <Changelog />;
   if (parsed.kind === 'shared') return <SharedChartView />;
   if (parsed.kind === 'cycles') return <CyclesView />;
+  if (parsed.kind === 'horary') return <HoraryView />;
   if (parsed.kind === 'eclipses') {
     return (
       <Stored>

@@ -55,6 +55,7 @@ export type Route =
   | { readonly kind: 'shared' }
   | { readonly kind: 'cycles' }
   | { readonly kind: 'eclipses' }
+  | { readonly kind: 'horary' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'admin-usage' }
   | { readonly kind: 'corpus-overrides' }
@@ -98,6 +99,9 @@ export function parseRoute(hash: string): Route {
     // #404: eclipses — needs the ephemeris and, optionally, a stored person to compare against.
     case '#/eclipses':
       return { kind: 'eclipses' };
+    // #406: a chart cast for the moment a question was asked — ephemeris only, no person.
+    case '#/horary':
+      return { kind: 'horary' };
     case '#/admin':
       return { kind: 'admin' };
     case '#/admin/usage':

@@ -2370,3 +2370,31 @@ label.stacked textarea:focus-visible {
     600 0.7rem system-ui,
     sans-serif;
 }
+
+/* Horary chart (#406): the considerations before judgment, each stated in words so colour is never the only cue. */
+.horary-considerations {
+  margin: 0.5rem 0 1rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.horary-considerations li {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.horary-considerations li.applies {
+  border-left-color: var(--solar);
+}
+
+.horary-considerations li.clear {
+  border-left-color: var(--line);
+}
+
+.horary-status {
+  font-weight: 650;
+}
