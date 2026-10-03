@@ -28,7 +28,9 @@ import type {
   HousePositions,
   HouseSystem,
   JulianDayUT,
+  LunarEclipse,
   PositionOptions,
+  SolarEclipse,
   Zodiac,
 } from './types.js';
 
@@ -234,6 +236,14 @@ export class WorkerEphemerisProvider implements EphemerisProvider {
 
   nextMoonCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT> {
     return this.#call('nextMoonCrossing', [fromJd, longitude, zodiac]);
+  }
+
+  nextSolarEclipse(fromJd: JulianDayUT, backwards?: boolean): Promise<SolarEclipse> {
+    return this.#call('nextSolarEclipse', [fromJd, backwards]);
+  }
+
+  nextLunarEclipse(fromJd: JulianDayUT, backwards?: boolean): Promise<LunarEclipse> {
+    return this.#call('nextLunarEclipse', [fromJd, backwards]);
   }
 
   azimuthAltitude(

@@ -2,17 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { ASPECTS } from '../src/astrology/aspects.js';
 import type { MutualAspectEvent } from '../src/astrology/mutual-aspects.js';
 import { renderCycleDiagramSvg } from '../src/chart/cycle-diagram.js';
-import {
-  CYCLE_ASPECT_KEYS,
-  CYCLE_BODY_KEYS,
-  CYCLE_PRESETS,
-  clampCycleYear,
-  cycleRows,
-  filterByMotion,
-  MAX_CYCLE_YEAR,
-  MIN_CYCLE_YEAR,
-} from '../src/ui/cycles.js';
+import { CYCLE_ASPECT_KEYS, CYCLE_BODY_KEYS, CYCLE_PRESETS, cycleRows, filterByMotion } from '../src/ui/cycles.js';
 import { parseRoute } from '../src/ui/route.js';
+import { clampEphemerisYear, MAX_EPHEMERIS_YEAR, MIN_EPHEMERIS_YEAR } from '../src/ui/year-range.js';
 import { cyclesViewMessages } from '../src/ui/CyclesView.messages.js';
 
 const conjunction = ASPECTS.find((aspect) => aspect.key === 'conjunction');
@@ -71,16 +63,16 @@ describe('filterByMotion', () => {
   });
 });
 
-describe('clampCycleYear', () => {
+describe('clampEphemerisYear (shared year clamp)', () => {
   it('keeps a year inside the range the ephemeris covers, and clamps one outside it', () => {
-    expect(clampCycleYear('2020')).toBe(2020);
-    expect(clampCycleYear(' 2020 ')).toBe(2020);
-    expect(clampCycleYear('1500')).toBe(MIN_CYCLE_YEAR);
-    expect(clampCycleYear('9999')).toBe(MAX_CYCLE_YEAR);
+    expect(clampEphemerisYear('2020')).toBe(2020);
+    expect(clampEphemerisYear(' 2020 ')).toBe(2020);
+    expect(clampEphemerisYear('1500')).toBe(MIN_EPHEMERIS_YEAR);
+    expect(clampEphemerisYear('9999')).toBe(MAX_EPHEMERIS_YEAR);
   });
 
   it('rejects anything that is not a whole number', () => {
-    for (const bad of ['', 'abc', '20.5', '2e3', '-', '2020x']) expect(clampCycleYear(bad)).toBeUndefined();
+    for (const bad of ['', 'abc', '20.5', '2e3', '-', '2020x']) expect(clampEphemerisYear(bad)).toBeUndefined();
   });
 });
 
@@ -99,9 +91,9 @@ describe('presets', () => {
   it('keep every fixed span inside the ephemeris range', () => {
     for (const preset of CYCLE_PRESETS) {
       if ('from' in preset.span) {
-        expect(preset.span.from).toBeGreaterThanOrEqual(MIN_CYCLE_YEAR);
+        expect(preset.span.from).toBeGreaterThanOrEqual(MIN_EPHEMERIS_YEAR);
         // `to` may extend past 2399 only by clamping at run time; the shipped presets stay inside 2200.
-        expect(preset.span.to).toBeLessThanOrEqual(MAX_CYCLE_YEAR);
+        expect(preset.span.to).toBeLessThanOrEqual(MAX_EPHEMERIS_YEAR);
       }
     }
   });

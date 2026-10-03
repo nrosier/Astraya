@@ -168,6 +168,39 @@ export interface AzimuthAltitudeOptions {
  * failure through a `serr` string that is easy to ignore, and ignoring it is how
  * a chart ends up quietly wrong.
  */
+/** What a solar eclipse looks like at its best on Earth: totality, a ring, a ring that turns total, or a bite. */
+export type SolarEclipseKind = 'total' | 'annular' | 'hybrid' | 'partial';
+
+/** Whether the Moon passes fully, partly or only through the penumbra of Earth's shadow. */
+export type LunarEclipseKind = 'total' | 'partial' | 'penumbral';
+
+/**
+ * A global solar eclipse. Times are Julian days (UT). The central phase — totality, or the ring
+ * of an annular eclipse — is absent for a partial eclipse, which has no central line.
+ */
+export interface SolarEclipse {
+  readonly kind: SolarEclipseKind;
+  /** Greatest eclipse, the moment of the exact Sun-Moon alignment that defines the eclipse's degree. */
+  readonly maxJd: JulianDayUT;
+  /** First and last contact of the Moon's penumbra with Earth. */
+  readonly startJd: JulianDayUT;
+  readonly endJd: JulianDayUT;
+  /** Begin and end of the central phase: when the Moon's shadow axis touches Earth. */
+  readonly centralStartJd?: JulianDayUT;
+  readonly centralEndJd?: JulianDayUT;
+}
+
+export interface LunarEclipse {
+  readonly kind: LunarEclipseKind;
+  readonly maxJd: JulianDayUT;
+  readonly penumbralStartJd: JulianDayUT;
+  readonly penumbralEndJd: JulianDayUT;
+  readonly partialStartJd?: JulianDayUT;
+  readonly partialEndJd?: JulianDayUT;
+  readonly totalStartJd?: JulianDayUT;
+  readonly totalEndJd?: JulianDayUT;
+}
+
 export interface EphemerisProvider {
   /** Load the WASM module and ephemeris data. Safe to call more than once. */
   initialize(): Promise<void>;
@@ -252,6 +285,16 @@ export interface EphemerisProvider {
 
   /** Same as `nextSunCrossing`, for the Moon. */
   nextMoonCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT>;
+
+  /**
+   * The next solar eclipse anywhere on Earth (or the previous one, with `backwards`), searching
+   * from `fromJd` — Swiss Ephemeris's `swe_sol_eclipse_when_glob`, with exact umbral/penumbral
+   * geometry rather than an approximation from node proximity (#404).
+   */
+  nextSolarEclipse(fromJd: JulianDayUT, backwards?: boolean): Promise<SolarEclipse>;
+
+  /** The next lunar eclipse, visible from anywhere the Moon is up — `swe_lun_eclipse_when`. */
+  nextLunarEclipse(fromJd: JulianDayUT, backwards?: boolean): Promise<LunarEclipse>;
 
   /**
    * Swiss Ephemeris library version. Shown on the About page, which the AGPL

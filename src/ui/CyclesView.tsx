@@ -12,14 +12,11 @@ import { renderCycleDiagramSvg } from '../chart/cycle-diagram.js';
 import { aspectDisplayName, bodyDisplayName, signDisplayName } from './astro-names.messages.js';
 import {
   bodyIdOf,
-  clampCycleYear,
   CYCLE_ASPECT_KEYS,
   CYCLE_BODY_KEYS,
   CYCLE_PRESETS,
   cycleRows,
   filterByMotion,
-  MAX_CYCLE_YEAR,
-  MIN_CYCLE_YEAR,
   type CyclePreset,
   type CycleRow,
   type MotionFilter,
@@ -30,6 +27,7 @@ import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { sharedMessages } from './shared.messages.js';
 import { SortableTable } from './SortableTable.js';
+import { clampEphemerisYear, MAX_EPHEMERIS_YEAR, MIN_EPHEMERIS_YEAR } from './year-range.js';
 import type { TableColumn } from './table-sort.js';
 
 interface Params {
@@ -84,14 +82,14 @@ export function CyclesView(): React.JSX.Element {
     setValidation(undefined);
     const idA = bodyIdOf(next.bodyA);
     const idB = bodyIdOf(next.bodyB);
-    const from = clampCycleYear(next.fromYear);
-    const to = clampCycleYear(next.toYear);
+    const from = clampEphemerisYear(next.fromYear);
+    const to = clampEphemerisYear(next.toYear);
     if (idA === undefined || idB === undefined || next.bodyA === next.bodyB) {
       setValidation(t.needsTwoBodies);
       return;
     }
     if (from === undefined || to === undefined) {
-      setValidation(t.badYear(MIN_CYCLE_YEAR, MAX_CYCLE_YEAR));
+      setValidation(t.badYear(MIN_EPHEMERIS_YEAR, MAX_EPHEMERIS_YEAR));
       return;
     }
     if (to < from) {

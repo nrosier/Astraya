@@ -25,10 +25,6 @@ export const CYCLE_BODY_KEYS: readonly string[] = [
 /** The aspects the screen offers: the five Ptolemaic ones. */
 export const CYCLE_ASPECT_KEYS: readonly string[] = ['conjunction', 'sextile', 'square', 'trine', 'opposition'];
 
-/** The shipped ephemeris data (`sepl_18` and friends) covers 1800 to 2400. */
-export const MIN_CYCLE_YEAR = 1800;
-export const MAX_CYCLE_YEAR = 2399;
-
 export type MotionFilter = 'all' | 'retrograde' | 'direct';
 
 export interface CyclePreset {
@@ -134,12 +130,6 @@ export function cycleRows(events: readonly MutualAspectEvent[]): readonly CycleR
       yearsSincePrevious: previous === undefined ? undefined : (event.jd - previous.jd) / DAYS_PER_YEAR,
     };
   });
-}
-
-/** Clamps a typed year into the range the ephemeris covers; `undefined` for anything that is not a whole number. */
-export function clampCycleYear(value: string): number | undefined {
-  if (!/^-?\d+$/.test(value.trim())) return undefined;
-  return Math.min(MAX_CYCLE_YEAR, Math.max(MIN_CYCLE_YEAR, Number(value)));
 }
 
 export function bodyIdOf(key: string): number | undefined {

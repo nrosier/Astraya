@@ -54,6 +54,7 @@ export type Route =
   | { readonly kind: 'astrocartography'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'cycles' }
+  | { readonly kind: 'eclipses' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'admin-usage' }
   | { readonly kind: 'corpus-overrides' }
@@ -94,6 +95,9 @@ export function parseRoute(hash: string): Route {
     // #410: planetary cycles — ephemeris only, no person, no stored data.
     case '#/cycles':
       return { kind: 'cycles' };
+    // #404: eclipses — needs the ephemeris and, optionally, a stored person to compare against.
+    case '#/eclipses':
+      return { kind: 'eclipses' };
     case '#/admin':
       return { kind: 'admin' };
     case '#/admin/usage':

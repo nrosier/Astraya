@@ -79,7 +79,7 @@ export function People(): React.JSX.Element {
         </button>
       </p>
       <p>
-        <a href="#/cycles">{t.cyclesLink}</a>
+        <a href="#/cycles">{t.cyclesLink}</a> · <a href="#/eclipses">{t.eclipsesLink}</a>
       </p>
 
       {people.length === 0 ? (

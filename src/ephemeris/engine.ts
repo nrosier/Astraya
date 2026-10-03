@@ -37,7 +37,11 @@ import {
   type HousePositions,
   type HouseSystem,
   type JulianDayUT,
+  type LunarEclipse,
+  type LunarEclipseKind,
   type PositionOptions,
+  type SolarEclipse,
+  type SolarEclipseKind,
   type Zodiac,
 } from './types.js';
 
@@ -126,6 +130,10 @@ interface SweInstance {
   swe_fixstar2_mag(star: string): { star_name: string; magnitude: number };
   swe_solcross_ut(x2cross: number, jd_ut: number, flag: number): number;
   swe_mooncross_ut(x2cross: number, jd_ut: number, flag: number): number;
+  /** The bare times array — see `nextSolarEclipse` for why this is not the `{ flag, data }` the package declares. */
+  swe_sol_eclipse_when_glob(tjd_start: number, ifl: number, iftype: number, backwards: boolean): readonly number[];
+  swe_sol_eclipse_where(tjd_ut: number, ifl: number): { data: readonly number[]; Array: readonly number[] };
+  swe_lun_eclipse_when(tjd_start: number, ifl: number, ifltype: number, backwards: boolean): readonly number[];
   swe_azalt(
     tjd_ut: number,
     calc_flag: number,
@@ -514,6 +522,81 @@ export class SwissEphemerisEngine implements EphemerisProvider {
 
   async nextMoonCrossing(fromJd: JulianDayUT, longitude: Degrees, zodiac?: Zodiac): Promise<JulianDayUT> {
     return this.#crossing('swe_mooncross_ut', longitude, fromJd, zodiac);
+  }
+
+  async nextSolarEclipse(fromJd: JulianDayUT, backwards = false): Promise<SolarEclipse> {
+    // Eclipse searches are geometry-only: they take no zodiac or observer, so there is no
+    // global state to set first (unlike every longitude-reading call above).
+    //
+    // sweph-wasm's own declarations promise `{ flag, error, data }` here. The live call returns
+    // the bare time array and no type flag at all, so the eclipse's kind is worked out below from
+    // the core-shadow sign rather than read off a flag that never arrives.
+    const call = 'swe_sol_eclipse_when_glob';
+    const swe = this.#instance();
+    let times: readonly number[];
+    try {
+      times = swe.swe_sol_eclipse_when_glob(fromJd, SE.SEFLG_SWIEPH, 0, backwards);
+    } catch (cause) {
+      throw new EphemerisError(cause instanceof Error ? cause.message : String(cause), { call, jd: fromJd });
+    }
+    const [maxJd = 0, , startJd = 0, endJd = 0, centralStart = 0, centralEnd = 0] = times;
+    if (maxJd === 0) {
+      throw new EphemerisError(`${call} found no eclipse from Julian day ${String(fromJd)}`, { call, jd: fromJd });
+    }
+    // SE reports an absent phase as 0, which is not a Julian day anyone will search for.
+    const central = centralStart !== 0 && centralEnd !== 0;
+    let kind: SolarEclipseKind = 'partial';
+    if (central) {
+      // The core shadow's diameter in km (attr[3]): negative where the umbra reaches the ground
+      // (a total eclipse), positive where it falls short (annular). Sampled at the exact ends of
+      // the central line and at maximum: all negative is total, all positive annular, and a flip
+      // along the line — annular at the ends, total in the middle — is a hybrid.
+      const coreAt = (jd: JulianDayUT): number => {
+        try {
+          return swe.swe_sol_eclipse_where(jd, SE.SEFLG_SWIEPH).Array[3] ?? 0;
+        } catch (cause) {
+          throw new EphemerisError(cause instanceof Error ? cause.message : String(cause), {
+            call: 'swe_sol_eclipse_where',
+            jd,
+          });
+        }
+      };
+      const signs = [coreAt(centralStart), coreAt(maxJd), coreAt(centralEnd)].map((core) => core < 0);
+      kind = signs.every(Boolean) ? 'total' : signs.some(Boolean) ? 'hybrid' : 'annular';
+    }
+    return {
+      kind,
+      maxJd,
+      startJd,
+      endJd,
+      ...(central ? { centralStartJd: centralStart, centralEndJd: centralEnd } : {}),
+    };
+  }
+
+  async nextLunarEclipse(fromJd: JulianDayUT, backwards = false): Promise<LunarEclipse> {
+    const call = 'swe_lun_eclipse_when';
+    let times: readonly number[];
+    try {
+      times = this.#instance().swe_lun_eclipse_when(fromJd, SE.SEFLG_SWIEPH, 0, backwards);
+    } catch (cause) {
+      throw new EphemerisError(cause instanceof Error ? cause.message : String(cause), { call, jd: fromJd });
+    }
+    const [maxJd = 0, , partialStart = 0, partialEnd = 0, totalStart = 0, totalEnd = 0, penStart = 0, penEnd = 0] =
+      times;
+    if (maxJd === 0) {
+      throw new EphemerisError(`${call} found no eclipse from Julian day ${String(fromJd)}`, { call, jd: fromJd });
+    }
+    // The phases SE fills in are the kind: totality means total, a partial phase without it is
+    // partial, and only the penumbral contacts left means the Moon never touched the umbra.
+    const kind: LunarEclipseKind = totalStart !== 0 ? 'total' : partialStart !== 0 ? 'partial' : 'penumbral';
+    return {
+      kind,
+      maxJd,
+      penumbralStartJd: penStart,
+      penumbralEndJd: penEnd,
+      ...(partialStart !== 0 ? { partialStartJd: partialStart, partialEndJd: partialEnd } : {}),
+      ...(totalStart !== 0 ? { totalStartJd: totalStart, totalEndJd: totalEnd } : {}),
+    };
   }
 
   #crossing(
