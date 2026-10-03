@@ -220,9 +220,9 @@ export function ProgressionsView({ personId }: { personId: string }): React.JSX.
       <h1>{person.displayName ? t.heading(person.displayName) : t.progressionsFallback}</h1>
       <p className="hint">{t.hint}</p>
 
-      <p>
+      <div className="field-grid">
         <label>
-          {t.techniqueLabel}{' '}
+          {t.techniqueLabel}
           <select
             value={technique}
             onChange={(event) => {
@@ -234,12 +234,9 @@ export function ProgressionsView({ personId }: { personId: string }): React.JSX.
             <option value="minor">{t.minorTechnique}</option>
           </select>
         </label>
-      </p>
-
-      {technique === 'secondary' && (
-        <p>
+        {technique === 'secondary' && (
           <label>
-            {t.mcMethodLabel}{' '}
+            {t.mcMethodLabel}
             <select
               value={mcMethod}
               onChange={(event) => {
@@ -251,8 +248,8 @@ export function ProgressionsView({ personId }: { personId: string }): React.JSX.
               <option value="solarArc">{t.solarArcMethod}</option>
             </select>
           </label>
-        </p>
-      )}
+        )}
+      </div>
 
       <p>
         <label>

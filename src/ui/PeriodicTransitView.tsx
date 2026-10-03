@@ -521,9 +521,9 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
           <section>
             <h2>{t.planetaryReturnHeading}</h2>
             <p className="hint">{t.planetaryReturnHint}</p>
-            <p>
+            <div className="field-grid">
               <label>
-                {t.bodyLabel}{' '}
+                {t.bodyLabel}
                 <select
                   value={returnBodyKey}
                   onChange={(event) => {
@@ -537,7 +537,7 @@ export function PeriodicTransitView({ personId }: { personId: string }): React.J
                   ))}
                 </select>
               </label>
-            </p>
+            </div>
 
             {returnLoad.kind === 'loading' && <p className="status">{t.calculating}</p>}
             {returnLoad.kind === 'error' && (

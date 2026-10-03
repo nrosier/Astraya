@@ -54,6 +54,16 @@
   /* The page's own content column width — shared by `.shell` and `.person-shelf` so they
      never drift out of sync whenever this gets tuned. */
   --shell-max-width: 64rem;
+  /* Clears `.locale-bar`'s own footprint (measured ~80px plus its 0.75rem right offset) with
+     room to spare — the floor `.person-tabs`'s own right padding must never drop below, since
+     it's the one row on every person-scoped page guaranteed to scroll up through the fixed
+     `.locale-bar`'s vertical band (#137). */
+  --locale-bar-clearance: 7rem;
+  /* Clears `.account-bar`'s own footprint generously — signed in as an admin, it can hold the
+     ephemeris status line plus a `SyncBadge`/username plus a signed-in-as row with both
+     "Sign out" and "Manage users" pills side by side, comfortably past 10rem. Used by
+     `.pwastatus` so its own text doesn't start underneath `.account-bar`'s column (#137). */
+  --account-bar-clearance: 11rem;
 }
 
 @media (prefers-color-scheme: light) {
@@ -1002,10 +1012,16 @@ label.stacked textarea:focus-visible {
 .pwastatus {
   position: fixed;
   inset: auto 0 0 0;
-  z-index: 10;
+  /* Below `.account-bar`'s own z-index (#137): both are fixed to the bottom of the viewport
+     and this one is rendered later in the DOM, so without an explicit order its own
+     background would paint over `.account-bar`'s pills whenever an update or a warm-cache
+     message is showing. The left padding below keeps this message's own text from starting
+     underneath that corner in the first place; the z-index order is the fallback for the
+     sliver of its semi-transparent background that still extends under it. */
+  z-index: 9;
   display: grid;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1.5rem 0.75rem var(--account-bar-clearance);
   background: color-mix(in oklab, var(--surface) 92%, transparent);
   border-top: 1px solid var(--line);
   backdrop-filter: blur(6px);
@@ -1184,7 +1200,13 @@ label.stacked textarea:focus-visible {
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 0.2rem;
-  padding: 0.6rem 0.6rem 0;
+  /* Right padding is `--locale-bar-clearance`, not the plain `0.6rem` every other side gets
+     (#137): this row sits at the very top of `.person-shelf`, which has no side padding of
+     its own below `--shell-max-width` (it runs edge to edge there) — so without this, the
+     last tab/family on a line would scroll up directly underneath the fixed `.locale-bar`,
+     intercepting its clicks and sitting visually behind its pills. Wrapping one tab earlier
+     than it otherwise would is the trade; it's cheaper than losing the tab entirely. */
+  padding: 0.6rem var(--locale-bar-clearance) 0 0.6rem;
 }
 
 .person-tab {
