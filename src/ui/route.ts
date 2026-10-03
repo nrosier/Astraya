@@ -54,6 +54,7 @@ export type Route =
   | { readonly kind: 'astrocartography'; readonly personId: string }
   | { readonly kind: 'shared' }
   | { readonly kind: 'admin' }
+  | { readonly kind: 'admin-usage' }
   | { readonly kind: 'corpus-overrides' }
   | { readonly kind: 'corpus-candidates' }
   | { readonly kind: 'set-password' }
@@ -91,6 +92,8 @@ export function parseRoute(hash: string): Route {
       return { kind: 'shared' };
     case '#/admin':
       return { kind: 'admin' };
+    case '#/admin/usage':
+      return { kind: 'admin-usage' };
     case '#/admin/corpus-overrides':
       return { kind: 'corpus-overrides' };
     case '#/admin/corpus-candidates':

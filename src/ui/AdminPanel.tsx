@@ -26,7 +26,6 @@ import {
 import { getOidcConfig } from '../sync/auth-client.js';
 import { adminPanelMessages } from './AdminPanel.messages.js';
 import { useMessages } from './messages.js';
-import { useSession } from './session-context.js';
 import { sharedMessages } from './shared.messages.js';
 import type { AdminUser, DeletionImpact, InterpretationUsageReport } from '../sync/admin-client.js';
 import type { OidcConfig } from '../sync/auth-client.js';
@@ -174,14 +173,12 @@ function UserRow({
 }
 
 export function AdminPanel(): React.JSX.Element {
-  const { user } = useSession();
   const [users, setUsers] = useState<readonly AdminUser[]>();
   const [oidcConfig, setOidcConfig] = useState<OidcConfig>();
   const [error, setError] = useState<string>();
   const [busyUserId, setBusyUserId] = useState<string>();
   const [passwordLink, setPasswordLink] = useState<{ userId: string; url: string }>();
   const [pendingDelete, setPendingDelete] = useState<PendingDelete>();
-  const [usage, setUsage] = useState<InterpretationUsageReport>();
   const t = useMessages(adminPanelMessages);
   const shared = useMessages(sharedMessages);
 
@@ -196,9 +193,6 @@ export function AdminPanel(): React.JSX.Element {
     });
     void getOidcConfig()
       .then(setOidcConfig)
-      .catch(() => undefined);
-    void getInterpretationUsage()
-      .then(setUsage)
       .catch(() => undefined);
   }, []);
 
@@ -266,14 +260,6 @@ export function AdminPanel(): React.JSX.Element {
         <a href="#/">&larr; {shared.back}</a>
       </p>
       <h1>{t.heading}</h1>
-      {user?.isAdmin === true && (
-        <p>
-          <a href="#/admin/corpus-overrides">{t.corpusOverridesLink}</a>
-          {' · '}
-          <a href="#/admin/corpus-candidates">{t.corpusCandidatesLink}</a>
-        </p>
-      )}
-
       {error !== undefined && (
         <p className="warning" role="alert">
           {error}
@@ -347,8 +333,40 @@ export function AdminPanel(): React.JSX.Element {
           </div>
         </div>
       )}
+    </main>
+  );
+}
 
-      <h2>{t.usageHeading}</h2>
+/**
+ * AI-customized interpretation usage (#382), its own admin screen (#414) rather than the foot of
+ * the user list, so it is one click from the admin menu. Admin-only on the server regardless of
+ * what this renders.
+ */
+export function AdminUsagePanel(): React.JSX.Element {
+  const [usage, setUsage] = useState<InterpretationUsageReport>();
+  const [error, setError] = useState<string>();
+  const t = useMessages(adminPanelMessages);
+  const shared = useMessages(sharedMessages);
+
+  useEffect(() => {
+    void getInterpretationUsage()
+      .then(setUsage)
+      .catch((cause: unknown) => {
+        setError(cause instanceof Error ? cause.message : String(cause));
+      });
+  }, []);
+
+  return (
+    <main className="shell">
+      <p className="back">
+        <a href="#/">&larr; {shared.back}</a>
+      </p>
+      <h1>{t.usageHeading}</h1>
+      {error !== undefined && (
+        <p className="warning" role="alert">
+          {error}
+        </p>
+      )}
       {usage === undefined ? (
         <p className="status">{t.loadingUsage}</p>
       ) : usage.users.length === 0 ? (

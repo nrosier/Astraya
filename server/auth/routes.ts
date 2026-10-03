@@ -7,7 +7,11 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { Database } from '../db.ts';
-import { promoteLocalUserIfAllowlisted, promoteOidcUserIfGroupMatched } from './admin-promotion.ts';
+import {
+  describeOidcAdminGroupCheck,
+  promoteLocalUserIfAllowlisted,
+  promoteOidcUserIfGroupMatched,
+} from './admin-promotion.ts';
 import { adminExists, announceBootstrap, checkBootstrapToken } from './bootstrap.ts';
 import {
   getUserByUsername,
@@ -194,6 +198,8 @@ export function registerAuthRoutes(app: FastifyInstance, db: Database): void {
         // Every callback, not just JIT provisioning: group membership can change on
         // the IdP side after the account already exists.
         user = promoteOidcUserIfGroupMatched(db, user, claims.groups);
+        const groupCheck = describeOidcAdminGroupCheck(claims.groups, oidcConfig.adminGroupClaim);
+        request.log[groupCheck.level]({ ...groupCheck.fields, isAdmin: user.isAdmin }, groupCheck.message);
 
         const session = createSession(db, user.id, { oidcIdToken: idToken });
         reply.setCookie(SESSION_COOKIE, session.id, {

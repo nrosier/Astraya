@@ -20,7 +20,7 @@ const en = {
   passwordLabel: 'Password',
 
   signOutButton: 'Sign out',
-  manageUsersLink: 'Manage users',
+  manageUsersLink: 'Admin',
   signOutFailed: (message: string) => `That did not go through, so you are still signed in. ${message}`,
 
   removeDataPrompt: 'Signed out. This device still has a local copy of that account’s data.',
@@ -51,7 +51,7 @@ const nl: typeof en = {
   passwordLabel: 'Wachtwoord',
 
   signOutButton: 'Uitloggen',
-  manageUsersLink: 'Gebruikers beheren',
+  manageUsersLink: 'Beheer',
   signOutFailed: (message: string) => `Dat is niet gelukt, je bent dus nog steeds ingelogd. ${message}`,
 
   removeDataPrompt: 'Uitgelogd. Dit apparaat heeft nog een lokale kopie van de gegevens van dat account.',
