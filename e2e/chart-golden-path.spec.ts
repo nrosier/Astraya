@@ -78,7 +78,10 @@ test('clicking a glyph on the wheel isolates it and opens a focused-info panel (
   await page.getByRole('link', { name: 'Natal chart', exact: true }).click();
   await expect(page.locator('div.chart-wheel')).toBeVisible();
 
-  const sunGlyph = page.locator('[data-body="sun"]');
+  // `.chart-point` is the clickable glyph group; since #412 the Sun's radial stack and its degree
+  // tick carry `data-body="sun"` too (so dimming reaches them), which is why this is narrower
+  // than the bare attribute.
+  const sunGlyph = page.locator('.chart-point[data-body="sun"]');
   await expect(sunGlyph).toHaveCount(1);
   await sunGlyph.click();
 
