@@ -1271,34 +1271,37 @@ label.stacked textarea:focus-visible {
   position: relative;
 }
 
-.person-tab-family > summary {
+.person-tab-family-toggle {
   padding: 0.55rem 1rem;
+  border: none;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: none;
   color: var(--muted);
+  font: inherit;
   font-weight: 550;
   cursor: pointer;
   user-select: none;
-  list-style: none;
 }
 
-/* Removes the browser's own disclosure marker so the custom caret below is the only one. */
-.person-tab-family > summary::-webkit-details-marker {
-  display: none;
-}
-
-.person-tab-family > summary::after {
+.person-tab-family-toggle::after {
   content: ' \25BE';
   font-size: 0.75em;
   color: var(--muted);
 }
 
-.person-tab-family:hover > summary {
+.person-tab-family:hover > .person-tab-family-toggle {
   color: var(--fg);
 }
 
-.person-tab-family[open] > summary {
+/* The group that is open, and — separately — the one holding the current page (#417): the page's
+   group is highlighted like an active tab without being held open. */
+.person-tab-family.open > .person-tab-family-toggle,
+.person-tab-family.active > .person-tab-family-toggle {
   background: var(--bg);
   color: var(--fg);
+}
+
+.person-tab-family.active > .person-tab-family-toggle {
   margin-bottom: -1px;
 }
 
