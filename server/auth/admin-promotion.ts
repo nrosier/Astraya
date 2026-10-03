@@ -34,6 +34,88 @@ export function loadOidcAdminGroups(): ReadonlySet<string> {
   );
 }
 
+export interface OidcAdminGroupCheck {
+  readonly level: 'info' | 'warn';
+  readonly message: string;
+  /** Structured fields for the log line: the claim read, what was found, what is configured, what matched. */
+  readonly fields: {
+    readonly groupClaim: string;
+    readonly groupsSeen: readonly string[];
+    readonly adminGroupsConfigured: readonly string[];
+    readonly matchedGroups: readonly string[];
+  };
+}
+
+/**
+ * What an OIDC sign-in's group check saw, as a log record (#414): promotion is silent by design
+ * (a non-match is not an error), which made a misconfiguration — the env var never loaded, or
+ * the IdP not putting `groups` in the ID token — impossible to tell apart from "nobody was in
+ * the admin group". Warns exactly when admin groups are configured but the token carried none,
+ * since that is the case the operator can fix; everything else is plain information.
+ */
+export function describeOidcAdminGroupCheck(groups: readonly string[], groupClaim: string): OidcAdminGroupCheck {
+  const configured = [...loadOidcAdminGroups()];
+  const matched = groups.filter((group) => configured.includes(group));
+  const fields = { groupClaim, groupsSeen: groups, adminGroupsConfigured: configured, matchedGroups: matched };
+  if (configured.length === 0) {
+    return {
+      level: 'info',
+      message: 'OIDC sign-in: ASTRAYA_OIDC_ADMIN_GROUPS is not set, so no admin promotion by group is attempted.',
+      fields,
+    };
+  }
+  if (groups.length === 0) {
+    return {
+      level: 'warn',
+      message: `OIDC sign-in: the ID token has no "${groupClaim}" claim (or it is empty), so nobody can be promoted by group. Check the provider's scope/property mapping that emits it.`,
+      fields,
+    };
+  }
+  if (matched.length === 0) {
+    return {
+      level: 'info',
+      message: `OIDC sign-in: none of the user's groups (${groups.join(', ')}) is in ASTRAYA_OIDC_ADMIN_GROUPS (${configured.join(', ')}); group names are matched exactly, case included.`,
+      fields,
+    };
+  }
+  return {
+    level: 'info',
+    message: `OIDC sign-in: matched admin group ${matched.join(', ')}.`,
+    fields,
+  };
+}
+
+export interface StartupNotice {
+  readonly level: 'info' | 'warn';
+  readonly message: string;
+}
+
+/** The one-time startup note about `ASTRAYA_OIDC_ADMIN_GROUPS` (#414), or `undefined` when there is nothing worth saying. */
+export function adminGroupStartupNotice(oidcEnabled: boolean, groupClaim: string): StartupNotice | undefined {
+  const configured = [...loadOidcAdminGroups()];
+  if (configured.length > 0 && !oidcEnabled) {
+    return {
+      level: 'warn',
+      message:
+        'ASTRAYA_OIDC_ADMIN_GROUPS is set but OIDC is not configured (ASTRAYA_OIDC_ISSUER is empty), so it has no effect. ' +
+        'Note the server reads only the process environment: a .env file is used only if it is loaded, e.g. `node --env-file=.env server/index.ts`.',
+    };
+  }
+  if (configured.length > 0) {
+    return {
+      level: 'info',
+      message: `OIDC admin promotion: members of ${configured.join(', ')} (read from the "${groupClaim}" claim) are made admin at sign-in.`,
+    };
+  }
+  if (oidcEnabled) {
+    return {
+      level: 'info',
+      message: 'OIDC is enabled but ASTRAYA_OIDC_ADMIN_GROUPS is not set: nobody is promoted to admin by group.',
+    };
+  }
+  return undefined;
+}
+
 function grantAdmin(db: Database, user: User): User {
   db.prepare('UPDATE users SET is_admin = 1 WHERE id = ? AND is_admin = 0').run(user.id);
   return { ...user, isAdmin: true };

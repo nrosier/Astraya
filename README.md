@@ -129,6 +129,30 @@ Authentik side after the initial sign-in exchange, so Authentik-derived
 sessions use a shorter TTL (24h, vs. 30 days for local accounts) to bound how
 long that gap can last.
 
+#### Making Authentik group members admins
+
+Set `ASTRAYA_OIDC_ADMIN_GROUPS` to a comma-separated list of Authentik group
+names (matched exactly, case included, e.g. `ASTRAYA_OIDC_ADMIN_GROUPS=astraya_admin`).
+Anyone in one of those groups is made an admin each time they sign in; nobody
+is ever demoted automatically. Two things have to be true for this to work:
+
+- **The server has to actually see the variable.** The Node server reads only
+  its process environment — it does not look for a `.env` file by itself. Pass
+  one explicitly (`node --env-file=.env server/index.ts`), or give the container
+  an `env_file`/`-e` for it. The server logs a one-line note at start-up saying
+  which groups it will promote, or warning when the variable is set but OIDC
+  is not configured.
+- **The ID token has to carry the group list.** Astraya reads the `groups`
+  claim (change it with `ASTRAYA_OIDC_ADMIN_GROUP_CLAIM`). In Authentik, make
+  sure the provider's scopes include a mapping that emits it — the default
+  `profile` scope mapping does on a standard install; a custom one may not.
+
+Each OIDC sign-in logs which groups the token carried and whether any matched,
+so if promotion doesn't happen, the server log says why.
+
+Admins get an **Admin** tab in the main menu with the user list, AI usage, and
+the corpus review screens.
+
 ### Optional: a geocoding provider that doesn't need a referrer
 
 The birth-place picker's "Search for a place by name" field needs no setup

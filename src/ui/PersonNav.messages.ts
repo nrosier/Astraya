@@ -7,6 +7,7 @@ import type { PersonTabFamilyKey, PersonTabKey } from './person-nav.js';
 
 const en = {
   chartTypesAriaLabel: 'Chart types',
+  adminTabLabel: 'Admin',
   disabledTabSuffix: (label: string) => `${label} — complete the birth record first`,
   completeBirthRecordHint: 'Complete the birth record to unlock the other tabs.',
   subtabsAriaLabel: (familyLabel: string) => `${familyLabel} subtabs`,
@@ -37,6 +38,7 @@ const en = {
 
 const nl: typeof en = {
   chartTypesAriaLabel: 'Horoscooptypes',
+  adminTabLabel: 'Beheer',
   disabledTabSuffix: (label: string) => `${label} — voltooi eerst de geboortegegevens`,
   completeBirthRecordHint: 'Vul de geboortegegevens in om de overige tabs te ontgrendelen.',
   subtabsAriaLabel: (familyLabel: string) => `Subtabs van ${familyLabel}`,

@@ -23,6 +23,7 @@ import { openDatabase } from './db.ts';
 import { registerAuthRoutes } from './auth/routes.ts';
 import { registerAdminRoutes } from './auth/admin-routes.ts';
 import { loadOidcConfig } from './auth/oidc.ts';
+import { adminGroupStartupNotice } from './auth/admin-promotion.ts';
 import { registerOpsRoutes } from './ops/routes.ts';
 import { registerCorpusOverrideRoutes } from './corpus-overrides-routes.ts';
 import { registerCorpusCandidateRoutes } from './corpus-candidates-routes.ts';
@@ -105,6 +106,11 @@ export async function build(options: BuildOptions = {}) {
   // `loadOidcConfig` throws on a present-but-malformed issuer — deliberately, so
   // a deployment mistake fails the boot rather than silently serving OIDC-less.
   const oidcConfig = loadOidcConfig();
+  const adminGroupNotice = adminGroupStartupNotice(
+    oidcConfig !== null,
+    oidcConfig?.adminGroupClaim ?? process.env.ASTRAYA_OIDC_ADMIN_GROUP_CLAIM ?? 'groups',
+  );
+  if (adminGroupNotice) app.log[adminGroupNotice.level](adminGroupNotice.message);
   // A self-hosted Nominatim instance (#290, #291): its origin replaces the default
   // public Nominatim host in `connect-src`. Must match the scheme+host
   // `VITE_NOMINATIM_URL` was built against, or the CSP blocks the lookup.

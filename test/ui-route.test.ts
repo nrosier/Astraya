@@ -199,6 +199,8 @@ describe('parseRoute', () => {
   });
 
   it('routes the corpus-overrides screen (#292)', () => {
+    expect(parseRoute('#/admin/usage')).toEqual({ kind: 'admin-usage' });
+    expect(parseRoute('#/admin/usage/')).toEqual({ kind: 'admin-usage' });
     expect(parseRoute('#/admin/corpus-overrides')).toEqual({ kind: 'corpus-overrides' });
     expect(parseRoute('#/admin/corpus-overrides/')).toEqual({ kind: 'corpus-overrides' });
   });

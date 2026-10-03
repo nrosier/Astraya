@@ -11,6 +11,8 @@
  * to look like a real browser tab strip (connected to the content below it), which would be the
  * wrong look for those already-shipped in-page tabs if the classes were shared.
  */
+import { ADMIN_HOME_HREF } from './admin-nav.js';
+import { useSessionUserOrUndefined } from './session-context.js';
 import { activeTabKey, isTabEnabled, PERSON_TAB_FAMILIES, PERSON_TABS } from './person-nav.js';
 import type { PersonTab } from './person-nav.js';
 import { personNavMessages } from './PersonNav.messages.js';
@@ -22,6 +24,7 @@ const UNGROUPED_KEYS = new Set(['birth-record', 'chart', 'report', 'astrocartogr
 
 export function PersonNav({ personId, route }: { personId: string; route: Route }): React.JSX.Element {
   const state = useStoreState();
+  const sessionUser = useSessionUserOrUndefined();
   const t = useMessages(personNavMessages);
   const person = state.people.get(personId);
   const hasBirthMoment = person?.moment !== undefined;
@@ -87,6 +90,13 @@ export function PersonNav({ personId, route }: { personId: string; route: Route 
             </details>
           );
         })}
+        {/* Admin area (#414): last in the strip and only for an admin. Purely navigation — each
+            admin route is guarded by `requireAdmin` on the server whatever this shows. */}
+        {sessionUser?.isAdmin === true && (
+          <a href={ADMIN_HOME_HREF} className="person-tab person-tab-admin">
+            {t.adminTabLabel}
+          </a>
+        )}
       </nav>
       {anyDisabled && <p className="hint">{t.completeBirthRecordHint}</p>}
     </div>

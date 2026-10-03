@@ -9,6 +9,7 @@ import { EphemerisProviderProvider, useEphemerisProvider } from './EphemerisProv
 import { LanguageToggle } from './LanguageToggle.js';
 import { useMessages } from './messages.js';
 import { People } from './People.js';
+import { AdminNav } from './AdminNav.js';
 import { PersonNav } from './PersonNav.js';
 import { PwaStatus } from './PwaStatus.js';
 import { parseRoute } from './route.js';
@@ -49,6 +50,7 @@ const SolarArcView = lazy(async () => ({ default: (await personScreens()).SolarA
 const SynastryView = lazy(async () => ({ default: (await personScreens()).SynastryView }));
 const TransitView = lazy(async () => ({ default: (await personScreens()).TransitView }));
 const AdminPanel = lazy(async () => ({ default: (await import('./AdminPanel.js')).AdminPanel }));
+const AdminUsagePanel = lazy(async () => ({ default: (await import('./AdminPanel.js')).AdminUsagePanel }));
 const CorpusOverridesPanel = lazy(async () => ({
   default: (await import('./CorpusOverridesPanel.js')).CorpusOverridesPanel,
 }));
@@ -273,24 +275,23 @@ function renderScreen(parsed: Route, seVersion: string | undefined): React.JSX.E
   if (parsed.kind === 'shared') return <SharedChartView />;
   if (parsed.kind === 'set-password') return <SetPasswordForm />;
   if (parsed.kind === 'setup') return <SetupForm />;
-  if (parsed.kind === 'admin') {
+  if (
+    parsed.kind === 'admin' ||
+    parsed.kind === 'admin-usage' ||
+    parsed.kind === 'corpus-overrides' ||
+    parsed.kind === 'corpus-candidates'
+  ) {
+    // One tab strip over all four admin screens (#414), in the same bordered shelf the person
+    // tabs use. The admin area is person-independent, so it is not part of `PersonNav`.
     return (
       <Stored>
-        <AdminPanel />
-      </Stored>
-    );
-  }
-  if (parsed.kind === 'corpus-overrides') {
-    return (
-      <Stored>
-        <CorpusOverridesPanel />
-      </Stored>
-    );
-  }
-  if (parsed.kind === 'corpus-candidates') {
-    return (
-      <Stored>
-        <CorpusCandidatesPanel />
+        <div className="person-shelf">
+          <AdminNav route={parsed} />
+          {parsed.kind === 'admin' && <AdminPanel />}
+          {parsed.kind === 'admin-usage' && <AdminUsagePanel />}
+          {parsed.kind === 'corpus-overrides' && <CorpusOverridesPanel />}
+          {parsed.kind === 'corpus-candidates' && <CorpusCandidatesPanel />}
+        </div>
       </Stored>
     );
   }

@@ -1238,6 +1238,13 @@ label.stacked textarea:focus-visible {
   color: var(--fg);
 }
 
+/* The admin area (#414) sits apart at the end of the person strip, in the accent so an admin
+   finds it without it competing with the chart tabs. */
+.person-tab.person-tab-admin {
+  margin-left: auto;
+  color: var(--accent);
+}
+
 /* The two load-bearing details for the fused look: this background must match `.person-shelf
    .shell`'s exactly, and the negative margin pulls the tab down over the seam between the tab
    row and the content panel so no gap or line shows through underneath it. */
