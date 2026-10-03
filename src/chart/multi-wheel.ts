@@ -24,8 +24,17 @@
  * to the true degree already says where the body really is, and a second
  * radius for planets would leave the degree annotations ragged.
  *
- * Aspect chords are confined to the inner disk (r <= the aspect circle) so
- * they never cross the bands carrying glyphs. Conjunctions are excluded from
+ * The layout itself (#412) is the classic one, outside in: zodiac dial, degree
+ * ruler, the planet band where every ring's bodies sit, the narrow house dial,
+ * then the aspect disk — see `sheet-geometry.ts`. The four angles run from the
+ * aspect circle out to the zodiac dial's edge, never across the aspect web.
+ *
+ * Every clickable symbol (body, sign, aspect chord) is a `<g>` carrying
+ * `data-body`/`data-sign`/`data-aspect-body-*` plus an invisible hit area, so
+ * the screen can isolate it on click and dim everything else by attribute.
+ *
+ * Aspect chords — a ring's own and cross-ring ones alike — end on the aspect
+ * circle, so they never cross the bands carrying glyphs. Conjunctions are excluded from
  * the web on purpose — a conjunction is two glyphs at nearly the same degree,
  * which the wheel already shows directly, and its chord would be a dot.
  *
@@ -39,7 +48,7 @@ import { SIGNS, degreesInSign } from '../astrology/signs.js';
 import type { BodyId, Degrees, HousePositions } from '../ephemeris/types.js';
 import { renderAspectWebSvg, renderCrossRingAspectWebSvg } from './aspect-web.js';
 import type { GlyphLayoutInput } from './glyph-layout.js';
-import { renderGlyphRingSvg, spreadGlyphs } from './glyph-layout.js';
+import { hitAreaCircle, renderGlyphRingSvg, spreadGlyphs } from './glyph-layout.js';
 import { renderGlyph, signGlyph } from './glyphs.js';
 import { baselineOffset, circle, escapeXml, fmt, line, polygon, text } from './svg-primitives.js';
 import type { RingBand, SheetGeometry } from './sheet-geometry.js';
@@ -60,7 +69,12 @@ export interface WheelRingInput {
   /** Shown in the corner legend, e.g. "Natal" or "Solar return 2026". */
   readonly label: string;
   readonly houses: HousePositions;
-  readonly bodies: readonly { readonly body: BodyId; readonly key: string; readonly longitude: Degrees }[];
+  readonly bodies: readonly {
+    readonly body: BodyId;
+    readonly key: string;
+    readonly longitude: Degrees;
+    readonly retrograde?: boolean;
+  }[];
   /**
    * This ring's own aspects (e.g. a natal chart's aspect set), drawn as a
    * chord web inside the aspect circle. Distinct from `CrossRingAspects`,
@@ -91,18 +105,22 @@ export interface MultiWheelOptions extends WheelOrientationOptions {
   readonly houseWedgeStyle?: HouseWedgeStyle;
   /** Cosmetic fill for the zodiac ring's twelve sign wedges. Defaults to `default` (no fill). */
   readonly signWedgeStyle?: SignWedgeStyle;
-  /** Minimum longitude gap kept between adjacent glyphs within a ring. Defaults to 6°. */
+  /** Minimum longitude gap kept between adjacent glyphs within a ring. Defaults to 7° for one ring, 6° for more. */
   readonly minSeparationDeg?: number;
-  /** Omits the outer border, zodiac ring and corner legend, for embedding in a larger sheet. */
+  /** Omits the `<svg>` wrapper, for embedding in a larger sheet. */
   readonly bare?: boolean;
 }
 
 const DEFAULT_SIZE = 800;
 const DEFAULT_HOUSE_WEDGE_STYLE: HouseWedgeStyle = 'equal-degree';
 const DEFAULT_SIGN_WEDGE_STYLE: SignWedgeStyle = 'default';
-const DEFAULT_MIN_SEPARATION_DEG = 6;
+/** A single ring's radial stack (degree, sign, minutes) needs a little more room per body than a bare glyph. */
+const DEFAULT_MIN_SEPARATION_SINGLE_DEG = 7;
+const DEFAULT_MIN_SEPARATION_STACKED_DEG = 6;
 /** Degree step the rainbow wedge's arc edges are approximated with (a straight-edged polygon, per this module's `polygon` primitive). */
 const WEDGE_ARC_STEP_DEG = 3;
+/** Average advance width of a digit/label character, in ems — a pure renderer has no text metrics. */
+const CHAR_EMS = 0.62;
 
 function norm360(degrees: Degrees): Degrees {
   const value = degrees % 360;
@@ -115,24 +133,21 @@ function cuspDisplayLongitude(cuspLongitude: Degrees, style: HouseWedgeStyle): D
   return Math.floor(norm360(cuspLongitude) / 30) * 30;
 }
 
-/** `05°12'` — a body's degree and minute within its sign, zero-padded to a fixed width so a column of them aligns. */
-function formatDegreeMinute(longitude: Degrees): string {
-  const withinSign = degreesInSign(longitude);
-  const totalMinutes = Math.round(withinSign * 60);
-  const degree = Math.floor(totalMinutes / 60) % 30;
-  const minute = totalMinutes % 60;
-  return `${String(degree).padStart(2, '0')}°${String(minute).padStart(2, '0')}'`;
+/** A longitude's degree and minute within its sign, rounded to the minute. */
+function degreeMinute(longitude: Degrees): { readonly degree: number; readonly minute: number } {
+  const totalMinutes = Math.round(degreesInSign(longitude) * 60);
+  return { degree: Math.floor(totalMinutes / 60) % 30, minute: totalMinutes % 60 };
 }
 
-/**
- * How wide `05°12'` draws, including the gap that keeps two of them apart.
- * Stated in ems because a pure renderer has no text metrics to measure with, and
- * an em figure scales with the sheet exactly as the drawn text does.
- */
-const DEGREE_LABEL_EMS = 3.6;
+/** The angle, in degrees of arc, that half a `chars`-character label plus a small gap subtends at `radius`. */
+function halfLabelArcDeg(chars: number, fontSize: number, radius: number): number {
+  const halfWidth = (chars * CHAR_EMS * fontSize) / 2 + fontSize * 0.3;
+  return (halfWidth / radius) * (180 / Math.PI);
+}
 
-function labelWidth(fontSize: number): number {
-  return fontSize * DEGREE_LABEL_EMS;
+function signElementClass(signIndex: number): string {
+  const sign = SIGNS[signIndex];
+  return sign === undefined ? '' : ` chart-sign-element-${sign.element}`;
 }
 
 /**
@@ -165,7 +180,14 @@ function signWedgePolygon(
   return polygon([...outerPoints, ...innerPoints], `wheel-sign-wedge wheel-sign-wedge-${signName}`);
 }
 
-/** The zodiac ring: its two edges, an optional rainbow sign-wedge fill, three tiers of degree ticks, sign divisions and the twelve sign glyphs. */
+/**
+ * The zodiac dial and the degree ruler under it: the dial's two edges (the inner one
+ * filled, tinting everything inside it), an optional rainbow sign-wedge fill, sign
+ * boundaries spanning the dial, the twelve element-coloured sign glyphs, and three tiers
+ * of degree ticks hanging inward from the dial's inner edge.
+ *
+ * Each sign glyph is its own clickable `<g data-sign>` with an invisible hit area (#412).
+ */
 function renderZodiacRingSvg(
   geometry: SheetGeometry,
   ascendant: Degrees,
@@ -173,47 +195,48 @@ function renderZodiacRingSvg(
   signWedgeStyle: SignWedgeStyle = 'default',
 ): string {
   const { cx, cy, zodiacOuter, zodiacInner } = geometry;
-  const parts: string[] = [circle(cx, cy, geometry.outerBorder, 'wheel-ring-outer')];
+  const parts: string[] = [circle(cx, cy, zodiacOuter, 'wheel-ring-outer')];
   if (signWedgeStyle === 'rainbow') {
     for (let signIndex = 0; signIndex < SIGNS.length; signIndex++) {
       parts.push(signWedgePolygon(geometry, ascendant, orientationOptions, signIndex));
     }
   }
-  parts.push(circle(cx, cy, zodiacOuter, 'wheel-ring-zodiac'));
   parts.push(circle(cx, cy, zodiacInner, 'wheel-ring-inner'));
 
   for (let degree = 0; degree < 360; degree += 1) {
     const angle = wheelAngle(degree, ascendant, orientationOptions);
     if (degree % 30 === 0) {
-      // A sign division spans the whole ring, so it replaces the tick here.
       const outer = pointOnCircle(cx, cy, zodiacOuter, angle);
       const inner = pointOnCircle(cx, cy, zodiacInner, angle);
       parts.push(line(outer.x, outer.y, inner.x, inner.y, 'wheel-sign-boundary'));
-      continue;
     }
     const isMajor = degree % TICK_MAJOR_INTERVAL_DEG === 0;
     const isMedium = degree % TICK_MEDIUM_INTERVAL_DEG === 0;
     const length = isMajor ? geometry.tickMajorLength : isMedium ? geometry.tickMediumLength : geometry.tickMinorLength;
     const tickClass = isMajor ? 'wheel-tick-major' : isMedium ? 'wheel-tick-medium' : 'wheel-tick-minor';
-    const outer = pointOnCircle(cx, cy, zodiacInner + length, angle);
-    const inner = pointOnCircle(cx, cy, zodiacInner, angle);
+    const outer = pointOnCircle(cx, cy, zodiacInner, angle);
+    const inner = pointOnCircle(cx, cy, zodiacInner - length, angle);
     parts.push(line(outer.x, outer.y, inner.x, inner.y, tickClass));
   }
 
   for (const sign of SIGNS) {
     const definition = signGlyph(sign.name);
     if (!definition) continue;
+    const name = sign.name.toLowerCase();
     // Centred in the sign's own 30° arc.
     const angle = wheelAngle(sign.index * 30 + 15, ascendant, orientationOptions);
     const point = pointOnCircle(cx, cy, geometry.signGlyphRadius, angle);
     parts.push(
-      renderGlyph(
-        definition,
-        point.x,
-        point.y,
-        geometry.signGlyphSize,
-        `chart-sign-glyph chart-sign-glyph-${sign.name.toLowerCase()}`,
-      ),
+      `<g class="chart-sign" data-sign="${name}">` +
+        hitAreaCircle(point.x, point.y, geometry.signGlyphSize * 0.62) +
+        renderGlyph(
+          definition,
+          point.x,
+          point.y,
+          geometry.signGlyphSize,
+          `chart-sign-glyph chart-sign-glyph-${name}${signElementClass(sign.index)}`,
+        ) +
+        `</g>`,
     );
   }
 
@@ -221,9 +244,11 @@ function renderZodiacRingSvg(
 }
 
 /**
- * The base chart's house structure: a spoke per cusp reaching the zodiac ring,
- * the ASC-DSC and MC-IC axes drawn heavy across the whole chart, and the
- * numeric house labels 1-12.
+ * The base chart's house structure: the house dial (`aspectCircle`-`houseRing`) with its
+ * numbers 1-12, a thin spoke per cusp from the dial out to the ruler, and the four angles
+ * drawn heavy from the dial out to the zodiac dial's outer edge — labelled ASC/DSC/MC/IC
+ * inside the house dial and with their exact degree in the zodiac dial (#412). The axes
+ * deliberately stop at the aspect circle rather than crossing the aspect web.
  *
  * The axes are drawn from the `HousePositions` angles themselves rather than
  * from cusps 1 and 10, so they stay the true horizon and meridian even under
@@ -234,19 +259,18 @@ function renderBaseHousesSvg(
   houses: HousePositions,
   geometry: SheetGeometry,
   ascendant: Degrees,
-  innerRadius: number,
   houseWedgeStyle: HouseWedgeStyle,
   orientationOptions: WheelOrientationOptions,
 ): string {
-  const { cx, cy, zodiacInner } = geometry;
-  const parts: string[] = [];
+  const { cx, cy, zodiacInner, zodiacOuter, aspectCircle } = geometry;
+  const parts: string[] = [circle(cx, cy, geometry.houseRing, 'wheel-ring-house')];
 
   for (let house = 1; house <= 12; house += 1) {
     const cuspLongitude = houses.cusps[house];
     if (cuspLongitude === undefined) continue;
     const angle = wheelAngle(cuspDisplayLongitude(cuspLongitude, houseWedgeStyle), ascendant, orientationOptions);
     const outer = pointOnCircle(cx, cy, zodiacInner, angle);
-    const inner = pointOnCircle(cx, cy, innerRadius, angle);
+    const inner = pointOnCircle(cx, cy, aspectCircle, angle);
     const isAngular = ANGULAR_HOUSES.includes(house);
     parts.push(
       line(
@@ -259,11 +283,82 @@ function renderBaseHousesSvg(
     );
   }
 
-  for (const axis of [houses.ascendant, houses.midheaven]) {
-    const angle = wheelAngle(axis, ascendant, orientationOptions);
-    const from = pointOnCircle(cx, cy, zodiacInner, angle);
-    const to = pointOnCircle(cx, cy, zodiacInner, angle + 180);
+  const axes = [
+    { label: 'ASC', longitude: houses.ascendant },
+    { label: 'DSC', longitude: houses.ascendant + 180 },
+    { label: 'MC', longitude: houses.midheaven },
+    { label: 'IC', longitude: houses.midheaven + 180 },
+  ];
+  const degreeRadius = zodiacOuter - geometry.axisDegreeFontSize * 0.85;
+  for (const axis of axes) {
+    const angle = wheelAngle(axis.longitude, ascendant, orientationOptions);
+    const from = pointOnCircle(cx, cy, aspectCircle, angle);
+    const to = pointOnCircle(cx, cy, zodiacOuter, angle);
     parts.push(line(from.x, from.y, to.x, to.y, 'chart-multiwheel-axis'));
+
+    // Just before the angle, on the side of the house it closes (12th for ASC, 9th for MC…),
+    // leaving the angle's own house free for its number.
+    const labelOffset = halfLabelArcDeg(axis.label.length, geometry.axisLabelFontSize, geometry.houseNumberRadius);
+    const labelPoint = pointOnCircle(
+      cx,
+      cy,
+      geometry.houseNumberRadius,
+      wheelAngle(axis.longitude - labelOffset, ascendant, orientationOptions),
+    );
+    parts.push(
+      text(
+        labelPoint.x,
+        labelPoint.y + baselineOffset(geometry.axisLabelFontSize),
+        'middle',
+        'chart-axis-label',
+        axis.label,
+        geometry.axisLabelFontSize,
+      ),
+    );
+
+    // Degree on one side of the line, minutes on the other, as the reference wheel prints it.
+    const { degree, minute } = degreeMinute(norm360(axis.longitude));
+    const degreeText = `${String(degree)}°`;
+    const minuteText = `${String(minute).padStart(2, '0')}'`;
+    const fontSize = geometry.axisDegreeFontSize;
+    const degreePoint = pointOnCircle(
+      cx,
+      cy,
+      degreeRadius,
+      wheelAngle(
+        axis.longitude + halfLabelArcDeg(degreeText.length, fontSize, degreeRadius),
+        ascendant,
+        orientationOptions,
+      ),
+    );
+    const minutePoint = pointOnCircle(
+      cx,
+      cy,
+      degreeRadius,
+      wheelAngle(
+        axis.longitude - halfLabelArcDeg(minuteText.length, fontSize, degreeRadius),
+        ascendant,
+        orientationOptions,
+      ),
+    );
+    parts.push(
+      text(
+        degreePoint.x,
+        degreePoint.y + baselineOffset(fontSize),
+        'middle',
+        'chart-axis-degree',
+        degreeText,
+        fontSize,
+      ),
+      text(
+        minutePoint.x,
+        minutePoint.y + baselineOffset(fontSize),
+        'middle',
+        'chart-axis-degree',
+        minuteText,
+        fontSize,
+      ),
+    );
   }
 
   for (let house = 1; house <= 12; house += 1) {
@@ -302,14 +397,14 @@ function renderRingCuspsSvg(
 ): string {
   const { cx, cy } = geometry;
   const ringClass = `chart-multiwheel-ring chart-multiwheel-ring-${String(ringIndex)}`;
-  const parts: string[] = [circle(cx, cy, band.outerRadius, ringClass)];
+  const parts: string[] = [circle(cx, cy, band.innerRadius, ringClass)];
 
   for (let house = 1; house <= 12; house += 1) {
     const cuspLongitude = houses.cusps[house];
     if (cuspLongitude === undefined) continue;
     const angle = wheelAngle(cuspDisplayLongitude(cuspLongitude, houseWedgeStyle), ascendant, orientationOptions);
     const isAngular = ANGULAR_HOUSES.includes(house);
-    const stubOuter = band.innerRadius + (band.outerRadius - band.innerRadius) * 0.6;
+    const stubOuter = band.innerRadius + (band.outerRadius - band.innerRadius) * 0.4;
     const outerEnd = pointOnCircle(cx, cy, isAngular ? band.outerRadius : stubOuter, angle);
     const innerEnd = pointOnCircle(cx, cy, band.innerRadius, angle);
     parts.push(
@@ -326,19 +421,34 @@ function renderRingCuspsSvg(
   return parts.join('');
 }
 
+/** A short tick at each body's true degree on its band's inner edge — the house dial's outer edge for the base ring. */
+function renderBodyTicksSvg(
+  positions: readonly GlyphLayoutInput[],
+  geometry: SheetGeometry,
+  ascendant: Degrees,
+  band: RingBand,
+  orientationOptions: WheelOrientationOptions,
+): string {
+  return positions
+    .map((position) => {
+      const angle = wheelAngle(position.longitude, ascendant, orientationOptions);
+      const inner = pointOnCircle(geometry.cx, geometry.cy, band.innerRadius, angle);
+      const outer = pointOnCircle(geometry.cx, geometry.cy, band.innerRadius + geometry.bodyTickLength, angle);
+      return `<line x1="${fmt(inner.x)}" y1="${fmt(inner.y)}" x2="${fmt(outer.x)}" y2="${fmt(outer.y)}" class="chart-body-tick" data-body="${position.key}" />`;
+    })
+    .join('');
+}
+
 /**
- * The `05°12'` annotation beside each body, at the *spread* angle its glyph
- * was actually drawn at rather than its true degree, so the label tracks a
- * glyph the collision pass nudged.
+ * The rest of each body's radial stack, under its glyph: degree, sign glyph (in its
+ * element colour) and minutes, all at the *spread* angle the glyph was drawn at, so a
+ * nudged glyph keeps its whole stack lined up beneath it (#412). Every part carries the
+ * body's `data-body`, so clicking any of it isolates that body and dimming reaches it.
  *
- * The sign is deliberately not repeated here as a glyph: the body sits on a
- * radial line straight out to its own sign's glyph in the zodiac ring, and a
- * third element per body in a band this narrow is what makes a crowded chart
- * illegible. `spreadGlyphs` is recomputed rather than threaded out of
- * `renderGlyphRingSvg` — it is pure and deterministic, so both calls agree,
- * and the alternative is teaching the glyph ring about degree formatting.
+ * `spreadGlyphs` is recomputed rather than threaded out of `renderGlyphRingSvg` — it is
+ * pure and deterministic, so both calls agree.
  */
-function renderDegreeLabelsSvg(
+function renderBodyStacksSvg(
   positions: readonly GlyphLayoutInput[],
   geometry: SheetGeometry,
   ascendant: Degrees,
@@ -346,37 +456,50 @@ function renderDegreeLabelsSvg(
   minSeparationDeg: number,
   orientationOptions: WheelOrientationOptions,
 ): string {
-  const placements = [...spreadGlyphs(positions, minSeparationDeg)].sort(
-    (a, b) => a.displayLongitude - b.displayLongitude,
-  );
-  // A label is far wider than the glyph it annotates, so the separation that
-  // keeps glyphs apart is nowhere near enough to keep labels apart. Widening the
-  // spread until they all fit would space 20 bodies almost evenly around the
-  // ring and destroy the clustering the wheel exists to show, so the labels a
-  // cluster has no room for are dropped instead: the glyph and its leader line
-  // still carry the position, and the exact degree is in the Positions table.
-  // The threshold is an angle, not a pixel count, so it holds at every `size`.
-  const labelWidthDeg = (labelWidth(geometry.degreeFontSize) / (2 * Math.PI * band.degreeLabelRadius)) * 360;
+  const { cx, cy } = geometry;
   const parts: string[] = [];
-  let lastShown: number | undefined;
-  let firstShown: number | undefined;
-  for (const placement of placements) {
-    if (lastShown !== undefined && placement.displayLongitude - lastShown < labelWidthDeg) continue;
-    if (firstShown !== undefined && norm360(firstShown - placement.displayLongitude) < labelWidthDeg) continue;
-    lastShown = placement.displayLongitude;
-    firstShown ??= placement.displayLongitude;
+  for (const placement of spreadGlyphs(positions, minSeparationDeg)) {
     const angle = wheelAngle(placement.displayLongitude, ascendant, orientationOptions);
-    const point = pointOnCircle(geometry.cx, geometry.cy, band.degreeLabelRadius, angle);
-    parts.push(
+    const { degree, minute } = degreeMinute(placement.longitude);
+    const signIndex = Math.floor(norm360(placement.longitude) / 30);
+    const sign = SIGNS[signIndex];
+    const signDefinition = sign === undefined ? undefined : signGlyph(sign.name);
+
+    const degreePoint = pointOnCircle(cx, cy, band.degreeLabelRadius, angle);
+    const signPoint = pointOnCircle(cx, cy, band.signLabelRadius, angle);
+    const minutePoint = pointOnCircle(cx, cy, band.minuteLabelRadius, angle);
+    const stack: string[] = [
       text(
-        point.x,
-        point.y + baselineOffset(geometry.degreeFontSize),
+        degreePoint.x,
+        degreePoint.y + baselineOffset(geometry.degreeFontSize),
         'middle',
         'chart-degree-label',
-        formatDegreeMinute(placement.longitude),
+        `${String(degree)}°`,
         geometry.degreeFontSize,
       ),
+    ];
+    if (sign !== undefined && signDefinition !== undefined) {
+      stack.push(
+        renderGlyph(
+          signDefinition,
+          signPoint.x,
+          signPoint.y,
+          geometry.stackSignGlyphSize,
+          `chart-sign-glyph chart-stack-sign-glyph chart-sign-glyph-${sign.name.toLowerCase()}${signElementClass(signIndex)}`,
+        ),
+      );
+    }
+    stack.push(
+      text(
+        minutePoint.x,
+        minutePoint.y + baselineOffset(geometry.minuteFontSize),
+        'middle',
+        'chart-minute-label',
+        `${String(minute).padStart(2, '0')}'`,
+        geometry.minuteFontSize,
+      ),
     );
+    parts.push(`<g class="chart-body-stack" data-body="${placement.key}">${stack.join('')}</g>`);
   }
   return parts.join('');
 }
@@ -399,7 +522,9 @@ export function renderMultiWheelSvg(
   const size = options?.size ?? DEFAULT_SIZE;
   const houseWedgeStyle = options?.houseWedgeStyle ?? DEFAULT_HOUSE_WEDGE_STYLE;
   const signWedgeStyle = options?.signWedgeStyle ?? DEFAULT_SIGN_WEDGE_STYLE;
-  const minSeparationDeg = options?.minSeparationDeg ?? DEFAULT_MIN_SEPARATION_DEG;
+  const minSeparationDeg =
+    options?.minSeparationDeg ??
+    (rings.length === 1 ? DEFAULT_MIN_SEPARATION_SINGLE_DEG : DEFAULT_MIN_SEPARATION_STACKED_DEG);
   const bare = options?.bare ?? false;
   const orientationOptions: WheelOrientationOptions = {
     ...(options?.orientation !== undefined ? { orientation: options.orientation } : {}),
@@ -412,20 +537,8 @@ export function renderMultiWheelSvg(
   const bands = resolveRingBands(geometry, rings.length);
 
   const parts: string[] = [renderZodiacRingSvg(geometry, ascendant, orientationOptions, signWedgeStyle)];
+  parts.push(renderBaseHousesSvg(baseRing.houses, geometry, ascendant, houseWedgeStyle, orientationOptions));
   parts.push(circle(cx, cy, geometry.aspectCircle, 'wheel-ring-aspect'));
-
-  const baseBand = bands[0];
-  if (baseBand === undefined) throw new Error('unreachable: resolveRingBands returns one band per ring');
-  parts.push(
-    renderBaseHousesSvg(
-      baseRing.houses,
-      geometry,
-      ascendant,
-      baseBand.innerRadius,
-      houseWedgeStyle,
-      orientationOptions,
-    ),
-  );
 
   rings.forEach((ring, index) => {
     const band = bands[index];
@@ -435,19 +548,26 @@ export function renderMultiWheelSvg(
         renderRingCuspsSvg(ring.houses, ascendant, geometry, band, index, houseWedgeStyle, orientationOptions),
       );
     }
-    const glyphInputs: readonly GlyphLayoutInput[] = ring.bodies.map((b) => ({ key: b.key, longitude: b.longitude }));
+    const glyphInputs: readonly GlyphLayoutInput[] = ring.bodies.map((b) => ({
+      key: b.key,
+      longitude: b.longitude,
+      ...(b.retrograde === true ? { retrograde: true } : {}),
+    }));
+    parts.push(renderBodyTicksSvg(glyphInputs, geometry, ascendant, band, orientationOptions));
+    // Only a single ring's band is wide enough for the radial degree/sign/minute stack;
+    // with two or three charts stacked, it would overlap the neighbouring ring's glyphs.
+    if (rings.length === 1) {
+      parts.push(renderBodyStacksSvg(glyphInputs, geometry, ascendant, band, minSeparationDeg, orientationOptions));
+    }
     parts.push(
       renderGlyphRingSvg(glyphInputs, ascendant, cx, cy, band.glyphRadius, band.trueRadius, {
         ...orientationOptions,
         minSeparationDeg,
         glyphSize: geometry.bodyGlyphSize,
+        leaderEndRadius: Math.min(band.glyphRadius + geometry.bodyGlyphSize / 2, band.trueRadius),
+        retrogradeFontSize: geometry.retrogradeFontSize,
       }),
     );
-    // Only a single ring's band is wide enough for a legible degree column;
-    // with two or three charts stacked, the labels would overlap their glyphs.
-    if (rings.length === 1) {
-      parts.push(renderDegreeLabelsSvg(glyphInputs, geometry, ascendant, band, minSeparationDeg, orientationOptions));
-    }
     if (ring.aspects !== undefined && ring.aspects.length > 0) {
       const longitudeByBody = new Map(ring.bodies.map((b) => [b.body, b.longitude]));
       const longitudeOf = (body: BodyId): Degrees => {
@@ -479,7 +599,7 @@ export function renderMultiWheelSvg(
           `renderMultiWheelSvg: body ${String(body)} is not present in outer ring ${String(cross.outerRingIndex)}`,
         );
       }
-      return { longitude, radius: outerBand.trueRadius };
+      return { longitude, radius: geometry.aspectCircle };
     };
     const resolveB = (body: BodyId): { longitude: Degrees; radius: number } => {
       const longitude = longitudeByBodyB.get(body);
@@ -488,7 +608,7 @@ export function renderMultiWheelSvg(
           `renderMultiWheelSvg: body ${String(body)} is not present in inner ring ${String(cross.innerRingIndex)}`,
         );
       }
-      return { longitude, radius: innerBand.trueRadius };
+      return { longitude, radius: geometry.aspectCircle };
     };
     parts.push(renderCrossRingAspectWebSvg(cross.aspects, resolveA, resolveB, ascendant, cx, cy, orientationOptions));
   }

@@ -57,6 +57,32 @@ function fmt(value: number): string {
   return value.toFixed(2);
 }
 
+/** Orbs this tight are drawn heavier, the way the reference wheel weights an exact aspect (#412). */
+export const TIGHT_ORB_DEG = 1;
+
+/**
+ * One chord as a group: an invisible, wide hit line (a 1-2px chord is otherwise nearly
+ * impossible to click — #412) under the visible line, with the endpoint body keys on the
+ * group so a click anywhere in it resolves to the same aspect.
+ */
+function aspectChord(
+  aspect: Aspect,
+  pointA: { readonly x: number; readonly y: number },
+  pointB: { readonly x: number; readonly y: number },
+  extraClass: string,
+): string {
+  const direction = aspect.applying ? 'applying' : 'separating';
+  const tight = aspect.orb <= TIGHT_ORB_DEG ? ' chart-aspect-tight' : '';
+  const className = `chart-aspect${extraClass} chart-aspect-${aspect.aspect.key} chart-aspect-${direction}${tight}`;
+  const coords = `x1="${fmt(pointA.x)}" y1="${fmt(pointA.y)}" x2="${fmt(pointB.x)}" y2="${fmt(pointB.y)}"`;
+  return (
+    `<g class="chart-aspect-link" data-aspect-key="${aspect.aspect.key}" data-aspect-body-a="${bodyKeyOf(aspect.bodyA)}" data-aspect-body-b="${bodyKeyOf(aspect.bodyB)}">` +
+    `<line ${coords} class="chart-hit-area" stroke="none" stroke-width="10" pointer-events="all" />` +
+    `<line ${coords} class="${className}" />` +
+    `</g>`
+  );
+}
+
 /**
  * Renders one `<line>` per aspect, chording the circle of radius `radius`
  * centered at `(cx, cy)`. `longitudeOf` resolves each aspect's two bodies to
@@ -80,13 +106,7 @@ export function renderAspectWebSvg(
     const angleB = wheelAngle(longitudeOf(aspect.bodyB), ascendant, orientationOptions);
     const pointA = pointOnCircle(cx, cy, radius, angleA);
     const pointB = pointOnCircle(cx, cy, radius, angleB);
-    const direction = aspect.applying ? 'applying' : 'separating';
-    const className = `chart-aspect chart-aspect-${aspect.aspect.key} chart-aspect-${direction}`;
-    const bodyAKey = bodyKeyOf(aspect.bodyA);
-    const bodyBKey = bodyKeyOf(aspect.bodyB);
-    parts.push(
-      `<line x1="${fmt(pointA.x)}" y1="${fmt(pointA.y)}" x2="${fmt(pointB.x)}" y2="${fmt(pointB.y)}" class="${className}" data-aspect-key="${aspect.aspect.key}" data-aspect-body-a="${bodyAKey}" data-aspect-body-b="${bodyBKey}" />`,
-    );
+    parts.push(aspectChord(aspect, pointA, pointB, ''));
   }
   return parts.join('');
 }
@@ -117,13 +137,7 @@ export function renderCrossRingAspectWebSvg(
     const angleB = wheelAngle(b.longitude, ascendant, orientationOptions);
     const pointA = pointOnCircle(cx, cy, a.radius, angleA);
     const pointB = pointOnCircle(cx, cy, b.radius, angleB);
-    const direction = aspect.applying ? 'applying' : 'separating';
-    const className = `chart-aspect chart-cross-aspect chart-aspect-${aspect.aspect.key} chart-aspect-${direction}`;
-    const bodyAKey = bodyKeyOf(aspect.bodyA);
-    const bodyBKey = bodyKeyOf(aspect.bodyB);
-    parts.push(
-      `<line x1="${fmt(pointA.x)}" y1="${fmt(pointA.y)}" x2="${fmt(pointB.x)}" y2="${fmt(pointB.y)}" class="${className}" data-aspect-key="${aspect.aspect.key}" data-aspect-body-a="${bodyAKey}" data-aspect-body-b="${bodyBKey}" />`,
-    );
+    parts.push(aspectChord(aspect, pointA, pointB, ' chart-cross-aspect'));
   }
   return parts.join('');
 }

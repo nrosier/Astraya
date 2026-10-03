@@ -98,8 +98,8 @@ describe('renderMultiWheelSvg (#52)', () => {
     const tri = renderMultiWheelSvg([natalRing, transitRing, thirdRing]);
     for (const svg of [bi, tri]) {
       expect(countClass(svg, 'wheel-ring-outer')).toBe(1);
-      expect(countClass(svg, 'wheel-ring-zodiac')).toBe(1);
       expect(countClass(svg, 'wheel-ring-inner')).toBe(1);
+      expect(countClass(svg, 'wheel-ring-house')).toBe(1);
       expect(countClass(svg, 'wheel-ring-aspect')).toBe(1);
       expect(countClass(svg, 'wheel-sign-boundary')).toBe(12);
     }
@@ -216,26 +216,45 @@ describe('renderMultiWheelSvg (#52)', () => {
 });
 
 describe('renderMultiWheelSvg zodiac ring', () => {
-  it('draws all twelve zodiac sign glyphs, which the wheel previously lacked entirely', () => {
+  it('draws all twelve zodiac sign glyphs, each coloured by its element (#412)', () => {
     const svg = renderMultiWheelSvg([natalRing]);
-    expect(countClass(svg, 'chart-sign-glyph chart-sign-glyph-aries')).toBe(1);
-    expect(countClass(svg, 'chart-sign-glyph chart-sign-glyph-pisces')).toBe(1);
-    expect(svg.split('chart-sign-glyph chart-sign-glyph-').length - 1).toBe(12);
+    expect(countClass(svg, 'chart-sign-glyph chart-sign-glyph-aries chart-sign-element-fire')).toBe(1);
+    expect(countClass(svg, 'chart-sign-glyph chart-sign-glyph-taurus chart-sign-element-earth')).toBe(1);
+    expect(countClass(svg, 'chart-sign-glyph chart-sign-glyph-gemini chart-sign-element-air')).toBe(1);
+    expect(countClass(svg, 'chart-sign-glyph chart-sign-glyph-pisces chart-sign-element-water')).toBe(1);
+    expect(svg.split('class="chart-sign-glyph chart-sign-glyph-').length - 1).toBe(12);
   });
 
-  it('draws three tick tiers, none of them landing on a sign boundary', () => {
+  it('wraps each sign glyph in a clickable group with an invisible hit area (#412)', () => {
     const svg = renderMultiWheelSvg([natalRing]);
-    // 12 sign boundaries replace the tick at every multiple of 30.
-    expect(countClass(svg, 'wheel-tick-major')).toBe(36 - 12); // multiples of 10
+    expect(svg.split('<g class="chart-sign" data-sign="').length - 1).toBe(12);
+    expect(svg).toMatch(
+      /<g class="chart-sign" data-sign="aries"><circle [^>]*class="chart-hit-area" fill="none" stroke="none" pointer-events="all" \/>/,
+    );
+  });
+
+  it('draws a three-tier degree ruler, one tick per degree', () => {
+    const svg = renderMultiWheelSvg([natalRing]);
+    expect(countClass(svg, 'wheel-tick-major')).toBe(36); // multiples of 10
     expect(countClass(svg, 'wheel-tick-medium')).toBe(72 - 36); // multiples of 5 only
-    expect(countClass(svg, 'wheel-tick-minor')).toBe(360 - 12 - 24 - 36);
+    expect(countClass(svg, 'wheel-tick-minor')).toBe(360 - 72);
   });
 
-  it('gives the three tiers distinct lengths, all standing on the zodiac ring inner edge', () => {
+  it('hangs the ruler ticks inward from the zodiac dial, clear of the planet band (#412)', () => {
     const geometry = resolveSheetGeometry(800);
     expect(geometry.tickMinorLength).toBeLessThan(geometry.tickMediumLength);
     expect(geometry.tickMediumLength).toBeLessThan(geometry.tickMajorLength);
-    expect(geometry.zodiacInner + geometry.tickMajorLength).toBeLessThan(geometry.zodiacOuter);
+    const svg = renderMultiWheelSvg([natalRing], [], { size: 800 });
+    const center = 400;
+    for (const match of svg.matchAll(
+      /<line x1="(-?[\d.]+)" y1="(-?[\d.]+)" x2="(-?[\d.]+)" y2="(-?[\d.]+)" class="wheel-tick-major"/g,
+    )) {
+      const outer = Math.hypot(Number(match[1]) - center, Number(match[2]) - center);
+      const inner = Math.hypot(Number(match[3]) - center, Number(match[4]) - center);
+      expect(outer).toBeCloseTo(geometry.zodiacInner, 1);
+      expect(inner).toBeCloseTo(geometry.zodiacInner - geometry.tickMajorLength, 1);
+      expect(inner).toBeGreaterThan(geometry.planetRingOuter);
+    }
   });
 
   it('draws no sign-wedge fill by default', () => {
@@ -265,9 +284,31 @@ describe('renderMultiWheelSvg house structure', () => {
     }
   });
 
-  it('draws the horizon and meridian as two heavy axes across the whole chart', () => {
-    const svg = renderMultiWheelSvg([natalRing]);
-    expect(countClass(svg, 'chart-multiwheel-axis')).toBe(2);
+  it('draws the four angles as heavy lines from the aspect circle to the outer edge, never across the aspect web (#412)', () => {
+    const geometry = resolveSheetGeometry(800);
+    const svg = renderMultiWheelSvg([natalRing], [], { size: 800 });
+    const axes = [
+      ...svg.matchAll(
+        /<line x1="(-?[\d.]+)" y1="(-?[\d.]+)" x2="(-?[\d.]+)" y2="(-?[\d.]+)" class="chart-multiwheel-axis"/g,
+      ),
+    ];
+    expect(axes).toHaveLength(4);
+    for (const match of axes) {
+      expect(Math.hypot(Number(match[1]) - 400, Number(match[2]) - 400)).toBeCloseTo(geometry.aspectCircle, 1);
+      expect(Math.hypot(Number(match[3]) - 400, Number(match[4]) - 400)).toBeCloseTo(geometry.zodiacOuter, 1);
+    }
+  });
+
+  it('labels the four angles in the house dial and prints their exact degree in the zodiac dial (#412)', () => {
+    const svg = renderMultiWheelSvg([
+      { ...natalRing, houses: { ...NATAL_HOUSES, ascendant: 0.55, midheaven: 270.65 } },
+    ]);
+    for (const label of ['ASC', 'DSC', 'MC', 'IC']) {
+      expect(svg).toMatch(new RegExp(`class="chart-axis-label">${label}<`));
+    }
+    expect(countClass(svg, 'chart-axis-degree')).toBe(8);
+    expect(svg).toContain(">33'<");
+    expect(svg).toContain(">39'<");
   });
 
   it("draws the axes from the true angles, so 'whole-sign' cusp snapping cannot move the horizon", () => {
@@ -301,9 +342,56 @@ describe('renderMultiWheelSvg degree annotations', () => {
       ],
     };
     const svg = renderMultiWheelSvg([ring]);
-    expect(svg).toContain(">10°12'<");
-    expect(svg).toContain(">05°30'<");
+    expect(svg).toContain('>10°<');
+    expect(svg).toContain(">12'<");
+    expect(svg).toContain('>5°<');
+    expect(svg).toContain(">30'<");
     expect(countClass(svg, 'chart-degree-label')).toBe(2);
+    expect(countClass(svg, 'chart-minute-label')).toBe(2);
+  });
+
+  it('stacks each body radially as glyph, degree, sign glyph and minutes, all tagged with its body key (#412)', () => {
+    const svg = renderMultiWheelSvg([{ ...natalRing, bodies: [{ body: 1, key: 'sun', longitude: 280.37 }] }]);
+    const stack = /<g class="chart-body-stack" data-body="sun">(.*?)<\/g><\/g>/.exec(svg)?.[1] ?? '';
+    expect(stack).toContain('>10°<');
+    expect(stack).toContain('chart-stack-sign-glyph chart-sign-glyph-capricorn chart-sign-element-earth');
+    expect(stack).toContain(">22'<");
+  });
+
+  it('marks a retrograde body with an R beside its glyph', () => {
+    const svg = renderMultiWheelSvg([
+      {
+        ...natalRing,
+        bodies: [
+          { body: 1, key: 'sun', longitude: 10 },
+          { body: 6, key: 'saturn', longitude: 32.05, retrograde: true },
+        ],
+      },
+    ]);
+    expect(svg.split('class="chart-retrograde">R<').length - 1).toBe(1);
+    expect(svg).toMatch(/data-body="saturn">.*?class="chart-retrograde">R</);
+  });
+
+  it('ticks each body’s true degree on the house dial’s outer edge (#412)', () => {
+    const geometry = resolveSheetGeometry(800);
+    const svg = renderMultiWheelSvg([natalRing], [], { size: 800 });
+    const ticks = [
+      ...svg.matchAll(
+        /<line x1="(-?[\d.]+)" y1="(-?[\d.]+)" x2="[^"]+" y2="[^"]+" class="chart-body-tick" data-body="(\w+)"/g,
+      ),
+    ];
+    expect(ticks.map((match) => match[3])).toEqual(['sun', 'moon']);
+    for (const match of ticks) {
+      expect(Math.hypot(Number(match[1]) - 400, Number(match[2]) - 400)).toBeCloseTo(geometry.houseRing, 1);
+    }
+  });
+
+  it('gives every body glyph a clickable group with an invisible hit area (#412)', () => {
+    const svg = renderMultiWheelSvg([natalRing]);
+    expect(svg).toMatch(
+      /<g class="chart-point" data-body="sun"><circle [^>]*class="chart-hit-area" fill="none" stroke="none" pointer-events="all" \/>/,
+    );
+    expect(svg).toMatch(/<g class="chart-point" data-body="moon">/);
   });
 
   it('annotates at the spread angle, so a nudged glyph keeps its label beside it', () => {
@@ -322,15 +410,15 @@ describe('renderMultiWheelSvg degree annotations', () => {
     const alone = renderMultiWheelSvg([{ ...natalRing, bodies: [{ body: 1, key: 'sun', longitude: 10 }] }]);
     const [aloneX, aloneY] = labelPoint(alone);
     const [movedX, movedY] = labelPoint(renderMultiWheelSvg([crowded]));
-    // The 6° minimum separation nudges the Sun 2.5° back off its true 10°, and
+    // The single-ring 7° minimum separation nudges the Sun 3° back off its true 10°, and
     // its label has to travel with the glyph rather than stay at the true
-    // degree: 2.5° at the label radius is around 9px.
+    // degree: 3° at the degree-label radius is around 13px.
     expect(Math.hypot(movedX - aloneX, movedY - aloneY)).toBeGreaterThan(8);
     // The text still reports the true degree: only the position is nudged.
-    expect(renderMultiWheelSvg([crowded])).toContain(">10°00'<");
+    expect(renderMultiWheelSvg([crowded])).toContain('>10°<');
   });
 
-  it('drops the labels a cluster has no room for rather than overlapping them', () => {
+  it('keeps the full stack for every body in a cluster, since the stack spreads with its glyph (#412)', () => {
     const cluster: WheelRingInput = {
       ...natalRing,
       bodies: [
@@ -341,11 +429,8 @@ describe('renderMultiWheelSvg degree annotations', () => {
       ],
     };
     const svg = renderMultiWheelSvg([cluster]);
-    // A label is several times wider than the glyph it annotates, so three
-    // bodies inside 2° cannot all carry one; the isolated Venus always can.
-    const labels = svg.split('class="chart-degree-label"').length - 1;
-    expect(labels).toBeGreaterThanOrEqual(2);
-    expect(labels).toBeLessThan(4);
+    expect(svg.split('class="chart-degree-label"').length - 1).toBe(4);
+    expect(svg.split('class="chart-minute-label"').length - 1).toBe(4);
   });
 
   it('keeps a label for every body once they are spread far enough apart', () => {

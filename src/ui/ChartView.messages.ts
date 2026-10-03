@@ -120,6 +120,9 @@ const en = {
   personPageLink: 'person page',
 
   isolationClear: 'Clear',
+  isolationSignEmpty: 'No planets in this sign.',
+  wheelClickHint:
+    'Click a planet, sign or aspect line to highlight it and its connections. Click it again, or an empty spot, to clear.',
 };
 
 const nl: typeof en = {
@@ -236,6 +239,9 @@ const nl: typeof en = {
   personPageLink: 'persoonspagina',
 
   isolationClear: 'Wissen',
+  isolationSignEmpty: 'Geen planeten in dit teken.',
+  wheelClickHint:
+    'Klik op een planeet, teken of aspectlijn om die en zijn verbindingen uit te lichten. Klik nogmaals, of op een lege plek, om te wissen.',
 };
 
 export const chartViewMessages = { en, nl };

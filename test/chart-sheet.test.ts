@@ -46,7 +46,7 @@ describe('renderChartSheetSvg', () => {
 
   it('contains the wheel and all three data panels', () => {
     const { markup } = renderChartSheetSvg(input);
-    expect(markup).toContain('wheel-ring-zodiac');
+    expect(markup).toContain('wheel-ring-house');
     expect(markup).toContain('chart-house-number');
     expect(markup).toContain('chart-matrix-diagonal');
     expect(markup).toContain('chart-emphasis-cell');

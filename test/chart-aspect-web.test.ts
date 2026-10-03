@@ -60,7 +60,7 @@ describe('renderAspectWebSvg (#42)', () => {
   it('draws one line per aspect, chording the requested radius', () => {
     const aspects = [aspect('square', 1, 2, 0.5, true)];
     const svg = renderAspectWebSvg(aspects, longitudeOf, 0, 300, 300, 200);
-    expect(svg.split('<line').length - 1).toBe(1);
+    expect(svg.split('class="chart-aspect ').length - 1).toBe(1);
 
     const angleA = wheelAngle(10, 0);
     const angleB = wheelAngle(100, 0);
@@ -79,6 +79,21 @@ describe('renderAspectWebSvg (#42)', () => {
 
   it('renders nothing for an empty aspect list', () => {
     expect(renderAspectWebSvg([], longitudeOf, 0, 300, 300, 200)).toBe('');
+  });
+
+  it('wraps each chord with a wide invisible hit line carrying the endpoint keys, so a thin line is easy to click (#412)', () => {
+    const svg = renderAspectWebSvg([aspect('trine', 1, 2, 3, false)], longitudeOf, 0, 300, 300, 200);
+    expect(svg).toMatch(
+      /^<g class="chart-aspect-link" data-aspect-key="trine" data-aspect-body-a="[^"]+" data-aspect-body-b="[^"]+">/,
+    );
+    expect(svg).toContain('class="chart-hit-area" stroke="none" stroke-width="10" pointer-events="all"');
+  });
+
+  it('marks an aspect within 1° as tight, and a wider one not (#412)', () => {
+    const tight = renderAspectWebSvg([aspect('square', 1, 2, 0.8, true)], longitudeOf, 0, 300, 300, 200);
+    const wide = renderAspectWebSvg([aspect('square', 1, 2, 2.5, true)], longitudeOf, 0, 300, 300, 200);
+    expect(tight).toContain('chart-aspect-tight');
+    expect(wide).not.toContain('chart-aspect-tight');
   });
 
   it('carries data-aspect-key/data-aspect-body-a/-b for click-to-isolate (#400)', () => {
@@ -114,7 +129,7 @@ describe('renderCrossRingAspectWebSvg (#52)', () => {
   it('draws one line per aspect, chording each side at its own radius', () => {
     const aspects = [aspect('square', 1, 2, 0.5, true)];
     const svg = renderCrossRingAspectWebSvg(aspects, resolveA, resolveB, 0, 300, 300);
-    expect(svg.split('<line').length - 1).toBe(1);
+    expect(svg.split('class="chart-aspect ').length - 1).toBe(1);
 
     const angleA = wheelAngle(10, 0);
     const angleB = wheelAngle(100, 0);

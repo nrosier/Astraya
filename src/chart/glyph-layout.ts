@@ -29,12 +29,15 @@
  */
 import type { Degrees } from '../ephemeris/types.js';
 import { bodyGlyph, renderGlyph } from './glyphs.js';
+import { baselineOffset, fmt, text } from './svg-primitives.js';
 import type { WheelOrientationOptions } from './wheel.js';
 import { pointOnCircle, wheelAngle } from './wheel.js';
 
 export interface GlyphLayoutInput {
   readonly key: string;
   readonly longitude: Degrees;
+  /** Draws a small `R` beside the glyph. */
+  readonly retrograde?: boolean;
 }
 
 export interface GlyphPlacement {
@@ -132,10 +135,21 @@ export interface GlyphRingOptions extends WheelOrientationOptions {
   readonly minSeparationDeg?: number;
   /** Glyph box size, in pixels (see `renderGlyph`). Defaults to 24. */
   readonly glyphSize?: number;
+  /** Where a spread glyph's leader line ends. Defaults to `glyphRadius` (the glyph's centre). */
+  readonly leaderEndRadius?: number;
+  /** Font size of the retrograde `R`. Defaults to 40% of `glyphSize`. */
+  readonly retrogradeFontSize?: number;
 }
 
-function fmt(value: number): string {
-  return value.toFixed(2);
+/**
+ * An invisible circle covering a symbol's whole box, so a click anywhere on it hits — the
+ * glyph itself is stroked paths with no fill, which are only hit-testable on the stroke pixels
+ * (`@astrodraw/astrochart`'s `ADD_CLICK_AREA` solves the same problem with a transparent rect).
+ * `pointer-events="all"` makes it hittable despite `fill="none"`, and the explicit
+ * `fill`/`stroke` keep it invisible in an exported SVG with no stylesheet (#412).
+ */
+export function hitAreaCircle(cx: number, cy: number, r: number): string {
+  return `<circle cx="${fmt(cx)}" cy="${fmt(cy)}" r="${fmt(r)}" class="chart-hit-area" fill="none" stroke="none" pointer-events="all" />`;
 }
 
 /**
@@ -160,6 +174,10 @@ export function renderGlyphRingSvg(
   const glyphSize = options?.glyphSize ?? 24;
   const placements = spreadGlyphs(positions, minSeparationDeg);
 
+  const leaderEndRadius = options?.leaderEndRadius ?? glyphRadius;
+  const retrogradeFontSize = options?.retrogradeFontSize ?? glyphSize * 0.4;
+  const retrogradeByKey = new Map(positions.map((p) => [p.key, p.retrograde === true]));
+
   const parts: string[] = [];
   for (const placement of placements) {
     const definition = bodyGlyph(placement.key);
@@ -167,25 +185,35 @@ export function renderGlyphRingSvg(
 
     const displayAngle = wheelAngle(placement.displayLongitude, ascendant, options);
     const glyphPoint = pointOnCircle(cx, cy, glyphRadius, displayAngle);
+    const groupParts: string[] = [hitAreaCircle(glyphPoint.x, glyphPoint.y, glyphSize * 0.62)];
 
     if (Math.abs(placement.displayLongitude - placement.longitude) > 1e-9) {
       const trueAngle = wheelAngle(placement.longitude, ascendant, options);
       const truePoint = pointOnCircle(cx, cy, trueRadius, trueAngle);
-      parts.push(
-        `<line x1="${fmt(truePoint.x)}" y1="${fmt(truePoint.y)}" x2="${fmt(glyphPoint.x)}" y2="${fmt(glyphPoint.y)}" class="chart-glyph-leader" />`,
+      const endPoint = pointOnCircle(cx, cy, leaderEndRadius, displayAngle);
+      groupParts.push(
+        `<line x1="${fmt(truePoint.x)}" y1="${fmt(truePoint.y)}" x2="${fmt(endPoint.x)}" y2="${fmt(endPoint.y)}" class="chart-glyph-leader" />`,
       );
     }
 
-    parts.push(
-      renderGlyph(
-        definition,
-        glyphPoint.x,
-        glyphPoint.y,
-        glyphSize,
-        `chart-glyph chart-glyph-${placement.key}`,
-        `data-body="${placement.key}"`,
-      ),
+    groupParts.push(
+      renderGlyph(definition, glyphPoint.x, glyphPoint.y, glyphSize, `chart-glyph chart-glyph-${placement.key}`),
     );
+
+    if (retrogradeByKey.get(placement.key) === true) {
+      groupParts.push(
+        text(
+          glyphPoint.x + glyphSize * 0.55,
+          glyphPoint.y + glyphSize * 0.4 + baselineOffset(retrogradeFontSize),
+          'start',
+          'chart-retrograde',
+          'R',
+          retrogradeFontSize,
+        ),
+      );
+    }
+
+    parts.push(`<g class="chart-point" data-body="${placement.key}">${groupParts.join('')}</g>`);
   }
   return parts.join('');
 }

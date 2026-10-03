@@ -42,6 +42,10 @@
   --aspect-hard: #ff8189;
   --aspect-soft: #6ec3ff;
   --aspect-minor: #8fe0a0;
+  --element-fire: #ff7a6b;
+  --element-earth: #6fd08a;
+  --element-air: #f2c14e;
+  --element-water: #6aa8ff;
   /* Attention accent: warnings, and the sun in anything we draw. */
   --solar: #f2b75e;
 
@@ -81,6 +85,10 @@
     --aspect-hard: #b3261e;
     --aspect-soft: #1857c4;
     --aspect-minor: #0a4d28;
+    --element-fire: #c62828;
+    --element-earth: #2e7d32;
+    --element-air: #b7791f;
+    --element-water: #1d4ed8;
 
     --glow-a: rgb(124 92 255 / 8%);
     --glow-b: rgb(242 183 94 / 7%);
@@ -109,6 +117,10 @@
   --aspect-hard: #ff8189;
   --aspect-soft: #6ec3ff;
   --aspect-minor: #8fe0a0;
+  --element-fire: #ff7a6b;
+  --element-earth: #6fd08a;
+  --element-air: #f2c14e;
+  --element-water: #6aa8ff;
 
   --glow-a: rgb(124 92 255 / 18%);
   --glow-b: rgb(242 183 94 / 8%);
@@ -128,6 +140,10 @@
   --aspect-hard: #b3261e;
   --aspect-soft: #1857c4;
   --aspect-minor: #0a4d28;
+  --element-fire: #c62828;
+  --element-earth: #2e7d32;
+  --element-air: #b7791f;
+  --element-water: #1d4ed8;
 
   --glow-a: rgb(124 92 255 / 8%);
   --glow-b: rgb(242 183 94 / 7%);
@@ -1403,22 +1419,6 @@ label.stacked textarea:focus-visible {
   margin-top: 0.2rem;
 }
 
-/* Tier 2 (#360): the AI-customized interpretation's own sections, one `<article>` per
-   `{heading, body}` pair the model returns (#376) — same rhythm as `.report-section`
-   one level up, since this renders inside that same tab rather than a whole report. */
-.tier2-result {
-  margin-top: 1.25rem;
-}
-
-.tier2-result article {
-  margin-bottom: 1.75rem;
-}
-
-.tier2-result article:last-child {
-  margin-bottom: 0;
-}
-
-.tier2-result h4 {
 /* Tier 2 mode picker (#411): a styled native select — keeps the platform's own keyboard and
    screen-reader behavior — with the selected mode's description underneath. */
 .tier2-mode-select {
@@ -1483,6 +1483,22 @@ label.stacked textarea:focus-visible {
   margin-top: 0.35rem;
 }
 
+/* Tier 2 (#360): the AI-customized interpretation's own sections, one `<article>` per
+   `{heading, body}` pair the model returns (#376) — same rhythm as `.report-section`
+   one level up, since this renders inside that same tab rather than a whole report. */
+.tier2-result {
+  margin-top: 1.25rem;
+}
+
+.tier2-result article {
+  margin-bottom: 1.75rem;
+}
+
+.tier2-result article:last-child {
+  margin-bottom: 0;
+}
+
+.tier2-result h4 {
   margin: 0 0 0.4rem;
   color: var(--accent);
   font-size: 0.95rem;
@@ -1712,13 +1728,71 @@ label.stacked textarea:focus-visible {
   stroke-linejoin: round;
 }
 
-.chart-house-number {
-  fill: var(--muted);
-  opacity: 0.85;
+/* Signs carry their element's colour (#412), in the zodiac dial and in each body's stack. */
+.chart-sign-element-fire path {
+  stroke: var(--element-fire);
+}
+.chart-sign-element-earth path {
+  stroke: var(--element-earth);
+}
+.chart-sign-element-air path {
+  stroke: var(--element-air);
+}
+.chart-sign-element-water path {
+  stroke: var(--element-water);
 }
 
-.chart-degree-label {
+/* The house dial (#412): a narrow ring a shade deeper than the planet band around it. */
+.wheel-ring-house {
+  fill: var(--surface);
+  fill-opacity: 0.6;
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+/* Wheel text sizes. The shared `font` shorthand above resets every `<text>`'s own size, so
+   the radial stack's hierarchy (degree over minutes) is restated here. */
+.chart-multiwheel .chart-house-number,
+.chart-sheet .chart-house-number {
   fill: var(--muted);
+  font-size: 0.85rem;
+}
+
+.chart-multiwheel .chart-degree-label,
+.chart-sheet .chart-degree-label {
+  fill: var(--fg);
+  font-size: 0.85rem;
+}
+
+.chart-multiwheel .chart-minute-label,
+.chart-sheet .chart-minute-label {
+  fill: var(--muted);
+  font-size: 0.65rem;
+}
+
+.chart-multiwheel .chart-retrograde,
+.chart-sheet .chart-retrograde {
+  fill: var(--aspect-hard);
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.chart-multiwheel .chart-axis-label,
+.chart-sheet .chart-axis-label {
+  fill: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.chart-multiwheel .chart-axis-degree,
+.chart-sheet .chart-axis-degree {
+  fill: var(--fg);
+  font-size: 0.62rem;
+}
+
+.chart-body-tick {
+  stroke: var(--fg);
+  stroke-width: 1.25;
 }
 
 /* Horizon and meridian: the two lines a reader orients the whole chart by. */
@@ -1767,18 +1841,34 @@ label.stacked textarea:focus-visible {
   opacity: 0.45;
 }
 
-.chart-glyph,
-.chart-aspect {
+/* Click-to-isolate (#400, #412). Only the natal wheel is interactive: it says so with a
+   pointer cursor and a hover wash on each symbol's hit area, so it's clear what can be clicked. */
+.chart-wheel-interactive [data-body],
+.chart-wheel-interactive [data-sign],
+.chart-wheel-interactive [data-aspect-body-a] {
+  cursor: pointer;
   transition: opacity 0.15s;
 }
 
-/* Click-to-isolate (#400): everything not part of the clicked body/aspect fades out. The
-   element-plus-class selectors (`g.chart-dimmed`, not just `.chart-dimmed`) are deliberate —
-   each outranks the single-class aspect-family color rules below by specificity, so dimming
-   wins regardless of which rule happens to come later in the file. */
-g.chart-dimmed,
-line.chart-dimmed {
-  opacity: 0.15;
+.chart-wheel-interactive .chart-point:hover .chart-hit-area,
+.chart-wheel-interactive .chart-sign:hover .chart-hit-area {
+  fill: color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.chart-wheel-interactive .chart-aspect-link:hover .chart-aspect {
+  stroke-width: 3;
+  opacity: 1;
+}
+
+/* Everything that isn't the selection or connected to it fades: other bodies (glyph, stack,
+   tick, leader), other signs, and aspect lines not involving it, which nearly vanish. Two
+   classes deep so it outranks every single-class colour/opacity rule regardless of order. */
+.chart-wheel-interactive .chart-dimmed {
+  opacity: 0.12;
+}
+
+.chart-wheel-interactive .chart-aspect-link.chart-dimmed {
+  opacity: 0.04;
 }
 
 /*
@@ -1817,6 +1907,11 @@ line.chart-dimmed {
 
 .chart-aspect.chart-aspect-applying {
   opacity: 0.95;
+}
+
+/* Within an orb of 1°: drawn heavier, the way the reference wheel weights an exact aspect (#412). */
+.chart-aspect.chart-aspect-tight {
+  stroke-width: 3;
 }
 
 .chart-multiwheel-legend-swatch {
