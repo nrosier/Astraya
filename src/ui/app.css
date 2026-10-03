@@ -2436,3 +2436,32 @@ label.stacked textarea:focus-visible {
 .rectification-detail ul {
   margin: 0.4rem 0 0.4rem 1.2rem;
 }
+
+/* The written interpretation under a wheel selection (#415). */
+.chart-isolation-interpretation {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.chart-isolation-interpretation h4 {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+.chart-isolation-texts {
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.chart-isolation-texts p {
+  margin: 0.15rem 0 0;
+}
+
+.chart-isolation-interpretation > button {
+  margin: 0.25rem 0 0.5rem;
+}

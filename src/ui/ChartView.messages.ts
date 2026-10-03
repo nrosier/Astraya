@@ -133,6 +133,13 @@ const en = {
   personPageLink: 'person page',
 
   isolationClear: 'Clear',
+  selectionInterpretationHeading: 'What it means',
+  selectionLoading: 'Loading the interpretation…',
+  selectionUnavailable: 'The interpretation text could not be loaded.',
+  selectionShowAll: (count: number) => `Show all ${String(count)}`,
+  selectionShowFewer: 'Show fewer',
+  dignityStateLabels: { ruler: 'Ruler (home sign)', exalted: 'Exalted', detriment: 'Detriment', fall: 'Fall' },
+  cuspHeading: (sign: string, house: number) => `${sign} on the cusp of house ${String(house)}`,
   isolationSignEmpty: 'No planets in this sign.',
   wheelClickHint:
     'Click a planet, sign or aspect line to highlight it and its connections. Click it again, or an empty spot, to clear.',
@@ -265,6 +272,13 @@ const nl: typeof en = {
   personPageLink: 'persoonspagina',
 
   isolationClear: 'Wissen',
+  selectionInterpretationHeading: 'Wat het betekent',
+  selectionLoading: 'De interpretatie wordt geladen…',
+  selectionUnavailable: 'De interpretatietekst kon niet worden geladen.',
+  selectionShowAll: (count: number) => `Toon alle ${String(count)}`,
+  selectionShowFewer: 'Toon minder',
+  dignityStateLabels: { ruler: 'Heerser (eigen teken)', exalted: 'Verheffing', detriment: 'Schade', fall: 'Val' },
+  cuspHeading: (sign: string, house: number) => `${sign} op de cusp van huis ${String(house)}`,
   isolationSignEmpty: 'Geen planeten in dit teken.',
   wheelClickHint:
     'Klik op een planeet, teken of aspectlijn om die en zijn verbindingen uit te lichten. Klik nogmaals, of op een lege plek, om te wissen.',

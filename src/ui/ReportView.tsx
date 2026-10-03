@@ -39,6 +39,7 @@ import { useEffect, useState } from 'react';
 import { assembleReport, reportPlacementKeys, type Report, type ReportParagraph } from '../interpretation/report.js';
 import { loadRuntimeCorpus } from '../interpretation/corpus-client.js';
 import { PERSONA_IDS, type CorpusEntry, type Locale, type PersonaId } from '../interpretation/schema.js';
+import { initialPersona, isPersonaId, PERSONA_KEY, reportPersonasEnabled } from './report-persona.js';
 import { checkCustomPrompt, type GuardrailIssue } from '../interpretation/prompt-guardrail.js';
 import { describeParagraphProvenance } from './report-provenance.js';
 import { useLocale } from './locale.js';
@@ -83,19 +84,6 @@ function guardrailIssueMessage(t: typeof reportViewMessages.en, issue: Guardrail
   }
 }
 
-const PERSONA_KEY = 'astraya:reportPersona';
-
-// Off by default: unset, empty, or anything other than 'true' disables the picker. Not the
-// string-presence pattern `geocode-provider.ts`'s env vars use — those are "which value", this
-// is "on or off", so it's a literal truthy-string check instead.
-// Read inside a function rather than hoisted to a module-level constant, the same reason
-// `!import.meta.env.PROD` below is checked inline rather than hoisted: it keeps this test-visible
-// per render/mount rather than frozen at whatever value happened to hold at first import.
-function reportPersonasEnabled(): boolean {
-  const raw: unknown = import.meta.env.VITE_ENABLE_REPORT_PERSONAS;
-  return raw === 'true';
-}
-
 /**
  * Mirrors `tools/corpus-gen/personas.json`'s `title` field — kept as a plain
  * literal here, the same reasoning `schema.ts`'s own `PERSONA_IDS` comment
@@ -111,16 +99,6 @@ export const PERSONA_LABELS: Readonly<Record<PersonaId, Readonly<Record<Locale, 
   mystic: { en: 'The Evolutionary Mystic', nl: 'De Esoterische Mysticus' },
   pragmatist: { en: 'The Pragmatic No-Nonsense Coach', nl: 'De Praktische No-Nonsense Coach' },
 };
-
-function isPersonaId(value: string): value is PersonaId {
-  return (PERSONA_IDS as readonly string[]).includes(value);
-}
-
-function initialPersona(): PersonaId | undefined {
-  if (!reportPersonasEnabled()) return undefined;
-  const stored = localStorage.getItem(PERSONA_KEY);
-  return stored !== null && isPersonaId(stored) ? stored : undefined;
-}
 
 function Paragraph({
   paragraph,

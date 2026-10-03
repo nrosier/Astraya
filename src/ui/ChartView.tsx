@@ -81,6 +81,7 @@ import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { ExtendedSettingsPanel } from './ExtendedSettingsPanel.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
+import { WheelSelectionText } from './WheelSelectionText.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
@@ -1004,6 +1005,9 @@ export function ChartDataView({
                       {aspectDisplayName(isolation.aspectRow.aspectKey, locale)} — {t.orbLabel}{' '}
                       {isolation.aspectRow.orb.toFixed(2)}°, {isolation.aspectRow.applying ? t.applying : t.separating}
                     </p>
+                  )}
+                  {isolatedKey !== undefined && (
+                    <WheelSelectionText chart={load.data} selectionKey={isolatedKey} locale={locale} />
                   )}
                 </div>
               )}
