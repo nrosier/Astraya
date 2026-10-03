@@ -4,6 +4,46 @@ All notable changes to Astraya are recorded here. Versions follow
 [semantic versioning](https://semver.org/), and every milestone ends in a release —
 see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.22.0] — 2026-10-03
+
+**A natal-chart feature pass lands most of #398's remaining "computed but no UI"
+astrology modules, plus click-to-isolate on the chart wheel, a Jones chart-shape
+diagram, and a third Tier-2 interpretation mode.**
+
+M9 (Polish & launch) progress, not a finished milestone — v1.0.0 hasn't shipped yet.
+
+### Added
+
+- **The natal chart surfaces five astrology modules that were computed but had no UI consumer (#398).** The Dignities table gains triplicity/bound/face/almuten columns and an Almuten-of-the-Ascendant line, plus anaretic-degree and out-of-bounds badges on Positions; three new tables land — Dispositors, Declinations (parallel/contraparallel), and Antiscia — alongside a Fixed Stars conjunction table (the seven traditionally significant stars) and a plain-text Jones chart-shape line.
+- **New Progressions, Solar Arc, and Draconic chart views, plus a planetary-return picker (#398).** Secondary/tertiary/minor progressions share one view with technique and MC-method selectors; Solar Arc directions get their own view; Draconic re-measures every body from the natal North Node; the existing Forecast screen gains a Jupiter/Saturn/Mars/Venus/Mercury return picker alongside the always-on solar/lunar tiers.
+- **Click-to-isolate on the natal chart wheel (#400).** Clicking a body glyph or an aspect line dims everything else and opens a focused-info panel with that body's or aspect's detail; clicking the same target again, or empty space, clears it. Scoped to the Natal Chart wheel for this first pass.
+- **A visual Jones chart-shape diagram next to the new text label (#401).** A small circular diagram drawn from the person's actual body longitudes, one wedge per occupied cluster, with a Bucket's handle marked in a distinct colour.
+- **The regenerated en/nl interpretation corpus ships** — 4796 entries each, en 99.6% / nl 98.9% validated, both above the 98% shipping bar.
+- **AI-Customized interpretation (Tier 2) gains a third mode, whole-chart synthesis, alongside grounded and freeform.** Also added: a guardrail against off-topic ("erase the disk") and fabrication ("it doesn't need to be accurate") requests in the custom-prompt field; successful generations are now saved, encrypted at rest, so they can be reopened later without calling the model again; and an admin-only usage/cost view showing per-user and deployment-wide spend against the two daily caps.
+- **Interpolated Lilith joins Mean and True as a third selectable Lilith variant.**
+- **A one-placement-at-a-time disclaimer** now shows once per Interpretation screen, noting that no single position or aspect carries much weight read in isolation.
+- **An admin screen for bulk-triaging generated corpus candidates.** Candidates sit invisible to readers until an admin accepts or rejects them, individually or in batch, sorted worst-triage-score-first.
+- **corpus-gen tooling gains a two-model review loop:** an independent judge (ChatGPT) flags entries against each placement's facts and a generic-trope/extreme-shadow failure mode, and the original generator (Gemini) critically reviews — not blindly applies — the judge's concerns before revising. Comes with cross-round rejection memory, cost reporting across every corpus-gen script, a placement-aware generation prompt (about 45% smaller), and a `corpus-stats.mjs` snapshot of how far the loop has progressed.
+
+### Changed
+
+- **The corner chrome is now a top-right locale bar (language, theme) and a bottom-left account bar (sign-in, sync status, ephemeris status), replacing the single top-right sidebar, and the content shell is widened from 46rem to 64rem.**
+- **Person tabs are grouped into collapsible families** — Transits & Forecast, Progressions & Directions, Relationship Charts, and Chart Variants — so the tab bar stops growing linearly as more techniques are added. Astrocartography stays standalone.
+
+### Fixed
+
+- **Three overlap/consistency bugs found by a UX/UI review:** the person-tab row could scroll underneath the fixed locale bar on narrow and medium viewports; the PWA update/ephemeris-warming banner could visually cover and intercept clicks on the account bar; and several `<select>` elements (Progressions, the new return picker) were unstyled because they weren't wrapped in the app's field-grid convention.
+- **i18n:** sign, body, and aspect names were leaking raw English into the Dutch UI in several places the earlier audit missed — the Forecast screen's Ascendant-sign mentions and transit-aspect sentences, Astrocartography's body picker and relocated-angle labels, and the extended-settings minor-aspects checklist.
+- **The OIDC sign-in callback could lose the just-set route hash** (`#/people`), leaving the app stuck on a static loading screen until a manual reload; the callback path itself could also get durably cached by the service worker, single-use login code and all.
+- **A known birth time at a latitude with no valid house solution (e.g. inside a polar circle on Placidus) crashed the report** instead of showing a fallback message — also found and fixed on the Composite and Harmonic chart screens, which shared the same gap.
+- **Tier 2 consent is now re-required per request and per mode-dependent claim**, instead of being carried over past where it should apply; the third-party geocoder is now disclosed, and About's "zero network calls" claim is corrected.
+- **The report screen now shows the same house-system-fallback warning the chart screen already did**, instead of silently dropping it on the dedicated report route.
+- **corpus-gen:** same-point calculation-variant pairs (e.g. mean/true Lilith, mean/true node) are scoped out of aspect generation, and the ones that already shipped before the fix are pruned; the evaluation judge now treats these variants as calculation methods rather than flagging them as interchangeable; and a language-mismatch detection gap that let some wrong-language entries through undetected is closed.
+
+### Documentation
+
+- **ADR 0001 adopts HTML-first rendering as this project's documentation convention (#399),** with its own markdown drift fixed and a stale status/consequence/guardrail-scope audit closed.
+
 ## [0.21.3] — 2026-09-30
 
 ### Fixed

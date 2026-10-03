@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/nrosier/astraya/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/nrosier/astraya/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/nrosier/astraya/releases"><img alt="Release" src="https://img.shields.io/badge/release-v0.21.3-blue"></a>
+  <a href="https://github.com/nrosier/astraya/releases"><img alt="Release" src="https://img.shields.io/badge/release-v0.22.0-blue"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue"></a>
 </p>
 
@@ -18,7 +18,7 @@ plausible-looking number.
 
 ## Status
 
-Pre-1.0 (`v0.21.3`). Calculation, charting, interpretation (including optional
+Pre-1.0 (`v0.22.0`). Calculation, charting, interpretation (including optional
 AI-customized restyling), and sync are all built and shipping; M9 (polish and
 the `v1.0.0` launch itself) is what's left — see the
 [issues and milestones](https://github.com/nrosier/astraya/issues) for what is
