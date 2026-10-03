@@ -7,7 +7,7 @@
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { bodyByKey } from '../src/astrology/bodies.js';
-import { findVoidOfCourseMoon } from '../src/astrology/void-of-course.js';
+import { findMoonSignWindow, findVoidOfCourseMoon, voidOfCourseAt } from '../src/astrology/void-of-course.js';
 import type { BodyId, EphemerisProvider, JulianDayUT } from '../src/ephemeris/types.js';
 import { getEngine } from './engine-harness.js';
 
@@ -168,4 +168,41 @@ describe('findVoidOfCourseMoon (#402)', () => {
     // The ~24° ayanamsa moves the sign boundaries, so the exit moment cannot be the same.
     expect(Math.abs(sidereal.signExitJd - tropical.signExitJd)).toBeGreaterThan(0.2);
   }, 120_000);
+});
+
+describe('findMoonSignWindow and voidOfCourseAt (#409)', () => {
+  it('answers exactly as findVoidOfCourseMoon does, for every moment inside one window', async () => {
+    const jd = start + 5.4;
+    const window = await findMoonSignWindow(engine, jd);
+    // Sample from the window's start to just before its end.
+    for (let step = 0; step <= 12; step++) {
+      const at = window.signEntryJd + ((window.signExitJd - window.signEntryJd) * step) / 13 + 0.001;
+      const viaWindow = voidOfCourseAt(window, at);
+      const direct = await findVoidOfCourseMoon(engine, at);
+      expect(viaWindow).toEqual(direct);
+    }
+  }, 300_000);
+
+  it('is pure: it needs no ephemeris, only a window and a moment', () => {
+    const window = {
+      signIndex: 3,
+      signEntryJd: 100,
+      signExitJd: 102.5,
+      events: [
+        { jd: 100.5, body: 1, aspect: { key: 'trine', name: 'Trine', angle: 120, family: 'major' as const } },
+        { jd: 101.2, body: 2, aspect: { key: 'square', name: 'Square', angle: 90, family: 'major' as const } },
+      ],
+    };
+    expect(voidOfCourseAt(window, 100.1)).toMatchObject({ isVoid: false, lastAspect: undefined });
+    expect(voidOfCourseAt(window, 100.1).nextAspect?.jd).toBe(100.5);
+    expect(voidOfCourseAt(window, 100.9)).toMatchObject({ isVoid: false });
+    const late = voidOfCourseAt(window, 101.8);
+    expect(late.isVoid).toBe(true);
+    expect(late.lastAspect?.jd).toBe(101.2);
+    expect(late.voidFromJd).toBe(101.2);
+    // With no aspects at all the Moon is void from the moment it enters the sign.
+    const bare = voidOfCourseAt({ ...window, events: [] }, 101);
+    expect(bare.isVoid).toBe(true);
+    expect(bare.voidFromJd).toBe(100);
+  });
 });

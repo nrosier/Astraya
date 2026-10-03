@@ -4,6 +4,7 @@
  * parsing — which decides what a typo does — is testable without a DOM.
  */
 import type { BirthMomentInput } from '../time/types.js';
+import { parseLatitude, parseLongitude } from './place-fields.js';
 
 export interface HoraryFields {
   /** `YYYY-MM-DD`, as `<input type="date">` produces. */
@@ -21,15 +22,6 @@ export type ParsedHoraryFields =
 
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_PATTERN = /^(\d{2}):(\d{2})(?::(\d{2}))?$/;
-const DECIMAL_PATTERN = /^-?\d+(?:[.,]\d+)?$/;
-
-/** A decimal typed with either `.` or `,` (a Dutch keyboard's), or `undefined` if it is not a plain number. */
-function parseDecimal(text: string): number | undefined {
-  const trimmed = text.trim();
-  if (!DECIMAL_PATTERN.test(trimmed)) return undefined;
-  return Number(trimmed.replace(',', '.'));
-}
-
 /** True when `year-month-day` names a real calendar day (so 2024-02-30 is rejected, not rolled into March). */
 function isRealDate(year: number, month: number, day: number): boolean {
   const probe = new Date(Date.UTC(year, month - 1, day));
@@ -54,10 +46,10 @@ export function parseHoraryFields(fields: HoraryFields): ParsedHoraryFields {
   const second = Number(time?.[3] ?? 0);
   if (time === null || hour > 23 || minute > 59 || second > 59) return { ok: false, field: 'time' };
 
-  const latitude = parseDecimal(fields.latitude);
-  if (latitude === undefined || latitude < -90 || latitude > 90) return { ok: false, field: 'latitude' };
-  const longitude = parseDecimal(fields.longitude);
-  if (longitude === undefined || longitude < -180 || longitude > 180) return { ok: false, field: 'longitude' };
+  const latitude = parseLatitude(fields.latitude);
+  if (latitude === undefined) return { ok: false, field: 'latitude' };
+  const longitude = parseLongitude(fields.longitude);
+  if (longitude === undefined) return { ok: false, field: 'longitude' };
 
   return {
     ok: true,

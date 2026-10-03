@@ -56,6 +56,7 @@ export type Route =
   | { readonly kind: 'cycles' }
   | { readonly kind: 'eclipses' }
   | { readonly kind: 'horary' }
+  | { readonly kind: 'electional' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'admin-usage' }
   | { readonly kind: 'corpus-overrides' }
@@ -102,6 +103,9 @@ export function parseRoute(hash: string): Route {
     // #406: a chart cast for the moment a question was asked — ephemeris only, no person.
     case '#/horary':
       return { kind: 'horary' };
+    // #409: a search for the best times to begin something — ephemeris only, no person.
+    case '#/electional':
+      return { kind: 'electional' };
     case '#/admin':
       return { kind: 'admin' };
     case '#/admin/usage':

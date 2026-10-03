@@ -183,14 +183,26 @@ async function findMoonAspects(
 }
 
 /**
- * Whether the Moon is void of course at `jd`, with the surrounding aspects and sign entry/exit.
- * See the file doc for the convention.
+ * Everything about one pass of the Moon through a sign that the void-of-course question needs:
+ * when it entered and leaves, and every exact aspect it makes in between. Computed once, it
+ * answers "is the Moon void at this moment?" for *any* moment in the sign — which is what lets a
+ * search across days (`electional.ts`) ask it thousands of times without repeating the scan.
  */
-export async function findVoidOfCourseMoon(
+export interface MoonSignWindow {
+  /** The Moon's sign, 0 = Aries … 11 = Pisces (in the requested zodiac). */
+  readonly signIndex: number;
+  readonly signEntryJd: JulianDayUT;
+  readonly signExitJd: JulianDayUT;
+  /** Every exact aspect the Moon makes while in the sign, in order. */
+  readonly events: readonly MoonAspectEvent[];
+}
+
+/** The pass of the Moon through its sign that contains `jd`, with every aspect it makes in it. */
+export async function findMoonSignWindow(
   provider: EphemerisProvider,
   jd: JulianDayUT,
   options: VoidOfCourseOptions = {},
-): Promise<VoidOfCourseMoon> {
+): Promise<MoonSignWindow> {
   const moon = bodyByKey('moon');
   if (moon === undefined) throw new Error('unreachable: the Moon is always in BODIES');
   const bodies = options.bodies ?? defaultBodies();
@@ -208,18 +220,34 @@ export async function findVoidOfCourseMoon(
   const signExitJd = await provider.nextMoonCrossing(jd, signEnd, options.zodiac);
 
   const events = await findMoonAspects(provider, moon.id, bodies, signEntryJd, signExitJd, positionOptions);
-  const lastAspect = [...events].reverse().find((event) => event.jd <= jd);
-  const nextAspect = events.find((event) => event.jd > jd);
-  const isVoid = nextAspect === undefined;
+  return { signIndex, signEntryJd, signExitJd, events };
+}
 
+/** Whether the window's Moon is void at `jd`, which must lie inside `[signEntryJd, signExitJd)`. Pure. */
+export function voidOfCourseAt(window: MoonSignWindow, jd: JulianDayUT): VoidOfCourseMoon {
+  const lastAspect = [...window.events].reverse().find((event) => event.jd <= jd);
+  const nextAspect = window.events.find((event) => event.jd > jd);
+  const isVoid = nextAspect === undefined;
   return {
     jd,
-    signIndex,
-    signEntryJd,
-    signExitJd,
+    signIndex: window.signIndex,
+    signEntryJd: window.signEntryJd,
+    signExitJd: window.signExitJd,
     isVoid,
     lastAspect,
     nextAspect,
-    voidFromJd: isVoid ? (lastAspect?.jd ?? signEntryJd) : undefined,
+    voidFromJd: isVoid ? (lastAspect?.jd ?? window.signEntryJd) : undefined,
   };
+}
+
+/**
+ * Whether the Moon is void of course at `jd`, with the surrounding aspects and sign entry/exit.
+ * See the file doc for the convention.
+ */
+export async function findVoidOfCourseMoon(
+  provider: EphemerisProvider,
+  jd: JulianDayUT,
+  options: VoidOfCourseOptions = {},
+): Promise<VoidOfCourseMoon> {
+  return voidOfCourseAt(await findMoonSignWindow(provider, jd, options), jd);
 }
