@@ -70,6 +70,19 @@ const en = {
   chartShapeSentence: (shape: string, handle: string | undefined) =>
     handle === undefined ? `Chart shape: ${shape}.` : `Chart shape: ${shape} (handle: ${handle}).`,
 
+  lunarPhaseLabels: {
+    new: 'New Moon',
+    crescent: 'Crescent Moon',
+    'first-quarter': 'First Quarter Moon',
+    gibbous: 'Gibbous Moon',
+    full: 'Full Moon',
+    disseminating: 'Disseminating Moon',
+    'last-quarter': 'Last Quarter Moon',
+    balsamic: 'Balsamic Moon',
+  },
+  lunarPhaseSentence: (phase: string, elongation: string, waxing: boolean, litPercent: number) =>
+    `Lunar phase: ${phase} — ${elongation} ahead of the Sun, ${waxing ? 'waxing' : 'waning'}, ${String(litPercent)}% lit.`,
+
   sectPrefix: 'Sect:',
   dayChart: 'Day chart',
   nightChart: 'Night chart',
@@ -190,6 +203,19 @@ const nl: typeof en = {
   },
   chartShapeSentence: (shape: string, handle: string | undefined) =>
     handle === undefined ? `Horoscoopvorm: ${shape}.` : `Horoscoopvorm: ${shape} (handvat: ${handle}).`,
+
+  lunarPhaseLabels: {
+    new: 'Nieuwe maan',
+    crescent: 'Wassende sikkel',
+    'first-quarter': 'Eerste kwartier',
+    gibbous: 'Wassende maan',
+    full: 'Volle maan',
+    disseminating: 'Afnemende maan',
+    'last-quarter': 'Laatste kwartier',
+    balsamic: 'Balsamische maan',
+  },
+  lunarPhaseSentence: (phase: string, elongation: string, waxing: boolean, litPercent: number) =>
+    `Maanfase: ${phase} — ${elongation} voor op de Zon, ${waxing ? 'wassend' : 'afnemend'}, ${String(litPercent)}% verlicht.`,
 
   sectPrefix: 'Sect:',
   dayChart: 'Daghoroscoop',

@@ -61,6 +61,7 @@ import { encodeChartShareLink } from '../domain/chart-share.js';
 import { momentKey } from '../time/encode.js';
 import { renderChartSheetSvg } from '../chart/chart-sheet.js';
 import { renderJonesShapeDiagramSvg } from '../chart/jones-shape-diagram.js';
+import { lunarPhaseOf } from '../astrology/lunar-phase.js';
 import {
   DEFAULT_EXTENDED_SETTINGS,
   toChartCalculationOptions,
@@ -71,7 +72,7 @@ import {
 import { standaloneSvg } from '../chart/standalone-svg.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
 import { AstroChartWheel } from './AstroChartWheel.js';
-import { bodyById } from '../astrology/bodies.js';
+import { bodyById, bodyByKey } from '../astrology/bodies.js';
 import { aspectDisplayName, bodyDisplayName, signDisplayName } from './astro-names.messages.js';
 import { chartViewMessages } from './ChartView.messages.js';
 import { svgToPngBlob } from './chart-raster.js';
@@ -353,8 +354,26 @@ function renderTableTab(
       const shapePositions = new Map(
         visiblePositions(data.positions, pointVisibility).map((position) => [position.body, position.longitude]),
       );
+      const sunBody = bodyByKey('sun');
+      const moonBody = bodyByKey('moon');
+      const sunLongitude = data.positions.find((position) => position.body === sunBody?.id)?.longitude;
+      const moonLongitude = data.positions.find((position) => position.body === moonBody?.id)?.longitude;
+      const lunarPhase =
+        sunLongitude === undefined || moonLongitude === undefined
+          ? undefined
+          : lunarPhaseOf(moonLongitude, sunLongitude);
       return (
         <>
+          {lunarPhase !== undefined && (
+            <p className="hint lunar-phase-summary">
+              {t.lunarPhaseSentence(
+                t.lunarPhaseLabels[lunarPhase.phase],
+                formatElongation(lunarPhase.elongation),
+                lunarPhase.waxing,
+                Math.round(lunarPhase.illumination * 100),
+              )}
+            </p>
+          )}
           {shape !== undefined && (
             <div className="chart-shape-summary">
               <p className="hint">
@@ -506,6 +525,12 @@ function pngSizes(t: typeof chartViewMessages.en): readonly { readonly label: st
     { label: t.pngMedium, size: 1200 },
     { label: t.pngLarge, size: 2400 },
   ];
+}
+
+/** `337°28'`: an elongation to the minute, the way Astro-Seek prints it beside the phase name. */
+function formatElongation(elongation: number): string {
+  const totalMinutes = Math.round(elongation * 60) % (360 * 60);
+  return `${String(Math.floor(totalMinutes / 60))}°${String(totalMinutes % 60).padStart(2, '0')}'`;
 }
 
 function bodyKeyOf(body: BodyId): string {
