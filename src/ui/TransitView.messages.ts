@@ -18,6 +18,13 @@ const en = {
   calculating: 'Calculating…',
   error: (message: string) => `Transits could not be calculated. ${message}`,
 
+  // Void-of-course Moon (#402), stated for noon UTC on the chosen date.
+  vocVoid: (when: string, since: string, last: string | undefined, nextSign: string, until: string) =>
+    `Void-of-course Moon at ${when}: yes — since ${since}${last === undefined ? ' (when it entered its sign)' : ` (last aspect: ${last})`}, until it enters ${nextSign} at ${until}.`,
+  vocActive: (when: string, next: string, at: string, sign: string, until: string) =>
+    `Void-of-course Moon at ${when}: no — its next aspect is ${next} at ${at}, before it leaves ${sign} at ${until}.`,
+  vocBasis: 'Counts the five major aspects to the Sun and Mercury through Pluto, from the moment each is exact.',
+
   contactsCaption: 'Contacts',
   transitingLabel: 'Transiting',
   aspectLabel: 'Aspect',
@@ -45,6 +52,12 @@ const nl: typeof en = {
   asOfLabel: 'Vanaf',
   calculating: 'Berekenen…',
   error: (message: string) => `Transits konden niet worden berekend. ${message}`,
+
+  vocVoid: (when: string, since: string, last: string | undefined, nextSign: string, until: string) =>
+    `Maan zonder koers op ${when}: ja — sinds ${since}${last === undefined ? ' (toen ze haar teken binnenging)' : ` (laatste aspect: ${last})`}, tot ze ${nextSign} binnengaat om ${until}.`,
+  vocActive: (when: string, next: string, at: string, sign: string, until: string) =>
+    `Maan zonder koers op ${when}: nee — haar volgende aspect is ${next} om ${at}, voordat ze ${sign} verlaat om ${until}.`,
+  vocBasis: 'Telt de vijf hoofdaspecten met de Zon en Mercurius tot en met Pluto, vanaf het moment dat elk exact is.',
 
   contactsCaption: 'Contacten',
   transitingLabel: 'Transiterend',
