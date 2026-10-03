@@ -84,7 +84,7 @@ describe('renderAspectWebSvg (#42)', () => {
   it('wraps each chord with a wide invisible hit line carrying the endpoint keys, so a thin line is easy to click (#412)', () => {
     const svg = renderAspectWebSvg([aspect('trine', 1, 2, 3, false)], longitudeOf, 0, 300, 300, 200);
     expect(svg).toMatch(
-      /^<g class="chart-aspect-link" data-aspect-key="trine" data-aspect-body-a="[^"]+" data-aspect-body-b="[^"]+">/,
+      /^<g class="chart-aspect-link" data-aspect-key="trine" data-aspect-body-a="[^"]+" data-aspect-body-b="[^"]+" data-ring-a="0" data-ring-b="0">/,
     );
     expect(svg).toContain('class="chart-hit-area" stroke="none" stroke-width="10" pointer-events="all"');
   });
@@ -116,13 +116,33 @@ describe('renderAspectWebSvg (#42)', () => {
   });
 });
 
+describe('aspect chords carry the ring of each end (#418)', () => {
+  const longitudeOf = (): number => 10;
+
+  it('marks a chart’s own aspects with one ring at both ends, defaulting to the innermost', () => {
+    const own = renderAspectWebSvg([aspect('square', 1, 2, 0.5, true)], longitudeOf, 0, 300, 300, 200);
+    expect(own).toContain('data-ring-a="0" data-ring-b="0"');
+    const onRingOne = renderAspectWebSvg(
+      [aspect('square', 1, 2, 0.5, true)],
+      longitudeOf,
+      0,
+      300,
+      300,
+      200,
+      undefined,
+      1,
+    );
+    expect(onRingOne).toContain('data-ring-a="1" data-ring-b="1"');
+  });
+});
+
 describe('renderCrossRingAspectWebSvg (#52)', () => {
-  const resolveA = (body: number): { longitude: number; radius: number } => {
-    if (body === 1) return { longitude: 10, radius: 250 };
+  const resolveA = (body: number): { longitude: number; radius: number; ring: number } => {
+    if (body === 1) return { longitude: 10, radius: 250, ring: 1 };
     throw new Error(`test fixture bug: no outer-ring longitude for body ${body}`);
   };
-  const resolveB = (body: number): { longitude: number; radius: number } => {
-    if (body === 2) return { longitude: 100, radius: 100 };
+  const resolveB = (body: number): { longitude: number; radius: number; ring: number } => {
+    if (body === 2) return { longitude: 100, radius: 100, ring: 0 };
     throw new Error(`test fixture bug: no inner-ring longitude for body ${body}`);
   };
 
@@ -143,6 +163,11 @@ describe('renderCrossRingAspectWebSvg (#52)', () => {
     const aspects = [aspect('square', 1, 2, 0.5, true)];
     const svg = renderCrossRingAspectWebSvg(aspects, resolveA, resolveB, 0, 300, 300);
     expect(svg).toContain('chart-aspect chart-cross-aspect chart-aspect-square chart-aspect-applying');
+  });
+
+  it('marks each end of a cross-ring chord with its own ring, outer side first (#418)', () => {
+    const svg = renderCrossRingAspectWebSvg([aspect('square', 1, 2, 0.5, true)], resolveA, resolveB, 0, 300, 300);
+    expect(svg).toContain('data-ring-a="1" data-ring-b="0"');
   });
 
   it('renders nothing for an empty aspect list', () => {

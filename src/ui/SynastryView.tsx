@@ -23,6 +23,10 @@ import { computeSynastry, type SynastryData } from '../domain/synastry.js';
 import { renderMultiWheelSvg, type CrossRingAspects } from '../chart/multi-wheel.js';
 import { aspectDisplayName, bodyDisplayName } from './astro-names.messages.js';
 import { composeFallbackText } from '../interpretation/compose.js';
+import { BiWheelSelectionPanel } from './BiWheelSelectionPanel.js';
+import { biWheelSelectionPanelMessages } from './BiWheelSelectionPanel.messages.js';
+import { resolveBiWheelSelection } from './bi-wheel-selection.js';
+import { useWheelIsolation } from './wheel-interaction.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { ordered } from './people-list.js';
@@ -153,6 +157,25 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
     return renderMultiWheelSvg([ringA, ringB], crossAspects);
   }, [load, person, partner, t]);
 
+  const wheelT = useMessages(biWheelSelectionPanelMessages);
+  const { wheelRef, selectionKey, clear: clearIsolation, onClick: handleWheelClick } = useWheelIsolation(wheelMarkup);
+  const nameA: string = person?.displayName ?? '';
+  const nameB: string = partner?.displayName ?? '';
+  const ringLabels = [nameA || t.personALabel, nameB || t.personBLabel];
+  const biWheelFacts = useMemo(() => {
+    if (load.kind !== 'ready' || selectionKey === undefined) return undefined;
+    return resolveBiWheelSelection(selectionKey, {
+      rings: [
+        { label: nameA || t.personALabel, data: load.data.chartA },
+        { label: nameB || t.personBLabel, data: load.data.chartB },
+      ],
+      cross: crossAspectRows(load.data.aspects),
+      // Each aspect's first end is person A (ring 0), its second the partner (ring 1).
+      crossRingOfA: 0,
+      crossRingOfB: 1,
+    });
+  }, [load, selectionKey, nameA, nameB, t]);
+
   if (person === undefined) {
     return <PersonNotFound />;
   }
@@ -217,7 +240,22 @@ export function SynastryView({ personId }: { personId: string }): React.JSX.Elem
         <>
           {/* App-generated SVG from just-computed chart data, never user-supplied markup —
               the same trust boundary ChartView.tsx's sheet markup is injected under. */}
-          <div className="chart-wheel" dangerouslySetInnerHTML={{ __html: wheelMarkup }} />
+          <p className="hint chart-wheel-hint">{wheelT.hint}</p>
+          <div
+            ref={wheelRef}
+            className="chart-wheel chart-wheel-interactive"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: wheelMarkup }}
+            onClick={handleWheelClick}
+          />
+          {biWheelFacts !== undefined && (
+            <BiWheelSelectionPanel
+              facts={biWheelFacts}
+              ringLabels={ringLabels}
+              locale={locale}
+              onClear={clearIsolation}
+            />
+          )}
 
           <SortableTable
             caption={t.aspectsCaption}

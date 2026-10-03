@@ -29,6 +29,7 @@
  */
 import type { Degrees } from '../ephemeris/types.js';
 import { bodyGlyph, renderGlyph } from './glyphs.js';
+import { SIGNS } from '../astrology/signs.js';
 import { baselineOffset, fmt, text } from './svg-primitives.js';
 import type { WheelOrientationOptions } from './wheel.js';
 import { pointOnCircle, wheelAngle } from './wheel.js';
@@ -49,6 +50,16 @@ export interface GlyphPlacement {
 }
 
 const DEFAULT_MIN_SEPARATION_DEG = 6;
+
+/**
+ * The attributes that identify a body's elements on the wheel (#418): its key, which ring it is on
+ * (a bi-wheel draws the same body in both) and the sign it stands in. One place builds them, so a
+ * glyph, its tick and its degree stack can never disagree about what they belong to.
+ */
+export function bodyAttributes(key: string, longitude: Degrees, ring: number): string {
+  const signName = SIGNS[Math.floor(norm360(longitude) / 30)]?.name.toLowerCase() ?? '';
+  return `data-body="${key}" data-ring="${String(ring)}" data-body-sign="${signName}"`;
+}
 const MAX_RELAXATION_PASSES = 200;
 
 function norm360(degrees: Degrees): Degrees {
@@ -139,6 +150,8 @@ export interface GlyphRingOptions extends WheelOrientationOptions {
   readonly leaderEndRadius?: number;
   /** Font size of the retrograde `R`. Defaults to 40% of `glyphSize`. */
   readonly retrogradeFontSize?: number;
+  /** Which ring these bodies are on, 0 for the innermost (and for a single wheel). Defaults to 0. */
+  readonly ring?: number;
 }
 
 /**
@@ -213,7 +226,9 @@ export function renderGlyphRingSvg(
       );
     }
 
-    parts.push(`<g class="chart-point" data-body="${placement.key}">${groupParts.join('')}</g>`);
+    parts.push(
+      `<g class="chart-point" ${bodyAttributes(placement.key, placement.longitude, options?.ring ?? 0)}>${groupParts.join('')}</g>`,
+    );
   }
   return parts.join('');
 }

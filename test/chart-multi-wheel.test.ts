@@ -352,7 +352,10 @@ describe('renderMultiWheelSvg degree annotations', () => {
 
   it('stacks each body radially as glyph, degree, sign glyph and minutes, all tagged with its body key (#412)', () => {
     const svg = renderMultiWheelSvg([{ ...natalRing, bodies: [{ body: 1, key: 'sun', longitude: 280.37 }] }]);
-    const stack = /<g class="chart-body-stack" data-body="sun">(.*?)<\/g><\/g>/.exec(svg)?.[1] ?? '';
+    const stack =
+      /<g class="chart-body-stack" data-body="sun" data-ring="0" data-body-sign="capricorn">(.*?)<\/g><\/g>/.exec(
+        svg,
+      )?.[1] ?? '';
     expect(stack).toContain('>10°<');
     expect(stack).toContain('chart-stack-sign-glyph chart-sign-glyph-capricorn chart-sign-element-earth');
     expect(stack).toContain(">22'<");
@@ -369,7 +372,7 @@ describe('renderMultiWheelSvg degree annotations', () => {
       },
     ]);
     expect(svg.split('class="chart-retrograde">R<').length - 1).toBe(1);
-    expect(svg).toMatch(/data-body="saturn">.*?class="chart-retrograde">R</);
+    expect(svg).toMatch(/data-body="saturn" data-ring="0" data-body-sign="[a-z]+">.*?class="chart-retrograde">R</);
   });
 
   it('ticks each body’s true degree on the house dial’s outer edge (#412)', () => {
@@ -377,7 +380,7 @@ describe('renderMultiWheelSvg degree annotations', () => {
     const svg = renderMultiWheelSvg([natalRing], [], { size: 800 });
     const ticks = [
       ...svg.matchAll(
-        /<line x1="(-?[\d.]+)" y1="(-?[\d.]+)" x2="[^"]+" y2="[^"]+" class="chart-body-tick" data-body="(\w+)"/g,
+        /<line x1="(-?[\d.]+)" y1="(-?[\d.]+)" x2="[^"]+" y2="[^"]+" class="chart-body-tick" data-body="(\w+)" data-ring="0"/g,
       ),
     ];
     expect(ticks.map((match) => match[3])).toEqual(['sun', 'moon']);
@@ -389,9 +392,9 @@ describe('renderMultiWheelSvg degree annotations', () => {
   it('gives every body glyph a clickable group with an invisible hit area (#412)', () => {
     const svg = renderMultiWheelSvg([natalRing]);
     expect(svg).toMatch(
-      /<g class="chart-point" data-body="sun"><circle [^>]*class="chart-hit-area" fill="none" stroke="none" pointer-events="all" \/>/,
+      /<g class="chart-point" data-body="sun" data-ring="0" data-body-sign="aries"><circle [^>]*class="chart-hit-area" fill="none" stroke="none" pointer-events="all" \/>/,
     );
-    expect(svg).toMatch(/<g class="chart-point" data-body="moon">/);
+    expect(svg).toMatch(/<g class="chart-point" data-body="moon" data-ring="0" data-body-sign="libra">/);
   });
 
   it('annotates at the spread angle, so a nudged glyph keeps its label beside it', () => {
@@ -462,6 +465,37 @@ describe('renderMultiWheelSvg degree annotations', () => {
 
   it('omits degree labels once rings are stacked, where the bands are too narrow for them', () => {
     expect(renderMultiWheelSvg([natalRing, transitRing])).not.toContain('chart-degree-label');
+  });
+});
+
+describe('renderMultiWheelSvg selection attributes (#418)', () => {
+  it('marks every element of a body — glyph group, degree tick and stack — with its ring and sign', () => {
+    const svg = renderMultiWheelSvg([natalRing]);
+    for (const part of ['chart-point', 'chart-body-tick', 'chart-body-stack']) {
+      expect(svg).toMatch(new RegExp(`class="${part}"[^>]*data-body="sun" data-ring="0" data-body-sign="aries"`));
+    }
+  });
+
+  it('puts a bi-wheel’s two Suns on different rings, so a click can tell them apart', () => {
+    const svg = renderMultiWheelSvg([natalRing, transitRing]);
+    expect(svg).toMatch(/class="chart-point"[^>]*data-body="sun" data-ring="0"/);
+    expect(svg).toMatch(/class="chart-point"[^>]*data-body="sun" data-ring="1"/);
+  });
+
+  it('names the sign each body is in, from its own longitude (the natal Sun at 10° Aries; the transiting Sun at 100° Cancer)', () => {
+    const svg = renderMultiWheelSvg([natalRing, transitRing]);
+    expect(svg).toMatch(/data-body="sun" data-ring="0" data-body-sign="aries"/);
+    expect(svg).toMatch(/data-body="sun" data-ring="1" data-body-sign="cancer"/);
+  });
+
+  it('marks a cross-ring chord with the ring of each end, and a ring’s own chord with that ring at both', () => {
+    const crossAspects: readonly CrossRingAspects[] = [
+      { innerRingIndex: 0, outerRingIndex: 1, aspects: [aspect('square', 1, 2, 0.5)] },
+    ];
+    const svg = renderMultiWheelSvg([natalRing, transitRing], crossAspects);
+    expect(svg).toContain('data-ring-a="1" data-ring-b="0"');
+    const own = renderMultiWheelSvg([{ ...natalRing, aspects: [aspect('trine', 1, 2, 1)] }, transitRing]);
+    expect(own).toContain('data-ring-a="0" data-ring-b="0"');
   });
 });
 

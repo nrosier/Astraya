@@ -26,7 +26,7 @@
  * pattern is small enough to inline here rather than factor into its own
  * component for a single caller.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   almutenOfAscendant,
   angleRows,
@@ -73,6 +73,7 @@ import { standaloneSvg } from '../chart/standalone-svg.js';
 import { resolveWheelDisplayOptions } from '../chart/wheel-options.js';
 import { AstroChartWheel } from './AstroChartWheel.js';
 import { bodyById, bodyByKey } from '../astrology/bodies.js';
+import { SIGNS } from '../astrology/signs.js';
 import { aspectDisplayName, bodyDisplayName, signDisplayName } from './astro-names.messages.js';
 import { chartViewMessages } from './ChartView.messages.js';
 import { svgToPngBlob } from './chart-raster.js';
@@ -81,12 +82,14 @@ import { useEphemerisProvider } from './EphemerisProviderContext.js';
 import { ExtendedSettingsPanel } from './ExtendedSettingsPanel.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
+import { useWheelIsolation } from './wheel-interaction.js';
 import { WheelSelectionText } from './WheelSelectionText.js';
+import { parseSelectionKey } from '../interpretation/selection.js';
 import { PersonNotFound } from './PersonNotFound.js';
 import { SortableTable } from './SortableTable.js';
 import { useStoreState } from './store-context.js';
 import type { TableColumn } from './table-sort.js';
-import type { BodyId, EphemerisProvider } from '../ephemeris/types.js';
+import type { EphemerisProvider } from '../ephemeris/types.js';
 import type { Locale } from '../interpretation/schema.js';
 import type { BirthMomentInput } from '../time/types.js';
 
@@ -534,14 +537,6 @@ function formatElongation(elongation: number): string {
   return `${String(Math.floor(totalMinutes / 60))}°${String(totalMinutes % 60).padStart(2, '0')}'`;
 }
 
-function bodyKeyOf(body: BodyId): string {
-  return bodyById(body)?.key ?? String(body);
-}
-
-function pairKeyOf(a: string, b: string): string {
-  return [a, b].sort().join('|');
-}
-
 /**
  * Click-to-isolate (#400, #412): what's currently clicked on the wheel, and everything derived
  * from it — which body, sign and aspect-pair keys stay at full strength, plus the focused-info
@@ -549,10 +544,7 @@ function pairKeyOf(a: string, b: string): string {
  * wheel div's own doc comment) — not a keyboard-accessible widget, since the data tables already
  * are the accessible path to every value this exposes.
  */
-interface WheelIsolation {
-  readonly bodies: ReadonlySet<string>;
-  readonly signs: ReadonlySet<string>;
-  readonly pairs: ReadonlySet<string>;
+interface WheelIsolationFacts {
   readonly heading: string;
   readonly positionRow?: PositionRow | undefined;
   readonly relatedAspects: readonly AspectRow[];
@@ -566,86 +558,51 @@ function signKeyOf(row: PositionRow): string {
   return row.sign.toLowerCase();
 }
 
-/** `isolatedKey` is `body:<bodyKey>`, `sign:<signKey>` or `aspect:<bodyKeyA>|<bodyKeyB>` (sorted) — see `handleWheelClick`. */
+/**
+ * The facts for the selection panel: what was clicked, from the chart's own tables. Which parts of
+ * the wheel to dim is not decided here — `wheel-interaction.ts` works that out from the wheel's markup.
+ */
 function resolveWheelIsolation(
   isolatedKey: string,
   data: ChartData,
   pointVisibility: PointVisibilityOptions,
   housesRenderable: boolean,
   locale: Locale,
-): WheelIsolation | undefined {
-  const colonIndex = isolatedKey.indexOf(':');
-  if (colonIndex === -1) return undefined;
-  const kind = isolatedKey.slice(0, colonIndex);
-  const value = isolatedKey.slice(colonIndex + 1);
+): WheelIsolationFacts | undefined {
+  const selection = parseSelectionKey(isolatedKey);
+  if (selection === undefined) return undefined;
   const allPositions = positionRows(data, pointVisibility, housesRenderable);
   const allAspects = aspectRows(data);
-  const signOfBody = new Map(allPositions.map((row) => [row.bodyKey, signKeyOf(row)]));
 
-  /** The given bodies, every body aspecting one of them, and those aspect pairs. */
-  function connectionsOf(focus: ReadonlySet<string>): { bodies: Set<string>; pairs: Set<string> } {
-    const bodies = new Set(focus);
-    const pairs = new Set<string>();
-    for (const aspect of data.aspects) {
-      const a = bodyKeyOf(aspect.bodyA);
-      const b = bodyKeyOf(aspect.bodyB);
-      if (!focus.has(a) && !focus.has(b)) continue;
-      bodies.add(a);
-      bodies.add(b);
-      pairs.add(pairKeyOf(a, b));
-    }
-    return { bodies, pairs };
-  }
-
-  if (kind === 'body') {
-    const { bodies, pairs } = connectionsOf(new Set([value]));
+  if (selection.kind === 'body') {
+    const value = selection.key;
     const positionRow = allPositions.find((row) => row.bodyKey === value);
-    const relatedAspects = allAspects.filter((row) => row.bodyAKey === value || row.bodyBKey === value);
-    const sign = signOfBody.get(value);
     return {
-      bodies,
-      signs: new Set(sign === undefined ? [] : [sign]),
-      pairs,
       heading: positionRow !== undefined ? bodyDisplayName(positionRow.bodyKey, locale) : value,
       positionRow,
-      relatedAspects,
+      relatedAspects: allAspects.filter((row) => row.bodyAKey === value || row.bodyBKey === value),
     };
   }
 
-  if (kind === 'sign') {
+  if (selection.kind === 'sign') {
+    const signKey = (SIGNS[selection.signIndex]?.name ?? '').toLowerCase();
     // Bodies only — the Ascendant/Midheaven rows have no daily motion (see `PositionRow.speed`).
-    const inSign = allPositions.filter((row) => row.speed !== undefined && signKeyOf(row) === value);
-    const { bodies, pairs } = connectionsOf(new Set(inSign.map((row) => row.bodyKey)));
-    const signRow = inSign[0];
-    const signName = signRow !== undefined ? signRow.sign : value.charAt(0).toUpperCase() + value.slice(1);
+    const inSign = allPositions.filter((row) => row.speed !== undefined && signKeyOf(row) === signKey);
+    const bodyKeys = new Set(inSign.map((row) => row.bodyKey));
     return {
-      bodies,
-      signs: new Set([value]),
-      pairs,
-      heading: signDisplayName(signName, locale),
-      relatedAspects: allAspects.filter((row) => pairs.has(pairKeyOf(row.bodyAKey, row.bodyBKey))),
+      heading: signDisplayName(SIGNS[selection.signIndex]?.name ?? '', locale),
+      relatedAspects: allAspects.filter((row) => bodyKeys.has(row.bodyAKey) || bodyKeys.has(row.bodyBKey)),
       bodiesInSign: inSign,
     };
   }
 
-  const [bodyAKey, bodyBKey] = value.split('|');
-  if (bodyAKey === undefined || bodyBKey === undefined) return undefined;
+  const { bodyA, bodyB } = selection;
   const aspectRow = allAspects.find(
-    (row) =>
-      (row.bodyAKey === bodyAKey && row.bodyBKey === bodyBKey) ||
-      (row.bodyAKey === bodyBKey && row.bodyBKey === bodyAKey),
+    (row) => (row.bodyAKey === bodyA && row.bodyBKey === bodyB) || (row.bodyAKey === bodyB && row.bodyBKey === bodyA),
   );
-  const bodyAName = aspectRow !== undefined ? bodyDisplayName(aspectRow.bodyAKey, locale) : bodyAKey;
-  const bodyBName = aspectRow !== undefined ? bodyDisplayName(aspectRow.bodyBKey, locale) : bodyBKey;
-  const signs = [signOfBody.get(bodyAKey), signOfBody.get(bodyBKey)].filter((sign) => sign !== undefined);
-  return {
-    bodies: new Set([bodyAKey, bodyBKey]),
-    signs: new Set(signs),
-    pairs: new Set([pairKeyOf(bodyAKey, bodyBKey)]),
-    heading: `${bodyAName} – ${bodyBName}`,
-    relatedAspects: [],
-    aspectRow,
-  };
+  const bodyAName = aspectRow !== undefined ? bodyDisplayName(aspectRow.bodyAKey, locale) : bodyA;
+  const bodyBName = aspectRow !== undefined ? bodyDisplayName(aspectRow.bodyBKey, locale) : bodyB;
+  return { heading: `${bodyAName} – ${bodyBName}`, relatedAspects: [], aspectRow };
 }
 
 /**
@@ -775,61 +732,21 @@ export function ChartDataView({
     );
   }, [load, housesRenderable, displayName, metaLines, extendedSettings, t, locale]);
 
-  // Click-to-isolate (#400). `wheelRef` is the delegation point: the wheel's markup is a raw
-  // injected string, not JSX, so individual glyphs/aspect lines can't carry their own `onClick`.
-  const wheelRef = useRef<HTMLDivElement>(null);
-  const [isolatedKey, setIsolatedKey] = useState<string | undefined>(undefined);
-
-  // A new sheet (redraw, person change, settings change) may no longer contain the previously
-  // clicked element at all — clear rather than risk pointing at something that no longer exists.
-  useEffect(() => {
-    setIsolatedKey(undefined);
-  }, [sheet]);
+  // Click-to-isolate (#400, #412, #418): the selection, its dimming of the wheel and its click
+  // handling are shared with every other wheel (`wheel-interaction.ts`); only the panel of facts
+  // below is this screen's own. A new sheet (redraw, person change, settings change) clears the
+  // selection, since the clicked symbol may no longer exist.
+  const {
+    wheelRef,
+    selectionKey: isolatedKey,
+    clear: clearIsolation,
+    onClick: handleWheelClick,
+  } = useWheelIsolation(sheet);
 
   const isolation = useMemo(() => {
     if (isolatedKey === undefined || load.kind !== 'ready') return undefined;
     return resolveWheelIsolation(isolatedKey, load.data, pointVisibility, housesRenderable, locale);
   }, [isolatedKey, load, pointVisibility, housesRenderable, locale]);
-
-  // Applies the dim/highlight split directly to the injected DOM (the only option: these
-  // elements are raw HTML, not React-rendered, so no amount of state can re-render their own
-  // classes). `g.chart-dimmed`/`line.chart-dimmed` in app.css outrank the aspect-family color
-  // rules by specificity (element + class beats class alone) regardless of source order.
-  useEffect(() => {
-    const root = wheelRef.current;
-    if (root === null) return;
-    for (const element of root.querySelectorAll('[data-body]')) {
-      const key = element.getAttribute('data-body') ?? '';
-      element.classList.toggle('chart-dimmed', isolation !== undefined && !isolation.bodies.has(key));
-    }
-    for (const element of root.querySelectorAll('[data-sign]')) {
-      const key = element.getAttribute('data-sign') ?? '';
-      element.classList.toggle('chart-dimmed', isolation !== undefined && !isolation.signs.has(key));
-    }
-    for (const element of root.querySelectorAll('[data-aspect-body-a]')) {
-      const a = element.getAttribute('data-aspect-body-a') ?? '';
-      const b = element.getAttribute('data-aspect-body-b') ?? '';
-      element.classList.toggle('chart-dimmed', isolation !== undefined && !isolation.pairs.has(pairKeyOf(a, b)));
-    }
-  }, [isolation, sheet]);
-
-  const handleWheelClick = (event: React.MouseEvent<HTMLDivElement>): void => {
-    const target = event.target as Element;
-    const bodyEl = target.closest('[data-body]');
-    const signEl = bodyEl === null ? target.closest('[data-sign]') : null;
-    const aspectEl = bodyEl === null && signEl === null ? target.closest('[data-aspect-body-a]') : null;
-    let nextKey: string | undefined;
-    if (bodyEl !== null) {
-      nextKey = `body:${bodyEl.getAttribute('data-body') ?? ''}`;
-    } else if (signEl !== null) {
-      nextKey = `sign:${signEl.getAttribute('data-sign') ?? ''}`;
-    } else if (aspectEl !== null) {
-      const a = aspectEl.getAttribute('data-aspect-body-a') ?? '';
-      const b = aspectEl.getAttribute('data-aspect-body-b') ?? '';
-      nextKey = `aspect:${pairKeyOf(a, b)}`;
-    }
-    setIsolatedKey((current) => (current === nextKey ? undefined : nextKey));
-  };
 
   useEffect(() => {
     if (!printAll) return undefined;
@@ -956,13 +873,7 @@ export function ChartDataView({
                 <div className="chart-isolation-panel">
                   <div className="chart-isolation-head">
                     <strong>{isolation.heading}</strong>
-                    <button
-                      type="button"
-                      className="quiet"
-                      onClick={() => {
-                        setIsolatedKey(undefined);
-                      }}
-                    >
+                    <button type="button" className="quiet" onClick={clearIsolation}>
                       {t.isolationClear}
                     </button>
                   </div>

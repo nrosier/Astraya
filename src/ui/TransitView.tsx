@@ -26,6 +26,10 @@ import { findVoidOfCourseMoon, type VoidOfCourseMoon } from '../astrology/void-o
 import { voidOfCourseSentence } from './void-of-course-text.js';
 import { aspectDisplayName, bodyDisplayName } from './astro-names.messages.js';
 import { todayInputValue } from './format.js';
+import { BiWheelSelectionPanel } from './BiWheelSelectionPanel.js';
+import { biWheelSelectionPanelMessages } from './BiWheelSelectionPanel.messages.js';
+import { resolveBiWheelSelection } from './bi-wheel-selection.js';
+import { useWheelIsolation } from './wheel-interaction.js';
 import { useLocale } from './locale.js';
 import { useMessages } from './messages.js';
 import { momentKey } from '../time/encode.js';
@@ -125,6 +129,22 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
     return renderMultiWheelSvg([natalRing, transitRing], crossAspects);
   }, [load, t]);
 
+  const wheelT = useMessages(biWheelSelectionPanelMessages);
+  const { wheelRef, selectionKey, clear: clearIsolation, onClick: handleWheelClick } = useWheelIsolation(wheelMarkup);
+  const biWheelFacts = useMemo(() => {
+    if (load.kind !== 'ready' || selectionKey === undefined) return undefined;
+    return resolveBiWheelSelection(selectionKey, {
+      rings: [
+        { label: t.natalLabel, data: load.data.natal },
+        { label: t.transitRingLabel, data: load.data.transit },
+      ],
+      cross: crossAspectRows(load.data.contacts),
+      // Each contact's first end is the transiting body (ring 1), its second the natal point (ring 0).
+      crossRingOfA: 1,
+      crossRingOfB: 0,
+    });
+  }, [load, selectionKey, t]);
+
   if (person === undefined) {
     return <PersonNotFound />;
   }
@@ -189,7 +209,22 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
         <>
           {/* App-generated SVG from just-computed chart data, never user-supplied markup —
               the same trust boundary ChartView.tsx's sheet markup is injected under. */}
-          <div className="chart-wheel" dangerouslySetInnerHTML={{ __html: wheelMarkup }} />
+          <p className="hint chart-wheel-hint">{wheelT.hint}</p>
+          <div
+            ref={wheelRef}
+            className="chart-wheel chart-wheel-interactive"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: wheelMarkup }}
+            onClick={handleWheelClick}
+          />
+          {biWheelFacts !== undefined && (
+            <BiWheelSelectionPanel
+              facts={biWheelFacts}
+              ringLabels={[t.natalLabel, t.transitRingLabel]}
+              locale={locale}
+              onClear={clearIsolation}
+            />
+          )}
 
           {load.voidOfCourse !== undefined && (
             <p className="void-of-course-summary">

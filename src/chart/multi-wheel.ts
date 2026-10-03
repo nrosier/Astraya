@@ -48,7 +48,7 @@ import { SIGNS, degreesInSign } from '../astrology/signs.js';
 import type { BodyId, Degrees, HousePositions } from '../ephemeris/types.js';
 import { renderAspectWebSvg, renderCrossRingAspectWebSvg } from './aspect-web.js';
 import type { GlyphLayoutInput } from './glyph-layout.js';
-import { hitAreaCircle, renderGlyphRingSvg, spreadGlyphs } from './glyph-layout.js';
+import { bodyAttributes, hitAreaCircle, renderGlyphRingSvg, spreadGlyphs } from './glyph-layout.js';
 import { renderGlyph, signGlyph } from './glyphs.js';
 import { baselineOffset, circle, escapeXml, fmt, line, polygon, text } from './svg-primitives.js';
 import type { RingBand, SheetGeometry } from './sheet-geometry.js';
@@ -428,13 +428,14 @@ function renderBodyTicksSvg(
   ascendant: Degrees,
   band: RingBand,
   orientationOptions: WheelOrientationOptions,
+  ring: number,
 ): string {
   return positions
     .map((position) => {
       const angle = wheelAngle(position.longitude, ascendant, orientationOptions);
       const inner = pointOnCircle(geometry.cx, geometry.cy, band.innerRadius, angle);
       const outer = pointOnCircle(geometry.cx, geometry.cy, band.innerRadius + geometry.bodyTickLength, angle);
-      return `<line x1="${fmt(inner.x)}" y1="${fmt(inner.y)}" x2="${fmt(outer.x)}" y2="${fmt(outer.y)}" class="chart-body-tick" data-body="${position.key}" />`;
+      return `<line x1="${fmt(inner.x)}" y1="${fmt(inner.y)}" x2="${fmt(outer.x)}" y2="${fmt(outer.y)}" class="chart-body-tick" ${bodyAttributes(position.key, position.longitude, ring)} />`;
     })
     .join('');
 }
@@ -455,6 +456,7 @@ function renderBodyStacksSvg(
   band: RingBand,
   minSeparationDeg: number,
   orientationOptions: WheelOrientationOptions,
+  ring: number,
 ): string {
   const { cx, cy } = geometry;
   const parts: string[] = [];
@@ -499,7 +501,9 @@ function renderBodyStacksSvg(
         geometry.minuteFontSize,
       ),
     );
-    parts.push(`<g class="chart-body-stack" data-body="${placement.key}">${stack.join('')}</g>`);
+    parts.push(
+      `<g class="chart-body-stack" ${bodyAttributes(placement.key, placement.longitude, ring)}>${stack.join('')}</g>`,
+    );
   }
   return parts.join('');
 }
@@ -553,11 +557,13 @@ export function renderMultiWheelSvg(
       longitude: b.longitude,
       ...(b.retrograde === true ? { retrograde: true } : {}),
     }));
-    parts.push(renderBodyTicksSvg(glyphInputs, geometry, ascendant, band, orientationOptions));
+    parts.push(renderBodyTicksSvg(glyphInputs, geometry, ascendant, band, orientationOptions, index));
     // Only a single ring's band is wide enough for the radial degree/sign/minute stack;
     // with two or three charts stacked, it would overlap the neighbouring ring's glyphs.
     if (rings.length === 1) {
-      parts.push(renderBodyStacksSvg(glyphInputs, geometry, ascendant, band, minSeparationDeg, orientationOptions));
+      parts.push(
+        renderBodyStacksSvg(glyphInputs, geometry, ascendant, band, minSeparationDeg, orientationOptions, index),
+      );
     }
     parts.push(
       renderGlyphRingSvg(glyphInputs, ascendant, cx, cy, band.glyphRadius, band.trueRadius, {
@@ -566,6 +572,7 @@ export function renderMultiWheelSvg(
         glyphSize: geometry.bodyGlyphSize,
         leaderEndRadius: Math.min(band.glyphRadius + geometry.bodyGlyphSize / 2, band.trueRadius),
         retrogradeFontSize: geometry.retrogradeFontSize,
+        ring: index,
       }),
     );
     if (ring.aspects !== undefined && ring.aspects.length > 0) {
@@ -578,7 +585,9 @@ export function renderMultiWheelSvg(
         return longitude;
       };
       const chords = ring.aspects.filter((aspect) => aspect.aspect.key !== 'conjunction');
-      parts.push(renderAspectWebSvg(chords, longitudeOf, ascendant, cx, cy, geometry.aspectCircle, orientationOptions));
+      parts.push(
+        renderAspectWebSvg(chords, longitudeOf, ascendant, cx, cy, geometry.aspectCircle, orientationOptions, index),
+      );
     }
   });
 
@@ -592,23 +601,23 @@ export function renderMultiWheelSvg(
     }
     const longitudeByBodyA = new Map(outerRing.bodies.map((b) => [b.body, b.longitude]));
     const longitudeByBodyB = new Map(innerRing.bodies.map((b) => [b.body, b.longitude]));
-    const resolveA = (body: BodyId): { longitude: Degrees; radius: number } => {
+    const resolveA = (body: BodyId): { longitude: Degrees; radius: number; ring: number } => {
       const longitude = longitudeByBodyA.get(body);
       if (longitude === undefined) {
         throw new Error(
           `renderMultiWheelSvg: body ${String(body)} is not present in outer ring ${String(cross.outerRingIndex)}`,
         );
       }
-      return { longitude, radius: geometry.aspectCircle };
+      return { longitude, radius: geometry.aspectCircle, ring: cross.outerRingIndex };
     };
-    const resolveB = (body: BodyId): { longitude: Degrees; radius: number } => {
+    const resolveB = (body: BodyId): { longitude: Degrees; radius: number; ring: number } => {
       const longitude = longitudeByBodyB.get(body);
       if (longitude === undefined) {
         throw new Error(
           `renderMultiWheelSvg: body ${String(body)} is not present in inner ring ${String(cross.innerRingIndex)}`,
         );
       }
-      return { longitude, radius: geometry.aspectCircle };
+      return { longitude, radius: geometry.aspectCircle, ring: cross.innerRingIndex };
     };
     parts.push(renderCrossRingAspectWebSvg(cross.aspects, resolveA, resolveB, ascendant, cx, cy, orientationOptions));
   }

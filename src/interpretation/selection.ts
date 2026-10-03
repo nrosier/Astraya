@@ -12,33 +12,47 @@
  * - **An aspect line:** that one pair.
  */
 import { SIGNS } from '../astrology/signs.js';
+import { parseBodyId } from '../chart/body-id.js';
 import type { ChartData } from '../domain/chart-compute.js';
 import { derivePlacements, rankPlacements, type SalientPlacement } from './rules.js';
 
 export type WheelSelection =
-  | { readonly kind: 'body'; readonly key: string }
+  | { readonly kind: 'body'; readonly key: string; readonly ring: number }
   | { readonly kind: 'sign'; readonly signIndex: number }
-  | { readonly kind: 'aspect'; readonly bodyA: string; readonly bodyB: string };
+  | {
+      readonly kind: 'aspect';
+      readonly bodyA: string;
+      readonly ringA: number;
+      readonly bodyB: string;
+      readonly ringB: number;
+    };
 
 /**
- * Reads the wheel's selection key: `body:<bodyKey>`, `sign:<lowercase sign name>` or
- * `aspect:<bodyKeyA>|<bodyKeyB>`. `undefined` for anything else, including a sign that does not exist.
+ * Reads the wheel's selection key: `body:<id>`, `sign:<lowercase sign name>` or `aspect:<idA>|<idB>`,
+ * where an id is a body key with an optional ring (`sun`, or `sun@1` — see `chart/body-id.ts`; a
+ * bare key is ring 0). `undefined` for anything else, including a sign that does not exist.
  */
 export function parseSelectionKey(key: string): WheelSelection | undefined {
   const colon = key.indexOf(':');
   if (colon === -1) return undefined;
   const kind = key.slice(0, colon);
   const value = key.slice(colon + 1);
-  if (kind === 'body') return value === '' ? undefined : { kind: 'body', key: value };
+  if (kind === 'body') {
+    const { key: bodyKey, ring } = parseBodyId(value);
+    return bodyKey === '' ? undefined : { kind: 'body', key: bodyKey, ring };
+  }
   if (kind === 'sign') {
     const signIndex = SIGNS.findIndex((sign) => sign.name.toLowerCase() === value);
     return signIndex === -1 ? undefined : { kind: 'sign', signIndex };
   }
   if (kind === 'aspect') {
-    const [bodyA, bodyB] = value.split('|');
-    return bodyA === undefined || bodyB === undefined || bodyA === '' || bodyB === ''
+    const [idA, idB] = value.split('|');
+    if (idA === undefined || idB === undefined) return undefined;
+    const a = parseBodyId(idA);
+    const b = parseBodyId(idB);
+    return a.key === '' || b.key === ''
       ? undefined
-      : { kind: 'aspect', bodyA, bodyB };
+      : { kind: 'aspect', bodyA: a.key, ringA: a.ring, bodyB: b.key, ringB: b.ring };
   }
   return undefined;
 }

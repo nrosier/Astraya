@@ -24,10 +24,33 @@ beforeAll(async () => {
 
 describe('parseSelectionKey (#415)', () => {
   it('reads each kind of key the wheel produces', () => {
-    expect(parseSelectionKey('body:sun')).toEqual({ kind: 'body', key: 'sun' });
+    expect(parseSelectionKey('body:sun')).toEqual({ kind: 'body', key: 'sun', ring: 0 });
     expect(parseSelectionKey('sign:capricorn')).toEqual({ kind: 'sign', signIndex: 9 });
     expect(parseSelectionKey('sign:aries')).toEqual({ kind: 'sign', signIndex: 0 });
-    expect(parseSelectionKey('aspect:moon|sun')).toEqual({ kind: 'aspect', bodyA: 'moon', bodyB: 'sun' });
+    expect(parseSelectionKey('aspect:moon|sun')).toEqual({
+      kind: 'aspect',
+      bodyA: 'moon',
+      ringA: 0,
+      bodyB: 'sun',
+      ringB: 0,
+    });
+  });
+
+  it('reads the ring a body is on, where the wheel names one (#418)', () => {
+    expect(parseSelectionKey('body:sun@1')).toEqual({ kind: 'body', key: 'sun', ring: 1 });
+    expect(parseSelectionKey('body:sun@0')).toEqual({ kind: 'body', key: 'sun', ring: 0 });
+    expect(parseSelectionKey('aspect:saturn@1|sun@0')).toEqual({
+      kind: 'aspect',
+      bodyA: 'saturn',
+      ringA: 1,
+      bodyB: 'sun',
+      ringB: 0,
+    });
+  });
+
+  it('treats a malformed ring as ring 0 rather than refusing the selection', () => {
+    expect(parseSelectionKey('body:sun@x')).toEqual({ kind: 'body', key: 'sun', ring: 0 });
+    expect(parseSelectionKey('body:sun@-1')).toEqual({ kind: 'body', key: 'sun', ring: 0 });
   });
 
   it('rejects a malformed key, an empty value, an unknown sign and an unknown kind', () => {
@@ -72,7 +95,7 @@ describe('selectionPlacements (#415)', () => {
   const sun = bodyByKey('sun')?.id ?? -1;
 
   it('for a planet: its sign, its house and every aspect it is part of — and nothing about other planets', () => {
-    const items = select({ kind: 'body', key: 'sun' });
+    const items = select({ kind: 'body', key: 'sun', ring: 0 });
     const categories = new Set(items.map((item) => item.placement.category));
     expect(categories.has('planet-in-sign')).toBe(true);
     expect(categories.has('planet-in-house')).toBe(true);
@@ -92,13 +115,15 @@ describe('selectionPlacements (#415)', () => {
   });
 
   it('puts the Sun in Capricorn, as the chart has it', () => {
-    const inSign = select({ kind: 'body', key: 'sun' }).find((item) => item.placement.category === 'planet-in-sign');
+    const inSign = select({ kind: 'body', key: 'sun', ring: 0 }).find(
+      (item) => item.placement.category === 'planet-in-sign',
+    );
     expect(inSign?.placement).toMatchObject({ category: 'planet-in-sign', body: 'sun', sign: 9 });
   });
 
   it('lists every aspect the chart has for that planet — as many as the report would', () => {
     const fromChart = chart.aspects.filter((aspect) => aspect.bodyA === sun || aspect.bodyB === sun).length;
-    const shown = select({ kind: 'body', key: 'sun' }).filter(
+    const shown = select({ kind: 'body', key: 'sun', ring: 0 }).filter(
       (item) => item.placement.category === 'aspect-pair',
     ).length;
     expect(shown).toBe(fromChart);
@@ -106,7 +131,7 @@ describe('selectionPlacements (#415)', () => {
   });
 
   it('puts what the planet is before how it relates: sign, then house, then aspects', () => {
-    const categories = select({ kind: 'body', key: 'sun' }).map((item) => item.placement.category);
+    const categories = select({ kind: 'body', key: 'sun', ring: 0 }).map((item) => item.placement.category);
     expect(categories[0]).toBe('planet-in-sign');
     expect(categories[1]).toBe('planet-in-house');
     const firstAspect = categories.indexOf('aspect-pair');
@@ -116,7 +141,9 @@ describe('selectionPlacements (#415)', () => {
   });
 
   it('orders the aspects by salience, most salient first, as the report ranks them', () => {
-    const aspects = select({ kind: 'body', key: 'sun' }).filter((item) => item.placement.category === 'aspect-pair');
+    const aspects = select({ kind: 'body', key: 'sun', ring: 0 }).filter(
+      (item) => item.placement.category === 'aspect-pair',
+    );
     const saliences = aspects.map((item) => item.salience);
     expect(saliences).toEqual([...saliences].sort((a, b) => b - a));
   });
@@ -126,6 +153,10 @@ describe('selectionPlacements (#415)', () => {
     const firstCusp = categories.indexOf('sign-on-cusp');
     expect(firstCusp).toBeGreaterThan(0);
     expect(categories.slice(0, firstCusp).every((category) => category === 'planet-in-sign')).toBe(true);
+  });
+
+  it('gives the same placements whichever ring was clicked: the written text is about the body, not the ring', () => {
+    expect(select({ kind: 'body', key: 'sun', ring: 1 })).toEqual(select({ kind: 'body', key: 'sun', ring: 0 }));
   });
 
   it('for a sign: each planet in it, and only those', () => {
@@ -164,18 +195,18 @@ describe('selectionPlacements (#415)', () => {
     if (!aspect) return;
     const a = bodyById(aspect.bodyA)?.key ?? '';
     const b = bodyById(aspect.bodyB)?.key ?? '';
-    const forward = select({ kind: 'aspect', bodyA: a, bodyB: b });
-    const reverse = select({ kind: 'aspect', bodyA: b, bodyB: a });
+    const forward = select({ kind: 'aspect', bodyA: a, ringA: 0, bodyB: b, ringB: 0 });
+    const reverse = select({ kind: 'aspect', bodyA: b, ringA: 0, bodyB: a, ringB: 0 });
     expect(forward).toHaveLength(1);
     expect(reverse).toEqual(forward);
     expect(forward[0]?.placement.category).toBe('aspect-pair');
   });
 
   it('for a pair that does not aspect: nothing', () => {
-    expect(select({ kind: 'aspect', bodyA: 'sun', bodyB: 'nonexistent' })).toEqual([]);
+    expect(select({ kind: 'aspect', bodyA: 'sun', ringA: 0, bodyB: 'nonexistent', ringB: 0 })).toEqual([]);
   });
 
   it('for a body with no placements (an unknown key): nothing', () => {
-    expect(select({ kind: 'body', key: 'nonexistent' })).toEqual([]);
+    expect(select({ kind: 'body', key: 'nonexistent', ring: 0 })).toEqual([]);
   });
 });

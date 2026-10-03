@@ -70,13 +70,15 @@ function aspectChord(
   pointA: { readonly x: number; readonly y: number },
   pointB: { readonly x: number; readonly y: number },
   extraClass: string,
+  ringA: number,
+  ringB: number,
 ): string {
   const direction = aspect.applying ? 'applying' : 'separating';
   const tight = aspect.orb <= TIGHT_ORB_DEG ? ' chart-aspect-tight' : '';
   const className = `chart-aspect${extraClass} chart-aspect-${aspect.aspect.key} chart-aspect-${direction}${tight}`;
   const coords = `x1="${fmt(pointA.x)}" y1="${fmt(pointA.y)}" x2="${fmt(pointB.x)}" y2="${fmt(pointB.y)}"`;
   return (
-    `<g class="chart-aspect-link" data-aspect-key="${aspect.aspect.key}" data-aspect-body-a="${bodyKeyOf(aspect.bodyA)}" data-aspect-body-b="${bodyKeyOf(aspect.bodyB)}">` +
+    `<g class="chart-aspect-link" data-aspect-key="${aspect.aspect.key}" data-aspect-body-a="${bodyKeyOf(aspect.bodyA)}" data-aspect-body-b="${bodyKeyOf(aspect.bodyB)}" data-ring-a="${String(ringA)}" data-ring-b="${String(ringB)}">` +
     `<line ${coords} class="chart-hit-area" stroke="none" stroke-width="10" pointer-events="all" />` +
     `<line ${coords} class="${className}" />` +
     `</g>`
@@ -99,6 +101,8 @@ export function renderAspectWebSvg(
   cy: number,
   radius: number,
   orientationOptions?: WheelOrientationOptions,
+  /** The ring both ends of these aspects are on (they are one chart's own). Defaults to 0. */
+  ring = 0,
 ): string {
   const parts: string[] = [];
   for (const aspect of aspects) {
@@ -106,7 +110,7 @@ export function renderAspectWebSvg(
     const angleB = wheelAngle(longitudeOf(aspect.bodyB), ascendant, orientationOptions);
     const pointA = pointOnCircle(cx, cy, radius, angleA);
     const pointB = pointOnCircle(cx, cy, radius, angleB);
-    parts.push(aspectChord(aspect, pointA, pointB, ''));
+    parts.push(aspectChord(aspect, pointA, pointB, '', ring, ring));
   }
   return parts.join('');
 }
@@ -122,8 +126,8 @@ export function renderAspectWebSvg(
  */
 export function renderCrossRingAspectWebSvg(
   aspects: readonly Aspect[],
-  resolveA: (body: BodyId) => { readonly longitude: Degrees; readonly radius: number },
-  resolveB: (body: BodyId) => { readonly longitude: Degrees; readonly radius: number },
+  resolveA: (body: BodyId) => { readonly longitude: Degrees; readonly radius: number; readonly ring: number },
+  resolveB: (body: BodyId) => { readonly longitude: Degrees; readonly radius: number; readonly ring: number },
   ascendant: Degrees,
   cx: number,
   cy: number,
@@ -137,7 +141,7 @@ export function renderCrossRingAspectWebSvg(
     const angleB = wheelAngle(b.longitude, ascendant, orientationOptions);
     const pointA = pointOnCircle(cx, cy, a.radius, angleA);
     const pointB = pointOnCircle(cx, cy, b.radius, angleB);
-    parts.push(aspectChord(aspect, pointA, pointB, ' chart-cross-aspect'));
+    parts.push(aspectChord(aspect, pointA, pointB, ' chart-cross-aspect', a.ring, b.ring));
   }
   return parts.join('');
 }

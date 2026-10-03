@@ -51,6 +51,17 @@ test('a person with a known birth time gets a Transit screen with a bi-wheel and
   await expect(page.locator('div.chart-wheel svg')).toHaveCount(1);
   await expect(page.getByRole('table', { name: 'Contacts' })).toBeVisible();
 
+  // Click-to-isolate (#418): the transiting Saturn is picked out on its own ring, the panel names
+  // the ring, and a second click clears it.
+  const transitingSaturn = page.locator('div.chart-wheel .chart-point[data-body="saturn"][data-ring="1"]');
+  await transitingSaturn.locator('.chart-hit-area').click();
+  await expect(page.locator('.chart-isolation-head strong')).toHaveText('Saturn (Transit)');
+  await expect(page.locator('div.chart-wheel .chart-dimmed').first()).toBeAttached();
+  await expect(transitingSaturn).not.toHaveClass(/chart-dimmed/);
+  await transitingSaturn.locator('.chart-hit-area').click();
+  await expect(page.locator('.chart-isolation-panel')).toHaveCount(0);
+  await expect(page.locator('div.chart-wheel .chart-dimmed')).toHaveCount(0);
+
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Download CSV', exact: true }).click(),
