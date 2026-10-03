@@ -111,6 +111,26 @@ implies the request itself was wrong. The per-user-per-hour request limit
 stopping a single account from burning through a lot of small, cheap calls
 before either cap has accumulated enough usage to trip.
 
+### Two-phase check of `customPrompt` (#411)
+
+The phrase-list guardrail is a cheap pre-filter, but any fixed list is defeated by rewording
+("tell them they'll definitely get the job" matches nothing). A prompt that passes it is therefore
+verified by a separate model call before anything is generated:
+
+1. **Verify.** `verifyCustomPrompt` (`llm-client.ts`) sends the instruction, enclosed as untrusted
+   data between `<reader_instruction>` tags, to the model with a policy-checker system prompt. The
+   model must answer exactly `pass` or `fail: <reason>`. Only tone, style, and focus are allowed;
+   instructions to lie, invent facts, promise outcomes, give medical/legal/financial advice, or
+   redirect the model are not.
+2. **Generate.** Runs only on `pass`.
+
+Any output that is neither form is treated as `fail`, and a failed verification call returns 502 —
+the check fails closed, never skipped. A rejection is a 422 with `code: 'customization-rejected'`
+and the model's `reason` (written in the request's locale), which the UI shows alongside a fixed
+"violates the allowed customization rules" message. The verification call is billed through
+`interpretation_usage` whatever its verdict, so it counts toward both daily caps. Synthesis mode
+has no `customPrompt` and skips this phase.
+
 ## Consequences
 
 Good:
@@ -133,8 +153,11 @@ Costs, stated plainly:
   something the UI or this document should understate.
 - `customPrompt`'s guardrail is best-effort, not structural — it can't
   detect a birth date typed as a fragment ("the fourth of July") or a
-  disguised injection attempt. It is documented as such rather than
-  oversold as equivalent to the placement-key guarantee.
+  disguised injection attempt. The model verification phase (#411) catches
+  reworded violations the phrase lists miss, but it is itself a model
+  judgment, so it is documented as a stronger filter rather than oversold as
+  equivalent to the placement-key guarantee. It also adds one extra model call
+  of latency and cost to every grounded/freeform request.
 - The two cost caps are process-local counters over `interpretation_usage`,
   read fresh on every request — correct for Astraya's single-process
   deployment, but would need a shared store (not sqlite `:memory:`-per-

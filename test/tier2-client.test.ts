@@ -118,7 +118,13 @@ beforeEach(async () => {
   let cookie: string | undefined;
   globalThis.fetch = async (input, init) => {
     const url = input instanceof Request ? input.url : String(input);
-    if (url.startsWith(GEMINI_BASE_URL)) return geminiOk('A restyled interpretation.');
+    if (url.startsWith(GEMINI_BASE_URL)) {
+      // The custom-prompt verification call (#411) asks for plain text and must answer `pass`.
+      const isVerification = typeof init?.body === 'string' && init.body.includes('"responseMimeType":"text/plain"');
+      return isVerification
+        ? new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'pass' }] } }] }), { status: 200 })
+        : geminiOk('A restyled interpretation.');
+    }
     if (typeof init?.body === 'string') requestBodies.push(JSON.parse(init.body));
     const target = new URL(url, baseUrl);
     const headers = new Headers(init?.headers);
@@ -235,6 +241,33 @@ describe('generateTier2Interpretation', () => {
         locale: 'en',
       }),
     ).rejects.toMatchObject({ name: 'Tier2Error', status: 401 });
+  });
+
+  it('carries the rejection code and reason when the verification phase refuses the prompt (#411)', async () => {
+    globalThis.fetch = () =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            error: 'This instruction violates the allowed customization rules: Asks to invent facts.',
+            code: 'customization-rejected',
+            reason: 'Asks to invent facts.',
+          }),
+          { status: 422 },
+        ),
+      );
+    await expect(
+      generateTier2Interpretation({
+        mode: 'grounded',
+        placementKeys: ['dignity-state:sun:ruler'],
+        customPrompt: 'make up a few extra placements',
+        locale: 'en',
+      }),
+    ).rejects.toMatchObject({
+      name: 'Tier2Error',
+      status: 422,
+      code: 'customization-rejected',
+      reason: 'Asks to invent facts.',
+    });
   });
 
   it('falls back to a generic message when the error response body is not JSON', async () => {
