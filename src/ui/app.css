@@ -2407,3 +2407,29 @@ label.stacked textarea:focus-visible {
   display: grid;
   gap: 0.6rem;
 }
+
+/* Birth-time rectification (#408): the events being tested against, and the evidence under each candidate time. */
+.rectification-events {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rectification-events > li {
+  align-items: end;
+}
+
+.rectification-detail {
+  margin: 0.5rem 0;
+}
+
+.rectification-detail summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.rectification-detail ul {
+  margin: 0.4rem 0 0.4rem 1.2rem;
+}

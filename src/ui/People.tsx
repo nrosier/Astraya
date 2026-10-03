@@ -80,7 +80,8 @@ export function People(): React.JSX.Element {
       </p>
       <p>
         <a href="#/cycles">{t.cyclesLink}</a> · <a href="#/eclipses">{t.eclipsesLink}</a> ·{' '}
-        <a href="#/horary">{t.horaryLink}</a> · <a href="#/electional">{t.electionalLink}</a>
+        <a href="#/horary">{t.horaryLink}</a> · <a href="#/electional">{t.electionalLink}</a> ·{' '}
+        <a href="#/rectification">{t.rectificationLink}</a>
       </p>
 
       {people.length === 0 ? (

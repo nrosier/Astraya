@@ -57,6 +57,7 @@ export type Route =
   | { readonly kind: 'eclipses' }
   | { readonly kind: 'horary' }
   | { readonly kind: 'electional' }
+  | { readonly kind: 'rectification' }
   | { readonly kind: 'admin' }
   | { readonly kind: 'admin-usage' }
   | { readonly kind: 'corpus-overrides' }
@@ -106,6 +107,9 @@ export function parseRoute(hash: string): Route {
     // #409: a search for the best times to begin something — ephemeris only, no person.
     case '#/electional':
       return { kind: 'electional' };
+    // #408: test candidate birth times against dated life events — needs the ephemeris and, optionally, a stored person to pre-fill from.
+    case '#/rectification':
+      return { kind: 'rectification' };
     case '#/admin':
       return { kind: 'admin' };
     case '#/admin/usage':
