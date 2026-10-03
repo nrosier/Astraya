@@ -22,6 +22,8 @@ import { chartWheelRing, crossAspectRows, type AspectRow } from '../domain/chart
 import { deriveExportFilename } from '../domain/export-filename.js';
 import { computeTransit, type TransitData } from '../domain/transit.js';
 import { renderMultiWheelSvg, type CrossRingAspects } from '../chart/multi-wheel.js';
+import { findVoidOfCourseMoon, type VoidOfCourseMoon } from '../astrology/void-of-course.js';
+import { voidOfCourseSentence } from './void-of-course-text.js';
 import { aspectDisplayName, bodyDisplayName } from './astro-names.messages.js';
 import { todayInputValue } from './format.js';
 import { useLocale } from './locale.js';
@@ -36,7 +38,7 @@ import type { Locale } from '../interpretation/schema.js';
 
 type Load =
   | { readonly kind: 'loading' }
-  | { readonly kind: 'ready'; readonly data: TransitData }
+  | { readonly kind: 'ready'; readonly data: TransitData; readonly voidOfCourse: VoidOfCourseMoon | undefined }
   | { readonly kind: 'error'; readonly message: string };
 
 function contactColumns(t: typeof transitViewMessages.en, locale: Locale): readonly TableColumn<AspectRow>[] {
@@ -96,7 +98,9 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
         // own calculation might apply.
         const targetJd = await provider.julianDayFromUtc(targetDate.year, targetDate.month, targetDate.day, 12, 0, 0);
         const data = await computeTransit(moment, targetJd, provider);
-        if (!effect.cancelled) setLoad({ kind: 'ready', data });
+        // Secondary to the wheel: if the Moon search fails, the screen still shows the transit.
+        const voidOfCourse = await findVoidOfCourseMoon(provider, targetJd).catch(() => undefined);
+        if (!effect.cancelled) setLoad({ kind: 'ready', data, voidOfCourse });
       } catch (error) {
         if (!effect.cancelled)
           setLoad({ kind: 'error', message: error instanceof Error ? error.message : String(error) });
@@ -186,6 +190,12 @@ export function TransitView({ personId }: { personId: string }): React.JSX.Eleme
           {/* App-generated SVG from just-computed chart data, never user-supplied markup —
               the same trust boundary ChartView.tsx's sheet markup is injected under. */}
           <div className="chart-wheel" dangerouslySetInnerHTML={{ __html: wheelMarkup }} />
+
+          {load.voidOfCourse !== undefined && (
+            <p className="void-of-course-summary">
+              {voidOfCourseSentence(load.voidOfCourse, t, locale)} <span className="hint">{t.vocBasis}</span>
+            </p>
+          )}
 
           <SortableTable
             caption={t.contactsCaption}
