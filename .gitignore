@@ -56,3 +56,8 @@ tools/corpus-gen/.data/
 # and each one is a full copy of a multi-MB corpus file, so keeping them out
 # of git history is deliberate, not an oversight.
 tools/corpus-gen/backups/
+
+# The evaluate -> improve hand-off queue (#381): transient, emptied by every improve run.
+# Its sibling eval-tracking/ is deliberately committed — it is the loop's memory of which
+# entries were already judged clean, so a fresh checkout doesn't re-pay to re-check them.
+tools/corpus-gen/feedback/
