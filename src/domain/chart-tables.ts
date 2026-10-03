@@ -567,6 +567,7 @@ export function chartWheelRing(data: ChartData, label = 'Natal', options: PointV
       body: position.body,
       key: bodyById(position.body)?.key ?? String(position.body),
       longitude: position.longitude,
+      retrograde: position.retrograde,
     })),
     aspects: filterAspectsForDisplay(data.aspects, { visibleFamilies: ['major'] }),
   };

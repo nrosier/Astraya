@@ -517,22 +517,30 @@ function pairKeyOf(a: string, b: string): string {
 }
 
 /**
- * Click-to-isolate (#400): what's currently clicked on the wheel, and everything derived from
- * it — which body/aspect-pair keys should stay at full opacity, plus the focused-info content.
- * A mouse/touch-only enhancement layered on an already-`aria-hidden` wheel (see the wheel div's
- * own doc comment) — not a keyboard-accessible widget, since the data tables already are the
- * accessible path to every value this exposes.
+ * Click-to-isolate (#400, #412): what's currently clicked on the wheel, and everything derived
+ * from it — which body, sign and aspect-pair keys stay at full strength, plus the focused-info
+ * content. A mouse/touch-only enhancement layered on an already-`aria-hidden` wheel (see the
+ * wheel div's own doc comment) — not a keyboard-accessible widget, since the data tables already
+ * are the accessible path to every value this exposes.
  */
 interface WheelIsolation {
   readonly bodies: ReadonlySet<string>;
+  readonly signs: ReadonlySet<string>;
   readonly pairs: ReadonlySet<string>;
   readonly heading: string;
   readonly positionRow?: PositionRow | undefined;
   readonly relatedAspects: readonly AspectRow[];
   readonly aspectRow?: AspectRow | undefined;
+  /** For a clicked sign: the bodies drawn in it. */
+  readonly bodiesInSign?: readonly PositionRow[] | undefined;
 }
 
-/** `isolatedKey` is `body:<bodyKey>` or `aspect:<bodyKeyA>|<bodyKeyB>` (sorted) — see `handleWheelClick`. */
+/** `data-sign` on the wheel is the sign's name lowercased (`multi-wheel.ts`). */
+function signKeyOf(row: PositionRow): string {
+  return row.sign.toLowerCase();
+}
+
+/** `isolatedKey` is `body:<bodyKey>`, `sign:<signKey>` or `aspect:<bodyKeyA>|<bodyKeyB>` (sorted) — see `handleWheelClick`. */
 function resolveWheelIsolation(
   isolatedKey: string,
   data: ChartData,
@@ -546,26 +554,51 @@ function resolveWheelIsolation(
   const value = isolatedKey.slice(colonIndex + 1);
   const allPositions = positionRows(data, pointVisibility, housesRenderable);
   const allAspects = aspectRows(data);
+  const signOfBody = new Map(allPositions.map((row) => [row.bodyKey, signKeyOf(row)]));
 
-  if (kind === 'body') {
-    const bodies = new Set<string>([value]);
+  /** The given bodies, every body aspecting one of them, and those aspect pairs. */
+  function connectionsOf(focus: ReadonlySet<string>): { bodies: Set<string>; pairs: Set<string> } {
+    const bodies = new Set(focus);
     const pairs = new Set<string>();
     for (const aspect of data.aspects) {
       const a = bodyKeyOf(aspect.bodyA);
       const b = bodyKeyOf(aspect.bodyB);
-      if (a !== value && b !== value) continue;
+      if (!focus.has(a) && !focus.has(b)) continue;
       bodies.add(a);
       bodies.add(b);
       pairs.add(pairKeyOf(a, b));
     }
+    return { bodies, pairs };
+  }
+
+  if (kind === 'body') {
+    const { bodies, pairs } = connectionsOf(new Set([value]));
     const positionRow = allPositions.find((row) => row.bodyKey === value);
     const relatedAspects = allAspects.filter((row) => row.bodyAKey === value || row.bodyBKey === value);
+    const sign = signOfBody.get(value);
     return {
       bodies,
+      signs: new Set(sign === undefined ? [] : [sign]),
       pairs,
       heading: positionRow !== undefined ? bodyDisplayName(positionRow.bodyKey, locale) : value,
       positionRow,
       relatedAspects,
+    };
+  }
+
+  if (kind === 'sign') {
+    // Bodies only — the Ascendant/Midheaven rows have no daily motion (see `PositionRow.speed`).
+    const inSign = allPositions.filter((row) => row.speed !== undefined && signKeyOf(row) === value);
+    const { bodies, pairs } = connectionsOf(new Set(inSign.map((row) => row.bodyKey)));
+    const signRow = inSign[0];
+    const signName = signRow !== undefined ? signRow.sign : value.charAt(0).toUpperCase() + value.slice(1);
+    return {
+      bodies,
+      signs: new Set([value]),
+      pairs,
+      heading: signDisplayName(signName, locale),
+      relatedAspects: allAspects.filter((row) => pairs.has(pairKeyOf(row.bodyAKey, row.bodyBKey))),
+      bodiesInSign: inSign,
     };
   }
 
@@ -578,8 +611,10 @@ function resolveWheelIsolation(
   );
   const bodyAName = aspectRow !== undefined ? bodyDisplayName(aspectRow.bodyAKey, locale) : bodyAKey;
   const bodyBName = aspectRow !== undefined ? bodyDisplayName(aspectRow.bodyBKey, locale) : bodyBKey;
+  const signs = [signOfBody.get(bodyAKey), signOfBody.get(bodyBKey)].filter((sign) => sign !== undefined);
   return {
     bodies: new Set([bodyAKey, bodyBKey]),
+    signs: new Set(signs),
     pairs: new Set([pairKeyOf(bodyAKey, bodyBKey)]),
     heading: `${bodyAName} – ${bodyBName}`,
     relatedAspects: [],
@@ -736,27 +771,31 @@ export function ChartDataView({
   useEffect(() => {
     const root = wheelRef.current;
     if (root === null) return;
-    const glyphs = root.querySelectorAll<SVGGElement>('[data-body]');
-    const lines = root.querySelectorAll<SVGLineElement>('[data-aspect-body-a]');
-    for (const glyph of glyphs) {
-      const key = glyph.getAttribute('data-body') ?? '';
-      glyph.classList.toggle('chart-dimmed', isolation !== undefined && !isolation.bodies.has(key));
+    for (const element of root.querySelectorAll('[data-body]')) {
+      const key = element.getAttribute('data-body') ?? '';
+      element.classList.toggle('chart-dimmed', isolation !== undefined && !isolation.bodies.has(key));
     }
-    for (const line of lines) {
-      const a = line.getAttribute('data-aspect-body-a') ?? '';
-      const b = line.getAttribute('data-aspect-body-b') ?? '';
-      const dim = isolation !== undefined && !isolation.pairs.has(pairKeyOf(a, b));
-      line.classList.toggle('chart-dimmed', dim);
+    for (const element of root.querySelectorAll('[data-sign]')) {
+      const key = element.getAttribute('data-sign') ?? '';
+      element.classList.toggle('chart-dimmed', isolation !== undefined && !isolation.signs.has(key));
+    }
+    for (const element of root.querySelectorAll('[data-aspect-body-a]')) {
+      const a = element.getAttribute('data-aspect-body-a') ?? '';
+      const b = element.getAttribute('data-aspect-body-b') ?? '';
+      element.classList.toggle('chart-dimmed', isolation !== undefined && !isolation.pairs.has(pairKeyOf(a, b)));
     }
   }, [isolation, sheet]);
 
   const handleWheelClick = (event: React.MouseEvent<HTMLDivElement>): void => {
     const target = event.target as Element;
     const bodyEl = target.closest('[data-body]');
-    const aspectEl = bodyEl === null ? target.closest('[data-aspect-body-a]') : null;
+    const signEl = bodyEl === null ? target.closest('[data-sign]') : null;
+    const aspectEl = bodyEl === null && signEl === null ? target.closest('[data-aspect-body-a]') : null;
     let nextKey: string | undefined;
     if (bodyEl !== null) {
       nextKey = `body:${bodyEl.getAttribute('data-body') ?? ''}`;
+    } else if (signEl !== null) {
+      nextKey = `sign:${signEl.getAttribute('data-sign') ?? ''}`;
     } else if (aspectEl !== null) {
       const a = aspectEl.getAttribute('data-aspect-body-a') ?? '';
       const b = aspectEl.getAttribute('data-aspect-body-b') ?? '';
@@ -866,9 +905,10 @@ export function ChartDataView({
 
           {sheet !== undefined && (
             <>
+              <p className="hint chart-wheel-hint">{t.wheelClickHint}</p>
               <div
                 ref={wheelRef}
-                className="chart-wheel"
+                className="chart-wheel chart-wheel-interactive"
                 // Hidden from assistive tech rather than given an aria-label (#69): a chart
                 // wheel packs dozens of positions/aspects into overlapping glyphs, and no short
                 // label does that justice. The data tables right below are the actual accessible
@@ -899,6 +939,19 @@ export function ChartDataView({
                       {t.isolationClear}
                     </button>
                   </div>
+                  {isolation.bodiesInSign !== undefined &&
+                    (isolation.bodiesInSign.length === 0 ? (
+                      <p className="hint">{t.isolationSignEmpty}</p>
+                    ) : (
+                      <p>
+                        {isolation.bodiesInSign
+                          .map(
+                            (row) =>
+                              `${bodyDisplayName(row.bodyKey, locale)} ${String(row.degree)}°${String(row.minute).padStart(2, '0')}'`,
+                          )
+                          .join(', ')}
+                      </p>
+                    ))}
                   {isolation.positionRow !== undefined && (
                     <p>
                       {signDisplayName(isolation.positionRow.sign, locale)} {isolation.positionRow.degree}°

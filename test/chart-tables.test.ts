@@ -630,8 +630,8 @@ describe('chartWheelRing (#52)', () => {
       label: 'Natal',
       houses: HOUSES,
       bodies: [
-        { body: SUN, key: 'sun', longitude: 10 },
-        { body: MOON, key: 'moon', longitude: 100 },
+        { body: SUN, key: 'sun', longitude: 10, retrograde: false },
+        { body: MOON, key: 'moon', longitude: 100, retrograde: false },
       ],
       aspects: [aspect],
     });
@@ -698,12 +698,12 @@ describe('chartWheelRing (#52)', () => {
       partOfSpirit: 0,
     };
     expect(chartWheelRing(data).bodies).toEqual([
-      { body: SUN, key: 'sun', longitude: 10 },
-      { body: CHIRON, key: 'chiron', longitude: 100 },
+      { body: SUN, key: 'sun', longitude: 10, retrograde: false },
+      { body: CHIRON, key: 'chiron', longitude: 100, retrograde: false },
     ]);
     expect(chartWheelRing(data).aspects).toEqual([aspect]);
     expect(chartWheelRing(data, 'Natal', { chironVisible: false }).bodies).toEqual([
-      { body: SUN, key: 'sun', longitude: 10 },
+      { body: SUN, key: 'sun', longitude: 10, retrograde: false },
     ]);
     expect(chartWheelRing(data, 'Natal', { chironVisible: false }).aspects).toEqual([aspect]);
   });
